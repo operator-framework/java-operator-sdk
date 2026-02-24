@@ -23,6 +23,9 @@ import java.util.function.Consumer;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.api.config.ConfigurationServiceOverrider;
 import io.javaoperatorsdk.operator.api.config.ControllerConfigurationOverrider;
+import io.javaoperatorsdk.operator.config.loader.provider.EnvVarConfigProvider;
+import io.javaoperatorsdk.operator.config.loader.provider.PrirityListConfigProvider;
+import io.javaoperatorsdk.operator.config.loader.provider.SystemPropertyConfigProvider;
 import io.javaoperatorsdk.operator.processing.retry.GenericRetry;
 
 public class ConfigLoader {
@@ -134,7 +137,11 @@ public class ConfigLoader {
   private final ConfigProvider configProvider;
 
   public ConfigLoader() {
-    this(new DefaultConfigProvider(), DEFAULT_CONTROLLER_KEY_PREFIX, DEFAULT_OPERATOR_KEY_PREFIX);
+    this(
+        new PrirityListConfigProvider(
+            List.of(new EnvVarConfigProvider(), new SystemPropertyConfigProvider())),
+        DEFAULT_CONTROLLER_KEY_PREFIX,
+        DEFAULT_OPERATOR_KEY_PREFIX);
   }
 
   public ConfigLoader(ConfigProvider configProvider) {

@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.javaoperatorsdk.operator.config.loader;
+package io.javaoperatorsdk.operator.config.loader.provider;
 
 import java.time.Duration;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -23,61 +23,25 @@ import org.junit.jupiter.api.Test;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatIllegalArgumentException;
 
-class DefaultConfigProviderTest {
-
-  private final DefaultConfigProvider provider = new DefaultConfigProvider();
+class SystemPropertyConfigProviderTest {
 
   @Test
-  void returnsEmptyWhenNeitherEnvNorPropertyIsSet() {
+  void returnsEmptyWhenPropertyAbsent() {
+    var provider = new SystemPropertyConfigProvider(k -> null);
     assertThat(provider.getValue("josdk.no.such.key", String.class)).isEmpty();
   }
 
-  // -- env variable tests -----------------------------------------------------
-
   @Test
-  void readsStringFromEnvVariable() {
-    var envProvider =
-        new DefaultConfigProvider(k -> k.equals("JOSDK_TEST_STRING") ? "from-env" : null);
-    assertThat(envProvider.getValue("josdk.test.string", String.class)).hasValue("from-env");
-  }
-
-  @Test
-  void envVariableKeyUsesUppercaseWithUnderscores() {
-    // dots and hyphens both become underscores, key is uppercased
-    var envProvider =
-        new DefaultConfigProvider(k -> k.equals("JOSDK_CACHE_SYNC_TIMEOUT") ? "PT10S" : null);
-    assertThat(envProvider.getValue("josdk.cache-sync.timeout", Duration.class))
-        .hasValue(Duration.ofSeconds(10));
-  }
-
-  @Test
-  void envVariableTakesPrecedenceOverSystemProperty() {
-    System.setProperty("josdk.test.precedence", "from-sysprop");
-    try {
-      var envProvider =
-          new DefaultConfigProvider(k -> k.equals("JOSDK_TEST_PRECEDENCE") ? "from-env" : null);
-      assertThat(envProvider.getValue("josdk.test.precedence", String.class)).hasValue("from-env");
-    } finally {
-      System.clearProperty("josdk.test.precedence");
-    }
-  }
-
-  @Test
-  void fallsBackToSystemPropertyWhenEnvVariableAbsent() {
-    System.setProperty("josdk.test.fallback", "from-sysprop");
-    try {
-      var envProvider = new DefaultConfigProvider(k -> null);
-      assertThat(envProvider.getValue("josdk.test.fallback", String.class))
-          .hasValue("from-sysprop");
-    } finally {
-      System.clearProperty("josdk.test.fallback");
-    }
+  void returnsEmptyForNullKey() {
+    var provider = new SystemPropertyConfigProvider(k -> "value");
+    assertThat(provider.getValue(null, String.class)).isEmpty();
   }
 
   @Test
   void readsStringFromSystemProperty() {
     System.setProperty("josdk.test.string", "hello");
     try {
+      var provider = new SystemPropertyConfigProvider();
       assertThat(provider.getValue("josdk.test.string", String.class)).hasValue("hello");
     } finally {
       System.clearProperty("josdk.test.string");
@@ -88,6 +52,7 @@ class DefaultConfigProviderTest {
   void readsBooleanFromSystemProperty() {
     System.setProperty("josdk.test.bool", "true");
     try {
+      var provider = new SystemPropertyConfigProvider();
       assertThat(provider.getValue("josdk.test.bool", Boolean.class)).hasValue(true);
     } finally {
       System.clearProperty("josdk.test.bool");
@@ -98,6 +63,7 @@ class DefaultConfigProviderTest {
   void readsIntegerFromSystemProperty() {
     System.setProperty("josdk.test.integer", "42");
     try {
+      var provider = new SystemPropertyConfigProvider();
       assertThat(provider.getValue("josdk.test.integer", Integer.class)).hasValue(42);
     } finally {
       System.clearProperty("josdk.test.integer");
@@ -108,6 +74,7 @@ class DefaultConfigProviderTest {
   void readsLongFromSystemProperty() {
     System.setProperty("josdk.test.long", "123456789");
     try {
+      var provider = new SystemPropertyConfigProvider();
       assertThat(provider.getValue("josdk.test.long", Long.class)).hasValue(123456789L);
     } finally {
       System.clearProperty("josdk.test.long");
@@ -118,6 +85,7 @@ class DefaultConfigProviderTest {
   void readsDurationFromSystemProperty() {
     System.setProperty("josdk.test.duration", "PT30S");
     try {
+      var provider = new SystemPropertyConfigProvider();
       assertThat(provider.getValue("josdk.test.duration", Duration.class))
           .hasValue(Duration.ofSeconds(30));
     } finally {
@@ -129,6 +97,7 @@ class DefaultConfigProviderTest {
   void throwsForUnsupportedType() {
     System.setProperty("josdk.test.unsupported", "value");
     try {
+      var provider = new SystemPropertyConfigProvider();
       assertThatIllegalArgumentException()
           .isThrownBy(() -> provider.getValue("josdk.test.unsupported", AtomicInteger.class))
           .withMessageContaining("Unsupported config type");
