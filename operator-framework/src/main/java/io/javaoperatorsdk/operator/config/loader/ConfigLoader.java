@@ -30,6 +30,7 @@ import io.javaoperatorsdk.operator.api.config.LeaderElectionConfigurationBuilder
 import io.javaoperatorsdk.operator.config.loader.provider.AgregatePrirityListConfigProvider;
 import io.javaoperatorsdk.operator.config.loader.provider.EnvVarConfigProvider;
 import io.javaoperatorsdk.operator.config.loader.provider.SystemPropertyConfigProvider;
+import io.javaoperatorsdk.operator.processing.event.rate.LinearRateLimiter;
 import io.javaoperatorsdk.operator.processing.retry.GenericRetry;
 
 public class ConfigLoader {
@@ -122,6 +123,12 @@ public class ConfigLoader {
   static final String RETRY_MAX_INTERVAL_SUFFIX = "retry.max-interval";
 
   // ---------------------------------------------------------------------------
+  // Controller-level rate-limiter property suffixes
+  // ---------------------------------------------------------------------------
+  static final String RATE_LIMITER_REFRESH_PERIOD_SUFFIX = "rate-limiter.refresh-period";
+  static final String RATE_LIMITER_LIMIT_FOR_PERIOD_SUFFIX = "rate-limiter.limit-for-period";
+
+  // ---------------------------------------------------------------------------
   // Controller-level (ControllerConfigurationOverrider) bindings
   // The key used at runtime is built as:
   //   CONTROLLER_KEY_PREFIX + controllerName + "." + <suffix>
@@ -147,7 +154,11 @@ public class ConfigLoader {
               Boolean.class,
               ControllerConfigurationOverrider::withTriggerReconcilerOnAllEvents),
           new ConfigBinding<>(
-              "informer-list-limit",
+              "informer.label-selector",
+              String.class,
+              ControllerConfigurationOverrider::withLabelSelector),
+          new ConfigBinding<>(
+              "informer.list-limit",
               Long.class,
               ControllerConfigurationOverrider::withInformerListLimit));
 
@@ -210,6 +221,11 @@ public class ConfigLoader {
     if (retryStep != null) {
       consumer = consumer == null ? retryStep : consumer.andThen(retryStep);
     }
+    Consumer<ControllerConfigurationOverrider<R>> rateLimiterStep =
+        buildRateLimiterConsumer(prefix);
+    if (rateLimiterStep != null) {
+      consumer = consumer.andThen(rateLimiterStep);
+    }
     return consumer;
   }
 
@@ -243,6 +259,32 @@ public class ConfigLoader {
       intervalMultiplier.ifPresent(retry::setIntervalMultiplier);
       maxInterval.ifPresent(retry::setMaxInterval);
       overrider.withRetry(retry);
+    };
+  }
+
+  /**
+   * Returns a {@link Consumer} that builds a {@link LinearRateLimiter} only if {@code
+   * rate-limiter.limit-for-period} is present and positive (a non-positive value would deactivate
+   * the limiter and is therefore treated as absent). {@code rate-limiter.refresh-period} is applied
+   * when also present; otherwise the default refresh period is used. Returns {@code null} when no
+   * effective rate-limiter configuration is found.
+   */
+  private <R extends HasMetadata>
+      Consumer<ControllerConfigurationOverrider<R>> buildRateLimiterConsumer(String prefix) {
+    Optional<Duration> refreshPeriod =
+        configProvider.getValue(prefix + RATE_LIMITER_REFRESH_PERIOD_SUFFIX, Duration.class);
+    Optional<Integer> limitForPeriod =
+        configProvider.getValue(prefix + RATE_LIMITER_LIMIT_FOR_PERIOD_SUFFIX, Integer.class);
+
+    if (limitForPeriod.isEmpty() || limitForPeriod.get() <= 0) {
+      return null;
+    }
+
+    return overrider -> {
+      var rateLimiter =
+          new LinearRateLimiter(
+              refreshPeriod.orElse(LinearRateLimiter.DEFAULT_REFRESH_PERIOD), limitForPeriod.get());
+      overrider.withRateLimiter(rateLimiter);
     };
   }
 

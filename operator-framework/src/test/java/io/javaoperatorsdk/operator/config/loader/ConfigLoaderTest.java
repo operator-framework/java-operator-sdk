@@ -201,7 +201,10 @@ class ConfigLoaderTest {
             "josdk.controller.ctrl.max-reconciliation-interval",
             "josdk.controller.ctrl.field-manager",
             "josdk.controller.ctrl.trigger-reconciler-on-all-events",
-            "josdk.controller.ctrl.informer-list-limit");
+            "josdk.controller.ctrl.informer.label-selector",
+            "josdk.controller.ctrl.informer.list-limit",
+            "josdk.controller.ctrl.rate-limiter.refresh-period",
+            "josdk.controller.ctrl.rate-limiter.limit-for-period");
   }
 
   @Test
@@ -212,6 +215,26 @@ class ConfigLoaderTest {
   @Test
   void controllerKeyPrefixIsJosdkControllerDot() {
     assertThat(ConfigLoader.DEFAULT_CONTROLLER_KEY_PREFIX).isEqualTo("josdk.controller.");
+  }
+
+  // -- rate limiter -----------------------------------------------------------
+
+  @Test
+  void rateLimiterQueriesExpectedKeys() {
+    var queriedKeys = new ArrayList<String>();
+    ConfigProvider recordingProvider =
+        new ConfigProvider() {
+          @Override
+          public <T> Optional<T> getValue(String key, Class<T> type) {
+            queriedKeys.add(key);
+            return Optional.empty();
+          }
+        };
+    new ConfigLoader(recordingProvider).applyControllerConfigs("ctrl");
+    assertThat(queriedKeys)
+        .contains(
+            "josdk.controller.ctrl.rate-limiter.refresh-period",
+            "josdk.controller.ctrl.rate-limiter.limit-for-period");
   }
 
   // -- binding coverage -------------------------------------------------------
