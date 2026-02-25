@@ -128,8 +128,8 @@ public class MDCUtils {
     }
   }
 
-  private static String key(String key, boolean forEventSource) {
-    return forEventSource ? EVENT_SOURCE_PREFIX + key : key;
+  private static String key(String baseKey, boolean forEventSource) {
+    return forEventSource ? EVENT_SOURCE_PREFIX + baseKey : baseKey;
   }
 
   public static void removeResourceInfo() {
