@@ -26,8 +26,8 @@ import org.slf4j.LoggerFactory;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.api.config.ConfigurationServiceOverrider;
 import io.javaoperatorsdk.operator.api.config.ControllerConfigurationOverrider;
+import io.javaoperatorsdk.operator.config.loader.provider.AgregatePrirityListConfigProvider;
 import io.javaoperatorsdk.operator.config.loader.provider.EnvVarConfigProvider;
-import io.javaoperatorsdk.operator.config.loader.provider.PrirityListConfigProvider;
 import io.javaoperatorsdk.operator.config.loader.provider.SystemPropertyConfigProvider;
 import io.javaoperatorsdk.operator.processing.retry.GenericRetry;
 
@@ -143,7 +143,7 @@ public class ConfigLoader {
 
   public ConfigLoader() {
     this(
-        new PrirityListConfigProvider(
+        new AgregatePrirityListConfigProvider(
             List.of(new EnvVarConfigProvider(), new SystemPropertyConfigProvider())),
         DEFAULT_CONTROLLER_KEY_PREFIX,
         DEFAULT_OPERATOR_KEY_PREFIX);
