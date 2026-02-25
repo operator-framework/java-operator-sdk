@@ -22,7 +22,6 @@ import io.javaoperatorsdk.operator.api.config.Utils;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
 import io.javaoperatorsdk.operator.processing.event.source.ResourceAction;
 
-@SuppressWarnings("unused")
 public class MDCUtils {
 
   private static final String NAME = "resource.name";
@@ -59,35 +58,12 @@ public class MDCUtils {
   }
 
   public static void withMDCForEvent(
-      HasMetadata resource, Runnable runnable, String eventSourceName) {
-    withMDCForEvent(resource, null, runnable, eventSourceName);
-  }
-
-  public static void withMDCForEvent(
       HasMetadata resource, ResourceAction action, Runnable runnable, String eventSourceName) {
     try {
       MDCUtils.addInformerEventInfo(resource, action, eventSourceName);
       runnable.run();
     } finally {
       MDCUtils.removeInformerEventInfo();
-    }
-  }
-
-  public static void withMDCForResourceID(ResourceID resourceID, Runnable runnable) {
-    try {
-      MDCUtils.addResourceIDInfo(resourceID);
-      runnable.run();
-    } finally {
-      MDCUtils.removeResourceIDInfo();
-    }
-  }
-
-  public static void withMDCForPrimary(HasMetadata primary, Runnable runnable) {
-    try {
-      MDCUtils.addResourceInfo(primary);
-      runnable.run();
-    } finally {
-      MDCUtils.removeResourceInfo();
     }
   }
 
