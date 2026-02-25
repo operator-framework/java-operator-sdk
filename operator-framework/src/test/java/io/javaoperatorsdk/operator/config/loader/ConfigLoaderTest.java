@@ -32,6 +32,7 @@ import io.javaoperatorsdk.operator.api.config.ConfigurationServiceOverrider;
 import io.javaoperatorsdk.operator.api.config.ControllerConfigurationOverrider;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 
 class ConfigLoaderTest {
 
@@ -286,6 +287,84 @@ class ConfigLoaderTest {
             "Every scalar setter on ControllerConfigurationOverrider should be covered by a"
                 + " binding")
         .containsExactlyInAnyOrderElementsOf(expectedSetters);
+  }
+
+  // -- leader election --------------------------------------------------------
+
+  @Test
+  void leaderElectionIsNotConfiguredWhenNoPropertiesPresent() {
+    var loader = new ConfigLoader(mapProvider(Map.of()));
+    var base = new BaseConfigurationService(null);
+    var result =
+        ConfigurationService.newOverriddenConfigurationService(base, loader.applyConfigs());
+    assertThat(result.getLeaderElectionConfiguration()).isEmpty();
+  }
+
+  @Test
+  void leaderElectionIsNotConfiguredWhenExplicitlyDisabled() {
+    var values = new HashMap<String, Object>();
+    values.put("josdk.leader-election.enabled", false);
+    values.put("josdk.leader-election.lease-name", "my-lease");
+    var loader = new ConfigLoader(mapProvider(values));
+    var base = new BaseConfigurationService(null);
+    var result =
+        ConfigurationService.newOverriddenConfigurationService(base, loader.applyConfigs());
+    assertThat(result.getLeaderElectionConfiguration()).isEmpty();
+  }
+
+  @Test
+  void leaderElectionConfiguredWithLeaseNameOnly() {
+    var loader =
+        new ConfigLoader(mapProvider(Map.of("josdk.leader-election.lease-name", "my-lease")));
+    var base = new BaseConfigurationService(null);
+    var result =
+        ConfigurationService.newOverriddenConfigurationService(base, loader.applyConfigs());
+    assertThat(result.getLeaderElectionConfiguration())
+        .hasValueSatisfying(
+            le -> {
+              assertThat(le.getLeaseName()).isEqualTo("my-lease");
+              assertThat(le.getLeaseNamespace()).isEmpty();
+              assertThat(le.getIdentity()).isEmpty();
+            });
+  }
+
+  @Test
+  void leaderElectionConfiguredWithAllProperties() {
+    var values = new HashMap<String, Object>();
+    values.put("josdk.leader-election.enabled", true);
+    values.put("josdk.leader-election.lease-name", "my-lease");
+    values.put("josdk.leader-election.lease-namespace", "my-ns");
+    values.put("josdk.leader-election.identity", "pod-1");
+    values.put("josdk.leader-election.lease-duration", Duration.ofSeconds(20));
+    values.put("josdk.leader-election.renew-deadline", Duration.ofSeconds(15));
+    values.put("josdk.leader-election.retry-period", Duration.ofSeconds(3));
+    var loader = new ConfigLoader(mapProvider(values));
+
+    var base = new BaseConfigurationService(null);
+    var result =
+        ConfigurationService.newOverriddenConfigurationService(base, loader.applyConfigs());
+
+    assertThat(result.getLeaderElectionConfiguration())
+        .hasValueSatisfying(
+            le -> {
+              assertThat(le.getLeaseName()).isEqualTo("my-lease");
+              assertThat(le.getLeaseNamespace()).hasValue("my-ns");
+              assertThat(le.getIdentity()).hasValue("pod-1");
+              assertThat(le.getLeaseDuration()).isEqualTo(Duration.ofSeconds(20));
+              assertThat(le.getRenewDeadline()).isEqualTo(Duration.ofSeconds(15));
+              assertThat(le.getRetryPeriod()).isEqualTo(Duration.ofSeconds(3));
+            });
+  }
+
+  @Test
+  void leaderElectionMissingLeaseNameThrowsWhenOtherPropertiesPresent() {
+    var loader =
+        new ConfigLoader(mapProvider(Map.of("josdk.leader-election.lease-namespace", "my-ns")));
+    var base = new BaseConfigurationService(null);
+    var consumer = loader.applyConfigs();
+    assertThatExceptionOfType(IllegalStateException.class)
+        .isThrownBy(() -> ConfigurationService.newOverriddenConfigurationService(base, consumer))
+        .withMessageContaining("lease-name");
   }
 
   /** Returns true when the two types are the same or one is the boxed/unboxed form of the other. */
