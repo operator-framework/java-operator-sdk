@@ -35,42 +35,26 @@ public class MDCUtils {
   private static final boolean enabled =
       Utils.getBooleanFromSystemPropsOrDefault(Utils.USE_MDC_ENV_KEY, true);
 
-  private static final String EVENT_RESOURCE_NAME = "eventsource.event.resource.name";
-  private static final String EVENT_RESOURCE_UID = "eventsource.event.resource.uid";
-  private static final String EVENT_RESOURCE_NAMESPACE = "eventsource.event.resource.namespace";
-  private static final String EVENT_RESOURCE_KIND = "eventsource.event.resource.kind";
-  private static final String EVENT_RESOURCE_VERSION = "eventsource.event.resource.resourceVersion";
-  private static final String EVENT_ACTION = "eventsource.event.action";
+  private static final String EVENT_SOURCE_PREFIX = "eventsource.event.";
+  private static final String EVENT_ACTION = EVENT_SOURCE_PREFIX + "action";
   private static final String EVENT_SOURCE_NAME = "eventsource.name";
+  private static final String UNKNOWN_ACTION = "unknown action";
 
   public static void addInformerEventInfo(
       HasMetadata resource, ResourceAction action, String eventSourceName) {
     if (enabled) {
-      MDC.put(EVENT_RESOURCE_NAME, resource.getMetadata().getName());
-      MDC.put(EVENT_RESOURCE_NAMESPACE, resource.getMetadata().getNamespace());
-      MDC.put(EVENT_RESOURCE_KIND, HasMetadata.getKind(resource.getClass()));
-      MDC.put(EVENT_RESOURCE_VERSION, resource.getMetadata().getResourceVersion());
-      MDC.put(EVENT_RESOURCE_UID, resource.getMetadata().getUid());
-      MDC.put(EVENT_ACTION, action == null ? null : action.name());
+      addResourceInfo(resource, true);
+      MDC.put(EVENT_ACTION, action == null ? UNKNOWN_ACTION : action.name());
       MDC.put(EVENT_SOURCE_NAME, eventSourceName);
     }
   }
 
   public static void removeInformerEventInfo() {
     if (enabled) {
-      MDC.remove(EVENT_RESOURCE_NAME);
-      MDC.remove(EVENT_RESOURCE_NAMESPACE);
-      MDC.remove(EVENT_RESOURCE_KIND);
-      MDC.remove(EVENT_RESOURCE_VERSION);
-      MDC.remove(EVENT_RESOURCE_UID);
+      removeResourceInfo(true);
       MDC.remove(EVENT_ACTION);
       MDC.remove(EVENT_SOURCE_NAME);
     }
-  }
-
-  public static void withMDCForEvent(
-      HasMetadata resource, Runnable runnable, String eventSourceName) {
-    withMDCForEvent(resource, null, runnable, eventSourceName);
   }
 
   public static void withMDCForEvent(
@@ -80,24 +64,6 @@ public class MDCUtils {
       runnable.run();
     } finally {
       MDCUtils.removeInformerEventInfo();
-    }
-  }
-
-  public static void withMDCForResourceID(ResourceID resourceID, Runnable runnable) {
-    try {
-      MDCUtils.addResourceIDInfo(resourceID);
-      runnable.run();
-    } finally {
-      MDCUtils.removeResourceIDInfo();
-    }
-  }
-
-  public static void withMDCForPrimary(HasMetadata primary, Runnable runnable) {
-    try {
-      MDCUtils.addResourceInfo(primary);
-      runnable.run();
-    } finally {
-      MDCUtils.removeResourceInfo();
     }
   }
 
@@ -116,33 +82,45 @@ public class MDCUtils {
   }
 
   public static void addResourceInfo(HasMetadata resource) {
+    addResourceInfo(resource, false);
+  }
+
+  public static void addResourceInfo(HasMetadata resource, boolean forEventSource) {
     if (enabled) {
-      MDC.put(API_VERSION, resource.getApiVersion());
-      MDC.put(KIND, resource.getKind());
+      MDC.put(key(API_VERSION, forEventSource), resource.getApiVersion());
+      MDC.put(key(KIND, forEventSource), resource.getKind());
       final var metadata = resource.getMetadata();
       if (metadata != null) {
-        MDC.put(NAME, metadata.getName());
+        MDC.put(key(NAME, forEventSource), metadata.getName());
         if (metadata.getNamespace() != null) {
-          MDC.put(NAMESPACE, metadata.getNamespace());
+          MDC.put(key(NAMESPACE, forEventSource), metadata.getNamespace());
         }
-        MDC.put(RESOURCE_VERSION, metadata.getResourceVersion());
+        MDC.put(key(RESOURCE_VERSION, forEventSource), metadata.getResourceVersion());
         if (metadata.getGeneration() != null) {
-          MDC.put(GENERATION, metadata.getGeneration().toString());
+          MDC.put(key(GENERATION, forEventSource), metadata.getGeneration().toString());
         }
-        MDC.put(UID, metadata.getUid());
+        MDC.put(key(UID, forEventSource), metadata.getUid());
       }
     }
   }
 
+  private static String key(String baseKey, boolean forEventSource) {
+    return forEventSource ? EVENT_SOURCE_PREFIX + baseKey : baseKey;
+  }
+
   public static void removeResourceInfo() {
+    removeResourceInfo(false);
+  }
+
+  public static void removeResourceInfo(boolean forEventSource) {
     if (enabled) {
-      MDC.remove(API_VERSION);
-      MDC.remove(KIND);
-      MDC.remove(NAME);
-      MDC.remove(NAMESPACE);
-      MDC.remove(RESOURCE_VERSION);
-      MDC.remove(GENERATION);
-      MDC.remove(UID);
+      MDC.remove(key(API_VERSION, forEventSource));
+      MDC.remove(key(KIND, forEventSource));
+      MDC.remove(key(NAME, forEventSource));
+      MDC.remove(key(NAMESPACE, forEventSource));
+      MDC.remove(key(RESOURCE_VERSION, forEventSource));
+      MDC.remove(key(GENERATION, forEventSource));
+      MDC.remove(key(UID, forEventSource));
     }
   }
 }
