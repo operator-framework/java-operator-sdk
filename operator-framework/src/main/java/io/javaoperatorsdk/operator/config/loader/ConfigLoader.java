@@ -26,6 +26,7 @@ import org.slf4j.LoggerFactory;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.api.config.ConfigurationServiceOverrider;
 import io.javaoperatorsdk.operator.api.config.ControllerConfigurationOverrider;
+import io.javaoperatorsdk.operator.api.config.LeaderElectionConfigurationBuilder;
 import io.javaoperatorsdk.operator.config.loader.provider.AgregatePrirityListConfigProvider;
 import io.javaoperatorsdk.operator.config.loader.provider.EnvVarConfigProvider;
 import io.javaoperatorsdk.operator.config.loader.provider.SystemPropertyConfigProvider;
@@ -102,6 +103,17 @@ public class ConfigLoader {
               ConfigurationServiceOverrider::withCloneSecondaryResourcesWhenGettingFromCache));
 
   // ---------------------------------------------------------------------------
+  // Operator-level leader-election property keys
+  // ---------------------------------------------------------------------------
+  static final String LEADER_ELECTION_ENABLED_KEY = "leader-election.enabled";
+  static final String LEADER_ELECTION_LEASE_NAME_KEY = "leader-election.lease-name";
+  static final String LEADER_ELECTION_LEASE_NAMESPACE_KEY = "leader-election.lease-namespace";
+  static final String LEADER_ELECTION_IDENTITY_KEY = "leader-election.identity";
+  static final String LEADER_ELECTION_LEASE_DURATION_KEY = "leader-election.lease-duration";
+  static final String LEADER_ELECTION_RENEW_DEADLINE_KEY = "leader-election.renew-deadline";
+  static final String LEADER_ELECTION_RETRY_PERIOD_KEY = "leader-election.retry-period";
+
+  // ---------------------------------------------------------------------------
   // Controller-level retry property suffixes
   // ---------------------------------------------------------------------------
   static final String RETRY_MAX_ATTEMPTS_SUFFIX = "retry.max-attempts";
@@ -166,7 +178,15 @@ public class ConfigLoader {
    * no binding has a matching value, preserving the previous behavior.
    */
   public Consumer<ConfigurationServiceOverrider> applyConfigs() {
-    return buildConsumer(OPERATOR_BINDINGS, operatorKeyPrefix);
+    Consumer<ConfigurationServiceOverrider> consumer =
+        buildConsumer(OPERATOR_BINDINGS, operatorKeyPrefix);
+
+    Consumer<ConfigurationServiceOverrider> leaderElectionStep =
+        buildLeaderElectionConsumer(operatorKeyPrefix);
+    if (leaderElectionStep != null) {
+      consumer = consumer.andThen(leaderElectionStep);
+    }
+    return consumer;
   }
 
   /**
@@ -223,6 +243,60 @@ public class ConfigLoader {
       intervalMultiplier.ifPresent(retry::setIntervalMultiplier);
       maxInterval.ifPresent(retry::setMaxInterval);
       overrider.withRetry(retry);
+    };
+  }
+
+  /**
+   * If leader election is explicitly disabled via {@code leader-election.enabled=false}, returns
+   * {@code null}. Otherwise, if at least one leader-election property is present (with {@code
+   * leader-election.lease-name} being required), returns a {@link Consumer} that builds a {@link
+   * io.javaoperatorsdk.operator.api.config.LeaderElectionConfiguration} via {@link
+   * LeaderElectionConfigurationBuilder} and applies it to the overrider. Returns {@code null} when
+   * no leader-election properties are present at all.
+   */
+  private Consumer<ConfigurationServiceOverrider> buildLeaderElectionConsumer(String prefix) {
+    Optional<Boolean> enabled =
+        configProvider.getValue(prefix + LEADER_ELECTION_ENABLED_KEY, Boolean.class);
+    if (enabled.isPresent() && !enabled.get()) {
+      return null;
+    }
+
+    Optional<String> leaseName =
+        configProvider.getValue(prefix + LEADER_ELECTION_LEASE_NAME_KEY, String.class);
+    Optional<String> leaseNamespace =
+        configProvider.getValue(prefix + LEADER_ELECTION_LEASE_NAMESPACE_KEY, String.class);
+    Optional<String> identity =
+        configProvider.getValue(prefix + LEADER_ELECTION_IDENTITY_KEY, String.class);
+    Optional<Duration> leaseDuration =
+        configProvider.getValue(prefix + LEADER_ELECTION_LEASE_DURATION_KEY, Duration.class);
+    Optional<Duration> renewDeadline =
+        configProvider.getValue(prefix + LEADER_ELECTION_RENEW_DEADLINE_KEY, Duration.class);
+    Optional<Duration> retryPeriod =
+        configProvider.getValue(prefix + LEADER_ELECTION_RETRY_PERIOD_KEY, Duration.class);
+
+    if (leaseName.isEmpty()
+        && leaseNamespace.isEmpty()
+        && identity.isEmpty()
+        && leaseDuration.isEmpty()
+        && renewDeadline.isEmpty()
+        && retryPeriod.isEmpty()) {
+      return null;
+    }
+
+    return overrider -> {
+      var builder =
+          LeaderElectionConfigurationBuilder.aLeaderElectionConfiguration(
+              leaseName.orElseThrow(
+                  () ->
+                      new IllegalStateException(
+                          "leader-election.lease-name must be set when configuring leader"
+                              + " election")));
+      leaseNamespace.ifPresent(builder::withLeaseNamespace);
+      identity.ifPresent(builder::withIdentity);
+      leaseDuration.ifPresent(builder::withLeaseDuration);
+      renewDeadline.ifPresent(builder::withRenewDeadline);
+      retryPeriod.ifPresent(builder::withRetryPeriod);
+      overrider.withLeaderElectionConfiguration(builder.build());
     };
   }
 
