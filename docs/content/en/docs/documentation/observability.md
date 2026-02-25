@@ -52,8 +52,8 @@ For `InformerEventSource` and `ControllerEventSource` the following information 
 
 ### Note on null values
 
-If a resource doesn't provide values for one of the specified key, the key will be omitted and not added to the MDC
-context. There is, however, one notable exception: the resources' namespace, where, instead of omitting the key, we emit
+If a resource doesn't provide values for one of the specified keys, the key will be omitted and not added to the MDC
+context. There is, however, one notable exception: the resource's namespace, where, instead of omitting the key, we emit
 the `MDCUtils.NO_NAMESPACE` value instead. This allows searching for resources without namespace (notably, clustered
 resources) in the logs more easily.
 
