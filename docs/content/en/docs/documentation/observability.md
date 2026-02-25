@@ -50,6 +50,13 @@ For `InformerEventSource` and `ControllerEventSource` the following information 
 | `eventsource.event.action`                     | action name (e.g. `ADDED`, `UPDATED`, `DELETED`) |
 | `eventsource.name`                             | name of the event source                         |
 
+### Note on null values
+
+If a resource doesn't provide values for one of the specified key, the key will be omitted and not added to the MDC
+context. There is, however, one notable exception: the resources' namespace, where, instead of omitting the key, we emit
+the `MDCUtils.NO_NAMESPACE` value instead. This allows searching for resources without namespace (notably, clustered
+resources) in the logs more easily.
+
 ### Disabling MDC support
 
 MDC support is enabled by default. If you want to disable it, you can set the `JAVA_OPERATOR_SDK_USE_MDC` environment
