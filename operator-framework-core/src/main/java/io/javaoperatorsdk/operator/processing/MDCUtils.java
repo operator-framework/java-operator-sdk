@@ -36,7 +36,7 @@ public class MDCUtils {
   private static final boolean enabled =
       Utils.getBooleanFromSystemPropsOrDefault(Utils.USE_MDC_ENV_KEY, true);
 
-  private static final String EVENT_SOURCE_PREFIX = "eventSource.event.";
+  private static final String EVENT_SOURCE_PREFIX = "eventsource.event.";
   private static final String EVENT_ACTION = EVENT_SOURCE_PREFIX + "action";
   private static final String EVENT_SOURCE_NAME = "eventsource.name";
   private static final String UNKNOWN_ACTION = "unknown action";
