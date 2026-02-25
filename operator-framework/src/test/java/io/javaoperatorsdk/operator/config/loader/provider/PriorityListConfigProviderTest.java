@@ -26,7 +26,7 @@ class PriorityListConfigProviderTest {
   @Test
   void returnsEmptyWhenAllProvidersReturnEmpty() {
     var provider =
-        new PrirityListConfigProvider(
+        new AgregatePrirityListConfigProvider(
             List.of(
                 new EnvVarConfigProvider(k -> null), new SystemPropertyConfigProvider(k -> null)));
     assertThat(provider.getValue("josdk.no.such.key", String.class)).isEmpty();
@@ -35,7 +35,7 @@ class PriorityListConfigProviderTest {
   @Test
   void firstProviderWins() {
     var provider =
-        new PrirityListConfigProvider(
+        new AgregatePrirityListConfigProvider(
             List.of(
                 new EnvVarConfigProvider(k -> k.equals("JOSDK_TEST_KEY") ? "first" : null),
                 new SystemPropertyConfigProvider(
@@ -46,7 +46,7 @@ class PriorityListConfigProviderTest {
   @Test
   void fallsBackToLaterProviderWhenEarlierReturnsEmpty() {
     var provider =
-        new PrirityListConfigProvider(
+        new AgregatePrirityListConfigProvider(
             List.of(
                 new EnvVarConfigProvider(k -> null),
                 new SystemPropertyConfigProvider(
@@ -61,7 +61,7 @@ class PriorityListConfigProviderTest {
         new SystemPropertyConfigProvider(k -> k.equals("josdk.test.key") ? "from-second" : null);
     var third = new EnvVarConfigProvider(k -> k.equals("JOSDK_TEST_KEY") ? "from-third" : null);
 
-    var provider = new PrirityListConfigProvider(List.of(first, second, third));
+    var provider = new AgregatePrirityListConfigProvider(List.of(first, second, third));
     assertThat(provider.getValue("josdk.test.key", String.class)).hasValue("from-second");
   }
 }

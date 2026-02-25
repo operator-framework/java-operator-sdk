@@ -216,8 +216,8 @@ class ConfigLoaderTest {
   // -- binding coverage -------------------------------------------------------
 
   /**
-   * Supported scalar types that PrirityListConfigProvider can parse from a string. Every binding's
-   * type must be one of these.
+   * Supported scalar types that AgregatePrirityListConfigProvider can parse from a string. Every
+   * binding's type must be one of these.
    */
   private static final Set<Class<?>> SUPPORTED_TYPES =
       Set.of(
