@@ -365,7 +365,11 @@ public class LocallyRunOperatorExtension extends AbstractOperatorExtension {
       iterator.remove();
     }
 
-    kubernetesClient.close();
+    // if if client used for infra client, we should not close it
+    // either test or operator should close this client
+    if (getKubernetesClient() != getInfrastructureKubernetesClient()) {
+      kubernetesClient.close();
+    }
 
     try {
       this.operator.stop();
