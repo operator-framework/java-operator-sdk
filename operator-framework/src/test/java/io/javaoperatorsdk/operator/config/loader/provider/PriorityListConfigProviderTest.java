@@ -16,6 +16,7 @@
 package io.javaoperatorsdk.operator.config.loader.provider;
 
 import java.util.List;
+import java.util.Properties;
 
 import org.junit.jupiter.api.Test;
 
@@ -23,12 +24,19 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 class PriorityListConfigProviderTest {
 
+  private static PropertiesConfigProvider propsProvider(String key, String value) {
+    Properties props = new Properties();
+    if (key != null) {
+      props.setProperty(key, value);
+    }
+    return new PropertiesConfigProvider(props);
+  }
+
   @Test
   void returnsEmptyWhenAllProvidersReturnEmpty() {
     var provider =
         new AgregatePrirityListConfigProvider(
-            List.of(
-                new EnvVarConfigProvider(k -> null), new SystemPropertyConfigProvider(k -> null)));
+            List.of(new EnvVarConfigProvider(k -> null), propsProvider(null, null)));
     assertThat(provider.getValue("josdk.no.such.key", String.class)).isEmpty();
   }
 
@@ -38,8 +46,7 @@ class PriorityListConfigProviderTest {
         new AgregatePrirityListConfigProvider(
             List.of(
                 new EnvVarConfigProvider(k -> k.equals("JOSDK_TEST_KEY") ? "first" : null),
-                new SystemPropertyConfigProvider(
-                    k -> k.equals("josdk.test.key") ? "second" : null)));
+                propsProvider("josdk.test.key", "second")));
     assertThat(provider.getValue("josdk.test.key", String.class)).hasValue("first");
   }
 
@@ -49,16 +56,14 @@ class PriorityListConfigProviderTest {
         new AgregatePrirityListConfigProvider(
             List.of(
                 new EnvVarConfigProvider(k -> null),
-                new SystemPropertyConfigProvider(
-                    k -> k.equals("josdk.test.key") ? "from-second" : null)));
+                propsProvider("josdk.test.key", "from-second")));
     assertThat(provider.getValue("josdk.test.key", String.class)).hasValue("from-second");
   }
 
   @Test
   void respectsOrderWithThreeProviders() {
     var first = new EnvVarConfigProvider(k -> null);
-    var second =
-        new SystemPropertyConfigProvider(k -> k.equals("josdk.test.key") ? "from-second" : null);
+    var second = propsProvider("josdk.test.key", "from-second");
     var third = new EnvVarConfigProvider(k -> k.equals("JOSDK_TEST_KEY") ? "from-third" : null);
 
     var provider = new AgregatePrirityListConfigProvider(List.of(first, second, third));
