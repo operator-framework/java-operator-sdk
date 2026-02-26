@@ -39,13 +39,6 @@
         <type>pom</type>
         <scope>import</scope>
       </dependency>
-      <dependency>
-        <groupId>io.smallrye.config</groupId>
-        <artifactId>smallrye-config-bom</artifactId>
-        <version>3.16.0</version>
-        <type>pom</type>
-        <scope>import</scope>
-      </dependency>
     </dependencies>
   </dependencyManagement>
 
@@ -98,22 +91,6 @@
       <groupId>io.javaoperatorsdk</groupId>
       <artifactId>operator-framework-junit</artifactId>
       <scope>test</scope>
-    </dependency>
-
-    <dependency>
-      <groupId>io.smallrye.config</groupId>
-      <artifactId>smallrye-config</artifactId>
-      <version>3.11.4</version>
-    </dependency>
-    <dependency>
-      <groupId>io.smallrye.config</groupId>
-      <artifactId>smallrye-config-source-yaml</artifactId>
-      <version>3.11.4</version>
-    </dependency>
-    <dependency>
-      <groupId>org.eclipse.microprofile.config</groupId>
-      <artifactId>microprofile-config-api</artifactId>
-      <version>3.1</version>
     </dependency>
   </dependencies>
 
