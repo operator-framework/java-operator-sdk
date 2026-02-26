@@ -36,6 +36,11 @@ public class PropertiesConfigProvider implements ConfigProvider {
 
   private final Properties properties;
 
+  /** Returns a {@link PropertiesConfigProvider} backed by {@link System#getProperties()}. */
+  public static PropertiesConfigProvider systemProperties() {
+    return new PropertiesConfigProvider(System.getProperties());
+  }
+
   /**
    * Loads properties from the given file path.
    *
