@@ -16,38 +16,25 @@
 package io.javaoperatorsdk.operator.sample;
 
 import java.io.IOException;
-import java.net.URL;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.takes.facets.fork.FkRegex;
 import org.takes.facets.fork.TkFork;
 import org.takes.http.Exit;
 import org.takes.http.FtBasic;
 
 import io.javaoperatorsdk.operator.Operator;
-import io.javaoperatorsdk.operator.config.loader.ConfigLoader;
-import io.javaoperatorsdk.operator.sample.smallryeconfig.SmallryeConfigProvider;
-import io.smallrye.config.SmallRyeConfigBuilder;
-import io.smallrye.config.source.yaml.YamlConfigSource;
 
 public class TomcatOperator {
 
+  private static final Logger log = LoggerFactory.getLogger(TomcatOperator.class);
+
   public static void main(String[] args) throws IOException {
 
-    URL configUrl = TomcatOperator.class.getResource("/application.yaml");
-    if (configUrl == null) {
-      throw new IllegalStateException("application.yaml not found on classpath");
-    }
-    var configLoader =
-        new ConfigLoader(
-            new SmallryeConfigProvider(
-                new SmallRyeConfigBuilder().withSources(new YamlConfigSource(configUrl)).build()));
-
-    Operator operator = new Operator(configLoader.applyConfigs());
-    operator.register(
-        new TomcatReconciler(), configLoader.applyControllerConfigs(TomcatReconciler.NAME));
-    operator.register(
-        new WebappReconciler(operator.getKubernetesClient()),
-        configLoader.applyControllerConfigs(WebappReconciler.NAME));
+    Operator operator = new Operator();
+    operator.register(new TomcatReconciler());
+    operator.register(new WebappReconciler(operator.getKubernetesClient()));
     operator.start();
 
     new FtBasic(new TkFork(new FkRegex("/health", "ALL GOOD.")), 8080).start(Exit.NEVER);

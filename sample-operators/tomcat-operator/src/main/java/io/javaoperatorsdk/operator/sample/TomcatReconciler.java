@@ -35,10 +35,9 @@ import io.javaoperatorsdk.operator.api.reconciler.dependent.Dependent;
       @Dependent(type = DeploymentDependentResource.class),
       @Dependent(type = ServiceDependentResource.class)
     })
-@ControllerConfiguration(name = TomcatReconciler.NAME)
+@ControllerConfiguration
 public class TomcatReconciler implements Reconciler<Tomcat> {
 
-  public static final String NAME = "tomcat";
   private final Logger log = LoggerFactory.getLogger(getClass());
 
   @Override
