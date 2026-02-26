@@ -23,6 +23,7 @@ import io.javaoperatorsdk.operator.processing.event.ResourceID;
 import io.javaoperatorsdk.operator.processing.event.source.ResourceAction;
 
 public class MDCUtils {
+  public static final String NO_NAMESPACE = "no namespace";
 
   private static final String NAME = "resource.name";
   private static final String NAMESPACE = "resource.namespace";
@@ -31,20 +32,18 @@ public class MDCUtils {
   private static final String RESOURCE_VERSION = "resource.resourceVersion";
   private static final String GENERATION = "resource.generation";
   private static final String UID = "resource.uid";
-  private static final String NO_NAMESPACE = "no namespace";
   private static final boolean enabled =
       Utils.getBooleanFromSystemPropsOrDefault(Utils.USE_MDC_ENV_KEY, true);
 
   private static final String EVENT_SOURCE_PREFIX = "eventsource.event.";
   private static final String EVENT_ACTION = EVENT_SOURCE_PREFIX + "action";
   private static final String EVENT_SOURCE_NAME = "eventsource.name";
-  private static final String UNKNOWN_ACTION = "unknown action";
 
   public static void addInformerEventInfo(
       HasMetadata resource, ResourceAction action, String eventSourceName) {
     if (enabled) {
       addResourceInfo(resource, true);
-      MDC.put(EVENT_ACTION, action == null ? UNKNOWN_ACTION : action.name());
+      MDC.put(EVENT_ACTION, action.name());
       MDC.put(EVENT_SOURCE_NAME, eventSourceName);
     }
   }
@@ -92,9 +91,10 @@ public class MDCUtils {
       final var metadata = resource.getMetadata();
       if (metadata != null) {
         MDC.put(key(NAME, forEventSource), metadata.getName());
-        if (metadata.getNamespace() != null) {
-          MDC.put(key(NAMESPACE, forEventSource), metadata.getNamespace());
-        }
+
+        final var namespace = metadata.getNamespace();
+        MDC.put(key(NAMESPACE, forEventSource), namespace != null ? namespace : NO_NAMESPACE);
+
         MDC.put(key(RESOURCE_VERSION, forEventSource), metadata.getResourceVersion());
         if (metadata.getGeneration() != null) {
           MDC.put(key(GENERATION, forEventSource), metadata.getGeneration().toString());
