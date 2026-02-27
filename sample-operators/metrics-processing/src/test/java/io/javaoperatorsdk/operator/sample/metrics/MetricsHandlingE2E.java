@@ -80,15 +80,18 @@ class MetricsHandlingE2E {
               .build();
 
   @BeforeAll
-  void setupObservability() {
+  void setupObservability() throws InterruptedException {
     log.info("Setting up observability stack...");
     installObservabilityServices();
     // Setup port forwarding to Prometheus
+    log.info("Setting up port forwarding for Prometheus");
     setupPrometheusPortForward();
     if (isLocal()) {
+      log.info("Setting up port forwarding for Otel collector and grafana");
       setupPortForwardForOtelCollector();
       setupPortForwardForGrafana();
     }
+    Thread.sleep(2000);
   }
 
   @AfterAll
@@ -140,7 +143,7 @@ class MetricsHandlingE2E {
     String prometheusUrl = "http://localhost:" + localPort;
 
     // Verify reconciliation started metrics
-    String startedQuery = "operator_sdk_reconciliations_started_total";
+    String startedQuery = "reconciliations_started_total";
     await()
         .atMost(Duration.ofSeconds(60))
         .pollInterval(Duration.ofSeconds(5))
@@ -149,11 +152,11 @@ class MetricsHandlingE2E {
               String result = queryPrometheus(prometheusUrl, startedQuery);
               log.info("Reconciliations started metric: {}", result);
               assertThat(result).contains("\"status\":\"success\"");
-              assertThat(result).contains("operator_sdk_reconciliations_started_total");
+              assertThat(result).contains("reconciliations_started_total");
             });
 
     // Verify success metrics
-    String successQuery = "operator_sdk_reconciliations_success_total";
+    String successQuery = "reconciliations_success_total";
     await()
         .atMost(Duration.ofSeconds(30))
         .untilAsserted(
@@ -161,11 +164,11 @@ class MetricsHandlingE2E {
               String result = queryPrometheus(prometheusUrl, successQuery);
               log.info("Reconciliations success metric: {}", result);
               assertThat(result).contains("\"status\":\"success\"");
-              assertThat(result).contains("operator_sdk_reconciliations_success_total");
+              assertThat(result).contains("reconciliations_success_total");
             });
 
     // Verify failure metrics
-    String failureQuery = "operator_sdk_reconciliations_failure_total";
+    String failureQuery = "reconciliations_failure_total";
     await()
         .atMost(Duration.ofSeconds(30))
         .untilAsserted(
@@ -173,11 +176,11 @@ class MetricsHandlingE2E {
               String result = queryPrometheus(prometheusUrl, failureQuery);
               log.info("Reconciliations failure metric: {}", result);
               assertThat(result).contains("\"status\":\"success\"");
-              assertThat(result).contains("operator_sdk_reconciliations_failure_total");
+              assertThat(result).contains("reconciliations_failure_total");
             });
 
     // Verify controller execution metrics
-    String controllerQuery = "operator_sdk_controllers_success_total";
+    String controllerQuery = "controllers_success_total";
     await()
         .atMost(Duration.ofSeconds(30))
         .untilAsserted(
@@ -188,7 +191,7 @@ class MetricsHandlingE2E {
             });
 
     // Verify execution time metrics
-    String executionTimeQuery = "operator_sdk_reconciliations_execution_seconds_count";
+    String executionTimeQuery = "reconciliations_execution_seconds_count";
     await()
         .atMost(Duration.ofSeconds(30))
         .untilAsserted(
@@ -231,7 +234,7 @@ class MetricsHandlingE2E {
     resource.getMetadata().setName(name);
 
     MetricsHandlingSpec spec = new MetricsHandlingSpec();
-    spec.setObservedNumber(number);
+    spec.setNumber(number);
     resource.setSpec(spec);
 
     return resource;
@@ -242,7 +245,7 @@ class MetricsHandlingE2E {
     resource.getMetadata().setName(name);
 
     MetricsHandlingSpec spec = new MetricsHandlingSpec();
-    spec.setObservedNumber(number);
+    spec.setNumber(number);
     resource.setSpec(spec);
 
     return resource;
@@ -345,7 +348,7 @@ class MetricsHandlingE2E {
               .pods()
               .inNamespace(OBSERVABILITY_NAMESPACE)
               .withName(pod.getMetadata().getName())
-              .portForward(port);
+              .portForward(port, port);
 
       log.info(
           "{} port forward established on local port: {}", appName, portForward.getLocalPort());
