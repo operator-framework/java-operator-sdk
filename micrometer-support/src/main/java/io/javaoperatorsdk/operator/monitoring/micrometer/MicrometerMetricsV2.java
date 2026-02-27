@@ -15,6 +15,7 @@
  */
 package io.javaoperatorsdk.operator.monitoring.micrometer;
 
+import java.time.Duration;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -40,6 +41,7 @@ import io.micrometer.core.instrument.Timer;
 public class MicrometerMetricsV2 implements Metrics {
 
   private static final String CONTROLLER_NAME = "controller.name";
+  private static final String NAMESPACE = "namespace";
   private static final String EVENT = "event";
   private static final String ACTION = "action";
   private static final String EVENTS_RECEIVED = "events.received";
@@ -59,13 +61,6 @@ public class MicrometerMetricsV2 implements Metrics {
       RECONCILIATIONS + "retries" + TOTAL_SUFFIX;
   private static final String RECONCILIATIONS_STARTED = RECONCILIATIONS + "started" + TOTAL_SUFFIX;
 
-  private static final String CONTROLLERS = "controllers.";
-
-  private static final String CONTROLLERS_SUCCESSFUL_EXECUTION =
-      CONTROLLERS + SUCCESS_SUFFIX + TOTAL_SUFFIX;
-  private static final String CONTROLLERS_FAILED_EXECUTION =
-      CONTROLLERS + FAILURE_SUFFIX + TOTAL_SUFFIX;
-
   private static final String RECONCILIATIONS_EXECUTIONS_GAUGE = RECONCILIATIONS + "executions";
   private static final String RECONCILIATIONS_QUEUE_SIZE_GAUGE = RECONCILIATIONS + "active";
   private static final String NUMBER_OF_RESOURCE_GAUGE = "custom_resources";
@@ -77,6 +72,7 @@ public class MicrometerMetricsV2 implements Metrics {
   private final Map<String, AtomicInteger> gauges = new ConcurrentHashMap<>();
   private final Map<String, Timer> executionTimers = new ConcurrentHashMap<>();
   private final Function<Timer.Builder, Timer.Builder> timerConfig;
+  private final boolean includeNamespaceTag;
 
   /**
    * Creates a new builder to configure how the eventual MicrometerMetricsV2 instance will behave,
@@ -98,15 +94,34 @@ public class MicrometerMetricsV2 implements Metrics {
    * @param timerConfig optional configuration for timers, defaults to publishing percentiles 0.5,
    *     0.95, 0.99 and histogram
    */
-  private MicrometerMetricsV2(MeterRegistry registry, Consumer<Timer.Builder> timerConfig) {
+  private MicrometerMetricsV2(
+      MeterRegistry registry, Consumer<Timer.Builder> timerConfig, boolean includeNamespaceTag) {
     this.registry = registry;
+    this.includeNamespaceTag = includeNamespaceTag;
     this.timerConfig =
         timerConfig != null
             ? builder -> {
               timerConfig.accept(builder);
               return builder;
             }
-            : Timer.Builder::publishPercentileHistogram;
+            // Use explicit SLO buckets rather than publishPercentileHistogram(). When using
+            // OtlpMeterRegistry (Micrometer 1.12+), publishPercentileHistogram() sends Base2
+            // Exponential Histograms over OTLP, which the OTel collector exposes as Prometheus
+            // native histograms — incompatible with histogram_quantile() and classic _bucket
+            // queries. Explicit SLO boundaries force EXPLICIT_BUCKET_HISTOGRAM format, which the
+            // collector reliably exposes as _bucket metrics.
+            : builder ->
+                builder.serviceLevelObjectives(
+                    Duration.ofMillis(10),
+                    Duration.ofMillis(50),
+                    Duration.ofMillis(100),
+                    Duration.ofMillis(250),
+                    Duration.ofMillis(500),
+                    Duration.ofSeconds(1),
+                    Duration.ofSeconds(2),
+                    Duration.ofSeconds(5),
+                    Duration.ofSeconds(10),
+                    Duration.ofSeconds(30));
   }
 
   @Override
@@ -138,29 +153,18 @@ public class MicrometerMetricsV2 implements Metrics {
     return NUMBER_OF_RESOURCE_GAUGE + name;
   }
 
-  // todo make the implementation more extensible, like easily add tags for namespace into metrics
-  // todo does it make sense to have both controller and reconciler execution counters?
   @Override
   public <T> T timeControllerExecution(ControllerExecution<T> execution) {
     final var name = execution.controllerName();
-
     final var timer = executionTimers.get(name);
-    try {
-      final var result =
-          timer.record(
-              () -> {
-                try {
-                  return execution.execute();
-                } catch (Exception e) {
-                  throw new OperatorException(e);
-                }
-              });
-      registry.counter(CONTROLLERS_SUCCESSFUL_EXECUTION, CONTROLLER_NAME, name).increment();
-      return result;
-    } catch (Exception e) {
-      registry.counter(CONTROLLERS_FAILED_EXECUTION, CONTROLLER_NAME, name).increment();
-      throw e;
-    }
+    return timer.record(
+        () -> {
+          try {
+            return execution.execute();
+          } catch (Exception e) {
+            throw new OperatorException(e);
+          }
+        });
   }
 
   @Override
@@ -172,14 +176,17 @@ public class MicrometerMetricsV2 implements Metrics {
       if (resourceEvent.getAction() == ResourceAction.DELETED) {
         gauges.get(numberOfResourcesRefName(getControllerName(metadata))).decrementAndGet();
       }
+      var namespace = resourceEvent.getRelatedCustomResourceID().getNamespace().orElse(null);
       incrementCounter(
           EVENTS_RECEIVED,
+          namespace,
           metadata,
           Tag.of(EVENT, event.getClass().getSimpleName()),
           Tag.of(ACTION, resourceEvent.getAction().toString()));
     } else {
       incrementCounter(
           EVENTS_RECEIVED,
+          null,
           metadata,
           Tag.of(EVENT, event.getClass().getSimpleName()),
           Tag.of(ACTION, UNKNOWN_ACTION));
@@ -188,7 +195,7 @@ public class MicrometerMetricsV2 implements Metrics {
 
   @Override
   public void cleanupDoneFor(ResourceID resourceID, Map<String, Object> metadata) {
-    incrementCounter(EVENTS_DELETE, metadata);
+    incrementCounter(EVENTS_DELETE, resourceID.getNamespace().orElse(null), metadata);
   }
 
   @Override
@@ -196,12 +203,12 @@ public class MicrometerMetricsV2 implements Metrics {
       HasMetadata resource, RetryInfo retryInfoNullable, Map<String, Object> metadata) {
     Optional<RetryInfo> retryInfo = Optional.ofNullable(retryInfoNullable);
 
-    // Record the counter without retry tags
-    incrementCounter(RECONCILIATIONS_STARTED, metadata);
+    var namespace = resource.getMetadata().getNamespace();
+    incrementCounter(RECONCILIATIONS_STARTED, namespace, metadata);
 
     int retryNumber = retryInfo.map(RetryInfo::getAttemptCount).orElse(0);
     if (retryNumber > 0) {
-      incrementCounter(RECONCILIATIONS_RETRIES_NUMBER, metadata);
+      incrementCounter(RECONCILIATIONS_RETRIES_NUMBER, namespace, metadata);
     }
 
     var controllerQueueSize =
@@ -212,7 +219,7 @@ public class MicrometerMetricsV2 implements Metrics {
   @Override
   public void successfullyFinishedReconciliation(
       HasMetadata resource, Map<String, Object> metadata) {
-    incrementCounter(RECONCILIATIONS_SUCCESS, metadata);
+    incrementCounter(RECONCILIATIONS_SUCCESS, resource.getMetadata().getNamespace(), metadata);
   }
 
   @Override
@@ -237,7 +244,7 @@ public class MicrometerMetricsV2 implements Metrics {
   @Override
   public void failedReconciliation(
       HasMetadata resource, RetryInfo retry, Exception exception, Map<String, Object> metadata) {
-    incrementCounter(RECONCILIATIONS_FAILED, metadata);
+    incrementCounter(RECONCILIATIONS_FAILED, resource.getMetadata().getNamespace(), metadata);
   }
 
   private static void addTag(String name, String value, List<Tag> tags) {
@@ -252,11 +259,17 @@ public class MicrometerMetricsV2 implements Metrics {
     addTag(CONTROLLER_NAME, name, tags);
   }
 
-  private void incrementCounter(
-      String counterName, Map<String, Object> metadata, Tag... additionalTags) {
+  private void addNamespaceTag(String namespace, List<Tag> tags) {
+    if (includeNamespaceTag && namespace != null && !namespace.isBlank()) {
+      tags.add(Tag.of(NAMESPACE, namespace));
+    }
+  }
 
-    final var tags = new ArrayList<Tag>(1 + additionalTags.length);
+  private void incrementCounter(
+      String counterName, String namespace, Map<String, Object> metadata, Tag... additionalTags) {
+    final var tags = new ArrayList<Tag>(2 + additionalTags.length);
     addControllerNameTag(metadata, tags);
+    addNamespaceTag(namespace, tags);
     if (additionalTags.length > 0) {
       tags.addAll(List.of(additionalTags));
     }
@@ -278,6 +291,7 @@ public class MicrometerMetricsV2 implements Metrics {
   public static class MicrometerMetricsV2Builder {
     protected final MeterRegistry registry;
     protected Consumer<Timer.Builder> executionTimerConfig = null;
+    protected boolean includeNamespaceTag = false;
 
     public MicrometerMetricsV2Builder(MeterRegistry registry) {
       this.registry = registry;
@@ -297,8 +311,22 @@ public class MicrometerMetricsV2 implements Metrics {
       return this;
     }
 
+    /**
+     * When enabled, a {@code namespace} tag is added to all per-reconciliation counters (started,
+     * success, failure, retries, events, deletes). Gauges remain controller-scoped because
+     * namespaces are not known at controller registration time.
+     *
+     * <p>Disabled by default to avoid unexpected cardinality increases in existing deployments.
+     *
+     * @return this builder for method chaining
+     */
+    public MicrometerMetricsV2Builder withNamespaceAsTag() {
+      this.includeNamespaceTag = true;
+      return this;
+    }
+
     public MicrometerMetricsV2 build() {
-      return new MicrometerMetricsV2(registry, executionTimerConfig);
+      return new MicrometerMetricsV2(registry, executionTimerConfig, includeNamespaceTag);
     }
   }
 }
