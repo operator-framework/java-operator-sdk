@@ -70,7 +70,7 @@ class MultiOwnerDependentTriggeringIT {
             });
 
     res1.getSpec().setValue(NEW_VALUE_1);
-    extension.replace(res1);
+    res1 = extension.replace(res1);
 
     await()
         .untilAsserted(
@@ -85,7 +85,7 @@ class MultiOwnerDependentTriggeringIT {
             });
 
     res2.getSpec().setValue(NEW_VALUE_2);
-    extension.replace(res2);
+    res2 = extension.replace(res2);
 
     await()
         .untilAsserted(
@@ -94,6 +94,26 @@ class MultiOwnerDependentTriggeringIT {
                   extension.get(ConfigMap.class, MultipleOwnerDependentConfigMap.RESOURCE_NAME);
               assertThat(cm.getData()).containsEntry(NEW_VALUE_2, NEW_VALUE_2);
               assertThat(cm.getMetadata().getOwnerReferences()).hasSize(2);
+            });
+
+    res1.getMetadata().setResourceVersion(null); // delete without optimistic locking
+    extension.delete(res1);
+    await()
+        .untilAsserted(
+            () -> {
+              var cm =
+                  extension.get(ConfigMap.class, MultipleOwnerDependentConfigMap.RESOURCE_NAME);
+              assertThat(cm.getMetadata().getOwnerReferences()).hasSize(1);
+            });
+
+    extension.delete(res2);
+    res2.getMetadata().setResourceVersion(null); // delete without optimistic locking
+    await()
+        .untilAsserted(
+            () -> {
+              var cm =
+                  extension.get(ConfigMap.class, MultipleOwnerDependentConfigMap.RESOURCE_NAME);
+              assertThat(cm).isNull();
             });
   }
 
