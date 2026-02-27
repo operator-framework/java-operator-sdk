@@ -103,7 +103,7 @@
             "uid": "prometheus"
           },
           "editorMode": "code",
-          "expr": "sum(rate(operator_sdk_reconciliations_started_total{service_name=\"josdk\"}[5m])) by (controller_name)",
+          "expr": "sum(rate(reconciliations_started_total{service_name=\"josdk\"}[5m])) by (controller_name)",
           "legendFormat": "{{controller_name}}",
           "range": true,
           "refId": "A"
@@ -224,7 +224,7 @@
             "uid": "prometheus"
           },
           "editorMode": "code",
-          "expr": "sum(rate(operator_sdk_reconciliations_success_total{service_name=\"josdk\"}[5m])) by (controller_name)",
+          "expr": "sum(rate(reconciliations_success_total{service_name=\"josdk\"}[5m])) by (controller_name)",
           "legendFormat": "Success - {{controller_name}}",
           "range": true,
           "refId": "A"
@@ -235,7 +235,7 @@
             "uid": "prometheus"
           },
           "editorMode": "code",
-          "expr": "sum(rate(operator_sdk_reconciliations_failure_total{service_name=\"josdk\"}[5m])) by (controller_name)",
+          "expr": "sum(rate(reconciliations_failure_total{service_name=\"josdk\"}[5m])) by (controller_name)",
           "legendFormat": "Failure - {{controller_name}}",
           "range": true,
           "refId": "B"
@@ -302,7 +302,7 @@
             "uid": "prometheus"
           },
           "editorMode": "code",
-          "expr": "sum(operator_sdk_reconciliations_executions{service_name=\"josdk\"})",
+          "expr": "sum(reconciliations_executions{service_name=\"josdk\"})",
           "legendFormat": "Executing",
           "range": true,
           "refId": "A"
@@ -369,7 +369,7 @@
             "uid": "prometheus"
           },
           "editorMode": "code",
-          "expr": "sum(operator_sdk_reconciliations_active{service_name=\"josdk\"})",
+          "expr": "sum(reconciliations_active{service_name=\"josdk\"})",
           "legendFormat": "Active",
           "range": true,
           "refId": "A"
@@ -430,7 +430,7 @@
             "uid": "prometheus"
           },
           "editorMode": "code",
-          "expr": "sum(operator_sdk_reconciliations_started_total{service_name=\"josdk\"})",
+          "expr": "sum(reconciliations_started_total{service_name=\"josdk\"})",
           "legendFormat": "Total",
           "range": true,
           "refId": "A"
@@ -495,7 +495,7 @@
             "uid": "prometheus"
           },
           "editorMode": "code",
-          "expr": "sum(rate(operator_sdk_reconciliations_failure_total{service_name=\"josdk\"}[5m]))",
+          "expr": "sum(rate(reconciliations_failure_total{service_name=\"josdk\"}[5m]))",
           "legendFormat": "Error Rate",
           "range": true,
           "refId": "A"
@@ -654,7 +654,7 @@
             "uid": "prometheus"
           },
           "editorMode": "code",
-          "expr": "histogram_quantile(0.50, sum(rate(operator_sdk_reconciliations_execution_seconds_bucket{service_name=\"josdk\"}[5m])) by (le, controller_name))",
+          "expr": "histogram_quantile(0.50, sum(rate(reconciliations_execution_seconds_bucket{service_name=\"josdk\"}[5m])) by (le, controller_name))",
           "legendFormat": "p50 - {{controller_name}}",
           "range": true,
           "refId": "A"
@@ -665,7 +665,7 @@
             "uid": "prometheus"
           },
           "editorMode": "code",
-          "expr": "histogram_quantile(0.95, sum(rate(operator_sdk_reconciliations_execution_seconds_bucket{service_name=\"josdk\"}[5m])) by (le, controller_name))",
+          "expr": "histogram_quantile(0.95, sum(rate(reconciliations_execution_seconds_bucket{service_name=\"josdk\"}[5m])) by (le, controller_name))",
           "legendFormat": "p95 - {{controller_name}}",
           "range": true,
           "refId": "B"
@@ -676,7 +676,7 @@
             "uid": "prometheus"
           },
           "editorMode": "code",
-          "expr": "histogram_quantile(0.99, sum(rate(operator_sdk_reconciliations_execution_seconds_bucket{service_name=\"josdk\"}[5m])) by (le, controller_name))",
+          "expr": "histogram_quantile(0.99, sum(rate(reconciliations_execution_seconds_bucket{service_name=\"josdk\"}[5m])) by (le, controller_name))",
           "legendFormat": "p99 - {{controller_name}}",
           "range": true,
           "refId": "C"
@@ -766,7 +766,7 @@
             "uid": "prometheus"
           },
           "editorMode": "code",
-          "expr": "sum(rate(operator_sdk_events_received_total{service_name=\"josdk\"}[5m])) by (event, action)",
+          "expr": "sum(rate(events_received_total{service_name=\"josdk\"}[5m])) by (event, action)",
           "legendFormat": "{{event}} - {{action}}",
           "range": true,
           "refId": "A"
@@ -856,7 +856,7 @@
             "uid": "prometheus"
           },
           "editorMode": "code",
-          "expr": "sum(rate(operator_sdk_reconciliations_failure_total{service_name=\"josdk\"}[5m])) by (controller_name)",
+          "expr": "sum(rate(reconciliations_failure_total{service_name=\"josdk\"}[5m])) by (controller_name)",
           "legendFormat": "{{controller_name}}",
           "range": true,
           "refId": "A"
@@ -946,7 +946,7 @@
             "uid": "prometheus"
           },
           "editorMode": "code",
-          "expr": "sum(rate(operator_sdk_controllers_success_total{service_name=\"josdk\"}[5m])) by (controller_name)",
+          "expr": "sum(rate(controllers_success_total{service_name=\"josdk\"}[5m])) by (controller_name)",
           "legendFormat": "Success - {{controller_name}}",
           "range": true,
           "refId": "A"
@@ -957,7 +957,7 @@
             "uid": "prometheus"
           },
           "editorMode": "code",
-          "expr": "sum(rate(operator_sdk_controllers_failure_total{service_name=\"josdk\"}[5m])) by (controller_name)",
+          "expr": "sum(rate(controllers_failure_total{service_name=\"josdk\"}[5m])) by (controller_name)",
           "legendFormat": "Failure - {{controller_name}}",
           "range": true,
           "refId": "B"
@@ -1047,7 +1047,7 @@
             "uid": "prometheus"
           },
           "editorMode": "code",
-          "expr": "sum(rate(operator_sdk_events_delete_total{service_name=\"josdk\"}[5m])) by (controller_name)",
+          "expr": "sum(rate(events_delete_total{service_name=\"josdk\"}[5m])) by (controller_name)",
           "legendFormat": "{{controller_name}}",
           "range": true,
           "refId": "A"
@@ -1145,7 +1145,7 @@
             "uid": "prometheus"
           },
           "editorMode": "code",
-          "expr": "sum(rate(operator_sdk_reconciliations_retries_total{service_name=\"josdk\"}[5m])) by (controller_name)",
+          "expr": "sum(rate(reconciliations_retries_total{service_name=\"josdk\"}[5m])) by (controller_name)",
           "legendFormat": "Retries - {{controller_name}}",
           "range": true,
           "refId": "A"

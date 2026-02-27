@@ -47,7 +47,6 @@ import io.micrometer.registry.otlp.OtlpMeterRegistry;
 public class MetricsHandlingSampleOperator {
 
   private static final Logger log = LoggerFactory.getLogger(MetricsHandlingSampleOperator.class);
-  public static final String OPERATOR_SDK_METRICS_PREFIX = "operator.sdk";
 
   /**
    * Based on env variables a different flavor of Reconciler is used, showcasing how the same logic
@@ -57,7 +56,7 @@ public class MetricsHandlingSampleOperator {
     log.info("Metrics Handling Sample Operator starting!");
 
     // Load configuration from config.yaml
-    Metrics metrics = initOTLPMetrics(false);
+    Metrics metrics = initOTLPMetrics(true);
     Operator operator =
         new Operator(o -> o.withStopOnInformerErrorDuringStartup(false).withMetrics(metrics));
 
@@ -77,11 +76,6 @@ public class MetricsHandlingSampleOperator {
     }
     var otlpConfig =
         new OtlpConfig() {
-          @Override
-          public String prefix() {
-            return OPERATOR_SDK_METRICS_PREFIX;
-          }
-
           @Override
           public @Nullable String get(String key) {
             return configProperties.get(key);
@@ -104,24 +98,18 @@ public class MetricsHandlingSampleOperator {
           new LoggingMeterRegistry(
               new LoggingRegistryConfig() {
                 @Override
-                public String prefix() {
-                  return OPERATOR_SDK_METRICS_PREFIX;
-                }
-
-                @Override
                 public String get(String key) {
                   return null;
                 }
 
                 @Override
                 public Duration step() {
-                  return Duration.ofSeconds(15);
+                  return Duration.ofSeconds(10);
                 }
               },
               Clock.SYSTEM);
       compositeRegistry.add(loggingRegistry);
     }
-
     // Register JVM and system metrics
     log.info("Registering JVM and system metrics...");
 

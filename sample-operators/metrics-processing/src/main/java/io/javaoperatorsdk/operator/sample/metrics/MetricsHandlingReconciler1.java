@@ -69,7 +69,7 @@ public class MetricsHandlingReconciler1 implements Reconciler<MetricsHandlingCus
 
     var spec = resource.getSpec();
     if (spec != null) {
-      status.setObservedNumber(spec.getObservedNumber());
+      status.setObservedNumber(spec.getNumber());
     }
 
     log.info("Successfully reconciled resource: {}", name);

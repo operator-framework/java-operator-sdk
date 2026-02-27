@@ -19,11 +19,11 @@ public class MetricsHandlingSpec {
 
   private int number;
 
-  public int getObservedNumber() {
+  public int getNumber() {
     return number;
   }
 
-  public void setObservedNumber(int observedNumber) {
-    this.number = observedNumber;
+  public void setNumber(int number) {
+    this.number = number;
   }
 }
