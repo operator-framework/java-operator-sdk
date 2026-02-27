@@ -112,27 +112,46 @@ class MetricsHandlingE2E {
     }
   }
 
+  // todo check historgram execution time
+  // failoures by controller
+  // delete event rate - delete resources in test
+  // error rate
   @Test
   void testPropagatedMetrics() throws Exception {
-    log.info("Starting metrics propagation test");
+    log.info("Starting longevity metrics test (running for ~50 seconds)");
 
-    // Create successful resources
-    MetricsHandlingCustomResource1 successResource1 = createResource1("test-success-1", 42);
-    operator.create(successResource1);
+    // Create initial resources including ones that trigger failures
+    operator.create(createResource1("test-success-1", 42));
+    operator.create(createResource2("test-success-2", 77));
+    operator.create(createResource1("test-fail-1", 100));
+    operator.create(createResource2("test-error-2", 200));
 
-    MetricsHandlingCustomResource2 successResource2 = createResource2("test-success-2", 77);
-    operator.create(successResource2);
+    // Continuously trigger reconciliations for ~50 seconds by alternating between
+    // creating new resources and updating specs of existing ones
+    long deadline = System.currentTimeMillis() + Duration.ofSeconds(50).toMillis();
+    int counter = 0;
+    while (System.currentTimeMillis() < deadline) {
+      counter++;
+      switch (counter % 3) {
+        case 0 -> {
+          operator.create(createResource1("test-dynamic-1-" + counter, counter * 3));
+          log.info("Iteration {}: created test-dynamic-1-{}", counter, counter);
+        }
+        case 1 -> {
+          var r1 = operator.get(MetricsHandlingCustomResource1.class, "test-success-1");
+          r1.getSpec().setNumber(counter * 7);
+          operator.replace(r1);
+          log.info("Iteration {}: updated test-success-1 number to {}", counter, counter * 7);
+        }
+        case 2 -> {
+          operator.create(createResource2("test-dynamic-2-" + counter, counter * 5));
+          log.info("Iteration {}: created test-dynamic-2-{}", counter, counter);
+        }
+      }
+      Thread.sleep(1000);
+    }
 
-    // Create resources that will fail
-    MetricsHandlingCustomResource1 failResource1 = createResource1("test-fail-1", 100);
-    operator.create(failResource1);
-
-    MetricsHandlingCustomResource2 errorResource2 = createResource2("test-error-2", 200);
-    operator.create(errorResource2);
-
-    // Wait for reconciliations to happen multiple times
-    log.info("Waiting for reconciliations to occur...");
-    Thread.sleep(10000);
+    log.info("Longevity phase completed ({} iterations), verifying metrics", counter);
     verifyPrometheusMetrics();
   }
 
