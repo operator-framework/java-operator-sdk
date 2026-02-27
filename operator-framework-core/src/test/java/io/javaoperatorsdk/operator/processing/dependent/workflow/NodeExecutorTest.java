@@ -26,7 +26,7 @@ import static org.junit.jupiter.api.Assertions.*;
 class NodeExecutorTest {
 
   private NodeExecutor errorThrowingNodeExecutor =
-      new NodeExecutor(null, null, null) {
+      new NodeExecutor(null, null) {
         @Override
         protected void doRun(DependentResourceNode dependentResourceNode) {
           throw new NoSuchFieldError();

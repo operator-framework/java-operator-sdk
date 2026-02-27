@@ -87,7 +87,7 @@ class WorkflowCleanupExecutor<P extends HasMetadata> extends AbstractWorkflowExe
   private class CleanupExecutor<R> extends NodeExecutor<R, P> {
 
     private CleanupExecutor(DependentResourceNode<R, P> drn) {
-      super(drn, WorkflowCleanupExecutor.this, primary);
+      super(drn, WorkflowCleanupExecutor.this);
     }
 
     @Override

@@ -150,7 +150,7 @@ class WorkflowReconcileExecutor<P extends HasMetadata> extends AbstractWorkflowE
   private class NodeReconcileExecutor<R> extends NodeExecutor<R, P> {
 
     private NodeReconcileExecutor(DependentResourceNode<R, P> dependentResourceNode) {
-      super(dependentResourceNode, WorkflowReconcileExecutor.this, primary);
+      super(dependentResourceNode, WorkflowReconcileExecutor.this);
     }
 
     @Override
@@ -176,7 +176,7 @@ class WorkflowReconcileExecutor<P extends HasMetadata> extends AbstractWorkflowE
   private class NodeDeleteExecutor<R> extends NodeExecutor<R, P> {
 
     private NodeDeleteExecutor(DependentResourceNode<R, P> dependentResourceNode) {
-      super(dependentResourceNode, WorkflowReconcileExecutor.this, primary);
+      super(dependentResourceNode, WorkflowReconcileExecutor.this);
     }
 
     @Override

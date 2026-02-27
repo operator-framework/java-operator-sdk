@@ -27,21 +27,18 @@ abstract class NodeExecutor<R, P extends HasMetadata> implements Runnable {
 
   private final DependentResourceNode<R, P> dependentResourceNode;
   private final AbstractWorkflowExecutor<P> workflowExecutor;
-  private final P primary;
 
   protected NodeExecutor(
       DependentResourceNode<R, P> dependentResourceNode,
-      AbstractWorkflowExecutor<P> workflowExecutor,
-      P primary) {
+      AbstractWorkflowExecutor<P> workflowExecutor) {
     this.dependentResourceNode = dependentResourceNode;
     this.workflowExecutor = workflowExecutor;
-    this.primary = primary;
   }
 
   @Override
   public void run() {
     MDCUtils.withMDCForResource(
-        primary,
+        workflowExecutor.primary,
         () -> {
           try {
             doRun(dependentResourceNode);
