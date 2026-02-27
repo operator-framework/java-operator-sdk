@@ -99,7 +99,7 @@ public class MetricsHandlingSampleOperator {
     compositeRegistry.add(otlpRegistry);
 
     String enableConsoleLogging = System.getenv("METRICS_CONSOLE_LOGGING");
-    if ("true".equalsIgnoreCase(enableConsoleLogging)) {
+    if (!"true".equalsIgnoreCase(enableConsoleLogging)) {
       log.info("Console metrics logging enabled");
       LoggingMeterRegistry loggingRegistry =
           new LoggingMeterRegistry(
