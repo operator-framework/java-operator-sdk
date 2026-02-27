@@ -28,14 +28,22 @@ echo -e "${GREEN}Installing Observability Stack${NC}"
 echo -e "${GREEN}OpenTelemetry + Prometheus + Grafana${NC}"
 echo -e "${GREEN}========================================${NC}"
 
-# Check if helm is installed
+# Check if helm is installed, download locally if not
 echo -e "\n${YELLOW}Checking helm installation...${NC}"
 if ! command -v helm &> /dev/null; then
-    echo -e "${RED}Error: helm is not installed${NC}"
-    echo "Please install helm: https://helm.sh/docs/intro/install/"
-    exit 1
+    echo -e "${YELLOW}helm not found, downloading locally...${NC}"
+    HELM_INSTALL_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/.helm"
+    mkdir -p "$HELM_INSTALL_DIR"
+    HELM_BIN="$HELM_INSTALL_DIR/helm"
+    if [ ! -f "$HELM_BIN" ]; then
+        curl -fsSL https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 \
+            | HELM_INSTALL_DIR="$HELM_INSTALL_DIR" USE_SUDO=false bash
+    fi
+    export PATH="$HELM_INSTALL_DIR:$PATH"
+    echo -e "${GREEN}✓ helm downloaded to $HELM_BIN${NC}"
+else
+    echo -e "${GREEN}✓ helm is installed${NC}"
 fi
-echo -e "${GREEN}✓ helm is installed${NC}"
 
 # Add Helm repositories
 echo -e "\n${YELLOW}Adding Helm repositories...${NC}"
