@@ -32,6 +32,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import io.fabric8.kubernetes.api.model.Pod;
+import io.fabric8.kubernetes.client.KubernetesClient;
+import io.fabric8.kubernetes.client.KubernetesClientBuilder;
 import io.fabric8.kubernetes.client.LocalPortForward;
 import io.javaoperatorsdk.operator.junit.AbstractOperatorExtension;
 import io.javaoperatorsdk.operator.junit.ClusterDeployedOperatorExtension;
@@ -56,6 +58,8 @@ class MetricsHandlingE2E {
   private LocalPortForward grafanaPortForward;
   private LocalPortForward otelCollectorPortForward;
 
+  static final KubernetesClient client = new KubernetesClientBuilder().build();
+
   MetricsHandlingE2E() throws FileNotFoundException {}
 
   @RegisterExtension
@@ -68,11 +72,7 @@ class MetricsHandlingE2E {
                   c -> c.withMetrics(MetricsHandlingSampleOperator.initOTLPMetrics(true)))
               .build()
           : ClusterDeployedOperatorExtension.builder()
-              .withOperatorDeployment(
-                  operator()
-                      .getKubernetesClient()
-                      .load(new FileInputStream("k8s/operator.yaml"))
-                      .items())
+              .withOperatorDeployment(client.load(new FileInputStream("k8s/operator.yaml")).items())
               .build();
 
   @BeforeAll
@@ -191,7 +191,6 @@ class MetricsHandlingE2E {
         .untilAsserted(
             () -> {
               String result = queryPrometheus(prometheusUrl, startedQuery);
-              log.info("Reconciliations started metric: {}", result);
               assertThat(result).contains("\"status\":\"success\"");
               assertThat(result).contains("reconciliations_started_total");
             });

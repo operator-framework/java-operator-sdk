@@ -103,7 +103,7 @@
             "uid": "prometheus"
           },
           "editorMode": "code",
-          "expr": "sum(rate(reconciliations_started_total{service_name=\"josdk\"}[5m])) by (controller_name)",
+          "expr": "sum(rate(reconciliations_started_total{service_name=~\"$service_name\"}[5m])) by (controller_name)",
           "legendFormat": "{{controller_name}}",
           "range": true,
           "refId": "A"
@@ -224,7 +224,7 @@
             "uid": "prometheus"
           },
           "editorMode": "code",
-          "expr": "sum(rate(reconciliations_success_total{service_name=\"josdk\"}[5m])) by (controller_name)",
+          "expr": "sum(rate(reconciliations_success_total{service_name=~\"$service_name\"}[5m])) by (controller_name)",
           "legendFormat": "Success - {{controller_name}}",
           "range": true,
           "refId": "A"
@@ -235,7 +235,7 @@
             "uid": "prometheus"
           },
           "editorMode": "code",
-          "expr": "sum(rate(reconciliations_failure_total{service_name=\"josdk\"}[5m])) by (controller_name)",
+          "expr": "sum(rate(reconciliations_failure_total{service_name=~\"$service_name\"}[5m])) by (controller_name)",
           "legendFormat": "Failure - {{controller_name}}",
           "range": true,
           "refId": "B"
@@ -302,7 +302,7 @@
             "uid": "prometheus"
           },
           "editorMode": "code",
-          "expr": "sum(reconciliations_executions{service_name=\"josdk\"})",
+          "expr": "sum(reconciliations_executions{service_name=~\"$service_name\"})",
           "legendFormat": "Executing",
           "range": true,
           "refId": "A"
@@ -316,7 +316,7 @@
         "type": "prometheus",
         "uid": "prometheus"
       },
-      "description": "Current reconciliation queue size",
+      "description": "Number of custom resources submitted to reconciliation to executor service",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -369,13 +369,13 @@
             "uid": "prometheus"
           },
           "editorMode": "code",
-          "expr": "sum(reconciliations_active{service_name=\"josdk\"})",
+          "expr": "sum(reconciliations_active{service_name=~\"$service_name\"})",
           "legendFormat": "Active",
           "range": true,
           "refId": "A"
         }
       ],
-      "title": "Active Reconciliations",
+      "title": "Reconciliation queue size",
       "type": "gauge"
     },
     {
@@ -430,7 +430,7 @@
             "uid": "prometheus"
           },
           "editorMode": "code",
-          "expr": "sum(reconciliations_started_total{service_name=\"josdk\"})",
+          "expr": "sum(reconciliations_started_total{service_name=~\"$service_name\"})",
           "legendFormat": "Total",
           "range": true,
           "refId": "A"
@@ -495,7 +495,7 @@
             "uid": "prometheus"
           },
           "editorMode": "code",
-          "expr": "sum(rate(reconciliations_failure_total{service_name=\"josdk\"}[5m]))",
+          "expr": "sum(rate(reconciliations_failure_total{service_name=~\"$service_name\"}[5m]))",
           "legendFormat": "Error Rate",
           "range": true,
           "refId": "A"
@@ -564,7 +564,7 @@
             "uid": "prometheus"
           },
           "editorMode": "code",
-          "expr": "custom_resources{service_name=\"josdk\"}",
+          "expr": "custom_resources{service_name=~\"$service_name\"}",
           "legendFormat": "{{controller_name}}",
           "range": true,
           "refId": "A"
@@ -654,7 +654,7 @@
             "uid": "prometheus"
           },
           "editorMode": "code",
-          "expr": "histogram_quantile(0.50, sum(rate(reconciliations_execution_seconds_bucket{service_name=\"josdk\"}[5m])) by (le, controller_name))",
+          "expr": "histogram_quantile(0.50, sum(rate(reconciliations_execution_seconds_bucket{service_name=~\"$service_name\"}[5m])) by (le, controller_name))",
           "legendFormat": "p50 - {{controller_name}}",
           "range": true,
           "refId": "A"
@@ -665,7 +665,7 @@
             "uid": "prometheus"
           },
           "editorMode": "code",
-          "expr": "histogram_quantile(0.95, sum(rate(reconciliations_execution_seconds_bucket{service_name=\"josdk\"}[5m])) by (le, controller_name))",
+          "expr": "histogram_quantile(0.95, sum(rate(reconciliations_execution_seconds_bucket{service_name=~\"$service_name\"}[5m])) by (le, controller_name))",
           "legendFormat": "p95 - {{controller_name}}",
           "range": true,
           "refId": "B"
@@ -676,7 +676,7 @@
             "uid": "prometheus"
           },
           "editorMode": "code",
-          "expr": "histogram_quantile(0.99, sum(rate(reconciliations_execution_seconds_bucket{service_name=\"josdk\"}[5m])) by (le, controller_name))",
+          "expr": "histogram_quantile(0.99, sum(rate(reconciliations_execution_seconds_bucket{service_name=~\"$service_name\"}[5m])) by (le, controller_name))",
           "legendFormat": "p99 - {{controller_name}}",
           "range": true,
           "refId": "C"
@@ -766,7 +766,7 @@
             "uid": "prometheus"
           },
           "editorMode": "code",
-          "expr": "sum(rate(events_received_total{service_name=\"josdk\"}[5m])) by (event, action)",
+          "expr": "sum(rate(events_received_total{service_name=~\"$service_name\"}[5m])) by (event, action)",
           "legendFormat": "{{event}} - {{action}}",
           "range": true,
           "refId": "A"
@@ -856,7 +856,7 @@
             "uid": "prometheus"
           },
           "editorMode": "code",
-          "expr": "sum(rate(reconciliations_failure_total{service_name=\"josdk\"}[5m])) by (controller_name)",
+          "expr": "sum(rate(reconciliations_failure_total{service_name=~\"$service_name\"}[5m])) by (controller_name)",
           "legendFormat": "{{controller_name}}",
           "range": true,
           "refId": "A"
@@ -946,7 +946,7 @@
             "uid": "prometheus"
           },
           "editorMode": "code",
-          "expr": "sum(rate(controllers_success_total{service_name=\"josdk\"}[5m])) by (controller_name)",
+          "expr": "sum(rate(controllers_success_total{service_name=~\"$service_name\"}[5m])) by (controller_name)",
           "legendFormat": "Success - {{controller_name}}",
           "range": true,
           "refId": "A"
@@ -957,7 +957,7 @@
             "uid": "prometheus"
           },
           "editorMode": "code",
-          "expr": "sum(rate(controllers_failure_total{service_name=\"josdk\"}[5m])) by (controller_name)",
+          "expr": "sum(rate(controllers_failure_total{service_name=~\"$service_name\"}[5m])) by (controller_name)",
           "legendFormat": "Failure - {{controller_name}}",
           "range": true,
           "refId": "B"
@@ -1047,7 +1047,7 @@
             "uid": "prometheus"
           },
           "editorMode": "code",
-          "expr": "sum(rate(events_delete_total{service_name=\"josdk\"}[5m])) by (controller_name)",
+          "expr": "sum(rate(events_delete_total{service_name=~\"$service_name\"}[5m])) by (controller_name)",
           "legendFormat": "{{controller_name}}",
           "range": true,
           "refId": "A"
@@ -1145,7 +1145,7 @@
             "uid": "prometheus"
           },
           "editorMode": "code",
-          "expr": "sum(rate(reconciliations_retries_total{service_name=\"josdk\"}[5m])) by (controller_name)",
+          "expr": "sum(rate(reconciliations_retries_total{service_name=~\"$service_name\"}[5m])) by (controller_name)",
           "legendFormat": "Retries - {{controller_name}}",
           "range": true,
           "refId": "A"
@@ -1160,7 +1160,30 @@
   "style": "dark",
   "tags": ["operator", "kubernetes", "josdk"],
   "templating": {
-    "list": []
+    "list": [
+      {
+        "current": {},
+        "datasource": {
+          "type": "prometheus",
+          "uid": "${DS_PROMETHEUS}"
+        },
+        "definition": "label_values(reconciliations_started_total, service_name)",
+        "hide": 0,
+        "includeAll": false,
+        "label": "Service",
+        "multi": false,
+        "name": "service_name",
+        "options": [],
+        "query": {
+          "query": "label_values(reconciliations_started_total, service_name)",
+          "refId": "StandardVariableQuery"
+        },
+        "refresh": 2,
+        "regex": "",
+        "sort": 1,
+        "type": "query"
+      }
+    ]
   },
   "time": {
     "from": "now-15m",

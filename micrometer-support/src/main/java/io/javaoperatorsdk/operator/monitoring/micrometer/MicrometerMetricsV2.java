@@ -19,6 +19,7 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
+import java.util.function.Function;
 
 import org.jspecify.annotations.NonNull;
 
@@ -75,7 +76,7 @@ public class MicrometerMetricsV2 implements Metrics {
   private final MeterRegistry registry;
   private final Map<String, AtomicInteger> gauges = new ConcurrentHashMap<>();
   private final Map<String, Timer> executionTimers = new ConcurrentHashMap<>();
-  private final Consumer<Timer.Builder> timerConfig;
+  private final Function<Timer.Builder, Timer.Builder> timerConfig;
 
   /**
    * Creates a new builder to configure how the eventual MicrometerMetricsV2 instance will behave,
@@ -101,8 +102,11 @@ public class MicrometerMetricsV2 implements Metrics {
     this.registry = registry;
     this.timerConfig =
         timerConfig != null
-            ? timerConfig
-            : builder -> builder.publishPercentiles(0.5, 0.95, 0.99).publishPercentileHistogram();
+            ? builder -> {
+              timerConfig.accept(builder);
+              return builder;
+            }
+            : Timer.Builder::publishPercentileHistogram;
   }
 
   @Override
@@ -124,8 +128,8 @@ public class MicrometerMetricsV2 implements Metrics {
     var numberOfResources = registry.gauge(NUMBER_OF_RESOURCE_GAUGE, tags, new AtomicInteger(0));
     gauges.put(numberOfResourcesRefName(name), numberOfResources);
 
-    final var timerBuilder = Timer.builder(RECONCILIATION_EXECUTION_DURATION).tags(tags);
-    timerConfig.accept(timerBuilder);
+    var timerBuilder = Timer.builder(RECONCILIATION_EXECUTION_DURATION).tags(tags);
+    timerBuilder = timerConfig.apply(timerBuilder);
     var timer = timerBuilder.register(registry);
     executionTimers.put(name, timer);
   }
