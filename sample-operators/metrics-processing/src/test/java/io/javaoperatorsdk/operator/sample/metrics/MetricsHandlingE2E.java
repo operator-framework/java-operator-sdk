@@ -20,6 +20,8 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
+import java.util.ArrayDeque;
+import java.util.Deque;
 
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
@@ -38,6 +40,7 @@ import io.javaoperatorsdk.operator.sample.metrics.customresource.MetricsHandling
 import io.javaoperatorsdk.operator.sample.metrics.customresource.MetricsHandlingCustomResource2;
 import io.javaoperatorsdk.operator.sample.metrics.customresource.MetricsHandlingSpec;
 
+import static io.javaoperatorsdk.operator.sample.metrics.MetricsHandlingSampleOperator.isLocal;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
 
@@ -54,13 +57,6 @@ class MetricsHandlingE2E {
   private LocalPortForward otelCollectorPortForward;
 
   MetricsHandlingE2E() throws FileNotFoundException {}
-
-  boolean isLocal() {
-    String deployment = System.getProperty("test.deployment");
-    boolean remote = (deployment != null && deployment.equals("remote"));
-    log.info("Running the operator {} ", remote ? "remotely" : "locally");
-    return !remote;
-  }
 
   @RegisterExtension
   AbstractOperatorExtension operator =
@@ -127,15 +123,19 @@ class MetricsHandlingE2E {
     operator.create(createResource2("test-error-2", 200));
 
     // Continuously trigger reconciliations for ~50 seconds by alternating between
-    // creating new resources and updating specs of existing ones
+    // creating new resources, updating specs of existing ones, and deleting older dynamic ones
     long deadline = System.currentTimeMillis() + Duration.ofSeconds(50).toMillis();
     int counter = 0;
+    Deque<String> createdResource1Names = new ArrayDeque<>();
+    Deque<String> createdResource2Names = new ArrayDeque<>();
     while (System.currentTimeMillis() < deadline) {
       counter++;
-      switch (counter % 3) {
+      switch (counter % 4) {
         case 0 -> {
-          operator.create(createResource1("test-dynamic-1-" + counter, counter * 3));
-          log.info("Iteration {}: created test-dynamic-1-{}", counter, counter);
+          String name = "test-dynamic-1-" + counter;
+          operator.create(createResource1(name, counter * 3));
+          createdResource1Names.addLast(name);
+          log.info("Iteration {}: created {}", counter, name);
         }
         case 1 -> {
           var r1 = operator.get(MetricsHandlingCustomResource1.class, "test-success-1");
@@ -144,8 +144,30 @@ class MetricsHandlingE2E {
           log.info("Iteration {}: updated test-success-1 number to {}", counter, counter * 7);
         }
         case 2 -> {
-          operator.create(createResource2("test-dynamic-2-" + counter, counter * 5));
-          log.info("Iteration {}: created test-dynamic-2-{}", counter, counter);
+          String name = "test-dynamic-2-" + counter;
+          operator.create(createResource2(name, counter * 5));
+          createdResource2Names.addLast(name);
+          log.info("Iteration {}: created {}", counter, name);
+        }
+        case 3 -> {
+          // Delete the oldest dynamic resource; prefer whichever type has more accumulated
+          if (!createdResource1Names.isEmpty()
+              && (createdResource2Names.isEmpty()
+                  || createdResource1Names.size() >= createdResource2Names.size())) {
+            String name = createdResource1Names.pollFirst();
+            var r = operator.get(MetricsHandlingCustomResource1.class, name);
+            if (r != null) {
+              operator.delete(r);
+              log.info("Iteration {}: deleted {}", counter, name);
+            }
+          } else if (!createdResource2Names.isEmpty()) {
+            String name = createdResource2Names.pollFirst();
+            var r = operator.get(MetricsHandlingCustomResource2.class, name);
+            if (r != null) {
+              operator.delete(r);
+              log.info("Iteration {}: deleted {}", counter, name);
+            }
+          }
         }
       }
       Thread.sleep(1000);
