@@ -108,10 +108,6 @@ class MetricsHandlingE2E {
     }
   }
 
-  // todo check historgram execution time
-  // failoures by controller
-  // delete event rate - delete resources in test
-  // error rate
   @Test
   void testPropagatedMetrics() throws Exception {
     log.info("Starting longevity metrics test (running for ~50 seconds)");
@@ -370,8 +366,7 @@ class MetricsHandlingE2E {
   private LocalPortForward setupPortForward(String appName, int port) {
     try {
       Pod pod =
-          operator
-              .getKubernetesClient()
+          client
               .pods()
               .inNamespace(OBSERVABILITY_NAMESPACE)
               .withLabel("app.kubernetes.io/name", appName)
@@ -383,8 +378,7 @@ class MetricsHandlingE2E {
 
       log.info("Setting up port forward to {} pod: {}", appName, pod.getMetadata().getName());
       var portForward =
-          operator
-              .getKubernetesClient()
+          client
               .pods()
               .inNamespace(OBSERVABILITY_NAMESPACE)
               .withName(pod.getMetadata().getName())
@@ -397,9 +391,5 @@ class MetricsHandlingE2E {
       log.error("Failed to setup {} port forward", appName, e);
       throw new RuntimeException(e);
     }
-  }
-
-  AbstractOperatorExtension operator() {
-    return operator;
   }
 }
