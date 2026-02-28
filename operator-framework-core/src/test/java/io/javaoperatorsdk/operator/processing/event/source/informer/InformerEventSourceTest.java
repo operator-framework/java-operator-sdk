@@ -24,6 +24,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import io.fabric8.kubernetes.api.model.ObjectMeta;
+import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.api.model.apps.DeploymentBuilder;
 import io.fabric8.kubernetes.client.KubernetesClient;
@@ -74,6 +75,8 @@ class InformerEventSourceTest {
   private final EventHandler eventHandlerMock = mock(EventHandler.class);
   private final InformerEventSourceConfiguration<Deployment> informerEventSourceConfiguration =
       mock(InformerEventSourceConfiguration.class);
+  private SecondaryToPrimaryMapper mockSecondaryToPrimaryMapper =
+      mock(SecondaryToPrimaryMapper.class);
 
   @BeforeEach
   void setup() {
@@ -81,7 +84,7 @@ class InformerEventSourceTest {
     when(informerEventSourceConfiguration.getInformerConfig()).thenReturn(informerConfig);
     when(informerConfig.getEffectiveNamespaces(any())).thenReturn(DEFAULT_NAMESPACES_SET);
     when(informerEventSourceConfiguration.getSecondaryToPrimaryMapper())
-        .thenReturn(mock(SecondaryToPrimaryMapper.class));
+        .thenReturn(mockSecondaryToPrimaryMapper);
     when(informerEventSourceConfiguration.getResourceClass()).thenReturn(Deployment.class);
 
     informerEventSource =
@@ -90,6 +93,11 @@ class InformerEventSourceTest {
               // mocking start
               @Override
               public synchronized void start() {}
+
+              @Override
+              public Optional<Deployment> get(ResourceID resourceID) {
+                return temporaryResourceCache.getResourceFromCache(resourceID);
+              }
             });
 
     var mockControllerConfig = mock(ControllerConfiguration.class);
@@ -336,6 +344,30 @@ class InformerEventSourceTest {
     latch2.countDown();
 
     assertNoEventProduced();
+  }
+
+  @Test
+  void cachingFilteringUpdateEventUpdatesPrimaryToSecondaryIndex() {
+    withRealTemporaryResourceCache();
+    var td = testDeployment();
+    when(mockSecondaryToPrimaryMapper.toPrimaryResourceIDs(any()))
+        .thenReturn(Set.of(ResourceID.fromResource(td)));
+
+    informerEventSource.eventFilteringUpdateAndCacheResource(
+        td,
+        d -> {
+          var d1 = testDeployment();
+          d1.getMetadata().setResourceVersion("2");
+          return d1;
+        });
+
+    var cr = new TestCustomResource();
+    cr.setMetadata(
+        new ObjectMetaBuilder()
+            .withName(td.getMetadata().getName())
+            .withNamespace(td.getMetadata().getNamespace())
+            .build());
+    assertThat(informerEventSource.getSecondaryResources(cr)).isNotEmpty();
   }
 
   private void assertNoEventProduced() {
