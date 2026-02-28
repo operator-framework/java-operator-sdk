@@ -1,0 +1,45 @@
+Thank you for installing {{ .Chart.Name }} ({{ .Chart.AppVersion }}).
+
+Release: {{ .Release.Name }}
+Namespace: {{ include "josdk-operator.namespace" . }}
+
+Operator deployment: {{ include "josdk-operator.fullname" . }}
+
+{{- if .Values.josdkConfig.enabled }}
+
+ConfigLoader properties are mounted from ConfigMap
+  {{ include "josdk-operator.configMapName" . }}
+at {{ .Values.josdkConfig.mountPath }}/josdk.properties.
+
+Wire it up in your operator main class:
+
+  ConfigLoader loader = new ConfigLoader(
+      PropertiesConfigProvider.fromFile(
+          Path.of("{{ .Values.josdkConfig.mountPath }}/josdk.properties")));
+{{- end }}
+
+{{- if .Values.log4j2.enabled }}
+
+Log4j2 configuration is mounted from ConfigMap
+  {{ include "josdk-operator.log4j2ConfigMapName" . }}
+at {{ .Values.log4j2.mountPath }}/log4j2.xml.
+
+Root log level: {{ .Values.log4j2.rootLevel }}
+{{- if .Values.log4j2.loggers }}
+Per-logger overrides:
+{{- range $logger, $level := .Values.log4j2.loggers }}
+  {{ $logger }} -> {{ $level }}
+{{- end }}
+{{- end }}
+
+The JVM flag -Dlog4j2.configurationFile={{ .Values.log4j2.mountPath }}/log4j2.xml
+has been added to JAVA_TOOL_OPTIONS automatically.
+{{- end }}
+
+To change the log level at runtime without redeploying, update the ConfigMap:
+
+  kubectl edit configmap {{ include "josdk-operator.log4j2ConfigMapName" . }} \
+    -n {{ include "josdk-operator.namespace" . }}
+
+Log4j2 will pick up the change within 30 seconds (monitorInterval="30" in the
+default configuration).

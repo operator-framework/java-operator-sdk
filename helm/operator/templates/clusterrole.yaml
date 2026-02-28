@@ -1,0 +1,44 @@
+{{- if .Values.rbac.create }}
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: {{ include "josdk-operator.fullname" . }}
+  labels:
+    {{- include "josdk-operator.labels" . | nindent 4 }}
+rules:
+  # Required for JOSDK to install / validate CRDs on startup.
+  - apiGroups: ["apiextensions.k8s.io"]
+    resources: ["customresourcedefinitions"]
+    verbs: ["get", "list", "watch", "create", "update", "patch"]
+  # Required for leader-election (if used).
+  - apiGroups: ["coordination.k8s.io"]
+    resources: ["leases"]
+    verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+  # Required for JOSDK event-source on ConfigMaps / Secrets (optional; remove if not needed).
+  - apiGroups: [""]
+    resources: ["events"]
+    verbs: ["create", "patch"]
+  # Add your operator's custom resource rules here via values.rbac.additionalRules, e.g.:
+  #   additionalRules:
+  #     - apiGroups: ["mygroup.example.com"]
+  #       resources: ["myresources", "myresources/status"]
+  #       verbs: ["*"]
+  {{- with .Values.rbac.additionalRules }}
+  {{- toYaml . | nindent 2 }}
+  {{- end }}
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: {{ include "josdk-operator.fullname" . }}
+  labels:
+    {{- include "josdk-operator.labels" . | nindent 4 }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: {{ include "josdk-operator.fullname" . }}
+subjects:
+  - kind: ServiceAccount
+    name: {{ include "josdk-operator.serviceAccountName" . }}
+    namespace: {{ include "josdk-operator.namespace" . }}
+{{- end }}

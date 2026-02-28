@@ -1,0 +1,31 @@
+{{- if .Values.josdkConfig.enabled }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "josdk-operator.configMapName" . }}
+  namespace: {{ include "josdk-operator.namespace" . }}
+  labels:
+    {{- include "josdk-operator.labels" . | nindent 4 }}
+data:
+  # All key-value pairs are written into josdk.properties.
+  # The operator reads this file via a file-backed ConfigProvider and passes it
+  # to ConfigLoader.  See the ConfigLoader javadoc for supported property keys.
+  #
+  # Example operator-level keys:
+  #   josdk.reconciliation.concurrent-threads=4
+  #   josdk.informer.stop-on-error-during-startup=false
+  #   josdk.informer.cache-sync-timeout=PT30S
+  #
+  # Example controller-level keys (replace "my-controller" with the lower-cased
+  # reconciler class name):
+  #   josdk.controller.my-controller.retry.max-attempts=5
+  #   josdk.controller.my-controller.retry.initial-interval=1000
+  #   josdk.controller.my-controller.retry.interval-multiplier=1.5
+  #   josdk.controller.my-controller.retry.max-interval=60000
+  #   josdk.controller.my-controller.rate-limiter.limit-for-period=10
+  #   josdk.controller.my-controller.rate-limiter.refresh-period=PT1S
+  josdk.properties: |
+    {{- range $key, $value := .Values.josdkConfig.properties }}
+    {{ $key }}={{ $value }}
+    {{- end }}
+{{- end }}
