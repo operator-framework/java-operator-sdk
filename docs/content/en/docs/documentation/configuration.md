@@ -189,7 +189,7 @@ Operator operator = new Operator(ConfigLoader.getDefault().applyConfigs());
 | `EnvVarConfigProvider` | `System.getenv()` | dots and hyphens → underscores, upper-cased (`josdk.check-crd` → `JOSDK_CHECK_CRD`) |
 | `PropertiesConfigProvider` | `java.util.Properties` or `.properties` file | key used as-is; use `PropertiesConfigProvider.systemProperties()` to read Java system properties |
 | `YamlConfigProvider` | YAML file | dot-separated key traverses nested mappings |
-| `AgregatePrirityListConfigProvider` | ordered list of providers | first non-empty result wins |
+| `AgregatePriorityListConfigProvider` | ordered list of providers | first non-empty result wins |
 
 All string-based providers convert values to the target type automatically.
 Supported types: `String`, `Boolean`, `Integer`, `Long`, `Double`, `Duration` (ISO-8601, e.g. `PT30S`).
@@ -244,11 +244,11 @@ Only keys that are actually present in the source are applied; everything else r
 programmatic or annotation-based default.
 
 You can also compose multiple sources with explicit priority using
-`AgregatePrirityListConfigProvider`:
+`AgregatePriorityListConfigProvider`:
 
 ```java
 var configLoader = new ConfigLoader(
-    new AgregatePrirityListConfigProvider(List.of(
+    new AgregatePriorityListConfigProvider(List.of(
         new EnvVarConfigProvider(),          // highest priority
         PropertiesConfigProvider.systemProperties(),
         new YamlConfigProvider(Path.of("config/operator.yaml"))  // lowest priority

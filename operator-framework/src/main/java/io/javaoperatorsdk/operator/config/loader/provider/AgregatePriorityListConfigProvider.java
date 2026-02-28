@@ -24,11 +24,11 @@ import io.javaoperatorsdk.operator.config.loader.ConfigProvider;
  * A {@link ConfigProvider} that delegates to an ordered list of providers. Providers are queried in
  * list order; the first non-empty result wins.
  */
-public class AgregatePrirityListConfigProvider implements ConfigProvider {
+public class AgregatePriorityListConfigProvider implements ConfigProvider {
 
   private final List<ConfigProvider> providers;
 
-  public AgregatePrirityListConfigProvider(List<ConfigProvider> providers) {
+  public AgregatePriorityListConfigProvider(List<ConfigProvider> providers) {
     this.providers = List.copyOf(providers);
   }
 
