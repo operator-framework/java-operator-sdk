@@ -203,8 +203,7 @@ public class ConfigLoader {
   /**
    * Returns a {@link Consumer} that applies every controller-level property found in the {@link
    * ConfigProvider} to the given {@link ControllerConfigurationOverrider}. The keys are looked up
-   * as {@code josdk.controller.<controllerName>.<property>}. Returns {@code null} when no binding
-   * has a matching value.
+   * as {@code josdk.controller.<controllerName>.<property>}.
    */
   @SuppressWarnings("unchecked")
   public <R extends HasMetadata>

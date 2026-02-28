@@ -390,7 +390,159 @@ class ConfigLoaderTest {
         .withMessageContaining("lease-name");
   }
 
-  /** Returns true when the two types are the same or one is the boxed/unboxed form of the other. */
+  // -- retry ------------------------------------------------------------------
+
+  /** A minimal reconciler used to obtain a base ControllerConfiguration in retry tests. */
+  @io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration
+  private static class DummyReconciler
+      implements io.javaoperatorsdk.operator.api.reconciler.Reconciler<
+          io.fabric8.kubernetes.api.model.ConfigMap> {
+    @Override
+    public io.javaoperatorsdk.operator.api.reconciler.UpdateControl<
+            io.fabric8.kubernetes.api.model.ConfigMap>
+        reconcile(
+            io.fabric8.kubernetes.api.model.ConfigMap r,
+            io.javaoperatorsdk.operator.api.reconciler.Context<
+                    io.fabric8.kubernetes.api.model.ConfigMap>
+                ctx) {
+      return io.javaoperatorsdk.operator.api.reconciler.UpdateControl.noUpdate();
+    }
+  }
+
+  private static io.javaoperatorsdk.operator.api.config.ControllerConfiguration<
+          io.fabric8.kubernetes.api.model.ConfigMap>
+      baseControllerConfig() {
+    return new BaseConfigurationService().getConfigurationFor(new DummyReconciler());
+  }
+
+  private static io.javaoperatorsdk.operator.processing.retry.GenericRetry applyAndGetRetry(
+      java.util.function.Consumer<
+              io.javaoperatorsdk.operator.api.config.ControllerConfigurationOverrider<
+                  io.fabric8.kubernetes.api.model.ConfigMap>>
+          consumer) {
+    var overrider =
+        io.javaoperatorsdk.operator.api.config.ControllerConfigurationOverrider.override(
+            baseControllerConfig());
+    consumer.accept(overrider);
+    return (io.javaoperatorsdk.operator.processing.retry.GenericRetry) overrider.build().getRetry();
+  }
+
+  @Test
+  void retryIsNotConfiguredWhenNoRetryPropertiesPresent() {
+    var loader = new ConfigLoader(mapProvider(Map.of()));
+    var consumer = loader.<io.fabric8.kubernetes.api.model.ConfigMap>applyControllerConfigs("ctrl");
+    var overrider =
+        io.javaoperatorsdk.operator.api.config.ControllerConfigurationOverrider.override(
+            baseControllerConfig());
+    consumer.accept(overrider);
+    // no retry property set → retry stays at the controller's default (null or unchanged)
+    var result = overrider.build();
+    // The consumer must not throw and the config is buildable
+    assertThat(result).isNotNull();
+  }
+
+  @Test
+  void retryQueriesExpectedKeys() {
+    var queriedKeys = new ArrayList<String>();
+    ConfigProvider recordingProvider =
+        new ConfigProvider() {
+          @Override
+          public <T> Optional<T> getValue(String key, Class<T> type) {
+            queriedKeys.add(key);
+            return Optional.empty();
+          }
+        };
+    new ConfigLoader(recordingProvider).applyControllerConfigs("ctrl");
+    assertThat(queriedKeys)
+        .contains(
+            "josdk.controller.ctrl.retry.max-attempts",
+            "josdk.controller.ctrl.retry.initial-interval",
+            "josdk.controller.ctrl.retry.interval-multiplier",
+            "josdk.controller.ctrl.retry.max-interval");
+  }
+
+  @Test
+  void retryMaxAttemptsIsApplied() {
+    var loader =
+        new ConfigLoader(mapProvider(Map.of("josdk.controller.ctrl.retry.max-attempts", 10)));
+    var retry = applyAndGetRetry(loader.applyControllerConfigs("ctrl"));
+    assertThat(retry.getMaxAttempts()).isEqualTo(10);
+    // other fields stay at their defaults
+    assertThat(retry.getInitialInterval())
+        .isEqualTo(
+            io.javaoperatorsdk.operator.processing.retry.GenericRetry
+                .defaultLimitedExponentialRetry()
+                .getInitialInterval());
+  }
+
+  @Test
+  void retryInitialIntervalIsApplied() {
+    var loader =
+        new ConfigLoader(mapProvider(Map.of("josdk.controller.ctrl.retry.initial-interval", 500L)));
+    var retry = applyAndGetRetry(loader.applyControllerConfigs("ctrl"));
+    assertThat(retry.getInitialInterval()).isEqualTo(500L);
+  }
+
+  @Test
+  void retryIntervalMultiplierIsApplied() {
+    var loader =
+        new ConfigLoader(
+            mapProvider(Map.of("josdk.controller.ctrl.retry.interval-multiplier", 2.0)));
+    var retry = applyAndGetRetry(loader.applyControllerConfigs("ctrl"));
+    assertThat(retry.getIntervalMultiplier()).isEqualTo(2.0);
+  }
+
+  @Test
+  void retryMaxIntervalIsApplied() {
+    var loader =
+        new ConfigLoader(mapProvider(Map.of("josdk.controller.ctrl.retry.max-interval", 30000L)));
+    var retry = applyAndGetRetry(loader.applyControllerConfigs("ctrl"));
+    assertThat(retry.getMaxInterval()).isEqualTo(30000L);
+  }
+
+  @Test
+  void retryAllPropertiesApplied() {
+    var values = new HashMap<String, Object>();
+    values.put("josdk.controller.ctrl.retry.max-attempts", 7);
+    values.put("josdk.controller.ctrl.retry.initial-interval", 1000L);
+    values.put("josdk.controller.ctrl.retry.interval-multiplier", 3.0);
+    values.put("josdk.controller.ctrl.retry.max-interval", 60000L);
+    var loader = new ConfigLoader(mapProvider(values));
+    var retry = applyAndGetRetry(loader.applyControllerConfigs("ctrl"));
+    assertThat(retry.getMaxAttempts()).isEqualTo(7);
+    assertThat(retry.getInitialInterval()).isEqualTo(1000L);
+    assertThat(retry.getIntervalMultiplier()).isEqualTo(3.0);
+    assertThat(retry.getMaxInterval()).isEqualTo(60000L);
+  }
+
+  @Test
+  void retryStartsFromDefaultLimitedExponentialRetryDefaults() {
+    // Only max-attempts is overridden — other fields must still be the defaults.
+    var defaults =
+        io.javaoperatorsdk.operator.processing.retry.GenericRetry.defaultLimitedExponentialRetry();
+    var loader =
+        new ConfigLoader(mapProvider(Map.of("josdk.controller.ctrl.retry.max-attempts", 3)));
+    var retry = applyAndGetRetry(loader.applyControllerConfigs("ctrl"));
+    assertThat(retry.getMaxAttempts()).isEqualTo(3);
+    assertThat(retry.getInitialInterval()).isEqualTo(defaults.getInitialInterval());
+    assertThat(retry.getIntervalMultiplier()).isEqualTo(defaults.getIntervalMultiplier());
+    assertThat(retry.getMaxInterval()).isEqualTo(defaults.getMaxInterval());
+  }
+
+  @Test
+  void retryIsIsolatedPerControllerName() {
+    var values = new HashMap<String, Object>();
+    values.put("josdk.controller.alpha.retry.max-attempts", 4);
+    values.put("josdk.controller.beta.retry.max-attempts", 9);
+    var loader = new ConfigLoader(mapProvider(values));
+
+    var alphaRetry = applyAndGetRetry(loader.applyControllerConfigs("alpha"));
+    var betaRetry = applyAndGetRetry(loader.applyControllerConfigs("beta"));
+
+    assertThat(alphaRetry.getMaxAttempts()).isEqualTo(4);
+    assertThat(betaRetry.getMaxAttempts()).isEqualTo(9);
+  }
+
   private static boolean isTypeCompatible(Class<?> methodParam, Class<?> bindingType) {
     if (methodParam == bindingType) return true;
     if (methodParam == boolean.class && bindingType == Boolean.class) return true;
