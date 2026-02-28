@@ -66,6 +66,15 @@ public class MDCUtils {
     }
   }
 
+  public static void withMDCForResource(HasMetadata resource, Runnable runnable) {
+    try {
+      MDCUtils.addResourceInfo(resource);
+      runnable.run();
+    } finally {
+      MDCUtils.removeResourceInfo();
+    }
+  }
+
   public static void addResourceIDInfo(ResourceID resourceID) {
     if (enabled) {
       MDC.put(NAME, resourceID.getName());
