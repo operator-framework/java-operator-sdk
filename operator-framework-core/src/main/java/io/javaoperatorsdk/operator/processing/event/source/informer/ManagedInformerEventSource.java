@@ -183,8 +183,13 @@ public abstract class ManagedInformerEventSource<
 
   @Override
   public Optional<R> get(ResourceID resourceID) {
-    var res = cache.get(resourceID);
+    // order of these two resource gets matter, since other way around
+    // there can be a race condition that we read the resource from the cache
+    // it is not found. But, right after that we process an event for the informer that
+    // evicts the temporal resource cache, so at the end resource won't be found in temp cache
+    // however it is there already in informer cache at that moment.
     Optional<R> resource = temporaryResourceCache.getResourceFromCache(resourceID);
+    var res = cache.get(resourceID);
     if (comparableResourceVersions
         && resource.isPresent()
         && res.filter(
