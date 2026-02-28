@@ -39,7 +39,7 @@ import io.micrometer.core.instrument.Timer;
 
 import static io.javaoperatorsdk.operator.api.reconciler.Constants.CONTROLLER_NAME;
 
-@Deprecated(forRemoval = true)
+@Deprecated
 public class MicrometerMetrics implements Metrics {
 
   private static final String PREFIX = "operator.sdk.";

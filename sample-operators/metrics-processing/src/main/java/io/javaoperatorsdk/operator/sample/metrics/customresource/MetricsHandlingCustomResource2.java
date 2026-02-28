@@ -27,6 +27,6 @@ public class MetricsHandlingCustomResource2
 
   @Override
   public String toString() {
-    return "MetricsHandlingCustomResource1{" + "spec=" + spec + ", status=" + status + '}';
+    return "MetricsHandlingCustomResource2{" + "spec=" + spec + ", status=" + status + '}';
   }
 }
