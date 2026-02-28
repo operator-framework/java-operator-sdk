@@ -28,8 +28,6 @@ import org.slf4j.LoggerFactory;
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.Secret;
-import io.fabric8.kubernetes.api.model.apps.Deployment;
-import io.fabric8.kubernetes.api.model.apps.StatefulSet;
 import io.fabric8.kubernetes.client.Config;
 import io.fabric8.kubernetes.client.ConfigBuilder;
 import io.fabric8.kubernetes.client.CustomResource;
@@ -445,64 +443,6 @@ public interface ConfigurationService {
   @Deprecated(forRemoval = true)
   default Set<Class<? extends HasMetadata>> defaultNonSSAResource() {
     return defaultNonSSAResources();
-  }
-
-  /**
-   * If a javaoperatorsdk.io/previous annotation should be used so that the operator sdk can detect
-   * events from its own updates of dependent resources and then filter them.
-   *
-   * <p>Disable this if you want to react to your own dependent resource updates
-   *
-   * @return if special annotation should be used for dependent resource to filter events
-   * @since 4.5.0
-   */
-  default boolean previousAnnotationForDependentResourcesEventFiltering() {
-    return true;
-  }
-
-  /**
-   * For dependent resources, the framework can add an annotation to filter out events resulting
-   * directly from the framework's operation. There are, however, some resources that do not follow
-   * the Kubernetes API conventions that changes in metadata should not increase the generation of
-   * the resource (as recorded in the {@code generation} field of the resource's {@code metadata}).
-   * For these resources, this convention is not respected and results in a new event for the
-   * framework to process. If that particular case is not handled correctly in the resource matcher,
-   * the framework will consider that the resource doesn't match the desired state and therefore
-   * triggers an update, which in turn, will re-add the annotation, thus starting the loop again,
-   * infinitely.
-   *
-   * <p>As a workaround, we automatically skip adding previous annotation for those well-known
-   * resources. Note that if you are sure that the matcher works for your use case, and it should in
-   * most instances, you can remove the resource type from the blocklist.
-   *
-   * <p>The consequence of adding a resource type to the set is that the framework will not use
-   * event filtering to prevent events, initiated by changes made by the framework itself as a
-   * result of its processing of dependent resources, to trigger the associated reconciler again.
-   *
-   * <p>Note that this method only takes effect if annotating dependent resources to prevent
-   * dependent resources events from triggering the associated reconciler again is activated as
-   * controlled by {@link #previousAnnotationForDependentResourcesEventFiltering()}
-   *
-   * @return a Set of resource classes where the previous version annotation won't be used.
-   */
-  default Set<Class<? extends HasMetadata>> withPreviousAnnotationForDependentResourcesBlocklist() {
-    return Set.of(Deployment.class, StatefulSet.class);
-  }
-
-  /**
-   * If the event logic should parse the resourceVersion to determine the ordering of dependent
-   * resource events. This is typically not needed.
-   *
-   * <p>Disabled by default as Kubernetes does not support, and discourages, this interpretation of
-   * resourceVersions. Enable only if your api server event processing seems to lag the operator
-   * logic, and you want to further minimize the amount of work done / updates issued by the
-   * operator.
-   *
-   * @return if resource version should be parsed (as integer)
-   * @since 4.5.0
-   */
-  default boolean parseResourceVersionsForEventFilteringAndCaching() {
-    return false;
   }
 
   /**

@@ -45,7 +45,11 @@ import static io.javaoperatorsdk.operator.processing.KubernetesResourceUtils.get
  * caches the updated resource from the response in an overlay cache on top of the Informer cache.
  * If the update fails, it reads the primary resource from the cluster, applies the modifications
  * again and retries the update.
+ *
+ * @deprecated Use {@link Context#resourceOperations()} that contains the more efficient up-to-date
+ *     versions of methods.
  */
+@Deprecated(forRemoval = true)
 public class PrimaryUpdateAndCacheUtils {
 
   public static final int DEFAULT_MAX_RETRY = 10;
@@ -449,5 +453,46 @@ public class PrimaryUpdateAndCacheUtils {
               + originalResource.getClass().getName(),
           e);
     }
+  }
+
+  public static int compareResourceVersions(HasMetadata h1, HasMetadata h2) {
+    return compareResourceVersions(
+        h1.getMetadata().getResourceVersion(), h2.getMetadata().getResourceVersion());
+  }
+
+  public static int compareResourceVersions(String v1, String v2) {
+    int v1Length = validateResourceVersion(v1);
+    int v2Length = validateResourceVersion(v2);
+    int comparison = v1Length - v2Length;
+    if (comparison != 0) {
+      return comparison;
+    }
+    for (int i = 0; i < v2Length; i++) {
+      int comp = v1.charAt(i) - v2.charAt(i);
+      if (comp != 0) {
+        return comp;
+      }
+    }
+    return 0;
+  }
+
+  private static int validateResourceVersion(String v1) {
+    int v1Length = v1.length();
+    if (v1Length == 0) {
+      throw new NonComparableResourceVersionException("Resource version is empty");
+    }
+    for (int i = 0; i < v1Length; i++) {
+      char char1 = v1.charAt(i);
+      if (char1 == '0') {
+        if (i == 0) {
+          throw new NonComparableResourceVersionException(
+              "Resource version cannot begin with 0: " + v1);
+        }
+      } else if (char1 < '0' || char1 > '9') {
+        throw new NonComparableResourceVersionException(
+            "Non numeric characters in resource version: " + v1);
+      }
+    }
+    return v1Length;
   }
 }

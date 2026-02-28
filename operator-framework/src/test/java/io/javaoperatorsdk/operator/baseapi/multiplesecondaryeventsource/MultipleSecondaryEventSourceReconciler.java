@@ -53,31 +53,8 @@ public class MultipleSecondaryEventSourceReconciler
       Context<MultipleSecondaryEventSourceCustomResource> context) {
     numberOfExecutions.addAndGet(1);
 
-    final var client = context.getClient();
-    if (client
-            .configMaps()
-            .inNamespace(resource.getMetadata().getNamespace())
-            .withName(getName1(resource))
-            .get()
-        == null) {
-      client
-          .configMaps()
-          .inNamespace(resource.getMetadata().getNamespace())
-          .resource(configMap(getName1(resource), resource))
-          .createOrReplace();
-    }
-    if (client
-            .configMaps()
-            .inNamespace(resource.getMetadata().getNamespace())
-            .withName(getName2(resource))
-            .get()
-        == null) {
-      client
-          .configMaps()
-          .inNamespace(resource.getMetadata().getNamespace())
-          .resource(configMap(getName2(resource), resource))
-          .createOrReplace();
-    }
+    context.resourceOperations().serverSideApply(configMap(getName1(resource), resource));
+    context.resourceOperations().serverSideApply(configMap(getName2(resource), resource));
 
     if (numberOfExecutions.get() >= 3) {
       if (context.getSecondaryResources(ConfigMap.class).size() != 2) {

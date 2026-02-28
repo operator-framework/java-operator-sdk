@@ -22,7 +22,7 @@
   <parent>
     <groupId>io.javaoperatorsdk</groupId>
     <artifactId>sample-operators</artifactId>
-    <version>5.2.4-SNAPSHOT</version>
+    <version>999-SNAPSHOT</version>
   </parent>
 
   <artifactId>sample-mysql-schema-operator</artifactId>
@@ -87,7 +87,7 @@
     </dependency>
     <dependency>
       <groupId>io.javaoperatorsdk</groupId>
-      <artifactId>operator-framework-junit-5</artifactId>
+      <artifactId>operator-framework-junit</artifactId>
       <scope>test</scope>
     </dependency>
   </dependencies>

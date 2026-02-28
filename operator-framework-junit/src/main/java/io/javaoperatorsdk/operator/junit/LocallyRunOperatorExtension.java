@@ -44,7 +44,7 @@ import io.fabric8.kubernetes.client.CustomResource;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.LocalPortForward;
 import io.javaoperatorsdk.operator.Operator;
-import io.javaoperatorsdk.operator.ReconcilerUtils;
+import io.javaoperatorsdk.operator.ReconcilerUtilsInternal;
 import io.javaoperatorsdk.operator.RegisteredController;
 import io.javaoperatorsdk.operator.api.config.ConfigurationServiceOverrider;
 import io.javaoperatorsdk.operator.api.config.ControllerConfigurationOverrider;
@@ -80,6 +80,7 @@ public class LocallyRunOperatorExtension extends AbstractOperatorExtension {
       List<CustomResourceDefinition> additionalCustomResourceDefinitionInstances,
       Duration infrastructureTimeout,
       boolean preserveNamespaceOnError,
+      boolean skipNamespaceDeletion,
       boolean waitForNamespaceDeletion,
       boolean oneNamespacePerClass,
       KubernetesClient kubernetesClient,
@@ -94,6 +95,7 @@ public class LocallyRunOperatorExtension extends AbstractOperatorExtension {
         infrastructureTimeout,
         oneNamespacePerClass,
         preserveNamespaceOnError,
+        skipNamespaceDeletion,
         waitForNamespaceDeletion,
         kubernetesClient,
         infrastructureKubernetesClient,
@@ -143,7 +145,7 @@ public class LocallyRunOperatorExtension extends AbstractOperatorExtension {
   }
 
   public static void applyCrd(Class<? extends HasMetadata> resourceClass, KubernetesClient client) {
-    applyCrd(ReconcilerUtils.getResourceTypeName(resourceClass), client);
+    applyCrd(ReconcilerUtilsInternal.getResourceTypeName(resourceClass), client);
   }
 
   /**
@@ -195,7 +197,7 @@ public class LocallyRunOperatorExtension extends AbstractOperatorExtension {
    * @param crClass the custom resource class for which we want to apply the CRD
    */
   public void applyCrd(Class<? extends CustomResource> crClass) {
-    applyCrd(ReconcilerUtils.getResourceTypeName(crClass));
+    applyCrd(ReconcilerUtilsInternal.getResourceTypeName(crClass));
   }
 
   public void applyCrd(CustomResourceDefinition customResourceDefinition) {
@@ -233,7 +235,7 @@ public class LocallyRunOperatorExtension extends AbstractOperatorExtension {
    *
    * @param resourceTypeName the resource type name associated with the CRD to be applied,
    *     typically, given a resource type, its name would be obtained using {@link
-   *     ReconcilerUtils#getResourceTypeName(Class)}
+   *     ReconcilerUtilsInternal#getResourceTypeName(Class)}
    */
   public void applyCrd(String resourceTypeName) {
     // first attempt to use a manually defined CRD
@@ -321,7 +323,7 @@ public class LocallyRunOperatorExtension extends AbstractOperatorExtension {
         ref.controllerConfigurationOverrider.accept(oconfig);
       }
 
-      final var resourceTypeName = ReconcilerUtils.getResourceTypeName(resourceClass);
+      final var resourceTypeName = ReconcilerUtilsInternal.getResourceTypeName(resourceClass);
       // only try to apply a CRD for the reconciler if it is associated to a CR
       if (CustomResource.class.isAssignableFrom(resourceClass)) {
         applyCrd(resourceTypeName);
@@ -363,7 +365,11 @@ public class LocallyRunOperatorExtension extends AbstractOperatorExtension {
       iterator.remove();
     }
 
-    kubernetesClient.close();
+    // if the client is used for infra client, we should not close it
+    // either test or operator should close this client
+    if (getKubernetesClient() != getInfrastructureKubernetesClient()) {
+      kubernetesClient.close();
+    }
 
     try {
       this.operator.stop();
@@ -541,6 +547,7 @@ public class LocallyRunOperatorExtension extends AbstractOperatorExtension {
           additionalCustomResourceDefinitionInstances,
           infrastructureTimeout,
           preserveNamespaceOnError,
+          skipNamespaceDeletion,
           waitForNamespaceDeletion,
           oneNamespacePerClass,
           kubernetesClient,

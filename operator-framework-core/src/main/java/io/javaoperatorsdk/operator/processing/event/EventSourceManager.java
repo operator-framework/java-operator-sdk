@@ -37,9 +37,9 @@ import io.javaoperatorsdk.operator.processing.Controller;
 import io.javaoperatorsdk.operator.processing.LifecycleAware;
 import io.javaoperatorsdk.operator.processing.event.source.EventSource;
 import io.javaoperatorsdk.operator.processing.event.source.EventSourceStartPriority;
+import io.javaoperatorsdk.operator.processing.event.source.ResourceAction;
 import io.javaoperatorsdk.operator.processing.event.source.ResourceEventAware;
 import io.javaoperatorsdk.operator.processing.event.source.controller.ControllerEventSource;
-import io.javaoperatorsdk.operator.processing.event.source.controller.ResourceAction;
 import io.javaoperatorsdk.operator.processing.event.source.informer.ManagedInformerEventSource;
 import io.javaoperatorsdk.operator.processing.event.source.timer.TimerEventSource;
 
@@ -217,7 +217,12 @@ public class EventSourceManager<P extends HasMetadata>
 
   @SuppressWarnings("rawtypes")
   public List<EventSource> allEventSources() {
-    return eventSources.allEventSources().toList();
+    return allEventSourcesStream().toList();
+  }
+
+  @SuppressWarnings("rawtypes")
+  public Stream<EventSource> allEventSourcesStream() {
+    return eventSources.allEventSources();
   }
 
   @SuppressWarnings("unused")

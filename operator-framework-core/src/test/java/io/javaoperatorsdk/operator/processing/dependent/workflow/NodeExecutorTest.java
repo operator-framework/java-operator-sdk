@@ -21,11 +21,10 @@ import java.util.concurrent.Executors;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
-import static org.junit.jupiter.api.Assertions.*;
-
 class NodeExecutorTest {
 
-  private NodeExecutor errorThrowingNodeExecutor =
+  @SuppressWarnings({"rawtypes", "unchecked"})
+  private final NodeExecutor errorThrowingNodeExecutor =
       new NodeExecutor(null, null) {
         @Override
         protected void doRun(DependentResourceNode dependentResourceNode) {

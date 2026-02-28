@@ -13,10 +13,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.javaoperatorsdk.operator.processing.event.source.controller;
+package io.javaoperatorsdk.operator.baseapi.filterpatchevent;
 
-public enum ResourceAction {
-  ADDED,
-  UPDATED,
-  DELETED
+public class FilterPatchEventTestCustomResourceStatus {
+
+  private String value;
+
+  public String getValue() {
+    return value;
+  }
+
+  public FilterPatchEventTestCustomResourceStatus setValue(String value) {
+    this.value = value;
+    return this;
+  }
 }

@@ -19,15 +19,15 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.function.BiFunction;
 
-import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import io.fabric8.kubernetes.api.model.*;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.api.model.networking.v1.Ingress;
-import io.javaoperatorsdk.operator.ReconcilerUtils;
+import io.javaoperatorsdk.operator.ReconcilerUtilsInternal;
 import io.javaoperatorsdk.operator.api.config.informer.InformerEventSourceConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.*;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
@@ -90,74 +90,51 @@ public class WebPageReconciler implements Reconciler<WebPage> {
       return UpdateControl.patchStatus(setInvalidHtmlErrorMessage(webPage));
     }
 
-    String ns = webPage.getMetadata().getNamespace();
-    String configMapName = configMapName(webPage);
-    String deploymentName = deploymentName(webPage);
+    ConfigMap desiredHtmlConfigMap = makeDesiredHtmlConfigMap(webPage);
+    Deployment desiredDeployment = makeDesiredDeployment(webPage);
+    Service desiredService = makeDesiredService(webPage, desiredDeployment);
 
-    ConfigMap desiredHtmlConfigMap = makeDesiredHtmlConfigMap(ns, configMapName, webPage);
-    Deployment desiredDeployment =
-        makeDesiredDeployment(webPage, deploymentName, ns, configMapName);
-    Service desiredService = makeDesiredService(webPage, ns, desiredDeployment);
-
-    var previousConfigMap = context.getSecondaryResource(ConfigMap.class).orElse(null);
-    if (!match(desiredHtmlConfigMap, previousConfigMap)) {
-      log.info(
-          "Creating or updating ConfigMap {} in {}",
-          desiredHtmlConfigMap.getMetadata().getName(),
-          ns);
-      context
-          .getClient()
-          .configMaps()
-          .inNamespace(ns)
-          .resource(desiredHtmlConfigMap)
-          .serverSideApply();
-    }
-
-    var existingDeployment = context.getSecondaryResource(Deployment.class).orElse(null);
-    if (!match(desiredDeployment, existingDeployment)) {
-      log.info(
-          "Creating or updating Deployment {} in {}",
-          desiredDeployment.getMetadata().getName(),
-          ns);
-      context
-          .getClient()
-          .apps()
-          .deployments()
-          .inNamespace(ns)
-          .resource(desiredDeployment)
-          .serverSideApply();
-    }
-
-    var existingService = context.getSecondaryResource(Service.class).orElse(null);
-    if (!match(desiredService, existingService)) {
-      log.info(
-          "Creating or updating Deployment {} in {}",
-          desiredDeployment.getMetadata().getName(),
-          ns);
-      context.getClient().services().inNamespace(ns).resource(desiredService).serverSideApply();
-    }
+    final var previousConfigMap = createOrUpdate(context, desiredHtmlConfigMap, this::match);
+    createOrUpdate(context, desiredDeployment, this::match);
+    createOrUpdate(context, desiredService, this::match);
 
     var existingIngress = context.getSecondaryResource(Ingress.class);
     if (Boolean.TRUE.equals(webPage.getSpec().getExposed())) {
       var desiredIngress = makeDesiredIngress(webPage);
       if (existingIngress.isEmpty() || !match(desiredIngress, existingIngress.get())) {
-        context.getClient().resource(desiredIngress).inNamespace(ns).serverSideApply();
+        context.resourceOperations().serverSideApply(desiredIngress);
       }
     } else existingIngress.ifPresent(ingress -> context.getClient().resource(ingress).delete());
 
     // not that this is not necessary, eventually mounted config map would be updated, just this way
-    // is much faster; what is handy for demo purposes.
+    // is much faster; this is handy for demo purposes.
     // https://kubernetes.io/docs/tasks/configure-pod-container/configure-pod-configmap/#mounted-configmaps-are-updated-automatically
     if (previousConfigMap != null
-        && !StringUtils.equals(
+        && !Objects.equals(
             previousConfigMap.getData().get(INDEX_HTML),
             desiredHtmlConfigMap.getData().get(INDEX_HTML))) {
+      final var ns = webPage.getMetadata().getNamespace();
       log.info("Restarting pods because HTML has changed in {}", ns);
       context.getClient().pods().inNamespace(ns).withLabel("app", deploymentName(webPage)).delete();
     }
 
     return UpdateControl.patchStatus(
         createWebPageForStatusUpdate(webPage, desiredHtmlConfigMap.getMetadata().getName()));
+  }
+
+  private <T extends HasMetadata> T createOrUpdate(
+      Context<WebPage> context, T desired, BiFunction<T, T, Boolean> matcher) {
+    @SuppressWarnings("unchecked")
+    final T previous = (T) context.getSecondaryResource(desired.getClass()).orElse(null);
+    if (!matcher.apply(desired, previous)) {
+      log.info(
+          "Creating or updating {} {} in {}",
+          desired.getKind(),
+          desired.getMetadata().getName(),
+          desired.getMetadata().getNamespace());
+      context.resourceOperations().serverSideApply(desired);
+    }
+    return previous;
   }
 
   private boolean match(Ingress desiredIngress, Ingress existingIngress) {
@@ -218,8 +195,10 @@ public class WebPageReconciler implements Reconciler<WebPage> {
     }
   }
 
-  private Service makeDesiredService(WebPage webPage, String ns, Deployment desiredDeployment) {
-    Service desiredService = ReconcilerUtils.loadYaml(Service.class, getClass(), "service.yaml");
+  private Service makeDesiredService(WebPage webPage, Deployment desiredDeployment) {
+    Service desiredService =
+        ReconcilerUtilsInternal.loadYaml(Service.class, getClass(), "service.yaml");
+    final var ns = webPage.getMetadata().getNamespace();
     desiredService.getMetadata().setName(serviceName(webPage));
     desiredService.getMetadata().setNamespace(ns);
     desiredService.getMetadata().setLabels(lowLevelLabel());
@@ -230,15 +209,18 @@ public class WebPageReconciler implements Reconciler<WebPage> {
     return desiredService;
   }
 
-  private Deployment makeDesiredDeployment(
-      WebPage webPage, String deploymentName, String ns, String configMapName) {
+  private Deployment makeDesiredDeployment(WebPage webPage) {
     Deployment desiredDeployment =
-        ReconcilerUtils.loadYaml(Deployment.class, getClass(), "deployment.yaml");
+        ReconcilerUtilsInternal.loadYaml(Deployment.class, getClass(), "deployment.yaml");
+    final var ns = webPage.getMetadata().getNamespace();
+    final var deploymentName = deploymentName(webPage);
     desiredDeployment.getMetadata().setName(deploymentName);
     desiredDeployment.getMetadata().setNamespace(ns);
     desiredDeployment.getMetadata().setLabels(lowLevelLabel());
     desiredDeployment.getSpec().getSelector().getMatchLabels().put("app", deploymentName);
     desiredDeployment.getSpec().getTemplate().getMetadata().getLabels().put("app", deploymentName);
+
+    final var configMapName = configMapName(webPage);
     desiredDeployment
         .getSpec()
         .getTemplate()
@@ -250,7 +232,9 @@ public class WebPageReconciler implements Reconciler<WebPage> {
     return desiredDeployment;
   }
 
-  private ConfigMap makeDesiredHtmlConfigMap(String ns, String configMapName, WebPage webPage) {
+  private ConfigMap makeDesiredHtmlConfigMap(WebPage webPage) {
+    final var ns = webPage.getMetadata().getNamespace();
+    final var configMapName = configMapName(webPage);
     Map<String, String> data = new HashMap<>();
     data.put(INDEX_HTML, webPage.getSpec().getHtml());
     ConfigMap configMap =
