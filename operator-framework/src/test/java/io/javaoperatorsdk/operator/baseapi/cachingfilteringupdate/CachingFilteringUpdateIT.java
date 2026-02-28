@@ -33,9 +33,7 @@ class CachingFilteringUpdateIT {
 
   @RegisterExtension
   LocallyRunOperatorExtension operator =
-      LocallyRunOperatorExtension.builder()
-          .withReconciler(new CachingFilteringUpdateReconciler())
-          .build();
+      LocallyRunOperatorExtension.builder().withReconciler(reconciler).build();
 
   @Test
   void testResourceAccessAfterUpdate() {
@@ -47,9 +45,7 @@ class CachingFilteringUpdateIT {
         .atMost(Duration.ofMinutes(1))
         .until(
             () -> {
-              if (operator
-                  .getReconcilerOfType(CachingFilteringUpdateReconciler.class)
-                  .isIssueFound()) {
+              if (reconciler.isIssueFound()) {
                 // Stop waiting as soon as an issue is detected.
                 return true;
               }
@@ -63,9 +59,7 @@ class CachingFilteringUpdateIT {
                   && Boolean.TRUE.equals(res.getStatus().getUpdated());
             });
 
-    if (operator
-        .getReconcilerOfType(CachingFilteringUpdateReconciler.class)
-        .isIssueFound()) {
+    if (operator.getReconcilerOfType(CachingFilteringUpdateReconciler.class).isIssueFound()) {
       throw new IllegalStateException("Error already found.");
     }
 
