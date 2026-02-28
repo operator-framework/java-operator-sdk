@@ -62,14 +62,11 @@ public class MetricsHandlingSampleOperator {
   public static void main(String[] args) {
     log.info("Metrics Handling Sample Operator starting!");
 
-    // Load configuration from config.yaml
     Metrics metrics = initOTLPMetrics(isLocal());
     Operator operator =
         new Operator(o -> o.withStopOnInformerErrorDuringStartup(false).withMetrics(metrics));
-
     operator.register(new MetricsHandlingReconciler1());
     operator.register(new MetricsHandlingReconciler2());
-
     operator.start();
   }
 
@@ -88,7 +85,6 @@ public class MetricsHandlingSampleOperator {
             return configProperties.get(key);
           }
 
-          // these should come from env variables
           @Override
           public Map<String, String> resourceAttributes() {
             return Map.of("service.name", "josdk", "operator", "metrics-processing");
@@ -98,6 +94,7 @@ public class MetricsHandlingSampleOperator {
     MeterRegistry otlpRegistry = new OtlpMeterRegistry(otlpConfig, Clock.SYSTEM);
     compositeRegistry.add(otlpRegistry);
 
+    // enable to easily see propagated metrics
     String enableConsoleLogging = System.getenv("METRICS_CONSOLE_LOGGING");
     if (!"true".equalsIgnoreCase(enableConsoleLogging)) {
       log.info("Console metrics logging enabled");
@@ -119,7 +116,6 @@ public class MetricsHandlingSampleOperator {
     }
     // Register JVM and system metrics
     log.info("Registering JVM and system metrics...");
-
     new JvmMemoryMetrics().bindTo(compositeRegistry);
     new JvmGcMetrics().bindTo(compositeRegistry);
     new JvmThreadMetrics().bindTo(compositeRegistry);
@@ -140,16 +136,13 @@ public class MetricsHandlingSampleOperator {
         log.warn("otlp-config.yaml not found in resources, using default OTLP configuration");
         return configMap;
       }
-
       Yaml yaml = new Yaml();
       Map<String, Object> yamlData = yaml.load(inputStream);
-
       // Navigate to otlp section and map properties directly
       Map<String, Object> otlp = (Map<String, Object>) yamlData.get("otlp");
       if (otlp != null) {
         otlp.forEach((key, value) -> configMap.put("otlp." + key, value.toString()));
       }
-
       log.info("Loaded OTLP configuration from otlp-config.yaml: {}", configMap);
     } catch (IOException e) {
       log.error("Error loading otlp-config.yaml", e);

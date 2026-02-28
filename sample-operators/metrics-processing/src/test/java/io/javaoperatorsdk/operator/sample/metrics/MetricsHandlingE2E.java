@@ -31,7 +31,7 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import io.fabric8.kubernetes.api.model.Pod;
+import io.fabric8.kubernetes.client.CustomResource;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClientBuilder;
 import io.fabric8.kubernetes.client.LocalPortForward;
@@ -54,9 +54,12 @@ class MetricsHandlingE2E {
   static final int PROMETHEUS_PORT = 9090;
   static final int GRAFANA_PORT = 3000;
   static final int OTEL_COLLECTOR_PORT = 4318;
+  public static final Duration TEST_DURATION = Duration.ofSeconds(60);
+  public static final String NAME_LABEL_KEY = "app.kubernetes.io/name";
+
   private LocalPortForward prometheusPortForward;
-  private LocalPortForward grafanaPortForward;
   private LocalPortForward otelCollectorPortForward;
+  private LocalPortForward grafanaPortForward;
 
   static final KubernetesClient client = new KubernetesClientBuilder().build();
 
@@ -72,55 +75,77 @@ class MetricsHandlingE2E {
                   c -> c.withMetrics(MetricsHandlingSampleOperator.initOTLPMetrics(true)))
               .build()
           : ClusterDeployedOperatorExtension.builder()
-              .withOperatorDeployment(client.load(new FileInputStream("k8s/operator.yaml")).items())
+              .withOperatorDeployment(
+                  new KubernetesClientBuilder()
+                      .build()
+                      .load(new FileInputStream("k8s/operator.yaml"))
+                      .items())
               .build();
 
   @BeforeAll
   void setupObservability() throws InterruptedException {
     log.info("Setting up observability stack...");
     installObservabilityServices();
-    // Setup port forwarding to Prometheus
-    log.info("Setting up port forwarding for Prometheus");
-    setupPrometheusPortForward();
+    prometheusPortForward = portForward(NAME_LABEL_KEY, "prometheus", PROMETHEUS_PORT);
     if (isLocal()) {
-      log.info("Setting up port forwarding for Otel collector and grafana");
-      setupPortForwardForOtelCollector();
-      setupPortForwardForGrafana();
+      otelCollectorPortForward =
+          portForward(NAME_LABEL_KEY, "otel-collector-collector", OTEL_COLLECTOR_PORT);
+      grafanaPortForward = portForward(NAME_LABEL_KEY, "grafana", GRAFANA_PORT);
     }
     Thread.sleep(2000);
   }
 
   @AfterAll
-  void cleanup() {
-    closePortForward(prometheusPortForward, "Prometheus");
-    closePortForward(grafanaPortForward, "Grafana");
-    closePortForward(otelCollectorPortForward, "OTel Collector");
+  void cleanup() throws IOException {
+    closePortForward(prometheusPortForward);
+    closePortForward(otelCollectorPortForward);
+    closePortForward(grafanaPortForward);
   }
 
-  private void closePortForward(LocalPortForward portForward, String name) {
-    if (portForward != null) {
-      try {
-        portForward.close();
-        log.info("Closed {} port forward", name);
-      } catch (IOException e) {
-        log.warn("Failed to close {} port forward", name, e);
-      }
+  private LocalPortForward portForward(String labelKey, String labelValue, int port) {
+    return client
+        .pods()
+        .inNamespace(OBSERVABILITY_NAMESPACE)
+        .withLabel(labelKey, labelValue)
+        .list()
+        .getItems()
+        .stream()
+        .findFirst()
+        .map(
+            pod ->
+                client
+                    .pods()
+                    .inNamespace(OBSERVABILITY_NAMESPACE)
+                    .withName(pod.getMetadata().getName())
+                    .portForward(port, port))
+        .orElseThrow(
+            () ->
+                new IllegalStateException(
+                    "Pod not found for label " + labelKey + "=" + labelValue));
+  }
+
+  private void closePortForward(LocalPortForward pf) throws IOException {
+    if (pf != null) {
+      pf.close();
     }
   }
 
+  // note that we just cover here cases that should be visible in metrics,
+  // including errors, delete events.
   @Test
   void testPropagatedMetrics() throws Exception {
-    log.info("Starting longevity metrics test (running for ~50 seconds)");
+    log.info(
+        "Starting longevity metrics test (running for {} seconds)", TEST_DURATION.getSeconds());
 
     // Create initial resources including ones that trigger failures
-    operator.create(createResource1("test-success-1", 42));
-    operator.create(createResource2("test-success-2", 77));
-    operator.create(createResource1("test-fail-1", 100));
-    operator.create(createResource2("test-error-2", 200));
+    operator.create(createResource(MetricsHandlingCustomResource1.class, "test-success-1", 1));
+    operator.create(createResource(MetricsHandlingCustomResource2.class, "test-success-2", 1));
+    operator.create(createResource(MetricsHandlingCustomResource1.class, "test-fail-1", 1));
+    operator.create(createResource(MetricsHandlingCustomResource2.class, "test-fail-2", 1));
 
     // Continuously trigger reconciliations for ~50 seconds by alternating between
     // creating new resources, updating specs of existing ones, and deleting older dynamic ones
-    long deadline = System.currentTimeMillis() + Duration.ofSeconds(50).toMillis();
+    long deadline = System.currentTimeMillis() + TEST_DURATION.toMillis();
     int counter = 0;
     Deque<String> createdResource1Names = new ArrayDeque<>();
     Deque<String> createdResource2Names = new ArrayDeque<>();
@@ -129,7 +154,7 @@ class MetricsHandlingE2E {
       switch (counter % 4) {
         case 0 -> {
           String name = "test-dynamic-1-" + counter;
-          operator.create(createResource1(name, counter * 3));
+          operator.create(createResource(MetricsHandlingCustomResource1.class, name, counter * 3));
           createdResource1Names.addLast(name);
           log.info("Iteration {}: created {}", counter, name);
         }
@@ -141,7 +166,7 @@ class MetricsHandlingE2E {
         }
         case 2 -> {
           String name = "test-dynamic-2-" + counter;
-          operator.create(createResource2(name, counter * 5));
+          operator.create(createResource(MetricsHandlingCustomResource2.class, name, counter * 5));
           createdResource2Names.addLast(name);
           log.info("Iteration {}: created {}", counter, name);
         }
@@ -154,7 +179,7 @@ class MetricsHandlingE2E {
             var r = operator.get(MetricsHandlingCustomResource1.class, name);
             if (r != null) {
               operator.delete(r);
-              log.info("Iteration {}: deleted {}", counter, name);
+              log.info("Iteration {}: deleted {} ", counter, name);
             }
           } else if (!createdResource2Names.isEmpty()) {
             String name = createdResource2Names.pollFirst();
@@ -173,71 +198,30 @@ class MetricsHandlingE2E {
     verifyPrometheusMetrics();
   }
 
-  private void verifyPrometheusMetrics() throws Exception {
+  private void verifyPrometheusMetrics() {
     log.info("Verifying metrics in Prometheus...");
+    String prometheusUrl = "http://localhost:" + PROMETHEUS_PORT;
 
-    int localPort = prometheusPortForward.getLocalPort();
-    String prometheusUrl = "http://localhost:" + localPort;
+    assertMetricPresent(prometheusUrl, "reconciliations_started_total", Duration.ofSeconds(60));
+    assertMetricPresent(prometheusUrl, "reconciliations_success_total", Duration.ofSeconds(30));
+    assertMetricPresent(prometheusUrl, "reconciliations_failure_total", Duration.ofSeconds(30));
+    assertMetricPresent(
+        prometheusUrl, "reconciliations_execution_seconds_count", Duration.ofSeconds(30));
 
-    // Verify reconciliation started metrics
-    String startedQuery = "reconciliations_started_total";
+    log.info("All metrics verified successfully in Prometheus");
+  }
+
+  private void assertMetricPresent(String prometheusUrl, String metricName, Duration timeout) {
     await()
-        .atMost(Duration.ofSeconds(60))
+        .atMost(timeout)
         .pollInterval(Duration.ofSeconds(5))
         .untilAsserted(
             () -> {
-              String result = queryPrometheus(prometheusUrl, startedQuery);
+              String result = queryPrometheus(prometheusUrl, metricName);
+              log.info("{}: {}", metricName, result);
               assertThat(result).contains("\"status\":\"success\"");
-              assertThat(result).contains("reconciliations_started_total");
+              assertThat(result).contains(metricName);
             });
-
-    // Verify success metrics
-    String successQuery = "reconciliations_success_total";
-    await()
-        .atMost(Duration.ofSeconds(30))
-        .untilAsserted(
-            () -> {
-              String result = queryPrometheus(prometheusUrl, successQuery);
-              log.info("Reconciliations success metric: {}", result);
-              assertThat(result).contains("\"status\":\"success\"");
-              assertThat(result).contains("reconciliations_success_total");
-            });
-
-    // Verify failure metrics
-    String failureQuery = "reconciliations_failure_total";
-    await()
-        .atMost(Duration.ofSeconds(30))
-        .untilAsserted(
-            () -> {
-              String result = queryPrometheus(prometheusUrl, failureQuery);
-              log.info("Reconciliations failure metric: {}", result);
-              assertThat(result).contains("\"status\":\"success\"");
-              assertThat(result).contains("reconciliations_failure_total");
-            });
-
-    // Verify controller execution metrics
-    String controllerQuery = "controllers_success_total";
-    await()
-        .atMost(Duration.ofSeconds(30))
-        .untilAsserted(
-            () -> {
-              String result = queryPrometheus(prometheusUrl, controllerQuery);
-              log.info("Controller success metric: {}", result);
-              assertThat(result).contains("\"status\":\"success\"");
-            });
-
-    // Verify execution time metrics
-    String executionTimeQuery = "reconciliations_execution_seconds_count";
-    await()
-        .atMost(Duration.ofSeconds(30))
-        .untilAsserted(
-            () -> {
-              String result = queryPrometheus(prometheusUrl, executionTimeQuery);
-              log.info("Execution time metric: {}", result);
-              assertThat(result).contains("\"status\":\"success\"");
-            });
-
-    log.info("All metrics verified successfully in Prometheus");
   }
 
   private String queryPrometheus(String prometheusUrl, String query) throws IOException {
@@ -265,26 +249,18 @@ class MetricsHandlingE2E {
     }
   }
 
-  private MetricsHandlingCustomResource1 createResource1(String name, int number) {
-    MetricsHandlingCustomResource1 resource = new MetricsHandlingCustomResource1();
-    resource.getMetadata().setName(name);
-
-    MetricsHandlingSpec spec = new MetricsHandlingSpec();
-    spec.setNumber(number);
-    resource.setSpec(spec);
-
-    return resource;
-  }
-
-  private MetricsHandlingCustomResource2 createResource2(String name, int number) {
-    MetricsHandlingCustomResource2 resource = new MetricsHandlingCustomResource2();
-    resource.getMetadata().setName(name);
-
-    MetricsHandlingSpec spec = new MetricsHandlingSpec();
-    spec.setNumber(number);
-    resource.setSpec(spec);
-
-    return resource;
+  private <R extends CustomResource<MetricsHandlingSpec, ?>> R createResource(
+      Class<R> type, String name, int number) {
+    try {
+      R resource = type.getDeclaredConstructor().newInstance();
+      resource.getMetadata().setName(name);
+      MetricsHandlingSpec spec = new MetricsHandlingSpec();
+      spec.setNumber(number);
+      resource.setSpec(spec);
+      return resource;
+    } catch (Exception e) {
+      throw new RuntimeException(e);
+    }
   }
 
   private void installObservabilityServices() {
@@ -304,7 +280,6 @@ class MetricsHandlingE2E {
         throw new IllegalStateException(
             "Observability script not found at: " + scriptFile.getAbsolutePath());
       }
-
       log.info("Running observability setup script: {}", scriptFile.getAbsolutePath());
 
       // Run the install-observability.sh script
@@ -323,72 +298,9 @@ class MetricsHandlingE2E {
       if (exitCode != 0) {
         log.warn("Observability setup script returned exit code: {}", exitCode);
       }
-
-      // Wait for Prometheus to be ready
-      await()
-          .atMost(Duration.ofMinutes(3))
-          .pollInterval(Duration.ofSeconds(5))
-          .untilAsserted(
-              () -> {
-                var prometheusPod =
-                    operator
-                        .getKubernetesClient()
-                        .pods()
-                        .inNamespace(OBSERVABILITY_NAMESPACE)
-                        .withLabel("app.kubernetes.io/name", "prometheus")
-                        .list()
-                        .getItems()
-                        .stream()
-                        .findFirst();
-                assertThat(prometheusPod).isPresent();
-                assertThat(prometheusPod.get().getStatus().getPhase()).isEqualTo("Running");
-              });
-
       log.info("Observability stack is ready");
     } catch (Exception e) {
       log.error("Failed to setup observability stack", e);
-      throw new RuntimeException(e);
-    }
-  }
-
-  private void setupPortForwardForGrafana() {
-    grafanaPortForward = setupPortForward("grafana", GRAFANA_PORT);
-  }
-
-  private void setupPortForwardForOtelCollector() {
-    otelCollectorPortForward = setupPortForward("otel-collector-collector", OTEL_COLLECTOR_PORT);
-  }
-
-  private void setupPrometheusPortForward() {
-    prometheusPortForward = setupPortForward("prometheus", PROMETHEUS_PORT);
-  }
-
-  private LocalPortForward setupPortForward(String appName, int port) {
-    try {
-      Pod pod =
-          client
-              .pods()
-              .inNamespace(OBSERVABILITY_NAMESPACE)
-              .withLabel("app.kubernetes.io/name", appName)
-              .list()
-              .getItems()
-              .stream()
-              .findFirst()
-              .orElseThrow(() -> new IllegalStateException(appName + " pod not found"));
-
-      log.info("Setting up port forward to {} pod: {}", appName, pod.getMetadata().getName());
-      var portForward =
-          client
-              .pods()
-              .inNamespace(OBSERVABILITY_NAMESPACE)
-              .withName(pod.getMetadata().getName())
-              .portForward(port, port);
-
-      log.info(
-          "{} port forward established on local port: {}", appName, portForward.getLocalPort());
-      return portForward;
-    } catch (Exception e) {
-      log.error("Failed to setup {} port forward", appName, e);
       throw new RuntimeException(e);
     }
   }
