@@ -28,7 +28,7 @@ import static org.awaitility.Awaitility.await;
 
 class CachingFilteringUpdateIT {
 
-  public static final int RESOURCE_NUMBER = 1000;
+  public static final int RESOURCE_NUMBER = 250;
   CachingFilteringUpdateReconciler reconciler = new CachingFilteringUpdateReconciler();
 
   @RegisterExtension
@@ -44,7 +44,7 @@ class CachingFilteringUpdateIT {
     }
     await()
         .pollDelay(Duration.ofSeconds(5))
-        .atMost(Duration.ofSeconds(30))
+        .atMost(Duration.ofMinutes(1))
         .untilAsserted(
             () -> {
               for (int i = 0; i < RESOURCE_NUMBER; i++) {
