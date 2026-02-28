@@ -27,7 +27,7 @@ import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.api.config.ConfigurationServiceOverrider;
 import io.javaoperatorsdk.operator.api.config.ControllerConfigurationOverrider;
 import io.javaoperatorsdk.operator.api.config.LeaderElectionConfigurationBuilder;
-import io.javaoperatorsdk.operator.config.loader.provider.AgregatePrirityListConfigProvider;
+import io.javaoperatorsdk.operator.config.loader.provider.AgregatePriorityListConfigProvider;
 import io.javaoperatorsdk.operator.config.loader.provider.EnvVarConfigProvider;
 import io.javaoperatorsdk.operator.config.loader.provider.PropertiesConfigProvider;
 import io.javaoperatorsdk.operator.processing.event.rate.LinearRateLimiter;
@@ -166,7 +166,7 @@ public class ConfigLoader {
 
   public ConfigLoader() {
     this(
-        new AgregatePrirityListConfigProvider(
+        new AgregatePriorityListConfigProvider(
             List.of(new EnvVarConfigProvider(), PropertiesConfigProvider.systemProperties())),
         DEFAULT_CONTROLLER_KEY_PREFIX,
         DEFAULT_OPERATOR_KEY_PREFIX);
