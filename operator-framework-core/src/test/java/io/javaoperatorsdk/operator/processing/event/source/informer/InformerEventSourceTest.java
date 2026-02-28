@@ -74,8 +74,6 @@ class InformerEventSourceTest {
   private final EventHandler eventHandlerMock = mock(EventHandler.class);
   private final InformerEventSourceConfiguration<Deployment> informerEventSourceConfiguration =
       mock(InformerEventSourceConfiguration.class);
-  private SecondaryToPrimaryMapper mockSecondaryToPrimaryMapper =
-      mock(SecondaryToPrimaryMapper.class);
 
   @BeforeEach
   void setup() {
