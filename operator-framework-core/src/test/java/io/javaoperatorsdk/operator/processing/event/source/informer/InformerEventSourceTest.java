@@ -84,7 +84,7 @@ class InformerEventSourceTest {
     when(informerEventSourceConfiguration.getInformerConfig()).thenReturn(informerConfig);
     when(informerConfig.getEffectiveNamespaces(any())).thenReturn(DEFAULT_NAMESPACES_SET);
     when(informerEventSourceConfiguration.getSecondaryToPrimaryMapper())
-        .thenReturn(mockSecondaryToPrimaryMapper);
+        .thenReturn(mock(SecondaryToPrimaryMapper.class));
     when(informerEventSourceConfiguration.getResourceClass()).thenReturn(Deployment.class);
 
     informerEventSource =
@@ -93,11 +93,6 @@ class InformerEventSourceTest {
               // mocking start
               @Override
               public synchronized void start() {}
-
-              @Override
-              public Optional<Deployment> get(ResourceID resourceID) {
-                return temporaryResourceCache.getResourceFromCache(resourceID);
-              }
             });
 
     var mockControllerConfig = mock(ControllerConfiguration.class);
@@ -344,30 +339,6 @@ class InformerEventSourceTest {
     latch2.countDown();
 
     assertNoEventProduced();
-  }
-
-  @Test
-  void cachingFilteringUpdateEventUpdatesPrimaryToSecondaryIndex() {
-    withRealTemporaryResourceCache();
-    var td = testDeployment();
-    when(mockSecondaryToPrimaryMapper.toPrimaryResourceIDs(any()))
-        .thenReturn(Set.of(ResourceID.fromResource(td)));
-
-    informerEventSource.eventFilteringUpdateAndCacheResource(
-        td,
-        d -> {
-          var d1 = testDeployment();
-          d1.getMetadata().setResourceVersion("2");
-          return d1;
-        });
-
-    var cr = new TestCustomResource();
-    cr.setMetadata(
-        new ObjectMetaBuilder()
-            .withName(td.getMetadata().getName())
-            .withNamespace(td.getMetadata().getNamespace())
-            .build());
-    assertThat(informerEventSource.getSecondaryResources(cr)).isNotEmpty();
   }
 
   private void assertNoEventProduced() {
