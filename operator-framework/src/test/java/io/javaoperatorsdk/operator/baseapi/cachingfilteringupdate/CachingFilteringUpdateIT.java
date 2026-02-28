@@ -45,19 +45,35 @@ class CachingFilteringUpdateIT {
     await()
         .pollDelay(Duration.ofSeconds(5))
         .atMost(Duration.ofMinutes(1))
-        .untilAsserted(
+        .until(
             () -> {
-              for (int i = 0; i < RESOURCE_NUMBER; i++) {
-                if (operator
-                    .getReconcilerOfType(CachingFilteringUpdateReconciler.class)
-                    .isIssueFound()) {
-                  throw new IllegalStateException("Error already found.");
-                }
-                var res = operator.get(CachingFilteringUpdateCustomResource.class, "resource" + i);
-                assertThat(res.getStatus()).isNotNull();
-                assertThat(res.getStatus().getUpdated()).isTrue();
+              if (operator
+                  .getReconcilerOfType(CachingFilteringUpdateReconciler.class)
+                  .isIssueFound()) {
+                // Stop waiting as soon as an issue is detected.
+                return true;
               }
+              // Use a single representative resource to detect that updates have completed.
+              var res =
+                  operator.get(
+                      CachingFilteringUpdateCustomResource.class,
+                      "resource" + (RESOURCE_NUMBER - 1));
+              return res != null
+                  && res.getStatus() != null
+                  && Boolean.TRUE.equals(res.getStatus().getUpdated());
             });
+
+    if (operator
+        .getReconcilerOfType(CachingFilteringUpdateReconciler.class)
+        .isIssueFound()) {
+      throw new IllegalStateException("Error already found.");
+    }
+
+    for (int i = 0; i < RESOURCE_NUMBER; i++) {
+      var res = operator.get(CachingFilteringUpdateCustomResource.class, "resource" + i);
+      assertThat(res.getStatus()).isNotNull();
+      assertThat(res.getStatus().getUpdated()).isTrue();
+    }
   }
 
   public CachingFilteringUpdateCustomResource createCustomResource(int i) {
