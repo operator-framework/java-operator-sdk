@@ -106,7 +106,7 @@ public interface Metrics {
    * Always called not only if successfully finished.
    *
    * @param resource the {@link ResourceID} associated with the resource being processed
-   * @param retryInfo not that this retry info in state after {@link RetryExecution#nextDelay()} is
+   * @param retryInfo note that this retry info is in state after {@link RetryExecution#nextDelay()} is
    *     called in case of exception.
    * @param metadata metadata associated with the resource being processed
    */
