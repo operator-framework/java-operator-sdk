@@ -187,7 +187,7 @@ public UpdateControl<WebPage> reconcile(WebPage webPage, Context<WebPage> contex
     // filtering and caching update
     context.resourceOperations().serverSideApply(desiredIngress);
     
-    // fresh resource already available from our update in caches
+    // fresh resource instantly available from our update in the cache
     var upToDateResource = context.getSecondaryResource(ConfigMap.class);
     
     makeStatusChanages(webPage);
