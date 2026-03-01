@@ -193,7 +193,7 @@ public class MicrometerMetricsV2 implements Metrics {
   }
 
   @Override
-  public void cleanupDoneFor(ResourceID resourceID, Map<String, Object> metadata) {
+  public void cleanupDone(ResourceID resourceID, Map<String, Object> metadata) {
     gauges.get(numberOfResourcesRefName(getControllerName(metadata))).decrementAndGet();
     incrementCounter(EVENTS_DELETE, resourceID.getNamespace().orElse(null), metadata);
   }
@@ -217,20 +217,19 @@ public class MicrometerMetricsV2 implements Metrics {
   }
 
   @Override
-  public void successfullyFinishedReconciliation(
-      HasMetadata resource, Map<String, Object> metadata) {
+  public void successfulReconciliation(HasMetadata resource, Map<String, Object> metadata) {
     incrementCounter(RECONCILIATIONS_SUCCESS, resource.getMetadata().getNamespace(), metadata);
   }
 
   @Override
-  public void reconciliationExecutionStarted(HasMetadata resource, Map<String, Object> metadata) {
+  public void reconciliationStarted(HasMetadata resource, Map<String, Object> metadata) {
     var reconcilerExecutions =
         gauges.get(reconciliationExecutionGaugeRefKey(getControllerName(metadata)));
     reconcilerExecutions.incrementAndGet();
   }
 
   @Override
-  public void reconciliationExecutionFinished(
+  public void reconciliationFinished(
       HasMetadata resource, RetryInfo retryInfo, Map<String, Object> metadata) {
     var reconcilerExecutions =
         gauges.get(reconciliationExecutionGaugeRefKey(metadata.get(CONTROLLER_NAME).toString()));

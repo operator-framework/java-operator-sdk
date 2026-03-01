@@ -76,18 +76,10 @@ public final class AggregatedMetrics implements Metrics {
   }
 
   @Override
-  @Deprecated(forRemoval = true)
-  public void reconcileCustomResource(
-      HasMetadata resource, RetryInfo retryInfo, Map<String, Object> metadata) {
-    metricsList.forEach(metrics -> metrics.reconcileCustomResource(resource, retryInfo, metadata));
-  }
-
-  @Override
   public void submittedForReconciliation(
       HasMetadata resource, RetryInfo retryInfo, Map<String, Object> metadata) {
     metricsList.forEach(
         metrics -> metrics.submittedForReconciliation(resource, retryInfo, metadata));
-    reconcileCustomResource(resource, retryInfo, metadata);
   }
 
   @Override
@@ -98,44 +90,28 @@ public final class AggregatedMetrics implements Metrics {
   }
 
   @Override
-  public void reconciliationExecutionStarted(HasMetadata resource, Map<String, Object> metadata) {
-    metricsList.forEach(metrics -> metrics.reconciliationExecutionStarted(resource, metadata));
+  public void reconciliationStarted(HasMetadata resource, Map<String, Object> metadata) {
+    metricsList.forEach(metrics -> metrics.reconciliationStarted(resource, metadata));
   }
 
   @Override
-  public void reconciliationExecutionFinished(
+  public void reconciliationFinished(
       HasMetadata resource, RetryInfo retryInfo, Map<String, Object> metadata) {
-    metricsList.forEach(
-        metrics -> metrics.reconciliationExecutionFinished(resource, retryInfo, metadata));
+    metricsList.forEach(metrics -> metrics.reconciliationFinished(resource, retryInfo, metadata));
   }
 
   @Override
-  public void cleanupDoneFor(ResourceID resourceID, Map<String, Object> metadata) {
-    metricsList.forEach(metrics -> metrics.cleanupDoneFor(resourceID, metadata));
+  public void cleanupDone(ResourceID resourceID, Map<String, Object> metadata) {
+    metricsList.forEach(metrics -> metrics.cleanupDone(resourceID, metadata));
   }
 
   @Override
-  @Deprecated(forRemoval = true)
-  public void finishedReconciliation(HasMetadata resource, Map<String, Object> metadata) {
-    metricsList.forEach(metrics -> metrics.finishedReconciliation(resource, metadata));
-  }
-
-  @Override
-  public void successfullyFinishedReconciliation(
-      HasMetadata resource, Map<String, Object> metadata) {
-    metricsList.forEach(metrics -> metrics.successfullyFinishedReconciliation(resource, metadata));
-    finishedReconciliation(resource, metadata);
+  public void successfulReconciliation(HasMetadata resource, Map<String, Object> metadata) {
+    metricsList.forEach(metrics -> metrics.successfulReconciliation(resource, metadata));
   }
 
   @Override
   public <T> T timeControllerExecution(ControllerExecution<T> execution) throws Exception {
     return metricsList.get(0).timeControllerExecution(execution);
-  }
-
-  @Override
-  @Deprecated(forRemoval = true)
-  public <T extends Map<?, ?>> T monitorSizeOf(T map, String name) {
-    metricsList.forEach(metrics -> metrics.monitorSizeOf(map, name));
-    return map;
   }
 }

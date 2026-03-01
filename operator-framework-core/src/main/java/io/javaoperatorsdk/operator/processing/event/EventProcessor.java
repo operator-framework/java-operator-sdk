@@ -286,7 +286,7 @@ public class EventProcessor<P extends HasMetadata> implements EventHandler, Life
       return;
     }
     cleanupOnSuccessfulExecution(executionScope);
-    metrics.successfullyFinishedReconciliation(executionScope.getResource(), metricsMetadata);
+    metrics.successfulReconciliation(executionScope.getResource(), metricsMetadata);
     if ((triggerOnAllEvents() && executionScope.isDeleteEvent())
         || (!triggerOnAllEvents() && state.deleteEventPresent())) {
       cleanupForDeletedEvent(executionScope.getResourceID());
@@ -432,7 +432,7 @@ public class EventProcessor<P extends HasMetadata> implements EventHandler, Life
   private void cleanupForDeletedEvent(ResourceID resourceID) {
     log.debug("Cleaning up for delete event");
     resourceStateManager.remove(resourceID);
-    metrics.cleanupDoneFor(resourceID, metricsMetadata);
+    metrics.cleanupDone(resourceID, metricsMetadata);
   }
 
   private boolean isControllerUnderExecution(ResourceState state) {
@@ -529,13 +529,13 @@ public class EventProcessor<P extends HasMetadata> implements EventHandler, Life
         }
         actualResource.ifPresent(executionScope::setResource);
         MDCUtils.addResourceInfo(executionScope.getResource());
-        metrics.reconciliationExecutionStarted(executionScope.getResource(), metricsMetadata);
+        metrics.reconciliationStarted(executionScope.getResource(), metricsMetadata);
         thread.setName("ReconcilerExecutor-" + controllerName() + "-" + thread.getId());
         PostExecutionControl<P> postExecutionControl =
             reconciliationDispatcher.handleExecution(executionScope);
         eventProcessingFinished(executionScope, postExecutionControl);
       } finally {
-        metrics.reconciliationExecutionFinished(
+        metrics.reconciliationFinished(
             executionScope.getResource(), executionScope.getRetryInfo(), metricsMetadata);
         // restore original name
         thread.setName(name);

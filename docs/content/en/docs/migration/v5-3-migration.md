@@ -27,3 +27,20 @@ to
       <scope>test</scope>
 </dependency>
 ```
+
+
+## Metrics interface changes
+
+The [Metrics](https://github.com/operator-framework/java-operator-sdk/blob/main/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/api/monitoring/Metrics.java) 
+interface changed in non backwards compatible way, in order to make the API cleaner:
+
+The following table show the relevant changes:
+
+1. `reconcileCustomResource` -> `submittedForReconciliation`
+2. `reconciliationExecutionStarted` -> `reconciliationStarted` 
+3. `reconciliationExecutionFinished` -> `successfulReconciliation`
+4. `cleanupDoneFor` -> `cleanupDone`
+
+Other changes:
+
+- `finishedReconciliation(..)` method was extended with `RetryInfo`

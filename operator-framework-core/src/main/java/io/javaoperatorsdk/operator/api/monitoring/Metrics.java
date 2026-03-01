@@ -42,24 +42,13 @@ public interface Metrics {
   default void controllerRegistered(Controller<? extends HasMetadata> controller) {}
 
   /**
-   * Called when an event has been accepted by the SDK from an event source, which would result in
-   * potentially triggering the associated Reconciler.
+   * Called when an event has been accepted by the SDK from an event source, which would potentially
+   * trigger the Reconciler.
    *
    * @param event the event
    * @param metadata metadata associated with the resource being processed
    */
   default void receivedEvent(Event event, Map<String, Object> metadata) {}
-
-  /**
-   * @deprecated use {@link Metrics#submittedForReconciliation(HasMetadata, RetryInfo, Map)} Called
-   *     right before a resource is dispatched to the ExecutorService for reconciliation.
-   * @param resource the associated with the resource
-   * @param retryInfo the current retry state information for the reconciliation request
-   * @param metadata metadata associated with the resource being processed
-   */
-  @Deprecated(forRemoval = true)
-  default void reconcileCustomResource(
-      HasMetadata resource, RetryInfo retryInfo, Map<String, Object> metadata) {}
 
   /**
    * Called right before a resource is submitted to the ExecutorService for reconciliation.
@@ -69,11 +58,9 @@ public interface Metrics {
    * @param metadata metadata associated with the resource being processed
    */
   default void submittedForReconciliation(
-      HasMetadata resource, RetryInfo retryInfo, Map<String, Object> metadata) {
-    reconcileCustomResource(resource, retryInfo, metadata);
-  }
+      HasMetadata resource, RetryInfo retryInfo, Map<String, Object> metadata) {}
 
-  default void reconciliationExecutionStarted(HasMetadata resource, Map<String, Object> metadata) {}
+  default void reconciliationStarted(HasMetadata resource, Map<String, Object> metadata) {}
 
   /**
    * Called when a precedent reconciliation for the resource associated with the specified {@link
@@ -99,38 +86,28 @@ public interface Metrics {
    * @param resource the {@link ResourceID} associated with the resource being processed
    * @param metadata metadata associated with the resource being processed
    */
-  default void successfullyFinishedReconciliation(
-      HasMetadata resource, Map<String, Object> metadata) {
-    finishedReconciliation(resource, metadata);
-  }
+  default void successfulReconciliation(HasMetadata resource, Map<String, Object> metadata) {}
 
   /**
-   * Always called not only if successfully finished.
+   * Always called when the reconciliation is finished, not only if reconciliation successfully
+   * finished.
    *
    * @param resource the {@link ResourceID} associated with the resource being processed
    * @param retryInfo note that this retry info is in state after {@link RetryExecution#nextDelay()}
    *     is called in case of exception.
    * @param metadata metadata associated with the resource being processed
    */
-  default void reconciliationExecutionFinished(
+  default void reconciliationFinished(
       HasMetadata resource, RetryInfo retryInfo, Map<String, Object> metadata) {}
 
   /**
    * Called when the resource associated with the specified {@link ResourceID} has been successfully
-   * deleted and the clean-up performed by the associated reconciler is finished.
+   * deleted and the cleanup of internal caches is completed.
    *
-   * @param resourceID the {@link ResourceID} associated with the resource being processed
+   * @param resourceID the {@link ResourceID} associated with the primary resource being processed
    * @param metadata metadata associated with the resource being processed
    */
-  default void cleanupDoneFor(ResourceID resourceID, Map<String, Object> metadata) {}
-
-  /**
-   * @deprecated use {@link Metrics#successfullyFinishedReconciliation(HasMetadata, Map)}
-   * @param resource the {@link ResourceID} associated with the resource being processed
-   * @param metadata metadata associated with the resource being processed
-   */
-  @Deprecated(forRemoval = true)
-  default void finishedReconciliation(HasMetadata resource, Map<String, Object> metadata) {}
+  default void cleanupDone(ResourceID resourceID, Map<String, Object> metadata) {}
 
   /**
    * Encapsulates the information about a controller execution i.e. a call to either {@link
@@ -209,21 +186,5 @@ public interface Metrics {
    */
   default <T> T timeControllerExecution(ControllerExecution<T> execution) throws Exception {
     return execution.execute();
-  }
-
-  /**
-   * Monitors the size of the specified map. This currently isn't used directly by the SDK but could
-   * be used by operators to monitor some of their structures, such as cache size.
-   *
-   * @param map the Map which size is to be monitored
-   * @param name the name of the provided Map to be used in metrics data
-   * @return the Map that was passed in so the registration can be done as part of an assignment
-   *     statement.
-   * @param <T> the type of the Map being monitored
-   */
-  @SuppressWarnings("unused")
-  @Deprecated(forRemoval = true)
-  default <T extends Map<?, ?>> T monitorSizeOf(T map, String name) {
-    return map;
   }
 }
