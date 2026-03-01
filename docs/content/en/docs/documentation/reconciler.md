@@ -166,9 +166,9 @@ It is an inherent issue with Informers that their caches are eventually consiste
 with the updates to Kubernetes API done from the controller. From version 5.3.0 the framework
 supports stronger guarantees, both for primary and secondary resources. If this feature is used:
 
-1. Reading cache after our update - even withing same reconciliation - returns the fresh resource.
-   Fresh means at least the version of the resource that is in the response form our update. 
-   Or more recent one if some other party updated the resource after our update.
+1. Reading from the cache after our update — even within the same reconciliation — returns a fresh resource.
+   "Fresh" means at least the version of the resource that is in the response from our update,
+   or a more recent version if some other party updated the resource after our update.
 2. Filtering events for our updates. If the controller updates a resource
    an event is produced by the Kubernetes API and propagated to Informer, what would normally trigger a next
    reconciliation. However, this is not ideal, since we already have that up-to-date resource
