@@ -25,7 +25,7 @@
     <version>999-SNAPSHOT</version>
   </parent>
 
-  <artifactId>sample-metrics-proricessing</artifactId>
+  <artifactId>sample-metrics-processing</artifactId>
   <packaging>jar</packaging>
   <name>Operator SDK - Samples - Metrics processing</name>
   <description>Showcases to handle metrics setup and deploys related tooling and dashboards</description>
