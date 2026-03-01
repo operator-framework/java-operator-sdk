@@ -185,7 +185,7 @@ public UpdateControl<WebPage> reconcile(WebPage webPage, Context<WebPage> contex
     
     ConfigMap managedConfigMap = prepareConfigMap(webPage);
     // filtering and caching update
-    context.resourceOperations().serverSideApply(desiredIngress);
+    context.resourceOperations().serverSideApply(managedConfigMap);
     
     // fresh resource instantly available from our update in the cache
     var upToDateResource = context.getSecondaryResource(ConfigMap.class);
