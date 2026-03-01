@@ -77,30 +77,108 @@ Metrics metrics; // initialize your metrics implementation
 Operator operator = new Operator(client, o -> o.withMetrics(metrics));
 ```
 
-### Micrometer implementation
+### MicrometerMetricsV2 (Recommended, since 5.3.0)
 
-The micrometer implementation is typically created using one of the provided factory methods which, depending on which
-is used, will return either a ready to use instance or a builder allowing users to customize how the implementation
-behaves, in particular when it comes to the granularity of collected metrics. It is, for example, possible to collect
-metrics on a per-resource basis via tags that are associated with meters. This is the default, historical behavior but
-this will change in a future version of JOSDK because this dramatically increases the cardinality of metrics, which
-could lead to performance issues.
+[`MicrometerMetricsV2`](https://github.com/java-operator-sdk/java-operator-sdk/blob/main/micrometer-support/src/main/java/io/javaoperatorsdk/operator/monitoring/micrometer/MicrometerMetricsV2.java) is the recommended micrometer-based implementation. It is designed with low cardinality in mind:
+all meters are scoped to the controller, not to individual resources. This avoids unbounded cardinality growth as
+resources come and go.
 
-To create a `MicrometerMetrics` implementation that behaves how it has historically behaved, you can just create an
-instance via:
+The simplest way to create an instance:
+
+```java
+MeterRegistry registry; // initialize your registry implementation
+Metrics metrics = MicrometerMetricsV2.newPerResourceCollectingMicrometerMetricsBuilder(registry).build();
+```
+
+Optionally, include a `namespace` tag on per-reconciliation counters (disabled by default to avoid unexpected
+cardinality increases in existing deployments):
+
+```java
+Metrics metrics = MicrometerMetricsV2.newPerResourceCollectingMicrometerMetricsBuilder(registry)
+        .withNamespaceAsTag()
+        .build();
+```
+
+You can also supply a custom timer configuration for `reconciliations.execution.duration`:
+
+```java
+Metrics metrics = MicrometerMetricsV2.newPerResourceCollectingMicrometerMetricsBuilder(registry)
+        .withExecutionTimerConfig(builder -> builder.publishPercentiles(0.5, 0.95, 0.99))
+        .build();
+```
+
+#### MicrometerMetricsV2 metrics
+
+All meters use `controller.name` as their primary tag. Counters optionally carry a `namespace` tag when
+`withNamespaceAsTag()` is enabled.
+
+| Meter name (Micrometer)                  | Type    | Tags                              | Description                                                          |
+|------------------------------------------|---------|-----------------------------------|----------------------------------------------------------------------|
+| `reconciliations.executions`             | gauge   | `controller.name`                 | Number of reconciler executions currently in progress                |
+| `reconciliations.active`                 | gauge   | `controller.name`                 | Number of resources currently queued for reconciliation              |
+| `custom_resources`                       | gauge   | `controller.name`                 | Number of custom resources tracked by the controller                 |
+| `reconciliations.execution.duration`     | timer   | `controller.name`                 | Reconciliation execution duration with explicit SLO bucket histogram |
+| `reconciliations.started.total`          | counter | `controller.name`, `namespace`*   | Number of reconciliations started (including retries)                |
+| `reconciliations.success.total`          | counter | `controller.name`, `namespace`*   | Number of successfully finished reconciliations                      |
+| `reconciliations.failure.total`          | counter | `controller.name`, `namespace`*   | Number of failed reconciliations                                     |
+| `reconciliations.retries.total`          | counter | `controller.name`, `namespace`*   | Number of reconciliation retries                                     |
+| `events.received`                        | counter | `controller.name`, `event`, `action`, `namespace`* | Number of Kubernetes events received by the controller  |
+| `events.delete`                          | counter | `controller.name`, `namespace`*   | Number of resource deletion events processed                         |
+
+\* `namespace` tag is only included when `withNamespaceAsTag()` is enabled.
+
+The execution timer uses explicit SLO boundaries (10ms, 50ms, 100ms, 250ms, 500ms, 1s, 2s, 5s, 10s, 30s) to ensure
+compatibility with `histogram_quantile()` queries in Prometheus. This is important when using the OTLP registry, where
+`publishPercentileHistogram()` would otherwise produce Base2 Exponential Histograms that are incompatible with classic
+`_bucket` queries.
+
+> **Note on Prometheus metric names**: The exact Prometheus metric name suffix depends on the `MeterRegistry` in use.
+> For `PrometheusMeterRegistry` the timer is exposed as `reconciliations_execution_duration_seconds_*`. For
+> `OtlpMeterRegistry` (metrics exported via OpenTelemetry Collector), it is exposed as
+> `reconciliations_execution_duration_milliseconds_*`.
+
+#### Grafana Dashboard
+
+A ready-to-use Grafana dashboard is available at
+[`observability/josdk-operator-metrics-dashboard.json`](https://github.com/java-operator-sdk/java-operator-sdk/blob/main/observability/josdk-operator-metrics-dashboard.json).
+It visualizes all of the metrics listed above, including reconciliation throughput, error rates, queue depth, active
+executions, resource counts, and execution duration histograms and heatmaps.
+
+The dashboard is designed to work with metrics exported via OpenTelemetry Collector to Prometheus, as set up by the
+observability sample (see below).
+
+#### Exploring metrics end-to-end
+
+The
+[`metrics-processing` sample operator](https://github.com/java-operator-sdk/java-operator-sdk/tree/main/sample-operators/metrics-processing)
+includes a full end-to-end test,
+[`MetricsHandlingE2E`](https://github.com/java-operator-sdk/java-operator-sdk/blob/main/sample-operators/metrics-processing/src/test/java/io/javaoperatorsdk/operator/sample/metrics/MetricsHandlingE2E.java),
+that:
+
+1. Installs a local observability stack (Prometheus, Grafana, OpenTelemetry Collector) via
+   `observability/install-observability.sh`. That imports also the Grafana dashboards.
+2. Runs two reconcilers that produce both successful and failing reconciliations over a sustained period
+3. Verifies that the expected metrics appear in Prometheus
+
+This is a good starting point for experimenting with the metrics and the Grafana dashboard in a real cluster without
+having to deploy your own operator.
+
+### MicrometerMetrics (Deprecated)
+
+> **Deprecated**: `MicrometerMetrics` (V1) is deprecated as of JOSDK 5.3.0. Use `MicrometerMetricsV2` instead.
+> V1 attaches resource-specific metadata (name, namespace, etc.) as tags to every meter, which causes unbounded
+> cardinality growth and can lead to performance issues in your metrics backend.
+
+The legacy `MicrometerMetrics` implementation is still available. To create an instance that behaves as it historically
+has:
 
 ```java
 MeterRegistry registry; // initialize your registry implementation
 Metrics metrics = MicrometerMetrics.newMicrometerMetricsBuilder(registry).build();
 ```
 
-The class provides factory methods which either return a fully pre-configured instance or a builder object that will
-allow you to configure more easily how the instance will behave. You can, for example, configure whether the
-implementation should collect metrics on a per-resource basis, whether associated meters should be removed when a
-resource is deleted and how the clean-up is performed. See the relevant classes documentation for more details.
-
-For example, the following will create a `MicrometerMetrics` instance configured to collect metrics on a per-resource
-basis, deleting the associated meters after 5 seconds when a resource is deleted, using up to 2 threads to do so.
+To collect metrics on a per-resource basis, deleting the associated meters after 5 seconds when a resource is deleted,
+using up to 2 threads:
 
 ```java
 MicrometerMetrics.newPerResourceCollectingMicrometerMetricsBuilder(registry)
@@ -109,9 +187,9 @@ MicrometerMetrics.newPerResourceCollectingMicrometerMetricsBuilder(registry)
         .build();
 ```
 
-### Operator SDK metrics
+#### Operator SDK metrics (V1)
 
-The micrometer implementation records the following metrics:
+The V1 micrometer implementation records the following metrics:
 
 | Meter name                                                  | Type           | Tag names                                                                           | Description                                                                                            |
 |-------------------------------------------------------------|----------------|-------------------------------------------------------------------------------------|--------------------------------------------------------------------------------------------------------|
@@ -130,12 +208,11 @@ The micrometer implementation records the following metrics:
 | operator.sdk.controllers.execution.cleanup.success          | counter        | controller, type                                                                    | Number of successful cleanups per controller                                                           |
 | operator.sdk.controllers.execution.cleanup.failure          | counter        | controller, exception                                                               | Number of failed cleanups per controller                                                               |
 
-As you can see all the recorded metrics start with the `operator.sdk` prefix. `<resource metadata>`, in the table above,
-refers to resource-specific metadata and depends on the considered metric and how the implementation is configured and
-could be summed up as follows: `group?, version, kind, [name, namespace?], scope` where the tags in square
-brackets (`[]`) won't be present when per-resource collection is disabled and tags followed by a question mark are
-omitted if the associated value is empty. Of note, when in the context of controllers' execution metrics, these tag
-names are prefixed with `resource.`. This prefix might be removed in a future version for greater consistency.
+All V1 metrics start with the `operator.sdk` prefix. `<resource metadata>` refers to resource-specific metadata and
+depends on the considered metric and how the implementation is configured: `group?, version, kind, [name, namespace?],
+scope` where tags in square brackets (`[]`) won't be present when per-resource collection is disabled and tags followed
+by a question mark are omitted if the value is empty. In the context of controllers' execution metrics, these tag names
+are prefixed with `resource.`.
 
 ### Aggregated Metrics
 
