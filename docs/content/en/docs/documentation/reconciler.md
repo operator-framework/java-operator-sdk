@@ -190,7 +190,7 @@ public UpdateControl<WebPage> reconcile(WebPage webPage, Context<WebPage> contex
     // fresh resource instantly available from our update in the cache
     var upToDateResource = context.getSecondaryResource(ConfigMap.class);
     
-    makeStatusChanages(webPage);
+    makeStatusChanges(webPage);
     
     // built in update methods by default use this feature
     return UpdateControl.patchStatus(webPage);
