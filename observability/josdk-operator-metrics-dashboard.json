@@ -195,6 +195,21 @@
                 }
               }
             ]
+          },
+          {
+            "matcher": {
+              "id": "byRegexp",
+              "options": "Retries.*"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "orange",
+                  "mode": "fixed"
+                }
+              }
+            ]
           }
         ]
       },
@@ -239,9 +254,20 @@
           "legendFormat": "Failure - {{controller_name}}",
           "range": true,
           "refId": "B"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "editorMode": "code",
+          "expr": "sum(rate(reconciliations_retries_total{service_name=~\"$service_name\"}[5m])) by (controller_name)",
+          "legendFormat": "Retries - {{controller_name}}",
+          "range": true,
+          "refId": "C"
         }
       ],
-      "title": "Reconciliation Success vs Failure Rate",
+      "title": "Reconciliation Success / Failure / Retry Rate",
       "type": "timeseries"
     },
     {
@@ -609,7 +635,7 @@
               }
             ]
           },
-          "unit": "s"
+          "unit": "ms"
         },
         "overrides": []
       },
