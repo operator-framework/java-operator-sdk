@@ -160,7 +160,87 @@ annotation. If you do not specify a finalizer name, one will be automatically ge
 
 From v5, by default, the finalizer is added using Server Side Apply. See also `UpdateControl` in docs.
 
-### Making sure the primary resource is up to date for the next reconciliation
+### Read-cache-after-write consistency and event filtering
+
+It is an inherent issue with Informers that their caches are eventually consistent even
+with the updates to Kubernetes API done from the controller. From version 5.3.0 the framework
+supports stronger guarantees, both for primary and secondary resources. If this feature is used:
+
+1. Reading cache after our update - even withing same reconciliation - returns the fresh resource.
+   Fresh means at least the version of the resource that is in the response form our update. 
+   Or more recent one if some other party updated the resource after our update.
+2. Filtering events for the update from the controller. If the controller updates a resource
+   the event produced the Kubernetes API and propagated to Informer would normally trigger a next
+   reconciliation, however this is not ideal, since we already have that up-to-date resource
+   in the cache in the current reconciliation, so in general it is not desirable to reconcile that again.
+   This feature makes sure that the reconciliation is not triggered from the event from our writes.
+
+
+In order to have these guarantees use [`ResourceOperations`](https://github.com/operator-framework/java-operator-sdk/blob/main/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/api/reconciler/ResourceOperations.java)
+from the context of the reconciliation:   
+
+```java 
+
+public UpdateControl<WebPage> reconcile(WebPage webPage, Context<WebPage> context) {
+    
+    ConfigMap managedConfigMap = prepareConfigMap(webPage);
+    // filtering and caching update
+    context.resourceOperations().serverSideApply(desiredIngress);
+    
+    // fresh resource already available from our update in caches
+    var upToDateResource = context.getSecondaryResource(ConfigMap.class);
+    
+    makeStatusChanages(webPage);
+    
+    // built in update methods by default uses this approach
+    return UpdateControl.patchStatus(webPage);
+}
+```
+
+### Built-in patches
+
+`UpdateControl` and `ErrorStatusUpdateControl` by default uses this functionality.
+
+Mainly to cover migration path for the cases when somebody expected events for their update
+a these controls now contain a new method: `UpdateControl.reschedule()`, that instantly propagates
+an event to reschedule the reconciliation.
+
+### Allocated values
+
+If you want to store some state - like generated IDs - in `.status` sub-resource, you 
+can do it safely with this feature. Since it is guaranteed that you will see the update
+in the next reconciliation.
+
+Note that this is not just with `UpdateControl` you can also do update any time on primary resource
+with `resourceOperations`:
+
+```java 
+
+public UpdateControl<WebPage> reconcile(WebPage webPage, Context<WebPage> context) {
+    
+    makeStatusChanages(webPage);
+    // this is equivalent with the update done by UpdateControl
+    context.resourceOperations().serverSideApplyPrimaryStatus(desiredIngress);
+    
+    return UpdateControl.noUpdate();
+}
+```
+
+### Notes
+- Talk about this feature in this [talk](https://www.youtube.com/watch?v=HrwHh5Yh6AM&t=1387s).
+- [Umbrella issue](https://github.com/operator-framework/java-operator-sdk/issues/2944) on our GitHub.
+- We were able to implement this feature since Kubernetes introduces guideline to compare 
+  resource versions. See the details [here](https://github.com/kubernetes/enhancements/tree/master/keps/sig-api-machinery/5504-comparable-resource-version).
+
+### Making sure the primary resource is up to date for the next reconciliation (deprecated)
+
+{{% alert title="Deprecated" %}}
+
+Read-cache-after-write consistency feature replaces this functionality.
+
+> It provides this functionality also for secondary resources and optimistic locking
+  is not required anymore. See details above.
+{{% /alert %}}
 
 It is typical to want to update the status subresource with the information that is available during the reconciliation.
 This is sometimes referred to as the last observed state. When the primary resource is updated, though, the framework
@@ -263,30 +343,30 @@ See also [sample](https://github.com/operator-framework/java-operator-sdk/blob/m
 ### Expectations
 
 Expectations are a pattern to ensure that, during reconciliation, your secondary resources are in a certain state.
-For a more detailed explanation see [this blogpost](https://ahmet.im/blog/controller-pitfalls/#expectations-pattern).
-You can find framework support for this pattern in [`io.javaoperatorsdk.operator.processing.expectation`](https://github.com/operator-framework/java-operator-sdk/blob/main/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/processing/expectation/) 
-package. See also related [integration test](https://github.com/operator-framework/java-operator-sdk/blob/main/operator-framework/src/test/java/io/javaoperatorsdk/operator/baseapi/expectation/ExpectationReconciler.java).
-Note that this feature is marked as `@Experimental`, since based on feedback the API might be improved / changed, but we intend 
-to support it, later also might be integrated to Dependent Resources and/or Workflows.
+For a more detailed explanation, see [this blogpost](https://ahmet.im/blog/controller-pitfalls/#expectations-pattern).
+You can find framework support for this pattern in the [`io.javaoperatorsdk.operator.processing.expectation`](https://github.com/operator-framework/java-operator-sdk/blob/main/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/processing/expectation/)
+package. See also the related [integration test](https://github.com/java-operator-sdk/java-operator-sdk/blob/main/operator-framework/src/test/java/io/javaoperatorsdk/operator/baseapi/expectation/ExpectationReconciler.java).
+Note that this feature is marked as `@Experimental`: based on feedback the API may be improved or changed, but we intend
+to keep supporting it and may later integrate it into Dependent Resources and/or Workflows.
 
-The idea is the nutshell, is that you can track your expectations in the expectation manager in the reconciler
-which has an API that covers the common use cases. 
+The idea, in a nutshell, is that you can track your expectations in the expectation manager within the reconciler,
+which provides an API covering the common use cases.
 
-The following sample is the simplified version of the integration test that implements the logic that creates a 
-deployment and sets status message if there are the target three replicas ready:
+The following is a simplified version of the integration test that implements the logic to create a
+deployment and set a status message once the target three replicas are ready:
 
 ```java
 public class ExpectationReconciler implements Reconciler<ExpectationCustomResource> {
 
     // some code is omitted
-    
+
     private final ExpectationManager<ExpectationCustomResource> expectationManager =
             new ExpectationManager<>();
 
     @Override
     public UpdateControl<ExpectationCustomResource> reconcile(
             ExpectationCustomResource primary, Context<ExpectationCustomResource> context) {
-        // exiting asap if there is an expectation that is not timed out neither fulfilled yet
+        // exit early if there is an expectation that has not yet timed out or been fulfilled
         if (expectationManager.ongoingExpectationPresent(primary, context)) {
             return UpdateControl.noUpdate();
         }
@@ -299,7 +379,7 @@ public class ExpectationReconciler implements Reconciler<ExpectationCustomResour
             return UpdateControl.noUpdate();
         } else {
             // Checks the expectation and removes it once it is fulfilled.
-            // In your logic you might add a next expectation based on your workflow.
+            // In your logic, you might add a next expectation based on your workflow.
             // Expectations have a name, so you can easily distinguish multiple expectations.
             var res = expectationManager.checkExpectation("deploymentReadyExpectation", primary, context);
             if (res.isFulfilled()) {
