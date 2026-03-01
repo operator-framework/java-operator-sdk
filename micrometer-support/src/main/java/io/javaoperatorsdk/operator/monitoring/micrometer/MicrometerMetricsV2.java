@@ -156,7 +156,7 @@ public class MicrometerMetricsV2 implements Metrics {
   }
 
   @Override
-  public <T> T timedControllerExecution(ControllerExecution<T> execution) {
+  public <T> T timeControllerExecution(ControllerExecution<T> execution) {
     final var name = execution.controllerName();
     final var timer = executionTimers.get(name);
     return timer.record(

@@ -34,7 +34,7 @@ import io.javaoperatorsdk.operator.processing.event.ResourceID;
  * All method calls are delegated to each metrics instance in the list in the order they were
  * provided to the constructor.
  *
- * <p><strong>Important:</strong> The {@link #timedControllerExecution(ControllerExecution)} method
+ * <p><strong>Important:</strong> The {@link #timeControllerExecution(ControllerExecution)} method
  * is handled specially - it is only invoked on the first metrics instance in the list, since it's
  * not an idempotent operation and can only be executed once. The controller execution cannot be
  * repeated multiple times as it would produce side effects and potentially inconsistent results.
@@ -110,7 +110,7 @@ public final class AggregatedMetrics implements Metrics {
   }
 
   @Override
-  public <T> T timedControllerExecution(ControllerExecution<T> execution) throws Exception {
-    return metricsList.get(0).timedControllerExecution(execution);
+  public <T> T timeControllerExecution(ControllerExecution<T> execution) throws Exception {
+    return metricsList.get(0).timeControllerExecution(execution);
   }
 }

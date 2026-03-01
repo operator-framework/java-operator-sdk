@@ -146,7 +146,7 @@ public class MicrometerMetrics implements Metrics {
   }
 
   @Override
-  public <T> T timedControllerExecution(ControllerExecution<T> execution) {
+  public <T> T timeControllerExecution(ControllerExecution<T> execution) {
     final var name = execution.controllerName();
     final var execName = PREFIX + CONTROLLERS_EXECUTION + execution.name();
     final var resourceID = execution.resourceID();

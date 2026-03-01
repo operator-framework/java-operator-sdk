@@ -115,7 +115,7 @@ public interface Metrics {
    * {@link io.javaoperatorsdk.operator.api.reconciler.Cleaner#cleanup(HasMetadata, Context)}. Note
    * that instances are automatically created for you by the SDK and passed to your Metrics
    * implementation at the appropriate time to the {@link
-   * #timedControllerExecution(ControllerExecution)} method.
+   * #timeControllerExecution(ControllerExecution)} method.
    *
    * @param <T> the outcome type associated with the controller execution. Currently, one of {@link
    *     io.javaoperatorsdk.operator.api.reconciler.UpdateControl} or {@link
@@ -184,7 +184,7 @@ public interface Metrics {
    * @throws Exception if an error occurred during the controller's execution, usually this should
    *     just be a pass-through of whatever the controller returned
    */
-  default <T> T timedControllerExecution(ControllerExecution<T> execution) throws Exception {
+  default <T> T timeControllerExecution(ControllerExecution<T> execution) throws Exception {
     return execution.execute();
   }
 }

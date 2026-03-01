@@ -150,30 +150,30 @@ class AggregatedMetricsTest {
   }
 
   @Test
-  void timedControllerExecution_shouldOnlyDelegateToFirstMetrics() throws Exception {
+  void timeControllerExecution_shouldOnlyDelegateToFirstMetrics() throws Exception {
     final var expectedResult = "execution result";
-    when(metrics1.timedControllerExecution(controllerExecution)).thenReturn(expectedResult);
+    when(metrics1.timeControllerExecution(controllerExecution)).thenReturn(expectedResult);
 
-    final var result = aggregatedMetrics.timedControllerExecution(controllerExecution);
+    final var result = aggregatedMetrics.timeControllerExecution(controllerExecution);
 
     assertThat(result).isEqualTo(expectedResult);
-    verify(metrics1).timedControllerExecution(controllerExecution);
-    verify(metrics2, never()).timedControllerExecution(any());
-    verify(metrics3, never()).timedControllerExecution(any());
+    verify(metrics1).timeControllerExecution(controllerExecution);
+    verify(metrics2, never()).timeControllerExecution(any());
+    verify(metrics3, never()).timeControllerExecution(any());
     verifyNoMoreInteractions(metrics1, metrics2, metrics3);
   }
 
   @Test
-  void timedControllerExecution_shouldPropagateException() throws Exception {
+  void timeControllerExecution_shouldPropagateException() throws Exception {
     final var expectedException = new RuntimeException("Controller execution failed");
-    when(metrics1.timedControllerExecution(controllerExecution)).thenThrow(expectedException);
+    when(metrics1.timeControllerExecution(controllerExecution)).thenThrow(expectedException);
 
-    assertThatThrownBy(() -> aggregatedMetrics.timedControllerExecution(controllerExecution))
+    assertThatThrownBy(() -> aggregatedMetrics.timeControllerExecution(controllerExecution))
         .isSameAs(expectedException);
 
-    verify(metrics1).timedControllerExecution(controllerExecution);
-    verify(metrics2, never()).timedControllerExecution(any());
-    verify(metrics3, never()).timedControllerExecution(any());
+    verify(metrics1).timeControllerExecution(controllerExecution);
+    verify(metrics2, never()).timeControllerExecution(any());
+    verify(metrics3, never()).timeControllerExecution(any());
     verifyNoMoreInteractions(metrics1, metrics2, metrics3);
   }
 }

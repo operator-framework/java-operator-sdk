@@ -52,14 +52,12 @@ class MetricsHandlingE2E {
   static final Logger log = LoggerFactory.getLogger(MetricsHandlingE2E.class);
   static final String OBSERVABILITY_NAMESPACE = "observability";
   static final int PROMETHEUS_PORT = 9090;
-  static final int GRAFANA_PORT = 3000;
   static final int OTEL_COLLECTOR_PORT = 4318;
   public static final Duration TEST_DURATION = Duration.ofSeconds(60);
   public static final String NAME_LABEL_KEY = "app.kubernetes.io/name";
 
   private LocalPortForward prometheusPortForward;
   private LocalPortForward otelCollectorPortForward;
-  private LocalPortForward grafanaPortForward;
 
   static final KubernetesClient client = new KubernetesClientBuilder().build();
 
@@ -90,7 +88,6 @@ class MetricsHandlingE2E {
     if (isLocal()) {
       otelCollectorPortForward =
           portForward(NAME_LABEL_KEY, "otel-collector-collector", OTEL_COLLECTOR_PORT);
-      grafanaPortForward = portForward(NAME_LABEL_KEY, "grafana", GRAFANA_PORT);
     }
     Thread.sleep(2000);
   }
@@ -99,7 +96,6 @@ class MetricsHandlingE2E {
   void cleanup() throws IOException {
     closePortForward(prometheusPortForward);
     closePortForward(otelCollectorPortForward);
-    closePortForward(grafanaPortForward);
   }
 
   private LocalPortForward portForward(String labelKey, String labelValue, int port) {

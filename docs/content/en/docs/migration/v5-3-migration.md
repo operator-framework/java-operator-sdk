@@ -4,7 +4,7 @@ description: Migrating from v5.2 to v5.3
 ---
 
 
-## Renamed JUnit Module
+## Rename of JUnit module
 
 If you use JUnit extension in your test just rename it from:
 
@@ -44,7 +44,7 @@ The following table shows the relevant method renames:
 | `finishedReconciliation`           | `reconciliationFinished`     |
 | `cleanupDoneFor`                   | `cleanupDone`                |
 | `receivedEvent`                    | `eventReceived`              |
-| `timeControllerExecution`          | `timedControllerExecution`   |
+
 
 Other changes:
 - `reconciliationFinished(..)` method is extended with `RetryInfo`
