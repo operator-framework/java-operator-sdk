@@ -39,6 +39,7 @@ import io.micrometer.core.instrument.Timer;
 
 import static io.javaoperatorsdk.operator.api.reconciler.Constants.CONTROLLER_NAME;
 
+@Deprecated
 public class MicrometerMetrics implements Metrics {
 
   private static final String PREFIX = "operator.sdk.";
@@ -208,6 +209,7 @@ public class MicrometerMetrics implements Metrics {
   }
 
   @Override
+  @Deprecated(forRemoval = true)
   public void reconcileCustomResource(
       HasMetadata resource, RetryInfo retryInfoNullable, Map<String, Object> metadata) {
     Optional<RetryInfo> retryInfo = Optional.ofNullable(retryInfoNullable);
@@ -228,7 +230,8 @@ public class MicrometerMetrics implements Metrics {
   }
 
   @Override
-  public void finishedReconciliation(HasMetadata resource, Map<String, Object> metadata) {
+  public void successfullyFinishedReconciliation(
+      HasMetadata resource, Map<String, Object> metadata) {
     incrementCounter(ResourceID.fromResource(resource), RECONCILIATIONS_SUCCESS, metadata);
   }
 
@@ -240,7 +243,8 @@ public class MicrometerMetrics implements Metrics {
   }
 
   @Override
-  public void reconciliationExecutionFinished(HasMetadata resource, Map<String, Object> metadata) {
+  public void reconciliationExecutionFinished(
+      HasMetadata resource, RetryInfo retryInfo, Map<String, Object> metadata) {
     var reconcilerExecutions =
         gauges.get(RECONCILIATIONS_EXECUTIONS + metadata.get(CONTROLLER_NAME));
     reconcilerExecutions.decrementAndGet();
@@ -252,7 +256,7 @@ public class MicrometerMetrics implements Metrics {
 
   @Override
   public void failedReconciliation(
-      HasMetadata resource, Exception exception, Map<String, Object> metadata) {
+      HasMetadata resource, RetryInfo retry, Exception exception, Map<String, Object> metadata) {
     var cause = exception.getCause();
     if (cause == null) {
       cause = exception;

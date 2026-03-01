@@ -26,7 +26,7 @@ import org.takes.http.Exit;
 import org.takes.http.FtBasic;
 
 import io.javaoperatorsdk.operator.Operator;
-import io.javaoperatorsdk.operator.monitoring.micrometer.MicrometerMetrics;
+import io.javaoperatorsdk.operator.monitoring.micrometer.MicrometerMetricsV2;
 import io.javaoperatorsdk.operator.sample.dependent.ResourcePollerConfig;
 import io.javaoperatorsdk.operator.sample.dependent.SchemaDependentResource;
 import io.micrometer.core.instrument.logging.LoggingMeterRegistry;
@@ -42,7 +42,8 @@ public class MySQLSchemaOperator {
         new Operator(
             overrider ->
                 overrider.withMetrics(
-                    MicrometerMetrics.withoutPerResourceMetrics(new LoggingMeterRegistry())));
+                    new MicrometerMetricsV2.MicrometerMetricsV2Builder(new LoggingMeterRegistry())
+                        .build()));
 
     MySQLSchemaReconciler schemaReconciler = new MySQLSchemaReconciler();
 

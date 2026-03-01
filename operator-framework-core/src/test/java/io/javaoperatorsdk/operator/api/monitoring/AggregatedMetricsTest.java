@@ -97,13 +97,12 @@ class AggregatedMetricsTest {
   @Test
   void failedReconciliation_shouldDelegateToAllMetricsInOrder() {
     final var exception = new RuntimeException("Test exception");
-
-    aggregatedMetrics.failedReconciliation(resource, exception, metadata);
+    aggregatedMetrics.failedReconciliation(resource, retryInfo, exception, metadata);
 
     final var inOrder = inOrder(metrics1, metrics2, metrics3);
-    inOrder.verify(metrics1).failedReconciliation(resource, exception, metadata);
-    inOrder.verify(metrics2).failedReconciliation(resource, exception, metadata);
-    inOrder.verify(metrics3).failedReconciliation(resource, exception, metadata);
+    inOrder.verify(metrics1).failedReconciliation(resource, retryInfo, exception, metadata);
+    inOrder.verify(metrics2).failedReconciliation(resource, retryInfo, exception, metadata);
+    inOrder.verify(metrics3).failedReconciliation(resource, retryInfo, exception, metadata);
     verifyNoMoreInteractions(metrics1, metrics2, metrics3);
   }
 
@@ -120,12 +119,12 @@ class AggregatedMetricsTest {
 
   @Test
   void reconciliationExecutionFinished_shouldDelegateToAllMetricsInOrder() {
-    aggregatedMetrics.reconciliationExecutionFinished(resource, metadata);
+    aggregatedMetrics.reconciliationExecutionFinished(resource, retryInfo, metadata);
 
     final var inOrder = inOrder(metrics1, metrics2, metrics3);
-    inOrder.verify(metrics1).reconciliationExecutionFinished(resource, metadata);
-    inOrder.verify(metrics2).reconciliationExecutionFinished(resource, metadata);
-    inOrder.verify(metrics3).reconciliationExecutionFinished(resource, metadata);
+    inOrder.verify(metrics1).reconciliationExecutionFinished(resource, retryInfo, metadata);
+    inOrder.verify(metrics2).reconciliationExecutionFinished(resource, retryInfo, metadata);
+    inOrder.verify(metrics3).reconciliationExecutionFinished(resource, retryInfo, metadata);
     verifyNoMoreInteractions(metrics1, metrics2, metrics3);
   }
 
@@ -141,14 +140,13 @@ class AggregatedMetricsTest {
   }
 
   @Test
-  void finishedReconciliation_shouldDelegateToAllMetricsInOrder() {
-    aggregatedMetrics.finishedReconciliation(resource, metadata);
+  void successfullyFinishedReconciliation_shouldDelegateToAllMetricsInOrder() {
+    aggregatedMetrics.successfullyFinishedReconciliation(resource, metadata);
 
     final var inOrder = inOrder(metrics1, metrics2, metrics3);
-    inOrder.verify(metrics1).finishedReconciliation(resource, metadata);
-    inOrder.verify(metrics2).finishedReconciliation(resource, metadata);
-    inOrder.verify(metrics3).finishedReconciliation(resource, metadata);
-    verifyNoMoreInteractions(metrics1, metrics2, metrics3);
+    inOrder.verify(metrics1).successfullyFinishedReconciliation(resource, metadata);
+    inOrder.verify(metrics2).successfullyFinishedReconciliation(resource, metadata);
+    inOrder.verify(metrics3).successfullyFinishedReconciliation(resource, metadata);
   }
 
   @Test

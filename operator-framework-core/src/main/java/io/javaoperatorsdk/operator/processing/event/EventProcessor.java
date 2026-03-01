@@ -180,7 +180,7 @@ public class EventProcessor<P extends HasMetadata> implements EventHandler, Life
                 state.deleteEventPresent(),
                 state.isDeleteFinalStateUnknown());
         state.unMarkEventReceived(triggerOnAllEvents());
-        metrics.reconcileCustomResource(latest, state.getRetry(), metricsMetadata);
+        metrics.submittedForReconciliation(latest, state.getRetry(), metricsMetadata);
         log.debug("Executing events for custom resource. Scope: {}", executionScope);
         executor.execute(new ReconcilerExecutor(resourceID, executionScope));
       } else {
@@ -286,13 +286,12 @@ public class EventProcessor<P extends HasMetadata> implements EventHandler, Life
       return;
     }
     cleanupOnSuccessfulExecution(executionScope);
-    metrics.finishedReconciliation(executionScope.getResource(), metricsMetadata);
+    metrics.successfullyFinishedReconciliation(executionScope.getResource(), metricsMetadata);
     if ((triggerOnAllEvents() && executionScope.isDeleteEvent())
         || (!triggerOnAllEvents() && state.deleteEventPresent())) {
       cleanupForDeletedEvent(executionScope.getResourceID());
     } else if (postExecutionControl.isFinalizerRemoved()) {
       state.markProcessedMarkForDeletion();
-      metrics.cleanupDoneFor(resourceID, metricsMetadata);
     } else {
       if (state.eventPresent() || isTriggerOnAllEventAndDeleteEventPresent(state)) {
         log.debug("Submitting for reconciliation.");
@@ -362,19 +361,18 @@ public class EventProcessor<P extends HasMetadata> implements EventHandler, Life
         state.eventPresent()
             || (triggerOnAllEvents() && state.isAdditionalEventPresentAfterDeleteEvent());
     state.markEventReceived(triggerOnAllEvents());
-
     retryAwareErrorLogging(state.getRetry(), eventPresent, exception, executionScope);
+    metrics.failedReconciliation(
+        executionScope.getResource(), state.getRetry(), exception, metricsMetadata);
     if (eventPresent) {
       log.debug("New events exist for resource id");
       submitReconciliationExecution(state);
       return;
     }
     Optional<Long> nextDelay = state.getRetry().nextDelay();
-
     nextDelay.ifPresentOrElse(
         delay -> {
           log.debug("Scheduling timer event for retry with delay:{}", delay);
-          metrics.failedReconciliation(executionScope.getResource(), exception, metricsMetadata);
           retryEventSource().scheduleOnce(resourceID, delay);
         },
         () -> {
@@ -537,7 +535,8 @@ public class EventProcessor<P extends HasMetadata> implements EventHandler, Life
             reconciliationDispatcher.handleExecution(executionScope);
         eventProcessingFinished(executionScope, postExecutionControl);
       } finally {
-        metrics.reconciliationExecutionFinished(executionScope.getResource(), metricsMetadata);
+        metrics.reconciliationExecutionFinished(
+            executionScope.getResource(), executionScope.getRetryInfo(), metricsMetadata);
         // restore original name
         thread.setName(name);
         MDCUtils.removeResourceInfo();
