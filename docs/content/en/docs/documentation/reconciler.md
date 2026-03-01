@@ -220,7 +220,7 @@ public UpdateControl<WebPage> reconcile(WebPage webPage, Context<WebPage> contex
     
     makeStatusChanages(webPage);
     // this is equivalent to UpdateControl.patchStatus(webpage)
-    context.resourceOperations().serverSideApplyPrimaryStatus(desiredIngress);
+    context.resourceOperations().serverSideApplyPrimaryStatus(webPage);
     return UpdateControl.noUpdate();
 }
 ```
