@@ -169,11 +169,11 @@ supports stronger guarantees, both for primary and secondary resources. If this 
 1. Reading cache after our update - even withing same reconciliation - returns the fresh resource.
    Fresh means at least the version of the resource that is in the response form our update. 
    Or more recent one if some other party updated the resource after our update.
-2. Filtering events for the update from the controller. If the controller updates a resource
-   the event produced the Kubernetes API and propagated to Informer would normally trigger a next
-   reconciliation, however this is not ideal, since we already have that up-to-date resource
+2. Filtering events for our updates. If the controller updates a resource
+   an event is produced by the Kubernetes API and propagated to Informer, what would normally trigger a next
+   reconciliation. However, this is not ideal, since we already have that up-to-date resource
    in the cache in the current reconciliation, so in general it is not desirable to reconcile that again.
-   This feature makes sure that the reconciliation is not triggered from the event from our writes.
+   This feature also makes sure that the reconciliation is not triggered from the event from our writes.
 
 
 In order to have these guarantees use [`ResourceOperations`](https://github.com/operator-framework/java-operator-sdk/blob/main/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/api/reconciler/ResourceOperations.java)
@@ -225,6 +225,14 @@ public UpdateControl<WebPage> reconcile(WebPage webPage, Context<WebPage> contex
     return UpdateControl.noUpdate();
 }
 ```
+
+### Caveats
+
+- This feature is implemented on top of fabric8 client informers using additional caches in `InformerEventSource`,
+  so it is safe to use `context.getSecondaryResources(..)` or `InformerEventSource.get(ResourceID)`
+  methods. However won't work with `InformerEventSource.list(..)` method, since it directly reads
+  the underlying informer cache.
+
 
 ### Notes
 - Talk about this feature in this [talk](https://www.youtube.com/watch?v=HrwHh5Yh6AM&t=1387s).
