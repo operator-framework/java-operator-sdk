@@ -59,9 +59,7 @@ public interface Metrics {
    */
   @Deprecated(forRemoval = true)
   default void reconcileCustomResource(
-      HasMetadata resource, RetryInfo retryInfo, Map<String, Object> metadata) {
-    submittedForReconciliation(resource, retryInfo, metadata);
-  }
+      HasMetadata resource, RetryInfo retryInfo, Map<String, Object> metadata) {}
 
   /**
    * Called right before a resource is submitted to the ExecutorService for reconciliation.
@@ -71,7 +69,9 @@ public interface Metrics {
    * @param metadata metadata associated with the resource being processed
    */
   default void submittedForReconciliation(
-      HasMetadata resource, RetryInfo retryInfo, Map<String, Object> metadata) {}
+      HasMetadata resource, RetryInfo retryInfo, Map<String, Object> metadata) {
+    reconcileCustomResource(resource, retryInfo, metadata);
+  }
 
   default void reconciliationExecutionStarted(HasMetadata resource, Map<String, Object> metadata) {}
 
@@ -100,14 +100,16 @@ public interface Metrics {
    * @param metadata metadata associated with the resource being processed
    */
   default void successfullyFinishedReconciliation(
-      HasMetadata resource, Map<String, Object> metadata) {}
+      HasMetadata resource, Map<String, Object> metadata) {
+    finishedReconciliation(resource, metadata);
+  }
 
   /**
    * Always called not only if successfully finished.
    *
    * @param resource the {@link ResourceID} associated with the resource being processed
-   * @param retryInfo note that this retry info is in state after {@link RetryExecution#nextDelay()} is
-   *     called in case of exception.
+   * @param retryInfo note that this retry info is in state after {@link RetryExecution#nextDelay()}
+   *     is called in case of exception.
    * @param metadata metadata associated with the resource being processed
    */
   default void reconciliationExecutionFinished(
@@ -128,9 +130,7 @@ public interface Metrics {
    * @param metadata metadata associated with the resource being processed
    */
   @Deprecated(forRemoval = true)
-  default void finishedReconciliation(HasMetadata resource, Map<String, Object> metadata) {
-    successfullyFinishedReconciliation(resource, metadata);
-  }
+  default void finishedReconciliation(HasMetadata resource, Map<String, Object> metadata) {}
 
   /**
    * Encapsulates the information about a controller execution i.e. a call to either {@link

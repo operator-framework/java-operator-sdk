@@ -180,7 +180,7 @@ public class EventProcessor<P extends HasMetadata> implements EventHandler, Life
                 state.deleteEventPresent(),
                 state.isDeleteFinalStateUnknown());
         state.unMarkEventReceived(triggerOnAllEvents());
-        metrics.reconcileCustomResource(latest, state.getRetry(), metricsMetadata);
+        metrics.submittedForReconciliation(latest, state.getRetry(), metricsMetadata);
         log.debug("Executing events for custom resource. Scope: {}", executionScope);
         executor.execute(new ReconcilerExecutor(resourceID, executionScope));
       } else {
@@ -286,7 +286,7 @@ public class EventProcessor<P extends HasMetadata> implements EventHandler, Life
       return;
     }
     cleanupOnSuccessfulExecution(executionScope);
-    metrics.finishedReconciliation(executionScope.getResource(), metricsMetadata);
+    metrics.successfullyFinishedReconciliation(executionScope.getResource(), metricsMetadata);
     if ((triggerOnAllEvents() && executionScope.isDeleteEvent())
         || (!triggerOnAllEvents() && state.deleteEventPresent())) {
       cleanupForDeletedEvent(executionScope.getResourceID());

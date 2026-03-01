@@ -85,8 +85,7 @@ public class MicrometerMetricsV2 implements Metrics {
    * @return a MicrometerMetricsV2 instance configured to not collect per-resource metrics
    * @see MicrometerMetricsV2Builder
    */
-  public static MicrometerMetricsV2Builder newPerResourceCollectingMicrometerMetricsBuilder(
-      MeterRegistry registry) {
+  public static MicrometerMetricsV2Builder newMicrometerMetricsV2Builder(MeterRegistry registry) {
     return new MicrometerMetricsV2Builder(registry);
   }
 
@@ -175,9 +174,6 @@ public class MicrometerMetricsV2 implements Metrics {
     if (event instanceof ResourceEvent resourceEvent) {
       if (resourceEvent.getAction() == ResourceAction.ADDED) {
         gauges.get(numberOfResourcesRefName(getControllerName(metadata))).incrementAndGet();
-      }
-      if (resourceEvent.getAction() == ResourceAction.DELETED) {
-        gauges.get(numberOfResourcesRefName(getControllerName(metadata))).decrementAndGet();
       }
       var namespace = resourceEvent.getRelatedCustomResourceID().getNamespace().orElse(null);
       incrementCounter(
