@@ -146,7 +146,7 @@ public class MicrometerMetrics implements Metrics {
   }
 
   @Override
-  public <T> T timeControllerExecution(ControllerExecution<T> execution) {
+  public <T> T timedControllerExecution(ControllerExecution<T> execution) {
     final var name = execution.controllerName();
     final var execName = PREFIX + CONTROLLERS_EXECUTION + execution.name();
     final var resourceID = execution.resourceID();
@@ -183,7 +183,7 @@ public class MicrometerMetrics implements Metrics {
   }
 
   @Override
-  public void receivedEvent(Event event, Map<String, Object> metadata) {
+  public void eventReceived(Event event, Map<String, Object> metadata) {
     if (event instanceof ResourceEvent) {
       incrementCounter(
           event.getRelatedCustomResourceID(),
@@ -209,7 +209,7 @@ public class MicrometerMetrics implements Metrics {
   }
 
   @Override
-  public void submittedForReconciliation(
+  public void reconciliationSubmitted(
       HasMetadata resource, RetryInfo retryInfoNullable, Map<String, Object> metadata) {
     Optional<RetryInfo> retryInfo = Optional.ofNullable(retryInfoNullable);
     incrementCounter(
@@ -229,7 +229,7 @@ public class MicrometerMetrics implements Metrics {
   }
 
   @Override
-  public void successfulReconciliation(HasMetadata resource, Map<String, Object> metadata) {
+  public void reconciliationSucceeded(HasMetadata resource, Map<String, Object> metadata) {
     incrementCounter(ResourceID.fromResource(resource), RECONCILIATIONS_SUCCESS, metadata);
   }
 
@@ -253,7 +253,7 @@ public class MicrometerMetrics implements Metrics {
   }
 
   @Override
-  public void failedReconciliation(
+  public void reconciliationFailed(
       HasMetadata resource, RetryInfo retry, Exception exception, Map<String, Object> metadata) {
     var cause = exception.getCause();
     if (cause == null) {

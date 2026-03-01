@@ -143,7 +143,7 @@ public class Controller<P extends HasMetadata>
 
   @Override
   public UpdateControl<P> reconcile(P resource, Context<P> context) throws Exception {
-    return metrics.timeControllerExecution(
+    return metrics.timedControllerExecution(
         new ControllerExecution<>() {
           @Override
           public String name() {
@@ -196,7 +196,7 @@ public class Controller<P extends HasMetadata>
   @Override
   public DeleteControl cleanup(P resource, Context<P> context) {
     try {
-      return metrics.timeControllerExecution(
+      return metrics.timedControllerExecution(
           new ControllerExecution<>() {
             @Override
             public String name() {

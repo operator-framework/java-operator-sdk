@@ -156,7 +156,7 @@ public class MicrometerMetricsV2 implements Metrics {
   }
 
   @Override
-  public <T> T timeControllerExecution(ControllerExecution<T> execution) {
+  public <T> T timedControllerExecution(ControllerExecution<T> execution) {
     final var name = execution.controllerName();
     final var timer = executionTimers.get(name);
     return timer.record(
@@ -170,7 +170,7 @@ public class MicrometerMetricsV2 implements Metrics {
   }
 
   @Override
-  public void receivedEvent(Event event, Map<String, Object> metadata) {
+  public void eventReceived(Event event, Map<String, Object> metadata) {
     if (event instanceof ResourceEvent resourceEvent) {
       if (resourceEvent.getAction() == ResourceAction.ADDED) {
         gauges.get(numberOfResourcesRefName(getControllerName(metadata))).incrementAndGet();
@@ -199,7 +199,7 @@ public class MicrometerMetricsV2 implements Metrics {
   }
 
   @Override
-  public void submittedForReconciliation(
+  public void reconciliationSubmitted(
       HasMetadata resource, RetryInfo retryInfoNullable, Map<String, Object> metadata) {
     Optional<RetryInfo> retryInfo = Optional.ofNullable(retryInfoNullable);
 
@@ -217,7 +217,7 @@ public class MicrometerMetricsV2 implements Metrics {
   }
 
   @Override
-  public void successfulReconciliation(HasMetadata resource, Map<String, Object> metadata) {
+  public void reconciliationSucceeded(HasMetadata resource, Map<String, Object> metadata) {
     incrementCounter(RECONCILIATIONS_SUCCESS, resource.getMetadata().getNamespace(), metadata);
   }
 
@@ -241,7 +241,7 @@ public class MicrometerMetricsV2 implements Metrics {
   }
 
   @Override
-  public void failedReconciliation(
+  public void reconciliationFailed(
       HasMetadata resource, RetryInfo retry, Exception exception, Map<String, Object> metadata) {
     incrementCounter(RECONCILIATIONS_FAILED, resource.getMetadata().getNamespace(), metadata);
   }

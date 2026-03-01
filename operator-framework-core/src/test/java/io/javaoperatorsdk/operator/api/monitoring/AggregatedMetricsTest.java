@@ -73,36 +73,36 @@ class AggregatedMetricsTest {
   }
 
   @Test
-  void receivedEvent_shouldDelegateToAllMetricsInOrder() {
-    aggregatedMetrics.receivedEvent(event, metadata);
+  void eventReceived_shouldDelegateToAllMetricsInOrder() {
+    aggregatedMetrics.eventReceived(event, metadata);
 
     final var inOrder = inOrder(metrics1, metrics2, metrics3);
-    inOrder.verify(metrics1).receivedEvent(event, metadata);
-    inOrder.verify(metrics2).receivedEvent(event, metadata);
-    inOrder.verify(metrics3).receivedEvent(event, metadata);
+    inOrder.verify(metrics1).eventReceived(event, metadata);
+    inOrder.verify(metrics2).eventReceived(event, metadata);
+    inOrder.verify(metrics3).eventReceived(event, metadata);
     verifyNoMoreInteractions(metrics1, metrics2, metrics3);
   }
 
   @Test
-  void submittedForReconciliation_shouldDelegateToAllMetricsInOrder() {
-    aggregatedMetrics.submittedForReconciliation(resource, retryInfo, metadata);
+  void reconciliationSubmitted_shouldDelegateToAllMetricsInOrder() {
+    aggregatedMetrics.reconciliationSubmitted(resource, retryInfo, metadata);
 
     final var inOrder = inOrder(metrics1, metrics2, metrics3);
-    inOrder.verify(metrics1).submittedForReconciliation(resource, retryInfo, metadata);
-    inOrder.verify(metrics2).submittedForReconciliation(resource, retryInfo, metadata);
-    inOrder.verify(metrics3).submittedForReconciliation(resource, retryInfo, metadata);
+    inOrder.verify(metrics1).reconciliationSubmitted(resource, retryInfo, metadata);
+    inOrder.verify(metrics2).reconciliationSubmitted(resource, retryInfo, metadata);
+    inOrder.verify(metrics3).reconciliationSubmitted(resource, retryInfo, metadata);
     verifyNoMoreInteractions(metrics1, metrics2, metrics3);
   }
 
   @Test
-  void failedReconciliation_shouldDelegateToAllMetricsInOrder() {
+  void reconciliationFailed_shouldDelegateToAllMetricsInOrder() {
     final var exception = new RuntimeException("Test exception");
-    aggregatedMetrics.failedReconciliation(resource, retryInfo, exception, metadata);
+    aggregatedMetrics.reconciliationFailed(resource, retryInfo, exception, metadata);
 
     final var inOrder = inOrder(metrics1, metrics2, metrics3);
-    inOrder.verify(metrics1).failedReconciliation(resource, retryInfo, exception, metadata);
-    inOrder.verify(metrics2).failedReconciliation(resource, retryInfo, exception, metadata);
-    inOrder.verify(metrics3).failedReconciliation(resource, retryInfo, exception, metadata);
+    inOrder.verify(metrics1).reconciliationFailed(resource, retryInfo, exception, metadata);
+    inOrder.verify(metrics2).reconciliationFailed(resource, retryInfo, exception, metadata);
+    inOrder.verify(metrics3).reconciliationFailed(resource, retryInfo, exception, metadata);
     verifyNoMoreInteractions(metrics1, metrics2, metrics3);
   }
 
@@ -140,40 +140,40 @@ class AggregatedMetricsTest {
   }
 
   @Test
-  void successfulReconciliation_shouldDelegateToAllMetricsInOrder() {
-    aggregatedMetrics.successfulReconciliation(resource, metadata);
+  void reconciliationSucceeded_shouldDelegateToAllMetricsInOrder() {
+    aggregatedMetrics.reconciliationSucceeded(resource, metadata);
 
     final var inOrder = inOrder(metrics1, metrics2, metrics3);
-    inOrder.verify(metrics1).successfulReconciliation(resource, metadata);
-    inOrder.verify(metrics2).successfulReconciliation(resource, metadata);
-    inOrder.verify(metrics3).successfulReconciliation(resource, metadata);
+    inOrder.verify(metrics1).reconciliationSucceeded(resource, metadata);
+    inOrder.verify(metrics2).reconciliationSucceeded(resource, metadata);
+    inOrder.verify(metrics3).reconciliationSucceeded(resource, metadata);
   }
 
   @Test
-  void timeControllerExecution_shouldOnlyDelegateToFirstMetrics() throws Exception {
+  void timedControllerExecution_shouldOnlyDelegateToFirstMetrics() throws Exception {
     final var expectedResult = "execution result";
-    when(metrics1.timeControllerExecution(controllerExecution)).thenReturn(expectedResult);
+    when(metrics1.timedControllerExecution(controllerExecution)).thenReturn(expectedResult);
 
-    final var result = aggregatedMetrics.timeControllerExecution(controllerExecution);
+    final var result = aggregatedMetrics.timedControllerExecution(controllerExecution);
 
     assertThat(result).isEqualTo(expectedResult);
-    verify(metrics1).timeControllerExecution(controllerExecution);
-    verify(metrics2, never()).timeControllerExecution(any());
-    verify(metrics3, never()).timeControllerExecution(any());
+    verify(metrics1).timedControllerExecution(controllerExecution);
+    verify(metrics2, never()).timedControllerExecution(any());
+    verify(metrics3, never()).timedControllerExecution(any());
     verifyNoMoreInteractions(metrics1, metrics2, metrics3);
   }
 
   @Test
-  void timeControllerExecution_shouldPropagateException() throws Exception {
+  void timedControllerExecution_shouldPropagateException() throws Exception {
     final var expectedException = new RuntimeException("Controller execution failed");
-    when(metrics1.timeControllerExecution(controllerExecution)).thenThrow(expectedException);
+    when(metrics1.timedControllerExecution(controllerExecution)).thenThrow(expectedException);
 
-    assertThatThrownBy(() -> aggregatedMetrics.timeControllerExecution(controllerExecution))
+    assertThatThrownBy(() -> aggregatedMetrics.timedControllerExecution(controllerExecution))
         .isSameAs(expectedException);
 
-    verify(metrics1).timeControllerExecution(controllerExecution);
-    verify(metrics2, never()).timeControllerExecution(any());
-    verify(metrics3, never()).timeControllerExecution(any());
+    verify(metrics1).timedControllerExecution(controllerExecution);
+    verify(metrics2, never()).timedControllerExecution(any());
+    verify(metrics3, never()).timedControllerExecution(any());
     verifyNoMoreInteractions(metrics1, metrics2, metrics3);
   }
 }

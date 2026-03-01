@@ -127,7 +127,7 @@ public class EventProcessor<P extends HasMetadata> implements EventHandler, Life
       var state = optionalState.orElseThrow();
       final var resourceID = event.getRelatedCustomResourceID();
       MDCUtils.addResourceIDInfo(resourceID);
-      metrics.receivedEvent(event, metricsMetadata);
+      metrics.eventReceived(event, metricsMetadata);
       handleEventMarking(event, state);
       if (!this.running) {
         if (state.deleteEventPresent()) {
@@ -180,7 +180,7 @@ public class EventProcessor<P extends HasMetadata> implements EventHandler, Life
                 state.deleteEventPresent(),
                 state.isDeleteFinalStateUnknown());
         state.unMarkEventReceived(triggerOnAllEvents());
-        metrics.submittedForReconciliation(latest, state.getRetry(), metricsMetadata);
+        metrics.reconciliationSubmitted(latest, state.getRetry(), metricsMetadata);
         log.debug("Executing events for custom resource. Scope: {}", executionScope);
         executor.execute(new ReconcilerExecutor(resourceID, executionScope));
       } else {
@@ -286,7 +286,7 @@ public class EventProcessor<P extends HasMetadata> implements EventHandler, Life
       return;
     }
     cleanupOnSuccessfulExecution(executionScope);
-    metrics.successfulReconciliation(executionScope.getResource(), metricsMetadata);
+    metrics.reconciliationSucceeded(executionScope.getResource(), metricsMetadata);
     if ((triggerOnAllEvents() && executionScope.isDeleteEvent())
         || (!triggerOnAllEvents() && state.deleteEventPresent())) {
       cleanupForDeletedEvent(executionScope.getResourceID());
@@ -362,7 +362,7 @@ public class EventProcessor<P extends HasMetadata> implements EventHandler, Life
             || (triggerOnAllEvents() && state.isAdditionalEventPresentAfterDeleteEvent());
     state.markEventReceived(triggerOnAllEvents());
     retryAwareErrorLogging(state.getRetry(), eventPresent, exception, executionScope);
-    metrics.failedReconciliation(
+    metrics.reconciliationFailed(
         executionScope.getResource(), state.getRetry(), exception, metricsMetadata);
     if (eventPresent) {
       log.debug("New events exist for resource id");

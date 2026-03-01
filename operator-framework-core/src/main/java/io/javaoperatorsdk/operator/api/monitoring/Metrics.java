@@ -48,7 +48,7 @@ public interface Metrics {
    * @param event the event
    * @param metadata metadata associated with the resource being processed
    */
-  default void receivedEvent(Event event, Map<String, Object> metadata) {}
+  default void eventReceived(Event event, Map<String, Object> metadata) {}
 
   /**
    * Called right before a resource is submitted to the ExecutorService for reconciliation.
@@ -57,7 +57,7 @@ public interface Metrics {
    * @param retryInfo the current retry state information for the reconciliation request
    * @param metadata metadata associated with the resource being processed
    */
-  default void submittedForReconciliation(
+  default void reconciliationSubmitted(
       HasMetadata resource, RetryInfo retryInfo, Map<String, Object> metadata) {}
 
   default void reconciliationStarted(HasMetadata resource, Map<String, Object> metadata) {}
@@ -71,7 +71,7 @@ public interface Metrics {
    * @param exception the exception that caused the failed reconciliation resulting in a retry
    * @param metadata metadata associated with the resource being processed
    */
-  default void failedReconciliation(
+  default void reconciliationFailed(
       HasMetadata resource,
       RetryInfo retryInfo,
       Exception exception,
@@ -86,7 +86,7 @@ public interface Metrics {
    * @param resource the {@link ResourceID} associated with the resource being processed
    * @param metadata metadata associated with the resource being processed
    */
-  default void successfulReconciliation(HasMetadata resource, Map<String, Object> metadata) {}
+  default void reconciliationSucceeded(HasMetadata resource, Map<String, Object> metadata) {}
 
   /**
    * Always called when the reconciliation is finished, not only if reconciliation successfully
@@ -115,7 +115,7 @@ public interface Metrics {
    * {@link io.javaoperatorsdk.operator.api.reconciler.Cleaner#cleanup(HasMetadata, Context)}. Note
    * that instances are automatically created for you by the SDK and passed to your Metrics
    * implementation at the appropriate time to the {@link
-   * #timeControllerExecution(ControllerExecution)} method.
+   * #timedControllerExecution(ControllerExecution)} method.
    *
    * @param <T> the outcome type associated with the controller execution. Currently, one of {@link
    *     io.javaoperatorsdk.operator.api.reconciler.UpdateControl} or {@link
@@ -184,7 +184,7 @@ public interface Metrics {
    * @throws Exception if an error occurred during the controller's execution, usually this should
    *     just be a pass-through of whatever the controller returned
    */
-  default <T> T timeControllerExecution(ControllerExecution<T> execution) throws Exception {
+  default <T> T timedControllerExecution(ControllerExecution<T> execution) throws Exception {
     return execution.execute();
   }
 }

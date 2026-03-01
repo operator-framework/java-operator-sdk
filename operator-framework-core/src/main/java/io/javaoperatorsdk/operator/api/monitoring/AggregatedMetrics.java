@@ -34,7 +34,7 @@ import io.javaoperatorsdk.operator.processing.event.ResourceID;
  * All method calls are delegated to each metrics instance in the list in the order they were
  * provided to the constructor.
  *
- * <p><strong>Important:</strong> The {@link #timeControllerExecution(ControllerExecution)} method
+ * <p><strong>Important:</strong> The {@link #timedControllerExecution(ControllerExecution)} method
  * is handled specially - it is only invoked on the first metrics instance in the list, since it's
  * not an idempotent operation and can only be executed once. The controller execution cannot be
  * repeated multiple times as it would produce side effects and potentially inconsistent results.
@@ -71,22 +71,21 @@ public final class AggregatedMetrics implements Metrics {
   }
 
   @Override
-  public void receivedEvent(Event event, Map<String, Object> metadata) {
-    metricsList.forEach(metrics -> metrics.receivedEvent(event, metadata));
+  public void eventReceived(Event event, Map<String, Object> metadata) {
+    metricsList.forEach(metrics -> metrics.eventReceived(event, metadata));
   }
 
   @Override
-  public void submittedForReconciliation(
+  public void reconciliationSubmitted(
       HasMetadata resource, RetryInfo retryInfo, Map<String, Object> metadata) {
-    metricsList.forEach(
-        metrics -> metrics.submittedForReconciliation(resource, retryInfo, metadata));
+    metricsList.forEach(metrics -> metrics.reconciliationSubmitted(resource, retryInfo, metadata));
   }
 
   @Override
-  public void failedReconciliation(
+  public void reconciliationFailed(
       HasMetadata resource, RetryInfo retry, Exception exception, Map<String, Object> metadata) {
     metricsList.forEach(
-        metrics -> metrics.failedReconciliation(resource, retry, exception, metadata));
+        metrics -> metrics.reconciliationFailed(resource, retry, exception, metadata));
   }
 
   @Override
@@ -106,12 +105,12 @@ public final class AggregatedMetrics implements Metrics {
   }
 
   @Override
-  public void successfulReconciliation(HasMetadata resource, Map<String, Object> metadata) {
-    metricsList.forEach(metrics -> metrics.successfulReconciliation(resource, metadata));
+  public void reconciliationSucceeded(HasMetadata resource, Map<String, Object> metadata) {
+    metricsList.forEach(metrics -> metrics.reconciliationSucceeded(resource, metadata));
   }
 
   @Override
-  public <T> T timeControllerExecution(ControllerExecution<T> execution) throws Exception {
-    return metricsList.get(0).timeControllerExecution(execution);
+  public <T> T timedControllerExecution(ControllerExecution<T> execution) throws Exception {
+    return metricsList.get(0).timedControllerExecution(execution);
   }
 }

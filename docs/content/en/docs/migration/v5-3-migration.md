@@ -28,19 +28,24 @@ to
 </dependency>
 ```
 
-
 ## Metrics interface changes
 
 The [Metrics](https://github.com/operator-framework/java-operator-sdk/blob/main/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/api/monitoring/Metrics.java) 
 interface changed in non backwards compatible way, in order to make the API cleaner:
 
-The following table show the relevant changes:
+The following table shows the relevant method renames:
 
-1. `reconcileCustomResource` -> `submittedForReconciliation`
-2. `reconciliationExecutionStarted` -> `reconciliationStarted` 
-3. `reconciliationExecutionFinished` -> `successfulReconciliation`
-4. `cleanupDoneFor` -> `cleanupDone`
+| v5.2 method                        | v5.3 method                  |
+|------------------------------------|------------------------------|
+| `reconcileCustomResource`          | `reconciliationSubmitted`    |
+| `reconciliationExecutionStarted`   | `reconciliationStarted`      |
+| `reconciliationExecutionFinished`  | `reconciliationSucceeded`    |
+| `failedReconciliation`             | `reconciliationFailed`       |
+| `finishedReconciliation`           | `reconciliationFinished`     |
+| `cleanupDoneFor`                   | `cleanupDone`                |
+| `receivedEvent`                    | `eventReceived`              |
+| `timeControllerExecution`          | `timedControllerExecution`   |
 
 Other changes:
-
-- `finishedReconciliation(..)` method was extended with `RetryInfo`
+- `reconciliationFinished(..)` method is extended with `RetryInfo`
+- `monitorSizeOf(..)` method is removed.
