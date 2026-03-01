@@ -219,9 +219,8 @@ with `resourceOperations`:
 public UpdateControl<WebPage> reconcile(WebPage webPage, Context<WebPage> context) {
     
     makeStatusChanages(webPage);
-    // this is equivalent with the update done by UpdateControl
+    // this is equivalent to UpdateControl.patchStatus(webpage)
     context.resourceOperations().serverSideApplyPrimaryStatus(desiredIngress);
-    
     return UpdateControl.noUpdate();
 }
 ```
