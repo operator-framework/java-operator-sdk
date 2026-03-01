@@ -78,12 +78,14 @@ class InformerEventSourceTest {
   @BeforeEach
   void setup() {
     final var informerConfig = mock(InformerConfiguration.class);
+    SecondaryToPrimaryMapper secondaryToPrimaryMapper = mock(SecondaryToPrimaryMapper.class);
+    when(informerEventSourceConfiguration.getSecondaryToPrimaryMapper())
+        .thenReturn(secondaryToPrimaryMapper);
+    when(secondaryToPrimaryMapper.toPrimaryResourceIDs(any()))
+        .thenReturn(Set.of(ResourceID.fromResource(testDeployment())));
     when(informerEventSourceConfiguration.getInformerConfig()).thenReturn(informerConfig);
     when(informerConfig.getEffectiveNamespaces(any())).thenReturn(DEFAULT_NAMESPACES_SET);
-    when(informerEventSourceConfiguration.getSecondaryToPrimaryMapper())
-        .thenReturn(mock(SecondaryToPrimaryMapper.class));
     when(informerEventSourceConfiguration.getResourceClass()).thenReturn(Deployment.class);
-
     informerEventSource =
         spy(
             new InformerEventSource<>(informerEventSourceConfiguration, clientMock) {
@@ -97,11 +99,6 @@ class InformerEventSourceTest {
 
     informerEventSource.setEventHandler(eventHandlerMock);
     informerEventSource.setControllerConfiguration(mockControllerConfig);
-    SecondaryToPrimaryMapper secondaryToPrimaryMapper = mock(SecondaryToPrimaryMapper.class);
-    when(informerEventSourceConfiguration.getSecondaryToPrimaryMapper())
-        .thenReturn(secondaryToPrimaryMapper);
-    when(secondaryToPrimaryMapper.toPrimaryResourceIDs(any()))
-        .thenReturn(Set.of(ResourceID.fromResource(testDeployment())));
     informerEventSource.start();
     informerEventSource.setTemporalResourceCache(temporaryResourceCache);
   }
