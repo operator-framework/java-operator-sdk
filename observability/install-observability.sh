@@ -66,15 +66,11 @@ echo -e "\n${YELLOW}All resources will be applied first, then we'll wait for the
 
 # Install cert-manager (required for OpenTelemetry Operator)
 echo -e "\n${YELLOW}Installing cert-manager...${NC}"
-if kubectl get namespace cert-manager > /dev/null 2>&1; then
-    echo -e "${YELLOW}cert-manager namespace already exists, skipping...${NC}"
-else
-    kubectl create namespace cert-manager
-    helm install cert-manager jetstack/cert-manager \
-        --namespace cert-manager \
-        --set crds.enabled=true
-    echo -e "${GREEN}✓ cert-manager installation started${NC}"
-fi
+helm upgrade --install cert-manager jetstack/cert-manager \
+    --namespace cert-manager \
+    --create-namespace \
+    --set crds.enabled=true
+echo -e "${GREEN}✓ cert-manager installation or upgrade started${NC}"
 
 # Create observability namespace
 echo -e "\n${YELLOW}Creating observability namespace...${NC}"
