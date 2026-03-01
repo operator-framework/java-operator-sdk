@@ -38,6 +38,9 @@ import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Tag;
 import io.micrometer.core.instrument.Timer;
 
+/**
+ * @since 5.3.0
+ */
 public class MicrometerMetricsV2 implements Metrics {
 
   private static final String CONTROLLER_NAME = "controller.name";
