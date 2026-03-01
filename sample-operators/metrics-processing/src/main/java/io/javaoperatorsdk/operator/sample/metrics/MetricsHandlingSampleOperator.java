@@ -96,7 +96,7 @@ public class MetricsHandlingSampleOperator {
 
     // enable to easily see propagated metrics
     String enableConsoleLogging = System.getenv("METRICS_CONSOLE_LOGGING");
-    if (!"true".equalsIgnoreCase(enableConsoleLogging)) {
+    if ("true".equalsIgnoreCase(enableConsoleLogging)) {
       log.info("Console metrics logging enabled");
       LoggingMeterRegistry loggingRegistry =
           new LoggingMeterRegistry(
