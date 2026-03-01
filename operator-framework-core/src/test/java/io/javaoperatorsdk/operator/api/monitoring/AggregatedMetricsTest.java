@@ -147,7 +147,6 @@ class AggregatedMetricsTest {
     inOrder.verify(metrics1).successfullyFinishedReconciliation(resource, metadata);
     inOrder.verify(metrics2).successfullyFinishedReconciliation(resource, metadata);
     inOrder.verify(metrics3).successfullyFinishedReconciliation(resource, metadata);
-    verifyNoMoreInteractions(metrics1, metrics2, metrics3);
   }
 
   @Test

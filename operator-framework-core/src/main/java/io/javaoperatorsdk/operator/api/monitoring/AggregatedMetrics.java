@@ -76,9 +76,18 @@ public final class AggregatedMetrics implements Metrics {
   }
 
   @Override
+  @Deprecated(forRemoval = true)
   public void reconcileCustomResource(
       HasMetadata resource, RetryInfo retryInfo, Map<String, Object> metadata) {
     metricsList.forEach(metrics -> metrics.reconcileCustomResource(resource, retryInfo, metadata));
+  }
+
+  @Override
+  public void submittedForReconciliation(
+      HasMetadata resource, RetryInfo retryInfo, Map<String, Object> metadata) {
+    metricsList.forEach(
+        metrics -> metrics.submittedForReconciliation(resource, retryInfo, metadata));
+    reconcileCustomResource(resource, retryInfo, metadata);
   }
 
   @Override
@@ -106,9 +115,16 @@ public final class AggregatedMetrics implements Metrics {
   }
 
   @Override
+  @Deprecated(forRemoval = true)
+  public void finishedReconciliation(HasMetadata resource, Map<String, Object> metadata) {
+    metricsList.forEach(metrics -> metrics.finishedReconciliation(resource, metadata));
+  }
+
+  @Override
   public void successfullyFinishedReconciliation(
       HasMetadata resource, Map<String, Object> metadata) {
     metricsList.forEach(metrics -> metrics.successfullyFinishedReconciliation(resource, metadata));
+    finishedReconciliation(resource, metadata);
   }
 
   @Override
