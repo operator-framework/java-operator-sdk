@@ -513,26 +513,13 @@
       "fieldConfig": {
         "defaults": {
           "color": {
-            "mode": "thresholds"
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "lineWidth": 2,
+            "fillOpacity": 10
           },
           "mappings": [],
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "blue",
-                "value": null
-              },
-              {
-                "color": "green",
-                "value": 10
-              },
-              {
-                "color": "yellow",
-                "value": 100
-              }
-            ]
-          },
           "unit": "short"
         },
         "overrides": []
@@ -545,16 +532,14 @@
       },
       "id": 13,
       "options": {
-        "colorMode": "value",
-        "graphMode": "area",
-        "justifyMode": "auto",
-        "orientation": "horizontal",
-        "reduceOptions": {
-          "values": false,
-          "calcs": ["lastNotNull"],
-          "fields": ""
+        "tooltip": {
+          "mode": "multi",
+          "sort": "none"
         },
-        "textMode": "auto"
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        }
       },
       "pluginVersion": "10.0.0",
       "targets": [
@@ -571,7 +556,7 @@
         }
       ],
       "title": "Custom Resources Count",
-      "type": "stat"
+      "type": "timeseries"
     },
     {
       "datasource": {
@@ -654,7 +639,7 @@
             "uid": "prometheus"
           },
           "editorMode": "code",
-          "expr": "histogram_quantile(0.50, sum(rate(reconciliations_execution_seconds_bucket{service_name=~\"$service_name\"}[5m])) by (le, controller_name))",
+          "expr": "histogram_quantile(0.50, sum(rate(reconciliations_execution_duration_milliseconds_bucket{service_name=~\"$service_name\"}[5m])) by (le, controller_name))",
           "legendFormat": "p50 - {{controller_name}}",
           "range": true,
           "refId": "A"
@@ -665,7 +650,7 @@
             "uid": "prometheus"
           },
           "editorMode": "code",
-          "expr": "histogram_quantile(0.95, sum(rate(reconciliations_execution_seconds_bucket{service_name=~\"$service_name\"}[5m])) by (le, controller_name))",
+          "expr": "histogram_quantile(0.95, sum(rate(reconciliations_execution_duration_milliseconds_bucket{service_name=~\"$service_name\"}[5m])) by (le, controller_name))",
           "legendFormat": "p95 - {{controller_name}}",
           "range": true,
           "refId": "B"
@@ -676,7 +661,7 @@
             "uid": "prometheus"
           },
           "editorMode": "code",
-          "expr": "histogram_quantile(0.99, sum(rate(reconciliations_execution_seconds_bucket{service_name=~\"$service_name\"}[5m])) by (le, controller_name))",
+          "expr": "histogram_quantile(0.99, sum(rate(reconciliations_execution_duration_milliseconds_bucket{service_name=~\"$service_name\"}[5m])) by (le, controller_name))",
           "legendFormat": "p99 - {{controller_name}}",
           "range": true,
           "refId": "C"
@@ -780,7 +765,7 @@
         "type": "prometheus",
         "uid": "prometheus"
       },
-      "description": "Failures by controller",
+      "description": "Reconciliation failures",
       "fieldConfig": {
         "defaults": {
           "color": {

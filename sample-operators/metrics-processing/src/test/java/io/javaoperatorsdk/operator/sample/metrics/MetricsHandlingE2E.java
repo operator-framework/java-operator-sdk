@@ -206,7 +206,7 @@ class MetricsHandlingE2E {
     assertMetricPresent(prometheusUrl, "reconciliations_success_total", Duration.ofSeconds(30));
     assertMetricPresent(prometheusUrl, "reconciliations_failure_total", Duration.ofSeconds(30));
     assertMetricPresent(
-        prometheusUrl, "reconciliations_execution_seconds_count", Duration.ofSeconds(30));
+        prometheusUrl, "reconciliations_execution_duration_milliseconds_count", Duration.ofSeconds(30));
 
     log.info("All metrics verified successfully in Prometheus");
   }

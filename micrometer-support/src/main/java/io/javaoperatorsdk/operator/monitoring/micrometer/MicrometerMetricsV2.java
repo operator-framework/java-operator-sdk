@@ -66,7 +66,7 @@ public class MicrometerMetricsV2 implements Metrics {
   private static final String NUMBER_OF_RESOURCE_GAUGE = "custom_resources";
 
   private static final String RECONCILIATION_EXECUTION_DURATION =
-      RECONCILIATIONS + "execution.seconds";
+      RECONCILIATIONS + "execution.duration";
 
   private final MeterRegistry registry;
   private final Map<String, AtomicInteger> gauges = new ConcurrentHashMap<>();
@@ -195,6 +195,7 @@ public class MicrometerMetricsV2 implements Metrics {
 
   @Override
   public void cleanupDoneFor(ResourceID resourceID, Map<String, Object> metadata) {
+    gauges.get(numberOfResourcesRefName(getControllerName(metadata))).decrementAndGet();
     incrementCounter(EVENTS_DELETE, resourceID.getNamespace().orElse(null), metadata);
   }
 
