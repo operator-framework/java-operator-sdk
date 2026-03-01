@@ -78,11 +78,6 @@
       <scope>compile</scope>
     </dependency>
     <dependency>
-      <groupId>org.takes</groupId>
-      <artifactId>takes</artifactId>
-      <version>1.25.0</version>
-    </dependency>
-    <dependency>
       <groupId>org.awaitility</groupId>
       <artifactId>awaitility</artifactId>
       <scope>compile</scope>
