@@ -84,13 +84,13 @@ class AggregatedMetricsTest {
   }
 
   @Test
-  void reconcileCustomResource_shouldDelegateToAllMetricsInOrder() {
-    aggregatedMetrics.reconcileCustomResource(resource, retryInfo, metadata);
+  void submittedForReconciliation_shouldDelegateToAllMetricsInOrder() {
+    aggregatedMetrics.submittedForReconciliation(resource, retryInfo, metadata);
 
     final var inOrder = inOrder(metrics1, metrics2, metrics3);
-    inOrder.verify(metrics1).reconcileCustomResource(resource, retryInfo, metadata);
-    inOrder.verify(metrics2).reconcileCustomResource(resource, retryInfo, metadata);
-    inOrder.verify(metrics3).reconcileCustomResource(resource, retryInfo, metadata);
+    inOrder.verify(metrics1).submittedForReconciliation(resource, retryInfo, metadata);
+    inOrder.verify(metrics2).submittedForReconciliation(resource, retryInfo, metadata);
+    inOrder.verify(metrics3).submittedForReconciliation(resource, retryInfo, metadata);
     verifyNoMoreInteractions(metrics1, metrics2, metrics3);
   }
 
@@ -174,20 +174,6 @@ class AggregatedMetricsTest {
     verify(metrics1).timeControllerExecution(controllerExecution);
     verify(metrics2, never()).timeControllerExecution(any());
     verify(metrics3, never()).timeControllerExecution(any());
-    verifyNoMoreInteractions(metrics1, metrics2, metrics3);
-  }
-
-  @Test
-  void monitorSizeOf_shouldDelegateToAllMetricsInOrderAndReturnOriginalMap() {
-    final var testMap = Map.of("key1", "value1");
-    final var mapName = "testMap";
-
-    final var result = aggregatedMetrics.monitorSizeOf(testMap, mapName);
-
-    assertThat(result).isSameAs(testMap);
-    verify(metrics1).monitorSizeOf(testMap, mapName);
-    verify(metrics2).monitorSizeOf(testMap, mapName);
-    verify(metrics3).monitorSizeOf(testMap, mapName);
     verifyNoMoreInteractions(metrics1, metrics2, metrics3);
   }
 }

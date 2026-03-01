@@ -209,8 +209,7 @@ public class MicrometerMetrics implements Metrics {
   }
 
   @Override
-  @Deprecated(forRemoval = true)
-  public void reconcileCustomResource(
+  public void submittedForReconciliation(
       HasMetadata resource, RetryInfo retryInfoNullable, Map<String, Object> metadata) {
     Optional<RetryInfo> retryInfo = Optional.ofNullable(retryInfoNullable);
     incrementCounter(
@@ -267,11 +266,6 @@ public class MicrometerMetrics implements Metrics {
         RECONCILIATIONS_FAILED,
         metadata,
         Tag.of(EXCEPTION, cause.getClass().getSimpleName()));
-  }
-
-  @Override
-  public <T extends Map<?, ?>> T monitorSizeOf(T map, String name) {
-    return registry.gaugeMapSize(PREFIX + name + SIZE_SUFFIX, Collections.emptyList(), map);
   }
 
   private void addMetadataTags(
