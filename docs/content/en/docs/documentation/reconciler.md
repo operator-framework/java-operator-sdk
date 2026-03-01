@@ -192,7 +192,7 @@ public UpdateControl<WebPage> reconcile(WebPage webPage, Context<WebPage> contex
     
     makeStatusChanages(webPage);
     
-    // built in update methods by default uses this approach
+    // built in update methods by default use this feature
     return UpdateControl.patchStatus(webPage);
 }
 ```
@@ -202,7 +202,7 @@ public UpdateControl<WebPage> reconcile(WebPage webPage, Context<WebPage> contex
 `UpdateControl` and `ErrorStatusUpdateControl` by default uses this functionality.
 
 Mainly to cover migration path for the cases when somebody expected events for their update
-a these controls now contain a new method: `UpdateControl.reschedule()`, that instantly propagates
+these controls now contain a new method: `UpdateControl.reschedule()`, that instantly propagates
 an event to reschedule the reconciliation.
 
 ### Allocated values
