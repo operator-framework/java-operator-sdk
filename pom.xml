@@ -549,10 +549,6 @@
                 <exclude>**/*Test.java</exclude>
                 <exclude>**/*IT.java</exclude>
               </excludes>
-              <statelessTestsetInfoReporter implementation="org.apache.maven.plugin.surefire.extensions.junit5.JUnit5StatelessTestsetInfoTreeReporter">
-                <printStdoutOnSuccess>true</printStdoutOnSuccess>
-                <printStderrOnSuccess>true</printStderrOnSuccess>
-              </statelessTestsetInfoReporter>
             </configuration>
           </plugin>
         </plugins>
