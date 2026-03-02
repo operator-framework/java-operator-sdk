@@ -168,15 +168,17 @@ supports stronger guarantees, both for primary and secondary resources. If this 
 
 1. Reading from the cache after our update — even within the same reconciliation — returns a fresh resource.
    "Fresh" means at least the version of the resource that is in the response from our update,
-   or a more recent version if some other party updated the resource after our update.
-2. Filtering events for our updates. If the controller updates a resource
-   an event is produced by the Kubernetes API and propagated to Informer, what would normally trigger a next
-   reconciliation. However, this is not ideal, since we already have that up-to-date resource
-   in the cache in the current reconciliation, so in general it is not desirable to reconcile that again.
-   This feature also makes sure that the reconciliation is not triggered from the event from our writes.
+   or a more recent version if some other party updated the resource after our update. In particular, this means that
+   you can safely store state (e.g. generated IDs) in the status sub-resource of your resources since it is now
+   guaranteed that the stored values will be observable during the next reconciliation.
+2. Filtering events for our updates. When a controller updates a resource an event is produced by the Kubernetes API and
+   propagated to Informer. This would normally trigger another reconciliation. This is, however, not optimal since we
+   already have that up-to-date resource in the current reconciliation cache. There is generally no need to reconcile
+   that resource again. This feature also makes sure that the reconciliation is not triggered from the event from our
+   writes.
 
 
-In order to have these guarantees use [`ResourceOperations`](https://github.com/operator-framework/java-operator-sdk/blob/main/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/api/reconciler/ResourceOperations.java)
+In order to benefit from these stronger guarantees, use [`ResourceOperations`](https://github.com/operator-framework/java-operator-sdk/blob/main/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/api/reconciler/ResourceOperations.java)
 from the context of the reconciliation:   
 
 ```java 
@@ -197,27 +199,12 @@ public UpdateControl<WebPage> reconcile(WebPage webPage, Context<WebPage> contex
 }
 ```
 
-### Built-in patches
-
-`UpdateControl` and `ErrorStatusUpdateControl` by default use this functionality.
-
-Mainly to cover migration path for the cases when somebody expected events for their update
-these controls now contain a new method: `UpdateControl.reschedule()`, that instantly propagates
-an event to reschedule the reconciliation.
-
-### Allocated values
-
-If you want to store some state - like generated IDs - in `.status` sub-resource, you 
-can do it safely with this feature. Since it is guaranteed that you will see the update
-in the next reconciliation.
-
-Note that this is not just with `UpdateControl` you can also do update any time on primary resource
-with `resourceOperations`:
+`UpdateControl` and `ErrorStatusUpdateControl` by default use this functionality, but you can also update your primary resource at any time during the reconciliation using `ResourceOperations`:
 
 ```java 
 
 public UpdateControl<WebPage> reconcile(WebPage webPage, Context<WebPage> context) {
-    
+
     makeStatusChanges(webPage);
     // this is equivalent to UpdateControl.patchStatus(webpage)
     context.resourceOperations().serverSideApplyPrimaryStatus(webPage);
@@ -225,17 +212,21 @@ public UpdateControl<WebPage> reconcile(WebPage webPage, Context<WebPage> contex
 }
 ```
 
+If your reconciler is built around the assumption that new reconciliations would occur after its own updates, a new
+`reschedule` method is provided on `UpdateControl` to immediately reschedule a new reconciliation, to mimic the previous
+behavior.
+
 ### Caveats
 
-- This feature is implemented on top of fabric8 client informers using additional caches in `InformerEventSource`,
-  so it is safe to use `context.getSecondaryResources(..)` or `InformerEventSource.get(ResourceID)`
-  methods. However won't work with `InformerEventSource.list(..)` method, since it directly reads
-  the underlying informer cache.
+- This feature is implemented on top of the Fabric8 client informers, using additional caches in `InformerEventSource`,
+  so it is safe to use `context.getSecondaryResources(..)` or `InformerEventSource.get(ResourceID)`methods. Listing
+  resources directly via `InformerEventSource.list(..)`, however, won't work since this method directly reads from the
+  underlying informer cache, thus bypassing the additional caches that make the feature possible.
 
 
 ### Notes
-- Talk about this feature in this [talk](https://www.youtube.com/watch?v=HrwHh5Yh6AM&t=1387s).
-- [Umbrella issue](https://github.com/operator-framework/java-operator-sdk/issues/2944) on our GitHub.
+- This [talk](https://www.youtube.com/watch?v=HrwHh5Yh6AM&t=1387s) mentions this feature.
+- [Umbrella issue](https://github.com/operator-framework/java-operator-sdk/issues/2944) on GitHub.
 - We were able to implement this feature since Kubernetes introduces guideline to compare 
   resource versions. See the details [here](https://github.com/kubernetes/enhancements/tree/master/keps/sig-api-machinery/5504-comparable-resource-version).
 
@@ -245,8 +236,7 @@ public UpdateControl<WebPage> reconcile(WebPage webPage, Context<WebPage> contex
 
 Read-cache-after-write consistency feature replaces this functionality.
 
-> It provides this functionality also for secondary resources and optimistic locking
-  is not required anymore. See details above.
+> It provides this functionality also for secondary resources and optimistic locking is not required anymore. See details above.
 {{% /alert %}}
 
 It is typical to want to update the status subresource with the information that is available during the reconciliation.
