@@ -207,7 +207,7 @@ public abstract class ManagedInformerEventSource<
   }
 
   /**
-   * @deprecated use {@link ManagedInformerEventSource#get(ResourceID)} instead.
+   * @deprecated Use {@link #get(ResourceID)} instead.
    */
   @Deprecated(forRemoval = true)
   @SuppressWarnings("unused")
