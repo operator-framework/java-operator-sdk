@@ -199,7 +199,7 @@ public UpdateControl<WebPage> reconcile(WebPage webPage, Context<WebPage> contex
 
 ### Built-in patches
 
-`UpdateControl` and `ErrorStatusUpdateControl` by default uses this functionality.
+`UpdateControl` and `ErrorStatusUpdateControl` by default use this functionality.
 
 Mainly to cover migration path for the cases when somebody expected events for their update
 these controls now contain a new method: `UpdateControl.reschedule()`, that instantly propagates
