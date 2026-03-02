@@ -110,6 +110,7 @@ public class SchemaDependentResource
 
   @Override
   public void delete(MySQLSchema primary, Context<MySQLSchema> context) {
+    log.debug("Deleting schema");
     try (Connection connection = getConnection()) {
       var userName = primary.getStatus() != null ? primary.getStatus().getUserName() : null;
       SchemaService.deleteSchemaAndRelatedUser(
