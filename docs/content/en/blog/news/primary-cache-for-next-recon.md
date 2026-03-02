@@ -5,6 +5,15 @@ author: >-
   [Attila Mészáros](https://github.com/csviri) and [Chris Laprun](https://github.com/metacosm)
 ---
 
+{{% alert title="Deprecated" %}}
+
+Read-cache-after-write consistency feature replaces this functionality. (since version 5.3.0)
+
+> It provides this functionality also for secondary resources and optimistic locking
+is not required anymore. See [details here](./../../docs/documentation/reconciler.md#read-cache-after-write-consistency-and-event-filtering).
+{{% /alert %}}
+
+
 We recently released v5.1 of Java Operator SDK (JOSDK). One of the highlights of this release is related to a topic of
 so-called
 [allocated values](https://github.com/kubernetes/community/blob/master/contributors/devel/sig-architecture/api-conventions.md#representing-allocated-values
