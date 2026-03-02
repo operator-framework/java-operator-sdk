@@ -206,6 +206,10 @@ public abstract class ManagedInformerEventSource<
     return res;
   }
 
+  /**
+   * @deprecated Use {@link #get(ResourceID)} instead.
+   */
+  @Deprecated(forRemoval = true)
   @SuppressWarnings("unused")
   public Optional<R> getCachedValue(ResourceID resourceID) {
     return get(resourceID);
