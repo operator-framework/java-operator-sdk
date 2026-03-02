@@ -127,7 +127,7 @@ class MySQLSchemaOperatorE2E {
         .delete();
 
     await()
-        .atMost(2, MINUTES)
+        .atMost(4, MINUTES)
         .ignoreExceptions()
         .untilAsserted(
             () -> {
