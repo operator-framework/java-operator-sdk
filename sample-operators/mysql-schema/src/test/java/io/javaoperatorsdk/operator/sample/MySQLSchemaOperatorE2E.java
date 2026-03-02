@@ -36,12 +36,8 @@ import io.javaoperatorsdk.operator.junit.LocallyRunOperatorExtension;
 import io.javaoperatorsdk.operator.sample.dependent.SchemaDependentResource;
 
 import static java.util.concurrent.TimeUnit.MINUTES;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
-import static org.hamcrest.CoreMatchers.equalTo;
-import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.notNullValue;
-import static org.hamcrest.Matchers.nullValue;
 
 class MySQLSchemaOperatorE2E {
 
@@ -114,10 +110,10 @@ class MySQLSchemaOperatorE2E {
                       .inNamespace(operator.getNamespace())
                       .withName(testSchema.getMetadata().getName())
                       .get();
-              assertThat(updatedSchema.getStatus(), is(notNullValue()));
-              assertThat(updatedSchema.getStatus().getStatus(), equalTo("CREATED"));
-              assertThat(updatedSchema.getStatus().getSecretName(), is(notNullValue()));
-              assertThat(updatedSchema.getStatus().getUserName(), is(notNullValue()));
+              assertThat(updatedSchema.getStatus()).isNotNull();
+              assertThat(updatedSchema.getStatus().getStatus()).isEqualTo("CREATED");
+              assertThat(updatedSchema.getStatus().getSecretName()).isNotNull();
+              assertThat(updatedSchema.getStatus().getUserName()).isNotNull();
             });
 
     client
@@ -137,7 +133,7 @@ class MySQLSchemaOperatorE2E {
                       .inNamespace(operator.getNamespace())
                       .withName(testSchema.getMetadata().getName())
                       .get();
-              assertThat(updatedSchema, is(nullValue()));
+              assertThat(updatedSchema).isNull();
             });
   }
 }
