@@ -77,9 +77,10 @@ Metrics metrics; // initialize your metrics implementation
 Operator operator = new Operator(client, o -> o.withMetrics(metrics));
 ```
 
-### MicrometerMetricsV2 (Recommended, since 5.3.0)
+### MicrometerMetricsV2 
 
-[`MicrometerMetricsV2`](https://github.com/java-operator-sdk/java-operator-sdk/blob/main/micrometer-support/src/main/java/io/javaoperatorsdk/operator/monitoring/micrometer/MicrometerMetricsV2.java) is the recommended micrometer-based implementation. It is designed with low cardinality in mind:
+[`MicrometerMetricsV2`](https://github.com/java-operator-sdk/java-operator-sdk/blob/main/micrometer-support/src/main/java/io/javaoperatorsdk/operator/monitoring/micrometer/MicrometerMetricsV2.java) 
+is the recommended micrometer-based implementation. It is designed with low cardinality in mind:
 all meters are scoped to the controller, not to individual resources. This avoids unbounded cardinality growth as
 resources come and go.
 
