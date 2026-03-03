@@ -48,7 +48,6 @@ public class MicrometerMetricsV2 implements Metrics {
   private static final String EVENT = "event";
   private static final String ACTION = "action";
   private static final String EVENTS_RECEIVED = "events.received";
-  private static final String EVENTS_DELETE = "events.delete";
   private static final String UNKNOWN_ACTION = "UNKNOWN";
   public static final String TOTAL_SUFFIX = ".total";
   private static final String SUCCESS_SUFFIX = "success";
@@ -56,19 +55,19 @@ public class MicrometerMetricsV2 implements Metrics {
 
   private static final String RECONCILIATIONS = "reconciliations.";
 
-  private static final String RECONCILIATIONS_FAILED =
+  public static final String RECONCILIATIONS_FAILED =
       RECONCILIATIONS + FAILURE_SUFFIX + TOTAL_SUFFIX;
-  private static final String RECONCILIATIONS_SUCCESS =
+  public static final String RECONCILIATIONS_SUCCESS =
       RECONCILIATIONS + SUCCESS_SUFFIX + TOTAL_SUFFIX;
-  private static final String RECONCILIATIONS_RETRIES_NUMBER =
+  public static final String RECONCILIATIONS_RETRIES_NUMBER =
       RECONCILIATIONS + "retries" + TOTAL_SUFFIX;
-  private static final String RECONCILIATIONS_STARTED = RECONCILIATIONS + "started" + TOTAL_SUFFIX;
+  public static final String RECONCILIATIONS_STARTED = RECONCILIATIONS + "started" + TOTAL_SUFFIX;
 
-  private static final String RECONCILIATIONS_EXECUTIONS_GAUGE = RECONCILIATIONS + "executions";
-  private static final String RECONCILIATIONS_QUEUE_SIZE_GAUGE = RECONCILIATIONS + "active";
-  private static final String NUMBER_OF_RESOURCE_GAUGE = "custom_resources";
+  public static final String RECONCILIATIONS_EXECUTIONS_GAUGE = RECONCILIATIONS + "active";
+  public static final String RECONCILIATIONS_QUEUE_SIZE_GAUGE = RECONCILIATIONS + "queue";
+  public static final String NUMBER_OF_RESOURCE_GAUGE = "custom_resources";
 
-  private static final String RECONCILIATION_EXECUTION_DURATION =
+  public static final String RECONCILIATION_EXECUTION_DURATION =
       RECONCILIATIONS + "execution.duration";
 
   private final MeterRegistry registry;
@@ -195,7 +194,6 @@ public class MicrometerMetricsV2 implements Metrics {
   @Override
   public void cleanupDone(ResourceID resourceID, Map<String, Object> metadata) {
     gauges.get(numberOfResourcesRefName(getControllerName(metadata))).decrementAndGet();
-    incrementCounter(EVENTS_DELETE, resourceID.getNamespace().orElse(null), metadata);
   }
 
   @Override
@@ -226,6 +224,9 @@ public class MicrometerMetricsV2 implements Metrics {
     var reconcilerExecutions =
         gauges.get(reconciliationExecutionGaugeRefKey(getControllerName(metadata)));
     reconcilerExecutions.incrementAndGet();
+    var controllerQueueSize =
+        gauges.get(controllerQueueSizeGaugeRefKey(metadata.get(CONTROLLER_NAME).toString()));
+    controllerQueueSize.decrementAndGet();
   }
 
   @Override
@@ -234,10 +235,6 @@ public class MicrometerMetricsV2 implements Metrics {
     var reconcilerExecutions =
         gauges.get(reconciliationExecutionGaugeRefKey(metadata.get(CONTROLLER_NAME).toString()));
     reconcilerExecutions.decrementAndGet();
-
-    var controllerQueueSize =
-        gauges.get(controllerQueueSizeGaugeRefKey(metadata.get(CONTROLLER_NAME).toString()));
-    controllerQueueSize.decrementAndGet();
   }
 
   @Override

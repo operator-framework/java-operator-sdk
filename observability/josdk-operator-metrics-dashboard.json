@@ -328,7 +328,7 @@
             "uid": "prometheus"
           },
           "editorMode": "code",
-          "expr": "sum(reconciliations_executions{service_name=~\"$service_name\"})",
+          "expr": "sum(reconciliations_active{service_name=~\"$service_name\"})",
           "legendFormat": "Executing",
           "range": true,
           "refId": "A"
@@ -395,7 +395,7 @@
             "uid": "prometheus"
           },
           "editorMode": "code",
-          "expr": "sum(reconciliations_active{service_name=~\"$service_name\"})",
+          "expr": "sum(reconciliations_queue{service_name=~\"$service_name\"})",
           "legendFormat": "Active",
           "range": true,
           "refId": "A"
@@ -874,96 +874,6 @@
         }
       ],
       "title": "Failures by Controller",
-      "type": "timeseries"
-    },
-    {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "prometheus"
-      },
-      "description": "Rate of delete events received",
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "palette-classic"
-          },
-          "custom": {
-            "axisCenteredZero": false,
-            "axisColorMode": "text",
-            "axisLabel": "",
-            "axisPlacement": "auto",
-            "barAlignment": 0,
-            "drawStyle": "line",
-            "fillOpacity": 10,
-            "gradientMode": "none",
-            "hideFrom": {
-              "tooltip": false,
-              "viz": false,
-              "legend": false
-            },
-            "lineInterpolation": "linear",
-            "lineWidth": 1,
-            "pointSize": 5,
-            "scaleDistribution": {
-              "type": "linear"
-            },
-            "showPoints": "never",
-            "spanNulls": false,
-            "stacking": {
-              "group": "A",
-              "mode": "none"
-            },
-            "thresholdsStyle": {
-              "mode": "off"
-            }
-          },
-          "mappings": [],
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "green",
-                "value": null
-              }
-            ]
-          },
-          "unit": "ops"
-        },
-        "overrides": []
-      },
-      "gridPos": {
-        "h": 8,
-        "w": 12,
-        "x": 12,
-        "y": 32
-      },
-      "id": 11,
-      "options": {
-        "legend": {
-          "calcs": ["last", "sum"],
-          "displayMode": "table",
-          "placement": "bottom",
-          "showLegend": true
-        },
-        "tooltip": {
-          "mode": "single",
-          "sort": "none"
-        }
-      },
-      "targets": [
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "prometheus"
-          },
-          "editorMode": "code",
-          "expr": "sum(rate(events_delete_total{service_name=~\"$service_name\"}[5m])) by (controller_name)",
-          "legendFormat": "{{controller_name}}",
-          "range": true,
-          "refId": "A"
-        }
-      ],
-      "title": "Delete Event Rate",
       "type": "timeseries"
     },
     {
