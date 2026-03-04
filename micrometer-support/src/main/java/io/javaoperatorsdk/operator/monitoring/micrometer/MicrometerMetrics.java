@@ -72,7 +72,6 @@ public class MicrometerMetrics implements Metrics {
   private static final String EVENTS_RECEIVED = "events.received";
   private static final String EVENTS_DELETE = "events.delete";
   private static final String CLUSTER = "cluster";
-  private static final String SIZE_SUFFIX = ".size";
   private static final String UNKNOWN_ACTION = "UNKNOWN";
   private final boolean collectPerResourceMetrics;
   private final MeterRegistry registry;
