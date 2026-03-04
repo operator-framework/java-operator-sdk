@@ -262,7 +262,7 @@ public class MicrometerMetricsV2 implements Metrics {
     addControllerNameTag(metadata, tags);
     addNamespaceTag(namespace, tags);
     if (additionalTags.length > 0) {
-      tags.addAll(List.of(additionalTags));
+      Collections.addAll(tags, additionalTags);
     }
     registry.counter(counterName, tags).increment();
   }
