@@ -46,7 +46,6 @@ public class MicrometerMetricsV2 implements Metrics {
   private static final String EVENT = "event";
   private static final String ACTION = "action";
   private static final String EVENTS_RECEIVED = "events.received";
-  private static final String UNKNOWN_ACTION = "UNKNOWN";
   public static final String TOTAL_SUFFIX = ".total";
 
   private static final String RECONCILIATIONS = "reconciliations.";
