@@ -127,8 +127,8 @@ All meters use `controller.name` as their primary tag. Counters optionally carry
 
 \* `namespace` tag is only included when `withNamespaceAsTag()` is enabled.
 
-The execution timer uses explicit SLO boundaries (10ms, 50ms, 100ms, 250ms, 500ms, 1s, 2s, 5s, 10s, 30s) to ensure
-compatibility with `histogram_quantile()` queries in Prometheus. This is important when using the OTLP registry, where
+The execution timer uses explicit boundaries (10ms, 50ms, 100ms, 250ms, 500ms, 1s, 2s, 5s, 10s, 30s) to ensure
+compatibility with `histogram_quantile()` queries in Prometheus. This is important when using the OpenTelemetry Protocol (OTLP) registry, where
 `publishPercentileHistogram()` would otherwise produce Base2 Exponential Histograms that are incompatible with classic
 `_bucket` queries.
 

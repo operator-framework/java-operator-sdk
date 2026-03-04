@@ -22,8 +22,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
-import org.jspecify.annotations.NonNull;
-
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.OperatorException;
 import io.javaoperatorsdk.operator.api.monitoring.Metrics;
@@ -179,11 +177,7 @@ public class MicrometerMetricsV2 implements Metrics {
           Tag.of(ACTION, resourceEvent.getAction().toString()));
     } else {
       incrementCounter(
-          EVENTS_RECEIVED,
-          null,
-          metadata,
-          Tag.of(EVENT, event.getClass().getSimpleName()),
-          Tag.of(ACTION, UNKNOWN_ACTION));
+          EVENTS_RECEIVED, null, metadata, Tag.of(EVENT, event.getClass().getSimpleName()));
     }
   }
 
@@ -267,11 +261,11 @@ public class MicrometerMetricsV2 implements Metrics {
     registry.counter(counterName, tags).increment();
   }
 
-  private static @NonNull String reconciliationExecutionGaugeRefKey(String controllerName) {
+  private static String reconciliationExecutionGaugeRefKey(String controllerName) {
     return RECONCILIATIONS_EXECUTIONS_GAUGE + "." + controllerName;
   }
 
-  private static @NonNull String controllerQueueSizeGaugeRefKey(String controllerName) {
+  private static String controllerQueueSizeGaugeRefKey(String controllerName) {
     return RECONCILIATIONS_QUEUE_SIZE_GAUGE + "." + controllerName;
   }
 
