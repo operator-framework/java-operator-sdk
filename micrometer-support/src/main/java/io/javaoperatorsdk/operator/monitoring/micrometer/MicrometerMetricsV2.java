@@ -217,11 +217,10 @@ public class MicrometerMetricsV2 implements Metrics {
 
   @Override
   public void reconciliationStarted(HasMetadata resource, Map<String, Object> metadata) {
-    var reconcilerExecutions =
-        gauges.get(reconciliationExecutionGaugeRefKey(getControllerName(metadata)));
+    final var controllerName = getControllerName(metadata);
+    var reconcilerExecutions = gauges.get(reconciliationExecutionGaugeRefKey(controllerName));
     reconcilerExecutions.incrementAndGet();
-    var controllerQueueSize =
-        gauges.get(controllerQueueSizeGaugeRefKey(metadata.get(CONTROLLER_NAME).toString()));
+    var controllerQueueSize = gauges.get(controllerQueueSizeGaugeRefKey(controllerName));
     controllerQueueSize.decrementAndGet();
   }
 
@@ -229,7 +228,7 @@ public class MicrometerMetricsV2 implements Metrics {
   public void reconciliationFinished(
       HasMetadata resource, RetryInfo retryInfo, Map<String, Object> metadata) {
     var reconcilerExecutions =
-        gauges.get(reconciliationExecutionGaugeRefKey(metadata.get(CONTROLLER_NAME).toString()));
+        gauges.get(reconciliationExecutionGaugeRefKey(getControllerName(metadata)));
     reconcilerExecutions.decrementAndGet();
   }
 
@@ -244,7 +243,7 @@ public class MicrometerMetricsV2 implements Metrics {
   }
 
   private static void addControllerNameTag(Map<String, Object> metadata, List<Tag> tags) {
-    addTag(CONTROLLER_NAME, getControllerName(metadata), tags);
+    addControllerNameTag(getControllerName(metadata), tags);
   }
 
   private static void addControllerNameTag(String name, List<Tag> tags) {
@@ -253,7 +252,7 @@ public class MicrometerMetricsV2 implements Metrics {
 
   private void addNamespaceTag(String namespace, List<Tag> tags) {
     if (includeNamespaceTag && namespace != null && !namespace.isBlank()) {
-      tags.add(Tag.of(NAMESPACE, namespace));
+      addTag(NAMESPACE, namespace, tags);
     }
   }
 
