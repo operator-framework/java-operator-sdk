@@ -50,15 +50,11 @@ public class MicrometerMetricsV2 implements Metrics {
   private static final String EVENTS_RECEIVED = "events.received";
   private static final String UNKNOWN_ACTION = "UNKNOWN";
   public static final String TOTAL_SUFFIX = ".total";
-  private static final String SUCCESS_SUFFIX = "success";
-  private static final String FAILURE_SUFFIX = "failure";
 
   private static final String RECONCILIATIONS = "reconciliations.";
 
-  public static final String RECONCILIATIONS_FAILED =
-      RECONCILIATIONS + FAILURE_SUFFIX + TOTAL_SUFFIX;
-  public static final String RECONCILIATIONS_SUCCESS =
-      RECONCILIATIONS + SUCCESS_SUFFIX + TOTAL_SUFFIX;
+  public static final String RECONCILIATIONS_FAILED = RECONCILIATIONS + "failure" + TOTAL_SUFFIX;
+  public static final String RECONCILIATIONS_SUCCESS = RECONCILIATIONS + "success" + TOTAL_SUFFIX;
   public static final String RECONCILIATIONS_RETRIES_NUMBER =
       RECONCILIATIONS + "retries" + TOTAL_SUFFIX;
   public static final String RECONCILIATIONS_STARTED = RECONCILIATIONS + "started" + TOTAL_SUFFIX;
