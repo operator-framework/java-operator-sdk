@@ -38,9 +38,40 @@ which are result of our own updates.
 much simpler to reason about!**
 {{% /alert %}}
 
-This post will deep dive in this topic, and explain all the rational and background behind this topic.
+This post will deep dive in this topic, explore the details and rationale behind it.
+
+I briefly [talked about this](https://www.youtube.com/watch?v=HrwHh5Yh6AM&t=1387s) topic at KubeCon last year.
 
 ## Informers and eventual consistency
+
+First we have to understand a fundamental building block of Kubernetes operators, called Informers.
+Since there is plentiful accessible information about this topic, just in a nutshell, we have to know,
+that these components:
+
+1. Watches Kubernetes resources - K8S API sends events if a resource changes to the client 
+   though a websocket. An usually contains the whole resource. (There are some exceptions, see Bookmarks).
+   See details about watch as K8S API concept in the [official docs](https://kubernetes.io/docs/reference/using-api/api-concepts/#semantics-for-watch). 
+2. Caches the actual latest state of the resource.
+3. If an informer receives and event in which the `metadata.resourceVersion` is different from the version 
+   in the cached resource it propagates and event further, in our case triggering the reconiliation.
+
+A controller is usually composed of multiple informers, one is tracking the primary resources, and
+there are also informers registered for each (secondary) resource we manage. 
+Informers are great since we don't have to poll the Kubernetes API, it is push based; and they provide 
+a cache, so reconciliations are very fast since they work on top of cached resources.
+
+Now let's take a look on the flow when we do an update to a resources. Let's say we manage a Pod from our
+controller:
+
+
+
+
+
+TODO
+- we do not cover deletes 
+- thank to shaw
+
+   
 
 
 
