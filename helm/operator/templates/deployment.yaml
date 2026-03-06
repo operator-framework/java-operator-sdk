@@ -1,0 +1,130 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "josdk-operator.fullname" . }}
+  namespace: {{ include "josdk-operator.namespace" . }}
+  labels:
+    {{- include "josdk-operator.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "josdk-operator.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "josdk-operator.selectorLabels" . | nindent 8 }}
+        {{- with .Values.podLabels }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+      {{- with .Values.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+    spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ include "josdk-operator.serviceAccountName" . }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      containers:
+        - name: operator
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          # ------------------------------------------------------------------
+          # Environment variables.
+          # JAVA_TOOL_OPTIONS is set when jvmArgs is non-empty or log4j2 is
+          # enabled (the helper appends -Dlog4j2.configurationFile).
+          # extraEnv entries are appended after.
+          # ------------------------------------------------------------------
+          {{- $jvmArgs := include "josdk-operator.jvmArgs" . | trim }}
+          {{- if or $jvmArgs .Values.extraEnv }}
+          env:
+            {{- if $jvmArgs }}
+            - name: JAVA_TOOL_OPTIONS
+              value: {{ $jvmArgs | quote }}
+            {{- end }}
+            {{- with .Values.extraEnv }}
+            {{- toYaml . | nindent 12 }}
+            {{- end }}
+          {{- end }}
+          {{- if .Values.healthProbes.enabled }}
+          ports:
+            - name: health
+              containerPort: {{ .Values.healthProbes.port }}
+              protocol: TCP
+          startupProbe:
+            httpGet:
+              path: {{ .Values.healthProbes.startupProbe.path }}
+              port: {{ .Values.healthProbes.port }}
+            initialDelaySeconds: {{ .Values.healthProbes.startupProbe.initialDelaySeconds }}
+            periodSeconds: {{ .Values.healthProbes.startupProbe.periodSeconds }}
+            failureThreshold: {{ .Values.healthProbes.startupProbe.failureThreshold }}
+          livenessProbe:
+            httpGet:
+              path: {{ .Values.healthProbes.livenessProbe.path }}
+              port: {{ .Values.healthProbes.port }}
+            initialDelaySeconds: {{ .Values.healthProbes.livenessProbe.initialDelaySeconds }}
+            periodSeconds: {{ .Values.healthProbes.livenessProbe.periodSeconds }}
+            failureThreshold: {{ .Values.healthProbes.livenessProbe.failureThreshold }}
+          {{- end }}
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+          volumeMounts:
+            # ----------------------------------------------------------------
+            # JOSDK ConfigLoader properties file
+            # Mounted at <josdkConfig.mountPath>/josdk.properties.
+            # Wire it up in your operator main class, e.g.:
+            #
+            #   ConfigLoader loader = new ConfigLoader(
+            #       PropertiesConfigProvider.fromFile(
+            #           Path.of("/config/josdk.properties")));
+            # ----------------------------------------------------------------
+            {{- if .Values.josdkConfig.enabled }}
+            - name: josdk-config
+              mountPath: {{ .Values.josdkConfig.mountPath }}
+              readOnly: true
+            {{- end }}
+            # ----------------------------------------------------------------
+            # Log4j2 configuration file
+            # Mounted at <log4j2.mountPath>/log4j2.xml.
+            # Picked up automatically via JAVA_TOOL_OPTIONS when log4j2.enabled=true.
+            # ----------------------------------------------------------------
+            {{- if .Values.log4j2.enabled }}
+            - name: log4j2-config
+              mountPath: {{ .Values.log4j2.mountPath }}
+              readOnly: true
+            {{- end }}
+            {{- with .Values.extraVolumeMounts }}
+            {{- toYaml . | nindent 12 }}
+            {{- end }}
+      volumes:
+        {{- if .Values.josdkConfig.enabled }}
+        - name: josdk-config
+          configMap:
+            name: {{ include "josdk-operator.configMapName" . }}
+        {{- end }}
+        {{- if .Values.log4j2.enabled }}
+        - name: log4j2-config
+          configMap:
+            name: {{ include "josdk-operator.log4j2ConfigMapName" . }}
+        {{- end }}
+        {{- with .Values.extraVolumes }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}

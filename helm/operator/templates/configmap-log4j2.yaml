@@ -1,0 +1,37 @@
+{{- if .Values.log4j2.enabled }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "josdk-operator.log4j2ConfigMapName" . }}
+  namespace: {{ include "josdk-operator.namespace" . }}
+  labels:
+    {{- include "josdk-operator.labels" . | nindent 4 }}
+data:
+  log4j2.xml: |
+    {{- if .Values.log4j2.xmlOverride }}
+    {{- .Values.log4j2.xmlOverride | nindent 4 }}
+    {{- else }}
+    <?xml version="1.0" encoding="UTF-8"?>
+    <Configuration status="WARN" monitorInterval="30">
+      <Appenders>
+        <Console name="Console" target="SYSTEM_OUT">
+          <!--
+            Pattern includes JOSDK MDC context keys so that every log line
+            shows which resource and event source triggered the message.
+          -->
+          <PatternLayout pattern="%d{ISO8601} %threadId %-30c{1.} [%-5level] %msg p:[%X{resource.name}:%X{resource.namespace}:%X{resource.resourceVersion}] e:[%X{eventsource.name}:%X{eventsource.event.action}:%X{eventsource.event.resource.name}:%X{eventsource.event.resource.namespace}:%X{eventsource.event.resource.resourceVersion}] %n%throwable"/>
+        </Console>
+      </Appenders>
+      <Loggers>
+        {{- range $logger, $level := .Values.log4j2.loggers }}
+        <Logger name="{{ $logger }}" level="{{ $level }}" additivity="false">
+          <AppenderRef ref="Console"/>
+        </Logger>
+        {{- end }}
+        <Root level="{{ .Values.log4j2.rootLevel }}">
+          <AppenderRef ref="Console"/>
+        </Root>
+      </Loggers>
+    </Configuration>
+    {{- end }}
+{{- end }}

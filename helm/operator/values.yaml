@@ -1,0 +1,153 @@
+# -----------------------------------------------------------------------
+# Generic JOSDK Operator Helm Chart – default values
+# Override any of these in your own values.yaml or with --set on the CLI.
+# -----------------------------------------------------------------------
+
+# -- Operator identity -------------------------------------------------------
+nameOverride: ""
+fullnameOverride: ""
+
+# -- Image -------------------------------------------------------------------
+image:
+  repository: my-operator
+  tag: latest
+  pullPolicy: IfNotPresent
+
+imagePullSecrets: []
+
+# -- Replicas ----------------------------------------------------------------
+replicaCount: 1
+
+# -- Namespace the operator is deployed into.
+# Defaults to the Helm release namespace (.Release.Namespace).
+namespace: ""
+
+# -- Service account ---------------------------------------------------------
+serviceAccount:
+  # Create a dedicated ServiceAccount for the operator.
+  create: true
+  # Annotations to add (e.g. for IRSA / Workload Identity).
+  annotations: {}
+  # Override the auto-generated name.
+  name: ""
+
+# -- Pod settings ------------------------------------------------------------
+podAnnotations: {}
+podLabels: {}
+
+podSecurityContext:
+  runAsNonRoot: true
+  runAsUser: 1000
+  fsGroup: 2000
+
+securityContext:
+  allowPrivilegeEscalation: false
+  readOnlyRootFilesystem: true
+  capabilities:
+    drop:
+      - ALL
+
+resources:
+  requests:
+    cpu: 100m
+    memory: 128Mi
+  limits:
+    cpu: 500m
+    memory: 512Mi
+
+# -- Health probes -----------------------------------------------------------
+# Requires the operator to expose an HTTP health endpoint.
+# The JOSDK sample operators expose /startup and /healthz on port 8080 by
+# default; adjust if your operator uses different paths or ports.
+healthProbes:
+  enabled: false
+  port: 8080
+  startupProbe:
+    path: /startup
+    initialDelaySeconds: 5
+    periodSeconds: 2
+    failureThreshold: 15
+  livenessProbe:
+    path: /healthz
+    initialDelaySeconds: 10
+    periodSeconds: 10
+    failureThreshold: 3
+
+# -- RBAC --------------------------------------------------------------------
+rbac:
+  # Create ClusterRole + ClusterRoleBinding.
+  create: true
+  # Additional rules appended to the ClusterRole.
+  # Add entries for your operator's custom resources here, e.g.:
+  #   - apiGroups: ["mygroup.example.com"]
+  #     resources: ["myresources", "myresources/status"]
+  #     verbs: ["*"]
+  additionalRules: []
+
+# -- ConfigLoader configuration ConfigMap ------------------------------------
+# When enabled, a ConfigMap is created and mounted into the operator pod at
+# /config/josdk.properties (or josdk.yaml).  The operator must be coded to
+# load it via ConfigLoader / ConfigProvider (or Spring, etc.).
+# All key-value pairs under `config.properties` are written verbatim into the
+# ConfigMap data entry `josdk.properties`.  Use the JOSDK property keys
+# documented in ConfigLoader (e.g. josdk.reconciliation.concurrent-threads).
+josdkConfig:
+  enabled: false
+  # Name of the ConfigMap; defaults to <fullname>-config.
+  configMapName: ""
+  # Mount path inside the container.
+  mountPath: /config
+  # Properties written into josdk.properties inside the ConfigMap.
+  # Example:
+  #   properties:
+  #     josdk.reconciliation.concurrent-threads: "4"
+  #     josdk.workflow.executor-threads: "2"
+  #     josdk.informer.stop-on-error-during-startup: "false"
+  #     josdk.controller.my-controller.retry.max-attempts: "5"
+  #     josdk.controller.my-controller.retry.initial-interval: "1000"
+  properties: {}
+
+# -- Log4j2 configuration ----------------------------------------------------
+# When enabled, a ConfigMap containing a log4j2.xml is created and mounted
+# into the operator pod at /config/log4j2.xml.  The operator must be launched
+# with -Dlog4j2.configurationFile=/config/log4j2.xml (set via `jvmArgs` below)
+# so that Log4j2 picks up the external file.
+log4j2:
+  enabled: false
+  # Name of the ConfigMap; defaults to <fullname>-log4j2.
+  configMapName: ""
+  # Mount path for the log4j2.xml file.
+  mountPath: /config
+  # Root log level (TRACE | DEBUG | INFO | WARN | ERROR | OFF).
+  rootLevel: INFO
+  # Per-logger overrides – map of logger-name → level.
+  # Example:
+  #   loggers:
+  #     io.javaoperatorsdk: DEBUG
+  #     io.fabric8.kubernetes.client: WARN
+  loggers: {}
+  # Full override of the log4j2 XML content.  When set, rootLevel and loggers
+  # are ignored and this raw XML is used instead.
+  xmlOverride: ""
+
+# -- Extra environment variables injected into the operator container --------
+# Example:
+#   extraEnv:
+#     - name: METRICS_CONSOLE_LOGGING
+#       value: "true"
+extraEnv: []
+
+# -- Extra volumes / mounts (user-defined, independent of the above) ---------
+extraVolumes: []
+extraVolumeMounts: []
+
+# -- JVM arguments passed to the operator process ---------------------------
+# The log4j2 config file path is appended automatically when log4j2.enabled=true.
+# Example:
+#   jvmArgs: "-Xmx256m -Xms128m"
+jvmArgs: ""
+
+# -- Node scheduling ---------------------------------------------------------
+nodeSelector: {}
+tolerations: []
+affinity: {}
