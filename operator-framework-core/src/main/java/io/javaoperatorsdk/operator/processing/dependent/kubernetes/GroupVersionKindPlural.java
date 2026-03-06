@@ -119,8 +119,6 @@ public class GroupVersionKindPlural extends GroupVersionKind {
    * @return the default plural form for the specified kind
    */
   public static String getDefaultPluralFor(String kind) {
-    // todo: replace by Fabric8 version when available, see
-    // https://github.com/fabric8io/kubernetes-client/pull/6314
     return kind != null ? Pluralize.toPlural(kind.toLowerCase()) : null;
   }
 
