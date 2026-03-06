@@ -216,3 +216,9 @@ With this index in place, you can retrieve the target resources very efficiently
                         .collect(Collectors.toSet()))
             .withNamespacesInheritedFromController().build(), context);
 ```
+
+## Read-cache-after-write consistency and event filtering
+
+From version 5.3.0 we provide stronger consistency guarantees and
+other features on top of basic informers, see [this section](reconciler.md#read-cache-after-write-consistency-and-event-filtering)
+for details.

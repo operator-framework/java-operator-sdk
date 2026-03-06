@@ -21,7 +21,7 @@
   <parent>
     <groupId>io.javaoperatorsdk</groupId>
     <artifactId>java-operator-sdk</artifactId>
-    <version>5.2.4-SNAPSHOT</version>
+    <version>999-SNAPSHOT</version>
   </parent>
 
   <artifactId>operator-framework</artifactId>
@@ -92,7 +92,7 @@
     </dependency>
     <dependency>
       <groupId>io.javaoperatorsdk</groupId>
-      <artifactId>operator-framework-junit-5</artifactId>
+      <artifactId>operator-framework-junit</artifactId>
       <version>${project.version}</version>
       <scope>test</scope>
     </dependency>

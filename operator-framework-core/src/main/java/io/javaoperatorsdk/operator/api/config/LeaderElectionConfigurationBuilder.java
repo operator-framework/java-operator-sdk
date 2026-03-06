@@ -31,7 +31,6 @@ public final class LeaderElectionConfigurationBuilder {
   private Duration renewDeadline = RENEW_DEADLINE_DEFAULT_VALUE;
   private Duration retryPeriod = RETRY_PERIOD_DEFAULT_VALUE;
   private LeaderCallbacks leaderCallbacks;
-  private boolean exitOnStopLeading = true;
 
   private LeaderElectionConfigurationBuilder(String leaseName) {
     this.leaseName = leaseName;
@@ -71,12 +70,22 @@ public final class LeaderElectionConfigurationBuilder {
     return this;
   }
 
+  /**
+   * @deprecated Use {@link #buildForTest(boolean)} instead as setting this to false should only be
+   *     used for testing purposes
+   */
+  @Deprecated(forRemoval = true)
   public LeaderElectionConfigurationBuilder withExitOnStopLeading(boolean exitOnStopLeading) {
-    this.exitOnStopLeading = exitOnStopLeading;
-    return this;
+    throw new UnsupportedOperationException(
+        "Setting exitOnStopLeading should only be used for testing purposes, use buildForTest"
+            + " instead");
   }
 
   public LeaderElectionConfiguration build() {
+    return buildForTest(false);
+  }
+
+  public LeaderElectionConfiguration buildForTest(boolean exitOnStopLeading) {
     return new LeaderElectionConfiguration(
         leaseName,
         leaseNamespace,

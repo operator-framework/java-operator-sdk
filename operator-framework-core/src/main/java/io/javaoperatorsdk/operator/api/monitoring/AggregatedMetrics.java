@@ -71,50 +71,46 @@ public final class AggregatedMetrics implements Metrics {
   }
 
   @Override
-  public void receivedEvent(Event event, Map<String, Object> metadata) {
-    metricsList.forEach(metrics -> metrics.receivedEvent(event, metadata));
+  public void eventReceived(Event event, Map<String, Object> metadata) {
+    metricsList.forEach(metrics -> metrics.eventReceived(event, metadata));
   }
 
   @Override
-  public void reconcileCustomResource(
+  public void reconciliationSubmitted(
       HasMetadata resource, RetryInfo retryInfo, Map<String, Object> metadata) {
-    metricsList.forEach(metrics -> metrics.reconcileCustomResource(resource, retryInfo, metadata));
+    metricsList.forEach(metrics -> metrics.reconciliationSubmitted(resource, retryInfo, metadata));
   }
 
   @Override
-  public void failedReconciliation(
-      HasMetadata resource, Exception exception, Map<String, Object> metadata) {
-    metricsList.forEach(metrics -> metrics.failedReconciliation(resource, exception, metadata));
+  public void reconciliationFailed(
+      HasMetadata resource, RetryInfo retry, Exception exception, Map<String, Object> metadata) {
+    metricsList.forEach(
+        metrics -> metrics.reconciliationFailed(resource, retry, exception, metadata));
   }
 
   @Override
-  public void reconciliationExecutionStarted(HasMetadata resource, Map<String, Object> metadata) {
-    metricsList.forEach(metrics -> metrics.reconciliationExecutionStarted(resource, metadata));
+  public void reconciliationStarted(HasMetadata resource, Map<String, Object> metadata) {
+    metricsList.forEach(metrics -> metrics.reconciliationStarted(resource, metadata));
   }
 
   @Override
-  public void reconciliationExecutionFinished(HasMetadata resource, Map<String, Object> metadata) {
-    metricsList.forEach(metrics -> metrics.reconciliationExecutionFinished(resource, metadata));
+  public void reconciliationFinished(
+      HasMetadata resource, RetryInfo retryInfo, Map<String, Object> metadata) {
+    metricsList.forEach(metrics -> metrics.reconciliationFinished(resource, retryInfo, metadata));
   }
 
   @Override
-  public void cleanupDoneFor(ResourceID resourceID, Map<String, Object> metadata) {
-    metricsList.forEach(metrics -> metrics.cleanupDoneFor(resourceID, metadata));
+  public void cleanupDone(ResourceID resourceID, Map<String, Object> metadata) {
+    metricsList.forEach(metrics -> metrics.cleanupDone(resourceID, metadata));
   }
 
   @Override
-  public void finishedReconciliation(HasMetadata resource, Map<String, Object> metadata) {
-    metricsList.forEach(metrics -> metrics.finishedReconciliation(resource, metadata));
+  public void reconciliationSucceeded(HasMetadata resource, Map<String, Object> metadata) {
+    metricsList.forEach(metrics -> metrics.reconciliationSucceeded(resource, metadata));
   }
 
   @Override
   public <T> T timeControllerExecution(ControllerExecution<T> execution) throws Exception {
     return metricsList.get(0).timeControllerExecution(execution);
-  }
-
-  @Override
-  public <T extends Map<?, ?>> T monitorSizeOf(T map, String name) {
-    metricsList.forEach(metrics -> metrics.monitorSizeOf(map, name));
-    return map;
   }
 }

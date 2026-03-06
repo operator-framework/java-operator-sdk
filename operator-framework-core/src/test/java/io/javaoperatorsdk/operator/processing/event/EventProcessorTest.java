@@ -38,8 +38,8 @@ import io.javaoperatorsdk.operator.api.monitoring.Metrics;
 import io.javaoperatorsdk.operator.processing.event.rate.LinearRateLimiter;
 import io.javaoperatorsdk.operator.processing.event.rate.RateLimiter;
 import io.javaoperatorsdk.operator.processing.event.rate.RateLimiter.RateLimitState;
+import io.javaoperatorsdk.operator.processing.event.source.ResourceAction;
 import io.javaoperatorsdk.operator.processing.event.source.controller.ControllerEventSource;
-import io.javaoperatorsdk.operator.processing.event.source.controller.ResourceAction;
 import io.javaoperatorsdk.operator.processing.event.source.controller.ResourceDeleteEvent;
 import io.javaoperatorsdk.operator.processing.event.source.controller.ResourceEvent;
 import io.javaoperatorsdk.operator.processing.event.source.timer.TimerEventSource;
@@ -338,7 +338,7 @@ class EventProcessorTest {
     eventProcessor.start();
 
     verify(reconciliationDispatcherMock, timeout(100).times(1)).handleExecution(any());
-    verify(metricsMock, times(1)).reconcileCustomResource(any(HasMetadata.class), isNull(), any());
+    verify(metricsMock, times(1)).reconciliationSubmitted(any(HasMetadata.class), isNull(), any());
   }
 
   @Test

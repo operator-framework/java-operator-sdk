@@ -19,6 +19,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
+import io.javaoperatorsdk.operator.processing.MDCUtils;
 
 abstract class NodeExecutor<R, P extends HasMetadata> implements Runnable {
 
@@ -36,19 +37,22 @@ abstract class NodeExecutor<R, P extends HasMetadata> implements Runnable {
 
   @Override
   public void run() {
-    try {
-      doRun(dependentResourceNode);
-
-    } catch (Exception e) {
-      // Exception is required because of Kotlin
-      workflowExecutor.handleExceptionInExecutor(dependentResourceNode, e);
-    } catch (Error e) {
-      // without this user would see no sign about the error
-      log.error("java.lang.Error during execution", e);
-      throw e;
-    } finally {
-      workflowExecutor.handleNodeExecutionFinish(dependentResourceNode);
-    }
+    MDCUtils.withMDCForResource(
+        workflowExecutor.primary,
+        () -> {
+          try {
+            doRun(dependentResourceNode);
+          } catch (Exception e) {
+            // Exception is required because of Kotlin
+            workflowExecutor.handleExceptionInExecutor(dependentResourceNode, e);
+          } catch (Error e) {
+            // without this user would see no sign about the error
+            log.error("java.lang.Error during execution", e);
+            throw e;
+          } finally {
+            workflowExecutor.handleNodeExecutionFinish(dependentResourceNode);
+          }
+        });
   }
 
   protected abstract void doRun(DependentResourceNode<R, P> dependentResourceNode);

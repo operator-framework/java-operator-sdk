@@ -63,9 +63,28 @@ public class ResourceID implements Serializable {
   }
 
   public boolean isSameResource(HasMetadata hasMetadata) {
+    if (hasMetadata == null) {
+      return false;
+    }
     final var metadata = hasMetadata.getMetadata();
-    return getName().equals(metadata.getName())
-        && getNamespace().map(ns -> ns.equals(metadata.getNamespace())).orElse(true);
+    return isSameResource(metadata.getName(), metadata.getNamespace());
+  }
+
+  /**
+   * Whether this ResourceID points to the same resource as the one identified by the specified name
+   * and namespace.
+   *
+   * <p>Note that this doesn't take API version or Kind into account so this should only be used
+   * when checking resources that are reasonably expected to be of the same type.
+   *
+   * @param name the name of the resource we want to check
+   * @param namespace the possibly {@code null} namespace of the resource we want to check
+   * @return {@code true} if this resource points to the same resource as the one pointed to by the
+   *     specified name and namespace, {@code false} otherwise
+   * @since 5.3.0
+   */
+  public boolean isSameResource(String name, String namespace) {
+    return Objects.equals(this.name, name) && Objects.equals(this.namespace, namespace);
   }
 
   @Override

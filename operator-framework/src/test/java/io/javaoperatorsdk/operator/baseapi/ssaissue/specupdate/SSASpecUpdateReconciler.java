@@ -15,6 +15,9 @@
  */
 package io.javaoperatorsdk.operator.baseapi.ssaissue.specupdate;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
 import io.javaoperatorsdk.operator.api.reconciler.Cleaner;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
@@ -27,18 +30,21 @@ import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
 public class SSASpecUpdateReconciler
     implements Reconciler<SSASpecUpdateCustomResource>, Cleaner<SSASpecUpdateCustomResource> {
 
+  private static final Logger log = LoggerFactory.getLogger(SSASpecUpdateReconciler.class);
+
   @Override
   public UpdateControl<SSASpecUpdateCustomResource> reconcile(
       SSASpecUpdateCustomResource resource, Context<SSASpecUpdateCustomResource> context) {
 
     var copy = createFreshCopy(resource);
     copy.getSpec().setValue("value");
-    context
-        .getClient()
-        .resource(copy)
-        .fieldManager(context.getControllerConfiguration().fieldManager())
-        .serverSideApply();
-
+    var res =
+        context
+            .getClient()
+            .resource(copy)
+            .fieldManager(context.getControllerConfiguration().fieldManager())
+            .serverSideApply();
+    log.info("res: {}", res);
     return UpdateControl.noUpdate();
   }
 

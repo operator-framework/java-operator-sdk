@@ -174,10 +174,10 @@ abstract class AbstractWorkflowExecutor<P extends HasMetadata> {
       DependentResourceNode<R, P> dependentResourceNode,
       NodeExecutor<R, P> nodeExecutor,
       String operation) {
+    logger()
+        .debug("Submitting to {}: {} primaryID: {}", operation, dependentResourceNode, primaryID);
     final Future<?> future = executorService.submit(nodeExecutor);
     markAsExecuting(dependentResourceNode, future);
-    logger()
-        .debug("Submitted to {}: {} primaryID: {}", operation, dependentResourceNode, primaryID);
   }
 
   protected <R> void registerOrDeregisterEventSourceBasedOnActivation(
