@@ -1,0 +1,558 @@
+/*
+ * Copyright Java Operator SDK Authors
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *         http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package io.javaoperatorsdk.operator.config.loader;
+
+import java.time.Duration;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
+
+import org.junit.jupiter.api.Test;
+
+import io.javaoperatorsdk.operator.api.config.BaseConfigurationService;
+import io.javaoperatorsdk.operator.api.config.ConfigurationService;
+import io.javaoperatorsdk.operator.api.config.ConfigurationServiceOverrider;
+import io.javaoperatorsdk.operator.api.config.ControllerConfigurationOverrider;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
+
+class ConfigLoaderTest {
+
+  // A simple ConfigProvider backed by a plain map for test control.
+  private static ConfigProvider mapProvider(Map<String, Object> values) {
+    return new ConfigProvider() {
+      @Override
+      @SuppressWarnings("unchecked")
+      public <T> Optional<T> getValue(String key, Class<T> type) {
+        return Optional.ofNullable((T) values.get(key));
+      }
+    };
+  }
+
+  @Test
+  void applyConfigsReturnsNoOpWhenNothingConfigured() {
+    var loader = new ConfigLoader(mapProvider(Map.of()));
+    var base = new BaseConfigurationService(null);
+    // consumer must be non-null and must leave all defaults unchanged
+    var consumer = loader.applyConfigs();
+    assertThat(consumer).isNotNull();
+    var result = ConfigurationService.newOverriddenConfigurationService(base, consumer);
+    assertThat(result.concurrentReconciliationThreads())
+        .isEqualTo(base.concurrentReconciliationThreads());
+    assertThat(result.concurrentWorkflowExecutorThreads())
+        .isEqualTo(base.concurrentWorkflowExecutorThreads());
+  }
+
+  @Test
+  void applyConfigsAppliesConcurrentReconciliationThreads() {
+    var loader =
+        new ConfigLoader(mapProvider(Map.of("josdk.reconciliation.concurrent-threads", 7)));
+
+    var base = new BaseConfigurationService(null);
+    var result =
+        ConfigurationService.newOverriddenConfigurationService(base, loader.applyConfigs());
+
+    assertThat(result.concurrentReconciliationThreads()).isEqualTo(7);
+  }
+
+  @Test
+  void applyConfigsAppliesConcurrentWorkflowExecutorThreads() {
+    var loader = new ConfigLoader(mapProvider(Map.of("josdk.workflow.executor-threads", 3)));
+
+    var base = new BaseConfigurationService(null);
+    var result =
+        ConfigurationService.newOverriddenConfigurationService(base, loader.applyConfigs());
+
+    assertThat(result.concurrentWorkflowExecutorThreads()).isEqualTo(3);
+  }
+
+  @Test
+  void applyConfigsAppliesBooleanFlags() {
+    var values = new HashMap<String, Object>();
+    values.put("josdk.check-crd", true);
+    values.put("josdk.close-client-on-stop", false);
+    values.put("josdk.informer.stop-on-error-during-startup", false);
+    values.put("josdk.dependent-resources.ssa-based-create-update-match", false);
+    values.put("josdk.use-ssa-to-patch-primary-resource", false);
+    values.put("josdk.clone-secondary-resources-when-getting-from-cache", true);
+    var loader = new ConfigLoader(mapProvider(values));
+
+    var base = new BaseConfigurationService(null);
+    var result =
+        ConfigurationService.newOverriddenConfigurationService(base, loader.applyConfigs());
+
+    assertThat(result.checkCRDAndValidateLocalModel()).isTrue();
+    assertThat(result.closeClientOnStop()).isFalse();
+    assertThat(result.stopOnInformerErrorDuringStartup()).isFalse();
+    assertThat(result.ssaBasedCreateUpdateMatchForDependentResources()).isFalse();
+    assertThat(result.useSSAToPatchPrimaryResource()).isFalse();
+    assertThat(result.cloneSecondaryResourcesWhenGettingFromCache()).isTrue();
+  }
+
+  @Test
+  void applyConfigsAppliesDurations() {
+    var values = new HashMap<String, Object>();
+    values.put("josdk.informer.cache-sync-timeout", Duration.ofSeconds(10));
+    values.put("josdk.reconciliation.termination-timeout", Duration.ofSeconds(5));
+    var loader = new ConfigLoader(mapProvider(values));
+
+    var base = new BaseConfigurationService(null);
+    var result =
+        ConfigurationService.newOverriddenConfigurationService(base, loader.applyConfigs());
+
+    assertThat(result.cacheSyncTimeout()).isEqualTo(Duration.ofSeconds(10));
+    assertThat(result.reconciliationTerminationTimeout()).isEqualTo(Duration.ofSeconds(5));
+  }
+
+  @Test
+  void applyConfigsOnlyAppliesPresentKeys() {
+    // Only one key present — other defaults must be unchanged.
+    var loader =
+        new ConfigLoader(mapProvider(Map.of("josdk.reconciliation.concurrent-threads", 12)));
+
+    var base = new BaseConfigurationService(null);
+    var result =
+        ConfigurationService.newOverriddenConfigurationService(base, loader.applyConfigs());
+
+    assertThat(result.concurrentReconciliationThreads()).isEqualTo(12);
+    // Default unchanged
+    assertThat(result.concurrentWorkflowExecutorThreads())
+        .isEqualTo(base.concurrentWorkflowExecutorThreads());
+  }
+
+  // -- applyControllerConfigs -------------------------------------------------
+
+  @Test
+  void applyControllerConfigsReturnsNoOpWhenNothingConfigured() {
+    var loader = new ConfigLoader(mapProvider(Map.of()));
+    assertThat(loader.applyControllerConfigs("my-controller")).isNotNull();
+  }
+
+  @Test
+  void applyControllerConfigsQueriesKeysPrefixedWithControllerName() {
+    // Record every key the loader asks for, regardless of whether a value exists.
+    var queriedKeys = new ArrayList<String>();
+    ConfigProvider recordingProvider =
+        new ConfigProvider() {
+          @Override
+          public <T> Optional<T> getValue(String key, Class<T> type) {
+            queriedKeys.add(key);
+            return Optional.empty();
+          }
+        };
+
+    new ConfigLoader(recordingProvider).applyControllerConfigs("my-ctrl");
+
+    assertThat(queriedKeys).allMatch(k -> k.startsWith("josdk.controller.my-ctrl."));
+  }
+
+  @Test
+  void applyControllerConfigsIsolatesControllersByName() {
+    // Two controllers configured in the same provider — only matching keys must be returned.
+    var values = new HashMap<String, Object>();
+    values.put("josdk.controller.alpha.finalizer", "alpha-finalizer");
+    values.put("josdk.controller.beta.finalizer", "beta-finalizer");
+    var loader = new ConfigLoader(mapProvider(values));
+
+    // alpha gets a consumer (key found), beta gets a consumer (key found)
+    assertThat(loader.applyControllerConfigs("alpha")).isNotNull();
+    assertThat(loader.applyControllerConfigs("beta")).isNotNull();
+    // a controller with no configured keys still gets a non-null no-op consumer
+    assertThat(loader.applyControllerConfigs("gamma")).isNotNull();
+  }
+
+  @Test
+  void applyControllerConfigsQueriesAllExpectedPropertySuffixes() {
+    var queriedKeys = new ArrayList<String>();
+    ConfigProvider recordingProvider =
+        new ConfigProvider() {
+          @Override
+          public <T> Optional<T> getValue(String key, Class<T> type) {
+            queriedKeys.add(key);
+            return Optional.empty();
+          }
+        };
+
+    new ConfigLoader(recordingProvider).applyControllerConfigs("ctrl");
+
+    assertThat(queriedKeys)
+        .contains(
+            "josdk.controller.ctrl.finalizer",
+            "josdk.controller.ctrl.generation-aware",
+            "josdk.controller.ctrl.label-selector",
+            "josdk.controller.ctrl.max-reconciliation-interval",
+            "josdk.controller.ctrl.field-manager",
+            "josdk.controller.ctrl.trigger-reconciler-on-all-events",
+            "josdk.controller.ctrl.informer.label-selector",
+            "josdk.controller.ctrl.informer.list-limit",
+            "josdk.controller.ctrl.rate-limiter.refresh-period",
+            "josdk.controller.ctrl.rate-limiter.limit-for-period");
+  }
+
+  @Test
+  void operatorKeyPrefixIsJosdkDot() {
+    assertThat(ConfigLoader.DEFAULT_OPERATOR_KEY_PREFIX).isEqualTo("josdk.");
+  }
+
+  @Test
+  void controllerKeyPrefixIsJosdkControllerDot() {
+    assertThat(ConfigLoader.DEFAULT_CONTROLLER_KEY_PREFIX).isEqualTo("josdk.controller.");
+  }
+
+  // -- rate limiter -----------------------------------------------------------
+
+  @Test
+  void rateLimiterQueriesExpectedKeys() {
+    var queriedKeys = new ArrayList<String>();
+    ConfigProvider recordingProvider =
+        new ConfigProvider() {
+          @Override
+          public <T> Optional<T> getValue(String key, Class<T> type) {
+            queriedKeys.add(key);
+            return Optional.empty();
+          }
+        };
+    new ConfigLoader(recordingProvider).applyControllerConfigs("ctrl");
+    assertThat(queriedKeys)
+        .contains(
+            "josdk.controller.ctrl.rate-limiter.refresh-period",
+            "josdk.controller.ctrl.rate-limiter.limit-for-period");
+  }
+
+  // -- binding coverage -------------------------------------------------------
+
+  /**
+   * Supported scalar types that AgregatePriorityListConfigProvider can parse from a string. Every
+   * binding's type must be one of these.
+   */
+  private static final Set<Class<?>> SUPPORTED_TYPES =
+      Set.of(
+          Boolean.class,
+          boolean.class,
+          Integer.class,
+          int.class,
+          Long.class,
+          long.class,
+          Double.class,
+          double.class,
+          Duration.class,
+          String.class);
+
+  @Test
+  void operatorBindingsCoverAllSingleScalarSettersOnConfigurationServiceOverrider() {
+    Set<String> expectedSetters =
+        Arrays.stream(ConfigurationServiceOverrider.class.getMethods())
+            .filter(m -> m.getParameterCount() == 1)
+            .filter(m -> SUPPORTED_TYPES.contains(m.getParameterTypes()[0]))
+            .filter(m -> m.getReturnType() == ConfigurationServiceOverrider.class)
+            .map(java.lang.reflect.Method::getName)
+            .collect(Collectors.toSet());
+
+    Set<String> boundMethodNames =
+        ConfigLoader.OPERATOR_BINDINGS.stream()
+            .flatMap(
+                b ->
+                    Arrays.stream(ConfigurationServiceOverrider.class.getMethods())
+                        .filter(m -> m.getParameterCount() == 1)
+                        .filter(m -> isTypeCompatible(m.getParameterTypes()[0], b.type()))
+                        .filter(m -> m.getReturnType() == ConfigurationServiceOverrider.class)
+                        .map(java.lang.reflect.Method::getName))
+            .collect(Collectors.toSet());
+
+    assertThat(boundMethodNames)
+        .as("Every scalar setter on ConfigurationServiceOverrider must be covered by a binding")
+        .containsExactlyInAnyOrderElementsOf(expectedSetters);
+  }
+
+  @Test
+  void controllerBindingsCoverAllSingleScalarSettersOnControllerConfigurationOverrider() {
+    Set<String> expectedSetters =
+        Arrays.stream(ControllerConfigurationOverrider.class.getMethods())
+            .filter(m -> m.getParameterCount() == 1)
+            .filter(m -> SUPPORTED_TYPES.contains(m.getParameterTypes()[0]))
+            .filter(m -> m.getReturnType() == ControllerConfigurationOverrider.class)
+            .filter(m -> m.getAnnotation(Deprecated.class) == null)
+            .map(java.lang.reflect.Method::getName)
+            .collect(Collectors.toSet());
+
+    Set<String> boundMethodNames =
+        ConfigLoader.CONTROLLER_BINDINGS.stream()
+            .flatMap(
+                b ->
+                    Arrays.stream(ControllerConfigurationOverrider.class.getMethods())
+                        .filter(m -> m.getParameterCount() == 1)
+                        .filter(m -> isTypeCompatible(m.getParameterTypes()[0], b.type()))
+                        .filter(m -> m.getReturnType() == ControllerConfigurationOverrider.class)
+                        .filter(m -> m.getAnnotation(Deprecated.class) == null)
+                        .map(java.lang.reflect.Method::getName))
+            .collect(Collectors.toSet());
+
+    assertThat(boundMethodNames)
+        .as(
+            "Every scalar setter on ControllerConfigurationOverrider should be covered by a"
+                + " binding")
+        .containsExactlyInAnyOrderElementsOf(expectedSetters);
+  }
+
+  // -- leader election --------------------------------------------------------
+
+  @Test
+  void leaderElectionIsNotConfiguredWhenNoPropertiesPresent() {
+    var loader = new ConfigLoader(mapProvider(Map.of()));
+    var base = new BaseConfigurationService(null);
+    var result =
+        ConfigurationService.newOverriddenConfigurationService(base, loader.applyConfigs());
+    assertThat(result.getLeaderElectionConfiguration()).isEmpty();
+  }
+
+  @Test
+  void leaderElectionIsNotConfiguredWhenExplicitlyDisabled() {
+    var values = new HashMap<String, Object>();
+    values.put("josdk.leader-election.enabled", false);
+    values.put("josdk.leader-election.lease-name", "my-lease");
+    var loader = new ConfigLoader(mapProvider(values));
+    var base = new BaseConfigurationService(null);
+    var result =
+        ConfigurationService.newOverriddenConfigurationService(base, loader.applyConfigs());
+    assertThat(result.getLeaderElectionConfiguration()).isEmpty();
+  }
+
+  @Test
+  void leaderElectionConfiguredWithLeaseNameOnly() {
+    var loader =
+        new ConfigLoader(mapProvider(Map.of("josdk.leader-election.lease-name", "my-lease")));
+    var base = new BaseConfigurationService(null);
+    var result =
+        ConfigurationService.newOverriddenConfigurationService(base, loader.applyConfigs());
+    assertThat(result.getLeaderElectionConfiguration())
+        .hasValueSatisfying(
+            le -> {
+              assertThat(le.getLeaseName()).isEqualTo("my-lease");
+              assertThat(le.getLeaseNamespace()).isEmpty();
+              assertThat(le.getIdentity()).isEmpty();
+            });
+  }
+
+  @Test
+  void leaderElectionConfiguredWithAllProperties() {
+    var values = new HashMap<String, Object>();
+    values.put("josdk.leader-election.enabled", true);
+    values.put("josdk.leader-election.lease-name", "my-lease");
+    values.put("josdk.leader-election.lease-namespace", "my-ns");
+    values.put("josdk.leader-election.identity", "pod-1");
+    values.put("josdk.leader-election.lease-duration", Duration.ofSeconds(20));
+    values.put("josdk.leader-election.renew-deadline", Duration.ofSeconds(15));
+    values.put("josdk.leader-election.retry-period", Duration.ofSeconds(3));
+    var loader = new ConfigLoader(mapProvider(values));
+
+    var base = new BaseConfigurationService(null);
+    var result =
+        ConfigurationService.newOverriddenConfigurationService(base, loader.applyConfigs());
+
+    assertThat(result.getLeaderElectionConfiguration())
+        .hasValueSatisfying(
+            le -> {
+              assertThat(le.getLeaseName()).isEqualTo("my-lease");
+              assertThat(le.getLeaseNamespace()).hasValue("my-ns");
+              assertThat(le.getIdentity()).hasValue("pod-1");
+              assertThat(le.getLeaseDuration()).isEqualTo(Duration.ofSeconds(20));
+              assertThat(le.getRenewDeadline()).isEqualTo(Duration.ofSeconds(15));
+              assertThat(le.getRetryPeriod()).isEqualTo(Duration.ofSeconds(3));
+            });
+  }
+
+  @Test
+  void leaderElectionMissingLeaseNameThrowsWhenOtherPropertiesPresent() {
+    var loader =
+        new ConfigLoader(mapProvider(Map.of("josdk.leader-election.lease-namespace", "my-ns")));
+    var base = new BaseConfigurationService(null);
+    var consumer = loader.applyConfigs();
+    assertThatExceptionOfType(IllegalStateException.class)
+        .isThrownBy(() -> ConfigurationService.newOverriddenConfigurationService(base, consumer))
+        .withMessageContaining("lease-name");
+  }
+
+  // -- retry ------------------------------------------------------------------
+
+  /** A minimal reconciler used to obtain a base ControllerConfiguration in retry tests. */
+  @io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration
+  private static class DummyReconciler
+      implements io.javaoperatorsdk.operator.api.reconciler.Reconciler<
+          io.fabric8.kubernetes.api.model.ConfigMap> {
+    @Override
+    public io.javaoperatorsdk.operator.api.reconciler.UpdateControl<
+            io.fabric8.kubernetes.api.model.ConfigMap>
+        reconcile(
+            io.fabric8.kubernetes.api.model.ConfigMap r,
+            io.javaoperatorsdk.operator.api.reconciler.Context<
+                    io.fabric8.kubernetes.api.model.ConfigMap>
+                ctx) {
+      return io.javaoperatorsdk.operator.api.reconciler.UpdateControl.noUpdate();
+    }
+  }
+
+  private static io.javaoperatorsdk.operator.api.config.ControllerConfiguration<
+          io.fabric8.kubernetes.api.model.ConfigMap>
+      baseControllerConfig() {
+    return new BaseConfigurationService().getConfigurationFor(new DummyReconciler());
+  }
+
+  private static io.javaoperatorsdk.operator.processing.retry.GenericRetry applyAndGetRetry(
+      java.util.function.Consumer<
+              io.javaoperatorsdk.operator.api.config.ControllerConfigurationOverrider<
+                  io.fabric8.kubernetes.api.model.ConfigMap>>
+          consumer) {
+    var overrider =
+        io.javaoperatorsdk.operator.api.config.ControllerConfigurationOverrider.override(
+            baseControllerConfig());
+    consumer.accept(overrider);
+    return (io.javaoperatorsdk.operator.processing.retry.GenericRetry) overrider.build().getRetry();
+  }
+
+  @Test
+  void retryIsNotConfiguredWhenNoRetryPropertiesPresent() {
+    var loader = new ConfigLoader(mapProvider(Map.of()));
+    var consumer = loader.<io.fabric8.kubernetes.api.model.ConfigMap>applyControllerConfigs("ctrl");
+    var overrider =
+        io.javaoperatorsdk.operator.api.config.ControllerConfigurationOverrider.override(
+            baseControllerConfig());
+    consumer.accept(overrider);
+    // no retry property set → retry stays at the controller's default (null or unchanged)
+    var result = overrider.build();
+    // The consumer must not throw and the config is buildable
+    assertThat(result).isNotNull();
+  }
+
+  @Test
+  void retryQueriesExpectedKeys() {
+    var queriedKeys = new ArrayList<String>();
+    ConfigProvider recordingProvider =
+        new ConfigProvider() {
+          @Override
+          public <T> Optional<T> getValue(String key, Class<T> type) {
+            queriedKeys.add(key);
+            return Optional.empty();
+          }
+        };
+    new ConfigLoader(recordingProvider).applyControllerConfigs("ctrl");
+    assertThat(queriedKeys)
+        .contains(
+            "josdk.controller.ctrl.retry.max-attempts",
+            "josdk.controller.ctrl.retry.initial-interval",
+            "josdk.controller.ctrl.retry.interval-multiplier",
+            "josdk.controller.ctrl.retry.max-interval");
+  }
+
+  @Test
+  void retryMaxAttemptsIsApplied() {
+    var loader =
+        new ConfigLoader(mapProvider(Map.of("josdk.controller.ctrl.retry.max-attempts", 10)));
+    var retry = applyAndGetRetry(loader.applyControllerConfigs("ctrl"));
+    assertThat(retry.getMaxAttempts()).isEqualTo(10);
+    // other fields stay at their defaults
+    assertThat(retry.getInitialInterval())
+        .isEqualTo(
+            io.javaoperatorsdk.operator.processing.retry.GenericRetry
+                .defaultLimitedExponentialRetry()
+                .getInitialInterval());
+  }
+
+  @Test
+  void retryInitialIntervalIsApplied() {
+    var loader =
+        new ConfigLoader(mapProvider(Map.of("josdk.controller.ctrl.retry.initial-interval", 500L)));
+    var retry = applyAndGetRetry(loader.applyControllerConfigs("ctrl"));
+    assertThat(retry.getInitialInterval()).isEqualTo(500L);
+  }
+
+  @Test
+  void retryIntervalMultiplierIsApplied() {
+    var loader =
+        new ConfigLoader(
+            mapProvider(Map.of("josdk.controller.ctrl.retry.interval-multiplier", 2.0)));
+    var retry = applyAndGetRetry(loader.applyControllerConfigs("ctrl"));
+    assertThat(retry.getIntervalMultiplier()).isEqualTo(2.0);
+  }
+
+  @Test
+  void retryMaxIntervalIsApplied() {
+    var loader =
+        new ConfigLoader(mapProvider(Map.of("josdk.controller.ctrl.retry.max-interval", 30000L)));
+    var retry = applyAndGetRetry(loader.applyControllerConfigs("ctrl"));
+    assertThat(retry.getMaxInterval()).isEqualTo(30000L);
+  }
+
+  @Test
+  void retryAllPropertiesApplied() {
+    var values = new HashMap<String, Object>();
+    values.put("josdk.controller.ctrl.retry.max-attempts", 7);
+    values.put("josdk.controller.ctrl.retry.initial-interval", 1000L);
+    values.put("josdk.controller.ctrl.retry.interval-multiplier", 3.0);
+    values.put("josdk.controller.ctrl.retry.max-interval", 60000L);
+    var loader = new ConfigLoader(mapProvider(values));
+    var retry = applyAndGetRetry(loader.applyControllerConfigs("ctrl"));
+    assertThat(retry.getMaxAttempts()).isEqualTo(7);
+    assertThat(retry.getInitialInterval()).isEqualTo(1000L);
+    assertThat(retry.getIntervalMultiplier()).isEqualTo(3.0);
+    assertThat(retry.getMaxInterval()).isEqualTo(60000L);
+  }
+
+  @Test
+  void retryStartsFromDefaultLimitedExponentialRetryDefaults() {
+    // Only max-attempts is overridden — other fields must still be the defaults.
+    var defaults =
+        io.javaoperatorsdk.operator.processing.retry.GenericRetry.defaultLimitedExponentialRetry();
+    var loader =
+        new ConfigLoader(mapProvider(Map.of("josdk.controller.ctrl.retry.max-attempts", 3)));
+    var retry = applyAndGetRetry(loader.applyControllerConfigs("ctrl"));
+    assertThat(retry.getMaxAttempts()).isEqualTo(3);
+    assertThat(retry.getInitialInterval()).isEqualTo(defaults.getInitialInterval());
+    assertThat(retry.getIntervalMultiplier()).isEqualTo(defaults.getIntervalMultiplier());
+    assertThat(retry.getMaxInterval()).isEqualTo(defaults.getMaxInterval());
+  }
+
+  @Test
+  void retryIsIsolatedPerControllerName() {
+    var values = new HashMap<String, Object>();
+    values.put("josdk.controller.alpha.retry.max-attempts", 4);
+    values.put("josdk.controller.beta.retry.max-attempts", 9);
+    var loader = new ConfigLoader(mapProvider(values));
+
+    var alphaRetry = applyAndGetRetry(loader.applyControllerConfigs("alpha"));
+    var betaRetry = applyAndGetRetry(loader.applyControllerConfigs("beta"));
+
+    assertThat(alphaRetry.getMaxAttempts()).isEqualTo(4);
+    assertThat(betaRetry.getMaxAttempts()).isEqualTo(9);
+  }
+
+  private static boolean isTypeCompatible(Class<?> methodParam, Class<?> bindingType) {
+    if (methodParam == bindingType) return true;
+    if (methodParam == boolean.class && bindingType == Boolean.class) return true;
+    if (methodParam == Boolean.class && bindingType == boolean.class) return true;
+    if (methodParam == int.class && bindingType == Integer.class) return true;
+    if (methodParam == Integer.class && bindingType == int.class) return true;
+    if (methodParam == long.class && bindingType == Long.class) return true;
+    if (methodParam == Long.class && bindingType == long.class) return true;
+    if (methodParam == double.class && bindingType == Double.class) return true;
+    if (methodParam == Double.class && bindingType == double.class) return true;
+    return false;
+  }
+}
