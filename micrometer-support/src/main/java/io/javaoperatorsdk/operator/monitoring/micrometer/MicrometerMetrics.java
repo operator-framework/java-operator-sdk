@@ -39,6 +39,10 @@ import io.micrometer.core.instrument.Timer;
 
 import static io.javaoperatorsdk.operator.api.reconciler.Constants.CONTROLLER_NAME;
 
+/**
+ * @deprecated Use {@link MicrometerMetricsV2} instead
+ */
+@Deprecated(forRemoval = true)
 public class MicrometerMetrics implements Metrics {
 
   private static final String PREFIX = "operator.sdk.";
@@ -68,7 +72,6 @@ public class MicrometerMetrics implements Metrics {
   private static final String EVENTS_RECEIVED = "events.received";
   private static final String EVENTS_DELETE = "events.delete";
   private static final String CLUSTER = "cluster";
-  private static final String SIZE_SUFFIX = ".size";
   private static final String UNKNOWN_ACTION = "UNKNOWN";
   private final boolean collectPerResourceMetrics;
   private final MeterRegistry registry;
@@ -182,7 +185,7 @@ public class MicrometerMetrics implements Metrics {
   }
 
   @Override
-  public void receivedEvent(Event event, Map<String, Object> metadata) {
+  public void eventReceived(Event event, Map<String, Object> metadata) {
     if (event instanceof ResourceEvent) {
       incrementCounter(
           event.getRelatedCustomResourceID(),
@@ -201,14 +204,14 @@ public class MicrometerMetrics implements Metrics {
   }
 
   @Override
-  public void cleanupDoneFor(ResourceID resourceID, Map<String, Object> metadata) {
+  public void cleanupDone(ResourceID resourceID, Map<String, Object> metadata) {
     incrementCounter(resourceID, EVENTS_DELETE, metadata);
 
     cleaner.removeMetersFor(resourceID);
   }
 
   @Override
-  public void reconcileCustomResource(
+  public void reconciliationSubmitted(
       HasMetadata resource, RetryInfo retryInfoNullable, Map<String, Object> metadata) {
     Optional<RetryInfo> retryInfo = Optional.ofNullable(retryInfoNullable);
     incrementCounter(
@@ -228,19 +231,20 @@ public class MicrometerMetrics implements Metrics {
   }
 
   @Override
-  public void finishedReconciliation(HasMetadata resource, Map<String, Object> metadata) {
+  public void reconciliationSucceeded(HasMetadata resource, Map<String, Object> metadata) {
     incrementCounter(ResourceID.fromResource(resource), RECONCILIATIONS_SUCCESS, metadata);
   }
 
   @Override
-  public void reconciliationExecutionStarted(HasMetadata resource, Map<String, Object> metadata) {
+  public void reconciliationStarted(HasMetadata resource, Map<String, Object> metadata) {
     var reconcilerExecutions =
         gauges.get(RECONCILIATIONS_EXECUTIONS + metadata.get(CONTROLLER_NAME));
     reconcilerExecutions.incrementAndGet();
   }
 
   @Override
-  public void reconciliationExecutionFinished(HasMetadata resource, Map<String, Object> metadata) {
+  public void reconciliationFinished(
+      HasMetadata resource, RetryInfo retryInfo, Map<String, Object> metadata) {
     var reconcilerExecutions =
         gauges.get(RECONCILIATIONS_EXECUTIONS + metadata.get(CONTROLLER_NAME));
     reconcilerExecutions.decrementAndGet();
@@ -251,8 +255,8 @@ public class MicrometerMetrics implements Metrics {
   }
 
   @Override
-  public void failedReconciliation(
-      HasMetadata resource, Exception exception, Map<String, Object> metadata) {
+  public void reconciliationFailed(
+      HasMetadata resource, RetryInfo retry, Exception exception, Map<String, Object> metadata) {
     var cause = exception.getCause();
     if (cause == null) {
       cause = exception;
@@ -264,11 +268,6 @@ public class MicrometerMetrics implements Metrics {
         RECONCILIATIONS_FAILED,
         metadata,
         Tag.of(EXCEPTION, cause.getClass().getSimpleName()));
-  }
-
-  @Override
-  public <T extends Map<?, ?>> T monitorSizeOf(T map, String name) {
-    return registry.gaugeMapSize(PREFIX + name + SIZE_SUFFIX, Collections.emptyList(), map);
   }
 
   private void addMetadataTags(

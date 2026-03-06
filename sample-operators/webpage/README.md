@@ -76,3 +76,6 @@ of your choice. The JAR file is built using your local Maven and JDK and then co
 
 1. Deploy the CRD: `kubectl apply -f target/classes/META-INF/fabric8/webpages.sample.javaoperatorsdk-v1.yml`
 2. Deploy the operator: `kubectl apply -f k8s/operator.yaml`
+
+To install observability components - such as Prometheus, Open Telemetry, Grafana use - execute:
+[install-observability.sh](../../observability/install-observability.sh)

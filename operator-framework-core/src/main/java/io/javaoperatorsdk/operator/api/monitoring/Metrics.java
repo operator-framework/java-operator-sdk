@@ -23,6 +23,7 @@ import io.javaoperatorsdk.operator.api.reconciler.RetryInfo;
 import io.javaoperatorsdk.operator.processing.Controller;
 import io.javaoperatorsdk.operator.processing.event.Event;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
+import io.javaoperatorsdk.operator.processing.retry.RetryExecution;
 
 /**
  * An interface that metrics providers can implement and that the SDK will call at different times
@@ -41,59 +42,72 @@ public interface Metrics {
   default void controllerRegistered(Controller<? extends HasMetadata> controller) {}
 
   /**
-   * Called when an event has been accepted by the SDK from an event source, which would result in
-   * potentially triggering the associated Reconciler.
+   * Called when an event has been accepted by the SDK from an event source, which would potentially
+   * trigger the Reconciler.
    *
    * @param event the event
    * @param metadata metadata associated with the resource being processed
    */
-  default void receivedEvent(Event event, Map<String, Object> metadata) {}
+  default void eventReceived(Event event, Map<String, Object> metadata) {}
 
   /**
-   * Called right before a resource is dispatched to the ExecutorService for reconciliation.
+   * Called right before a resource is submitted to the ExecutorService for reconciliation.
    *
    * @param resource the associated with the resource
    * @param retryInfo the current retry state information for the reconciliation request
    * @param metadata metadata associated with the resource being processed
    */
-  default void reconcileCustomResource(
+  default void reconciliationSubmitted(
       HasMetadata resource, RetryInfo retryInfo, Map<String, Object> metadata) {}
+
+  default void reconciliationStarted(HasMetadata resource, Map<String, Object> metadata) {}
 
   /**
    * Called when a precedent reconciliation for the resource associated with the specified {@link
    * ResourceID} resulted in the provided exception, resulting in a retry of the reconciliation.
    *
    * @param resource the {@link ResourceID} associated with the resource being processed
+   * @param retryInfo the state of retry before {@link RetryExecution#nextDelay()} is called
    * @param exception the exception that caused the failed reconciliation resulting in a retry
    * @param metadata metadata associated with the resource being processed
    */
-  default void failedReconciliation(
-      HasMetadata resource, Exception exception, Map<String, Object> metadata) {}
-
-  default void reconciliationExecutionStarted(HasMetadata resource, Map<String, Object> metadata) {}
-
-  default void reconciliationExecutionFinished(
-      HasMetadata resource, Map<String, Object> metadata) {}
-
-  /**
-   * Called when the resource associated with the specified {@link ResourceID} has been successfully
-   * deleted and the clean-up performed by the associated reconciler is finished.
-   *
-   * @param resourceID the {@link ResourceID} associated with the resource being processed
-   * @param metadata metadata associated with the resource being processed
-   */
-  default void cleanupDoneFor(ResourceID resourceID, Map<String, Object> metadata) {}
+  default void reconciliationFailed(
+      HasMetadata resource,
+      RetryInfo retryInfo,
+      Exception exception,
+      Map<String, Object> metadata) {}
 
   /**
    * Called when the {@link
    * io.javaoperatorsdk.operator.api.reconciler.Reconciler#reconcile(HasMetadata, Context)} method
    * of the Reconciler associated with the resource associated with the specified {@link ResourceID}
-   * has sucessfully finished.
+   * has successfully finished.
    *
    * @param resource the {@link ResourceID} associated with the resource being processed
    * @param metadata metadata associated with the resource being processed
    */
-  default void finishedReconciliation(HasMetadata resource, Map<String, Object> metadata) {}
+  default void reconciliationSucceeded(HasMetadata resource, Map<String, Object> metadata) {}
+
+  /**
+   * Always called when the reconciliation is finished, not only if reconciliation successfully
+   * finished.
+   *
+   * @param resource the {@link ResourceID} associated with the resource being processed
+   * @param retryInfo note that this retry info is in state after {@link RetryExecution#nextDelay()}
+   *     is called in case of exception.
+   * @param metadata metadata associated with the resource being processed
+   */
+  default void reconciliationFinished(
+      HasMetadata resource, RetryInfo retryInfo, Map<String, Object> metadata) {}
+
+  /**
+   * Called when the resource associated with the specified {@link ResourceID} has been successfully
+   * deleted and the cleanup of internal caches is completed.
+   *
+   * @param resourceID the {@link ResourceID} associated with the primary resource being processed
+   * @param metadata metadata associated with the resource being processed
+   */
+  default void cleanupDone(ResourceID resourceID, Map<String, Object> metadata) {}
 
   /**
    * Encapsulates the information about a controller execution i.e. a call to either {@link
@@ -172,20 +186,5 @@ public interface Metrics {
    */
   default <T> T timeControllerExecution(ControllerExecution<T> execution) throws Exception {
     return execution.execute();
-  }
-
-  /**
-   * Monitors the size of the specified map. This currently isn't used directly by the SDK but could
-   * be used by operators to monitor some of their structures, such as cache size.
-   *
-   * @param map the Map which size is to be monitored
-   * @param name the name of the provided Map to be used in metrics data
-   * @return the Map that was passed in so the registration can be done as part of an assignment
-   *     statement.
-   * @param <T> the type of the Map being monitored
-   */
-  @SuppressWarnings("unused")
-  default <T extends Map<?, ?>> T monitorSizeOf(T map, String name) {
-    return map;
   }
 }

@@ -127,7 +127,7 @@ public class EventProcessor<P extends HasMetadata> implements EventHandler, Life
       var state = optionalState.orElseThrow();
       final var resourceID = event.getRelatedCustomResourceID();
       MDCUtils.addResourceIDInfo(resourceID);
-      metrics.receivedEvent(event, metricsMetadata);
+      metrics.eventReceived(event, metricsMetadata);
       handleEventMarking(event, state);
       if (!this.running) {
         if (state.deleteEventPresent()) {
@@ -180,7 +180,7 @@ public class EventProcessor<P extends HasMetadata> implements EventHandler, Life
                 state.deleteEventPresent(),
                 state.isDeleteFinalStateUnknown());
         state.unMarkEventReceived(triggerOnAllEvents());
-        metrics.reconcileCustomResource(latest, state.getRetry(), metricsMetadata);
+        metrics.reconciliationSubmitted(latest, state.getRetry(), metricsMetadata);
         log.debug("Executing events for custom resource. Scope: {}", executionScope);
         executor.execute(new ReconcilerExecutor(resourceID, executionScope));
       } else {
@@ -286,13 +286,12 @@ public class EventProcessor<P extends HasMetadata> implements EventHandler, Life
       return;
     }
     cleanupOnSuccessfulExecution(executionScope);
-    metrics.finishedReconciliation(executionScope.getResource(), metricsMetadata);
+    metrics.reconciliationSucceeded(executionScope.getResource(), metricsMetadata);
     if ((triggerOnAllEvents() && executionScope.isDeleteEvent())
         || (!triggerOnAllEvents() && state.deleteEventPresent())) {
       cleanupForDeletedEvent(executionScope.getResourceID());
     } else if (postExecutionControl.isFinalizerRemoved()) {
       state.markProcessedMarkForDeletion();
-      metrics.cleanupDoneFor(resourceID, metricsMetadata);
     } else {
       if (state.eventPresent() || isTriggerOnAllEventAndDeleteEventPresent(state)) {
         log.debug("Submitting for reconciliation.");
@@ -362,19 +361,18 @@ public class EventProcessor<P extends HasMetadata> implements EventHandler, Life
         state.eventPresent()
             || (triggerOnAllEvents() && state.isAdditionalEventPresentAfterDeleteEvent());
     state.markEventReceived(triggerOnAllEvents());
-
     retryAwareErrorLogging(state.getRetry(), eventPresent, exception, executionScope);
+    metrics.reconciliationFailed(
+        executionScope.getResource(), state.getRetry(), exception, metricsMetadata);
     if (eventPresent) {
       log.debug("New events exist for resource id");
       submitReconciliationExecution(state);
       return;
     }
     Optional<Long> nextDelay = state.getRetry().nextDelay();
-
     nextDelay.ifPresentOrElse(
         delay -> {
           log.debug("Scheduling timer event for retry with delay:{}", delay);
-          metrics.failedReconciliation(executionScope.getResource(), exception, metricsMetadata);
           retryEventSource().scheduleOnce(resourceID, delay);
         },
         () -> {
@@ -434,7 +432,7 @@ public class EventProcessor<P extends HasMetadata> implements EventHandler, Life
   private void cleanupForDeletedEvent(ResourceID resourceID) {
     log.debug("Cleaning up for delete event");
     resourceStateManager.remove(resourceID);
-    metrics.cleanupDoneFor(resourceID, metricsMetadata);
+    metrics.cleanupDone(resourceID, metricsMetadata);
   }
 
   private boolean isControllerUnderExecution(ResourceState state) {
@@ -531,13 +529,14 @@ public class EventProcessor<P extends HasMetadata> implements EventHandler, Life
         }
         actualResource.ifPresent(executionScope::setResource);
         MDCUtils.addResourceInfo(executionScope.getResource());
-        metrics.reconciliationExecutionStarted(executionScope.getResource(), metricsMetadata);
+        metrics.reconciliationStarted(executionScope.getResource(), metricsMetadata);
         thread.setName("ReconcilerExecutor-" + controllerName() + "-" + thread.getId());
         PostExecutionControl<P> postExecutionControl =
             reconciliationDispatcher.handleExecution(executionScope);
         eventProcessingFinished(executionScope, postExecutionControl);
       } finally {
-        metrics.reconciliationExecutionFinished(executionScope.getResource(), metricsMetadata);
+        metrics.reconciliationFinished(
+            executionScope.getResource(), executionScope.getRetryInfo(), metricsMetadata);
         // restore original name
         thread.setName(name);
         MDCUtils.removeResourceInfo();

@@ -338,7 +338,7 @@ class EventProcessorTest {
     eventProcessor.start();
 
     verify(reconciliationDispatcherMock, timeout(100).times(1)).handleExecution(any());
-    verify(metricsMock, times(1)).reconcileCustomResource(any(HasMetadata.class), isNull(), any());
+    verify(metricsMock, times(1)).reconciliationSubmitted(any(HasMetadata.class), isNull(), any());
   }
 
   @Test
