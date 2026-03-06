@@ -4,7 +4,7 @@ description: Migrating from v5.2 to v5.3
 ---
 
 
-## Renamed JUnit Module
+## Rename of JUnit module
 
 If you use JUnit extension in your test just rename it from:
 
@@ -27,3 +27,25 @@ to
       <scope>test</scope>
 </dependency>
 ```
+
+## Metrics interface changes
+
+The [Metrics](https://github.com/operator-framework/java-operator-sdk/blob/main/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/api/monitoring/Metrics.java) 
+interface changed in non backwards compatible way, in order to make the API cleaner:
+
+The following table shows the relevant method renames:
+
+| v5.2 method                        | v5.3 method                  |
+|------------------------------------|------------------------------|
+| `reconcileCustomResource`          | `reconciliationSubmitted`    |
+| `reconciliationExecutionStarted`   | `reconciliationStarted`      |
+| `reconciliationExecutionFinished`  | `reconciliationSucceeded`    |
+| `failedReconciliation`             | `reconciliationFailed`       |
+| `finishedReconciliation`           | `reconciliationFinished`     |
+| `cleanupDoneFor`                   | `cleanupDone`                |
+| `receivedEvent`                    | `eventReceived`              |
+
+
+Other changes:
+- `reconciliationFinished(..)` method is extended with `RetryInfo`
+- `monitorSizeOf(..)` method is removed.
