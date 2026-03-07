@@ -18,7 +18,9 @@ package io.javaoperatorsdk.operator.processing.event.source.informer;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentSkipListMap;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -55,9 +57,12 @@ public class TemporaryResourceCache<T extends HasMetadata> {
 
   private static final Logger log = LoggerFactory.getLogger(TemporaryResourceCache.class);
 
+  private final ConcurrentSkipListMap<Long, ResourceID> cachedVersions =
+      new ConcurrentSkipListMap<>();
+
   private final Map<ResourceID, T> cache = new ConcurrentHashMap<>();
   private final boolean comparableResourceVersions;
-  private String latestResourceVersion;
+  private volatile String latestResourceVersion;
 
   private final Map<ResourceID, EventFilterDetails> activeUpdates = new HashMap<>();
 
@@ -139,7 +144,7 @@ public class TemporaryResourceCache<T extends HasMetadata> {
             "Removing resource from temp cache. comparison: {} unknown state: {}",
             comp,
             unknownState);
-        cache.remove(resourceId);
+        cacheRemove(resourceId, cached.getMetadata().getResourceVersion());
         // we propagate event only for our update or newer other can be discarded since we know we
         // will receive
         // additional event
@@ -155,10 +160,23 @@ public class TemporaryResourceCache<T extends HasMetadata> {
           delete
               ? new ResourceDeleteEvent(ResourceAction.DELETED, resourceId, resource, unknownState)
               : new ExtendedResourceEvent(action, resourceId, resource, prevResourceVersion));
+      checkStaleResources();
       return EventHandling.DEFER;
     } else {
       return result;
     }
+  }
+
+  private void checkStaleResources() {
+    CompletableFuture.runAsync(
+        () -> {
+          var longLatest = Long.parseLong(latestResourceVersion);
+          var head = cachedVersions.headMap(longLatest);
+          for (var entry : head.entrySet()) {
+            cache.remove(entry.getValue());
+            cachedVersions.remove(entry.getKey());
+          }
+        });
   }
 
   /** put the item into the cache if it's for a later state than what has already been observed. */
@@ -204,11 +222,27 @@ public class TemporaryResourceCache<T extends HasMetadata> {
           "Temporarily moving ahead to target version {} for resource id: {}",
           newResource.getMetadata().getResourceVersion(),
           resourceId);
-      cache.put(resourceId, newResource);
+      cacheResource(resourceId, newResource);
     }
   }
 
   public synchronized Optional<T> getResourceFromCache(ResourceID resourceID) {
     return Optional.ofNullable(cache.get(resourceID));
+  }
+
+  private void cacheResource(ResourceID resourceId, T resource) {
+    var actualCached = cache.get(resourceId);
+    cache.put(resourceId, resource);
+    CompletableFuture.runAsync(
+        () -> {
+          cachedVersions.remove(Long.parseLong(actualCached.getMetadata().getResourceVersion()));
+          cachedVersions.put(
+              Long.parseLong(resource.getMetadata().getResourceVersion()), resourceId);
+        });
+  }
+
+  private void cacheRemove(ResourceID resourceId, String cachedResourceVersion) {
+    cache.remove(resourceId);
+    CompletableFuture.runAsync(() -> cachedVersions.remove(Long.parseLong(cachedResourceVersion)));
   }
 }

@@ -30,7 +30,7 @@ import io.javaoperatorsdk.operator.processing.event.source.informer.TemporaryRes
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-class TemporaryPrimaryResourceCacheTest {
+class TemporaryResourceCacheTest {
 
   public static final String RESOURCE_VERSION = "2";
 
