@@ -135,7 +135,8 @@ class MetricsHandlingE2E {
                 () ->
                     new IllegalStateException(
                         "Pod not found for label " + labelKey + "=" + labelValue));
-    log.info("Pod {} is ready, establishing port-forward on port {}", pod.getMetadata().getName(), port);
+    log.info(
+        "Pod {} is ready, establishing port-forward on port {}", pod.getMetadata().getName(), port);
     return client
         .pods()
         .inNamespace(OBSERVABILITY_NAMESPACE)
