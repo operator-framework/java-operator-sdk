@@ -54,12 +54,16 @@ import io.javaoperatorsdk.operator.processing.event.source.controller.ResourceEv
 public class TemporaryResourceCache<T extends HasMetadata> {
 
   private static final Logger log = LoggerFactory.getLogger(TemporaryResourceCache.class);
+  public static final long DEFAULT_OBSOLETE_RESOURCE_CHECK_INTERVAL = 1000 * 60 * 3L;
 
   private final Map<ResourceID, T> cache = new ConcurrentHashMap<>();
+  private final Map<ResourceID, EventFilterDetails> activeUpdates = new HashMap<>();
   private final boolean comparableResourceVersions;
   private String latestResourceVersion;
 
-  private final Map<ResourceID, EventFilterDetails> activeUpdates = new HashMap<>();
+  private final long obsoleteResourceCheckInterval;
+  private volatile long lastObsoleteResourceCheck = System.currentTimeMillis();
+  private ManagedInformerEventSource<T, ?, ?> managedInformerEventSource;
 
   public enum EventHandling {
     DEFER,
@@ -67,8 +71,22 @@ public class TemporaryResourceCache<T extends HasMetadata> {
     NEW
   }
 
-  public TemporaryResourceCache(boolean comparableResourceVersions) {
+  public TemporaryResourceCache(
+      boolean comparableResourceVersions,
+      ManagedInformerEventSource<T, ?, ?> managedInformerEventSource) {
+    this(
+        comparableResourceVersions,
+        DEFAULT_OBSOLETE_RESOURCE_CHECK_INTERVAL,
+        managedInformerEventSource);
+  }
+
+  TemporaryResourceCache(
+      boolean comparableResourceVersions,
+      long obsoleteResourceCheckInterval,
+      ManagedInformerEventSource<T, ?, ?> managedInformerEventSource) {
     this.comparableResourceVersions = comparableResourceVersions;
+    this.obsoleteResourceCheckInterval = obsoleteResourceCheckInterval;
+    this.managedInformerEventSource = managedInformerEventSource;
   }
 
   public synchronized void startEventFilteringModify(ResourceID resourceID) {
@@ -148,6 +166,7 @@ public class TemporaryResourceCache<T extends HasMetadata> {
         result = EventHandling.OBSOLETE;
       }
     }
+    checkObsoleteResources();
     var ed = activeUpdates.get(resourceId);
     if (ed != null && result != EventHandling.OBSOLETE) {
       log.debug("Setting last event for id: {} delete: {}", resourceId, delete);
@@ -205,6 +224,23 @@ public class TemporaryResourceCache<T extends HasMetadata> {
           newResource.getMetadata().getResourceVersion(),
           resourceId);
       cache.put(resourceId, newResource);
+    }
+  }
+
+  void checkObsoleteResources() {
+    if (System.currentTimeMillis() > lastObsoleteResourceCheck + obsoleteResourceCheckInterval) {
+      lastObsoleteResourceCheck = System.currentTimeMillis();
+      log.debug("Checking for obsolete resources.");
+      var iterator = cache.entrySet().iterator();
+      while (iterator.hasNext()) {
+        var e = iterator.next();
+        if (ReconcilerUtilsInternal.compareResourceVersions(
+                e.getValue().getMetadata().getResourceVersion(), latestResourceVersion)
+            < 0) iterator.remove();
+        // todo propagate event
+        managedInformerEventSource.handleEvent(ResourceAction.DELETED, e.getValue(), null, true);
+        log.debug("Removing obsolete resource with ID: {}", e.getKey());
+      }
     }
   }
 

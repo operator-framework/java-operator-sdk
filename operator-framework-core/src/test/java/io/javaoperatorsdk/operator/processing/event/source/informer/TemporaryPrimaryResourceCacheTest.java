@@ -29,6 +29,7 @@ import io.javaoperatorsdk.operator.processing.event.source.informer.TemporaryRes
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.mock;
 
 class TemporaryPrimaryResourceCacheTest {
 
@@ -38,7 +39,8 @@ class TemporaryPrimaryResourceCacheTest {
 
   @BeforeEach
   void setup() {
-    temporaryResourceCache = new TemporaryResourceCache<>(true);
+    temporaryResourceCache =
+        new TemporaryResourceCache<>(true, mock(ManagedInformerEventSource.class));
   }
 
   @Test
@@ -114,7 +116,8 @@ class TemporaryPrimaryResourceCacheTest {
 
   @Test
   void nonComparableResourceVersionsDisables() {
-    this.temporaryResourceCache = new TemporaryResourceCache<>(false);
+    this.temporaryResourceCache =
+        new TemporaryResourceCache<>(false, mock(ManagedInformerEventSource.class));
 
     this.temporaryResourceCache.putResource(testResource());
 
@@ -123,7 +126,7 @@ class TemporaryPrimaryResourceCacheTest {
   }
 
   @Test
-  void eventReceivedDuringFiltering() throws Exception {
+  void eventReceivedDuringFiltering() {
     var testResource = testResource();
 
     temporaryResourceCache.startEventFilteringModify(ResourceID.fromResource(testResource));
