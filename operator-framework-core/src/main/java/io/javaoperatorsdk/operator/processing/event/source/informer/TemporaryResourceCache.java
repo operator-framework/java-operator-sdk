@@ -63,7 +63,7 @@ public class TemporaryResourceCache<T extends HasMetadata> {
 
   private final long obsoleteResourceCheckInterval;
   private volatile long lastObsoleteResourceCheck = System.currentTimeMillis();
-  private ManagedInformerEventSource<T, ?, ?> managedInformerEventSource;
+  private final ManagedInformerEventSource<T, ?, ?> managedInformerEventSource;
 
   public enum EventHandling {
     DEFER,
@@ -237,7 +237,6 @@ public class TemporaryResourceCache<T extends HasMetadata> {
         if (ReconcilerUtilsInternal.compareResourceVersions(
                 e.getValue().getMetadata().getResourceVersion(), latestResourceVersion)
             < 0) iterator.remove();
-        // todo propagate event
         managedInformerEventSource.handleEvent(ResourceAction.DELETED, e.getValue(), null, true);
         log.debug("Removing obsolete resource with ID: {}", e.getKey());
       }
