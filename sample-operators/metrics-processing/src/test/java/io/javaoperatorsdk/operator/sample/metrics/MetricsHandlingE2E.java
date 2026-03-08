@@ -130,6 +130,13 @@ class MetricsHandlingE2E {
             .list()
             .getItems()
             .stream()
+            .filter(
+                p ->
+                    p.getStatus() != null
+                        && p.getStatus().getConditions() != null
+                        && p.getStatus().getConditions().stream()
+                            .anyMatch(
+                                c -> "Ready".equals(c.getType()) && "True".equals(c.getStatus())))
             .findFirst()
             .orElseThrow(
                 () ->
