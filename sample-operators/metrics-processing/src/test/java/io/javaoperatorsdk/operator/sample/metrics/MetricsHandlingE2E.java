@@ -121,6 +121,19 @@ class MetricsHandlingE2E {
   }
 
   private Optional<Pod> findReadyPod(String labelKey, String labelValue) {
+    if (log.isDebugEnabled()) {
+      log.debug(
+          "Pods with label selectors '{}={}': {}",
+          labelKey,
+          labelValue,
+          client
+              .pods()
+              .inNamespace(OBSERVABILITY_NAMESPACE)
+              .withLabel(labelKey, labelValue)
+              .list()
+              .getItems());
+    }
+
     return client
         .pods()
         .inNamespace(OBSERVABILITY_NAMESPACE)
