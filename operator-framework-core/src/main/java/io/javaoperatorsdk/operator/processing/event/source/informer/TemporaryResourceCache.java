@@ -144,7 +144,7 @@ public class TemporaryResourceCache<T extends HasMetadata> {
             "Removing resource from temp cache. comparison: {} unknown state: {}",
             comp,
             unknownState);
-        cacheRemove(resourceId, cached.getMetadata().getResourceVersion());
+        cacheRemove(resourceId);
         // we propagate event only for our update or newer other can be discarded since we know we
         // will receive
         // additional event
@@ -160,7 +160,6 @@ public class TemporaryResourceCache<T extends HasMetadata> {
           delete
               ? new ResourceDeleteEvent(ResourceAction.DELETED, resourceId, resource, unknownState)
               : new ExtendedResourceEvent(action, resourceId, resource, prevResourceVersion));
-      checkStaleResources();
       return EventHandling.DEFER;
     } else {
       return result;
@@ -173,8 +172,10 @@ public class TemporaryResourceCache<T extends HasMetadata> {
           var longLatest = Long.parseLong(latestResourceVersion);
           var head = cachedVersions.headMap(longLatest);
           for (var entry : head.entrySet()) {
-            cache.remove(entry.getValue());
-            cachedVersions.remove(entry.getKey());
+            synchronized (this) {
+              cache.remove(entry.getValue());
+              cachedVersions.remove(entry.getKey());
+            }
           }
         });
   }
@@ -231,18 +232,15 @@ public class TemporaryResourceCache<T extends HasMetadata> {
   }
 
   private void cacheResource(ResourceID resourceId, T resource) {
-    var actualCached = cache.get(resourceId);
-    cache.put(resourceId, resource);
-    CompletableFuture.runAsync(
-        () -> {
-          cachedVersions.remove(Long.parseLong(actualCached.getMetadata().getResourceVersion()));
-          cachedVersions.put(
-              Long.parseLong(resource.getMetadata().getResourceVersion()), resourceId);
-        });
+    var prevValue = cache.put(resourceId, resource);
+    if (prevValue != null) {
+      cachedVersions.remove(Long.parseLong(prevValue.getMetadata().getResourceVersion()));
+    }
+    cachedVersions.put(Long.parseLong(resource.getMetadata().getResourceVersion()), resourceId);
   }
 
-  private void cacheRemove(ResourceID resourceId, String cachedResourceVersion) {
-    cache.remove(resourceId);
-    CompletableFuture.runAsync(() -> cachedVersions.remove(Long.parseLong(cachedResourceVersion)));
+  private void cacheRemove(ResourceID resourceId) {
+    var removed = cache.remove(resourceId);
+    cachedVersions.remove(Long.parseLong(removed.getMetadata().getResourceVersion()));
   }
 }
