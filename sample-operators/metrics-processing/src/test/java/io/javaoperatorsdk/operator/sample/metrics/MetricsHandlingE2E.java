@@ -22,6 +22,7 @@ import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.ArrayDeque;
 import java.util.Deque;
+import java.util.Optional;
 
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
@@ -31,6 +32,7 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.client.CustomResource;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClientBuilder;
@@ -102,42 +104,9 @@ class MetricsHandlingE2E {
     await()
         .atMost(Duration.ofMinutes(3))
         .pollInterval(Duration.ofSeconds(5))
-        .until(
-            () -> {
-              var pods =
-                  client
-                      .pods()
-                      .inNamespace(OBSERVABILITY_NAMESPACE)
-                      .withLabel(labelKey, labelValue)
-                      .list()
-                      .getItems();
-              return pods.stream()
-                  .anyMatch(
-                      pod ->
-                          pod.getStatus() != null
-                              && pod.getStatus().getConditions() != null
-                              && pod.getStatus().getConditions().stream()
-                                  .anyMatch(
-                                      c ->
-                                          "Ready".equals(c.getType())
-                                              && "True".equals(c.getStatus())));
-            });
+        .until(() -> findReadyPod(labelKey, labelValue).isPresent());
     var pod =
-        client
-            .pods()
-            .inNamespace(OBSERVABILITY_NAMESPACE)
-            .withLabel(labelKey, labelValue)
-            .list()
-            .getItems()
-            .stream()
-            .filter(
-                p ->
-                    p.getStatus() != null
-                        && p.getStatus().getConditions() != null
-                        && p.getStatus().getConditions().stream()
-                            .anyMatch(
-                                c -> "Ready".equals(c.getType()) && "True".equals(c.getStatus())))
-            .findFirst()
+        findReadyPod(labelKey, labelValue)
             .orElseThrow(
                 () ->
                     new IllegalStateException(
@@ -149,6 +118,23 @@ class MetricsHandlingE2E {
         .inNamespace(OBSERVABILITY_NAMESPACE)
         .withName(pod.getMetadata().getName())
         .portForward(port, port);
+  }
+
+  private Optional<Pod> findReadyPod(String labelKey, String labelValue) {
+    return client
+        .pods()
+        .inNamespace(OBSERVABILITY_NAMESPACE)
+        .withLabel(labelKey, labelValue)
+        .list()
+        .getItems()
+        .stream()
+        .filter(
+            pod ->
+                pod.getStatus() != null
+                    && pod.getStatus().getConditions() != null
+                    && pod.getStatus().getConditions().stream()
+                        .anyMatch(c -> "Ready".equals(c.getType()) && "True".equals(c.getStatus())))
+        .findFirst();
   }
 
   private void closePortForward(LocalPortForward pf) throws IOException {
