@@ -153,6 +153,7 @@ public class TemporaryResourceCache<T extends HasMetadata> {
         result = EventHandling.OBSOLETE;
       }
     }
+    checkStaleResources();
     var ed = activeUpdates.get(resourceId);
     if (ed != null && result != EventHandling.OBSOLETE) {
       log.debug("Setting last event for id: {} delete: {}", resourceId, delete);
@@ -167,6 +168,7 @@ public class TemporaryResourceCache<T extends HasMetadata> {
   }
 
   private void checkStaleResources() {
+    // todo add only once within an interval check
     CompletableFuture.runAsync(
         () -> {
           var longLatest = Long.parseLong(latestResourceVersion);
