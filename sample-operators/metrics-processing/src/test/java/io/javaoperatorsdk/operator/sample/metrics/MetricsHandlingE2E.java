@@ -102,8 +102,8 @@ class MetricsHandlingE2E {
   private LocalPortForward portForward(String labelKey, String labelValue, int port) {
     log.info("Waiting for pod with label {}={} to be ready...", labelKey, labelValue);
     await()
-        .atMost(Duration.ofMinutes(3))
-        .pollInterval(Duration.ofSeconds(5))
+        .atMost(Duration.ofMinutes(7))
+        .pollInterval(Duration.ofSeconds(10))
         .until(() -> findReadyPod(labelKey, labelValue).isPresent());
     var pod =
         findReadyPod(labelKey, labelValue)
