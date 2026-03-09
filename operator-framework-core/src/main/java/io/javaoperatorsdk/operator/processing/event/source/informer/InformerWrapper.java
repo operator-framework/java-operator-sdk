@@ -221,16 +221,14 @@ class InformerWrapper<T extends HasMetadata>
 
   @Override
   public Status getStatus() {
-    var status = isRunning() && hasSynced() && isWatching() ? Status.HEALTHY : Status.UNHEALTHY;
+    var status = isRunning() && hasSynced() ? Status.HEALTHY : Status.UNHEALTHY;
     log.debug(
-        "Informer status: {} for type: {}, namespace: {}, details [is running: {}, has synced: {},"
-            + " is watching: {}]",
+        "Informer status: {} for type: {}, namespace: {}, details [is running: {}, has synced: {}]",
         status,
         informer.getApiTypeClass().getSimpleName(),
         namespaceIdentifier,
         isRunning(),
-        hasSynced(),
-        isWatching());
+        hasSynced());
     return status;
   }
 
