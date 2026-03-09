@@ -32,7 +32,6 @@ import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.informers.ResourceEventHandler;
 import io.javaoperatorsdk.operator.OperatorException;
-import io.javaoperatorsdk.operator.ReconcilerUtilsInternal;
 import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.config.Informable;
 import io.javaoperatorsdk.operator.api.config.NamespaceChangeable;
@@ -193,15 +192,11 @@ public abstract class ManagedInformerEventSource<
     // point the resource would already be present in the informer cache, but we would
     // have missed it in both caches during this call.
     Optional<R> resource = temporaryResourceCache.getResourceFromCache(resourceID);
-    var res = cache.get(resourceID);
-    if (comparableResourceVersions
-        && resource.isPresent()
-        && res.filter(
-                r -> ReconcilerUtilsInternal.compareResourceVersions(r, resource.orElseThrow()) > 0)
-            .isEmpty()) {
+    if (comparableResourceVersions && resource.isPresent()) {
       log.debug("Latest resource found in temporary cache for Resource ID: {}", resourceID);
       return resource;
     }
+    var res = cache.get(resourceID);
     log.debug(
         "Resource not found, or older, in temporary cache. Found in informer cache {}, for"
             + " Resource ID: {}",
