@@ -22,6 +22,8 @@ import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.ArrayDeque;
 import java.util.Deque;
+import java.util.Optional;
+import java.util.concurrent.atomic.AtomicReference;
 
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
@@ -31,6 +33,7 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.client.CustomResource;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClientBuilder;
@@ -81,7 +84,7 @@ class MetricsHandlingE2E {
               .build();
 
   @BeforeAll
-  void setupObservability() throws InterruptedException {
+  void setupObservability() {
     log.info("Setting up observability stack...");
     installObservabilityServices();
     prometheusPortForward = portForward(NAME_LABEL_KEY, "prometheus", PROMETHEUS_PORT);
@@ -89,7 +92,6 @@ class MetricsHandlingE2E {
       otelCollectorPortForward =
           portForward(NAME_LABEL_KEY, "otel-collector-collector", OTEL_COLLECTOR_PORT);
     }
-    Thread.sleep(2000);
   }
 
   @AfterAll
@@ -99,6 +101,29 @@ class MetricsHandlingE2E {
   }
 
   private LocalPortForward portForward(String labelKey, String labelValue, int port) {
+    log.info("Waiting for pod with label {}={} to be ready...", labelKey, labelValue);
+    AtomicReference<Pod> portForwardPod = new AtomicReference<>();
+
+    await()
+        .atMost(Duration.ofMinutes(15))
+        .pollInterval(Duration.ofSeconds(10))
+        .untilAsserted(
+            () -> {
+              var pod = findReadyPod(labelKey, labelValue);
+              assertThat(pod).isPresent();
+              portForwardPod.set(pod.orElseThrow());
+            });
+    var pod = portForwardPod.get();
+    log.info(
+        "Pod {} is ready, establishing port-forward on port {}", pod.getMetadata().getName(), port);
+    return client
+        .pods()
+        .inNamespace(OBSERVABILITY_NAMESPACE)
+        .withName(pod.getMetadata().getName())
+        .portForward(port, port);
+  }
+
+  private Optional<Pod> findReadyPod(String labelKey, String labelValue) {
     return client
         .pods()
         .inNamespace(OBSERVABILITY_NAMESPACE)
@@ -106,18 +131,13 @@ class MetricsHandlingE2E {
         .list()
         .getItems()
         .stream()
-        .findFirst()
-        .map(
+        .filter(
             pod ->
-                client
-                    .pods()
-                    .inNamespace(OBSERVABILITY_NAMESPACE)
-                    .withName(pod.getMetadata().getName())
-                    .portForward(port, port))
-        .orElseThrow(
-            () ->
-                new IllegalStateException(
-                    "Pod not found for label " + labelKey + "=" + labelValue));
+                pod.getStatus() != null
+                    && pod.getStatus().getConditions() != null
+                    && pod.getStatus().getConditions().stream()
+                        .anyMatch(c -> "Ready".equals(c.getType()) && "True".equals(c.getStatus())))
+        .findFirst();
   }
 
   private void closePortForward(LocalPortForward pf) throws IOException {
