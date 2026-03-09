@@ -236,4 +236,8 @@ class InformerWrapper<T extends HasMetadata>
   public String getTargetNamespace() {
     return namespaceIdentifier;
   }
+
+  public SharedIndexInformer<T> getInformer() {
+    return informer;
+  }
 }

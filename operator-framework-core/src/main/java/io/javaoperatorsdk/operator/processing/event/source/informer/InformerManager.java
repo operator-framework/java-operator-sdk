@@ -235,6 +235,13 @@ class InformerManager<R extends HasMetadata, C extends Informable<R>>
     return Optional.ofNullable(sources.get(namespace));
   }
 
+  String lastSyncResourceVersion(String namespace) {
+    return getSource(namespace)
+        .map(InformerWrapper::getInformer)
+        .orElseThrow()
+        .lastSyncResourceVersion();
+  }
+
   @Override
   public void addIndexers(Map<String, Function<R, List<String>>> indexers) {
     this.indexers.putAll(indexers);

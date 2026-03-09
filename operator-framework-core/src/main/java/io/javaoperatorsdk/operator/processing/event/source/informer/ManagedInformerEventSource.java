@@ -153,11 +153,7 @@ public abstract class ManagedInformerEventSource<
     if (isRunning()) {
       return;
     }
-    var watchesOnlyOneNamespace =
-        configuration.getInformerConfig().watchCurrentNamespace()
-            || configuration.getInformerConfig().watchAllNamespaces();
-    temporaryResourceCache =
-        new TemporaryResourceCache<>(comparableResourceVersions, !watchesOnlyOneNamespace, this);
+    temporaryResourceCache = new TemporaryResourceCache<>(comparableResourceVersions, this);
     this.cache = new InformerManager<>(client, configuration, this);
     cache.setControllerConfiguration(controllerConfiguration);
     cache.addIndexers(indexers);

@@ -376,8 +376,12 @@ class InformerEventSourceTest {
   }
 
   private void withRealTemporaryResourceCache() {
-    temporaryResourceCache =
-        spy(new TemporaryResourceCache<>(true, false, mock(ManagedInformerEventSource.class)));
+    var mes = mock(ManagedInformerEventSource.class);
+    var mim = mock(InformerManager.class);
+    when(mes.manager()).thenReturn(mim);
+    when(mim.lastSyncResourceVersion(any())).thenReturn("1");
+
+    temporaryResourceCache = spy(new TemporaryResourceCache<>(true, mes));
     informerEventSource.setTemporalResourceCache(temporaryResourceCache);
   }
 
