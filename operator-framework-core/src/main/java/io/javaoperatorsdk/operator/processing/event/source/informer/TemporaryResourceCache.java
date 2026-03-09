@@ -239,7 +239,7 @@ public class TemporaryResourceCache<T extends HasMetadata> {
   }
 
   private void checkObsoleteResources() {
-    if (System.currentTimeMillis() > lastObsoleteResourceCheck + obsoleteResourceCheckInterval) {
+    if (System.currentTimeMillis() >= lastObsoleteResourceCheck + obsoleteResourceCheckInterval) {
       lastObsoleteResourceCheck = System.currentTimeMillis();
       log.debug("Checking for obsolete resources.");
       var iterator = cache.entrySet().iterator();
@@ -248,9 +248,11 @@ public class TemporaryResourceCache<T extends HasMetadata> {
         if (ReconcilerUtilsInternal.compareResourceVersions(
                 e.getValue().getMetadata().getResourceVersion(),
                 getLatestResourceVersion(e.getValue().getMetadata().getNamespace()))
-            < 0) iterator.remove();
-        managedInformerEventSource.handleEvent(ResourceAction.DELETED, e.getValue(), null, true);
-        log.debug("Removing obsolete resource with ID: {}", e.getKey());
+            < 0) {
+          iterator.remove();
+          managedInformerEventSource.handleEvent(ResourceAction.DELETED, e.getValue(), null, true);
+          log.debug("Removing obsolete resource with ID: {}", e.getKey());
+        }
       }
     }
   }

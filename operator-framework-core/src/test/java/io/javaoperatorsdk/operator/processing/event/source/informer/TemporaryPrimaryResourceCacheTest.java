@@ -319,12 +319,8 @@ class TemporaryPrimaryResourceCacheTest {
 
   @Test
   void removalOfObsoleteResources() {
-    this.temporaryResourceCache =
-        new TemporaryResourceCache<>(
-            true,
-            OBSOLETE_RESOURCE_CHECK_INTERVAL,
-            Executors.newScheduledThreadPool(1),
-            managedInformerEventSource);
+    withTemporaryResourceCacheForObsoleteHandling();
+
     var tr = testResource();
     this.temporaryResourceCache.putResource(tr);
 
@@ -342,6 +338,54 @@ class TemporaryPrimaryResourceCacheTest {
             () ->
                 assertThat(temporaryResourceCache.getResourceFromCache(ResourceID.fromResource(tr)))
                     .isEmpty());
+  }
+
+  @Test
+  void checksObsoleteOnlyWithCertainDelay() {
+    withTemporaryResourceCacheForObsoleteHandling();
+    this.temporaryResourceCache.putResource(testResource());
+    latestSyncVersion = "3";
+    await()
+        .pollDelay(Duration.ofMillis(OBSOLETE_RESOURCE_CHECK_INTERVAL / 5))
+        .untilAsserted(
+            () ->
+                assertThat(
+                        temporaryResourceCache.getResourceFromCache(
+                            ResourceID.fromResource(testResource())))
+                    .isPresent());
+
+    await()
+        .untilAsserted(
+            () ->
+                assertThat(
+                        temporaryResourceCache.getResourceFromCache(
+                            ResourceID.fromResource(testResource())))
+                    .isEmpty());
+  }
+
+  @Test
+  void obsoleteResourceIsNotRemovedIfLatestSyncVersionIsOlder() {
+    withTemporaryResourceCacheForObsoleteHandling();
+    this.temporaryResourceCache.putResource(testResource());
+    latestSyncVersion = "1";
+
+    await()
+        .pollDelay(Duration.ofMillis(OBSOLETE_RESOURCE_CHECK_INTERVAL * 2))
+        .untilAsserted(
+            () ->
+                assertThat(
+                        temporaryResourceCache.getResourceFromCache(
+                            ResourceID.fromResource(testResource())))
+                    .isPresent());
+  }
+
+  private void withTemporaryResourceCacheForObsoleteHandling() {
+    this.temporaryResourceCache =
+        new TemporaryResourceCache<>(
+            true,
+            OBSOLETE_RESOURCE_CHECK_INTERVAL,
+            Executors.newScheduledThreadPool(1),
+            managedInformerEventSource);
   }
 
   private ConfigMap propagateTestResourceToCache() {
