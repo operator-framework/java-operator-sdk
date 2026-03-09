@@ -190,11 +190,6 @@ public abstract class ManagedInformerEventSource<
 
   @Override
   public Optional<R> get(ResourceID resourceID) {
-    // The order of these two lookups matters. If we queried the informer cache first,
-    // a race condition could occur: we might not find the resource there yet, then
-    // process an informer event that evicts the temporary resource cache entry. At that
-    // point the resource would already be present in the informer cache, but we would
-    // have missed it in both caches during this call.
     Optional<R> resource = temporaryResourceCache.getResourceFromCache(resourceID);
     var res = cache.get(resourceID);
     if (comparableResourceVersions
