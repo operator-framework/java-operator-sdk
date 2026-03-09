@@ -37,6 +37,7 @@ import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.config.InformerStoppedHandler;
 import io.javaoperatorsdk.operator.api.config.informer.InformerConfiguration;
 import io.javaoperatorsdk.operator.api.config.informer.InformerEventSourceConfiguration;
+import io.javaoperatorsdk.operator.api.reconciler.Constants;
 import io.javaoperatorsdk.operator.processing.event.EventHandler;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
 import io.javaoperatorsdk.operator.processing.event.source.EventFilterTestUtils;
@@ -87,6 +88,8 @@ class InformerEventSourceTest {
     when(informerEventSourceConfiguration.getInformerConfig()).thenReturn(informerConfig);
     when(informerConfig.getEffectiveNamespaces(any())).thenReturn(DEFAULT_NAMESPACES_SET);
     when(informerEventSourceConfiguration.getResourceClass()).thenReturn(Deployment.class);
+    when(informerConfig.getObsoleteResourceCacheCheckInterval())
+        .thenReturn(Constants.DEFAULT_OBSOLETE_RESOURCE_CHECK_INTERVAL);
     informerEventSource =
         spy(
             new InformerEventSource<>(informerEventSourceConfiguration, clientMock) {
@@ -383,7 +386,7 @@ class InformerEventSourceTest {
     when(mim.lastSyncResourceVersion(any())).thenReturn("1");
 
     temporaryResourceCache =
-        spy(new TemporaryResourceCache<>(true, 0, mock(ScheduledExecutorService.class), mes));
+        spy(new TemporaryResourceCache<>(true, 100, mock(ScheduledExecutorService.class), mes));
     informerEventSource.setTemporalResourceCache(temporaryResourceCache);
   }
 
