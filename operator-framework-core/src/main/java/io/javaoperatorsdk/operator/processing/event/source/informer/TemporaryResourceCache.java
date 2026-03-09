@@ -263,7 +263,7 @@ public class TemporaryResourceCache<T extends HasMetadata> {
     } else {
       perNamespaceLatestResourceVersion.put(
           resource.getMetadata().getNamespace(), resource.getMetadata().getResourceVersion());
-      log.debug("Setting latest resource version to: {} for namesoace", latestResourceVersion);
+      log.debug("Setting latest resource version to: {} for namespace", latestResourceVersion);
     }
   }
 
