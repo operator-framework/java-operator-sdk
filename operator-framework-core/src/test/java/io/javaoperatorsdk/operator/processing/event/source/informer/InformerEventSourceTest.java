@@ -377,7 +377,7 @@ class InformerEventSourceTest {
 
   private void withRealTemporaryResourceCache() {
     temporaryResourceCache =
-        spy(new TemporaryResourceCache<>(true, mock(ManagedInformerEventSource.class)));
+        spy(new TemporaryResourceCache<>(true, false, mock(ManagedInformerEventSource.class)));
     informerEventSource.setTemporalResourceCache(temporaryResourceCache);
   }
 

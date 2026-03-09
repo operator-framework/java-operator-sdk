@@ -40,7 +40,7 @@ class TemporaryPrimaryResourceCacheTest {
   @BeforeEach
   void setup() {
     temporaryResourceCache =
-        new TemporaryResourceCache<>(true, mock(ManagedInformerEventSource.class));
+        new TemporaryResourceCache<>(true, false, mock(ManagedInformerEventSource.class));
   }
 
   @Test
@@ -117,7 +117,7 @@ class TemporaryPrimaryResourceCacheTest {
   @Test
   void nonComparableResourceVersionsDisables() {
     this.temporaryResourceCache =
-        new TemporaryResourceCache<>(false, mock(ManagedInformerEventSource.class));
+        new TemporaryResourceCache<>(false, false, mock(ManagedInformerEventSource.class));
 
     this.temporaryResourceCache.putResource(testResource());
 

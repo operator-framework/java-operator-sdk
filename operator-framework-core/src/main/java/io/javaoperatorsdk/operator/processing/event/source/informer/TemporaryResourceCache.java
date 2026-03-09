@@ -59,7 +59,8 @@ public class TemporaryResourceCache<T extends HasMetadata> {
   private final Map<ResourceID, T> cache = new ConcurrentHashMap<>();
   private final Map<ResourceID, EventFilterDetails> activeUpdates = new HashMap<>();
   private final boolean comparableResourceVersions;
-  private String latestResourceVersion;
+  private final ConcurrentHashMap<String, String> perNamespaceLatestResourceVersion;
+  private volatile String latestResourceVersion;
 
   private final long obsoleteResourceCheckInterval;
   private volatile long lastObsoleteResourceCheck = System.currentTimeMillis();
@@ -73,20 +74,28 @@ public class TemporaryResourceCache<T extends HasMetadata> {
 
   public TemporaryResourceCache(
       boolean comparableResourceVersions,
+      boolean wrapsMultipleInformers,
       ManagedInformerEventSource<T, ?, ?> managedInformerEventSource) {
     this(
         comparableResourceVersions,
+        wrapsMultipleInformers,
         DEFAULT_OBSOLETE_RESOURCE_CHECK_INTERVAL,
         managedInformerEventSource);
   }
 
   TemporaryResourceCache(
       boolean comparableResourceVersions,
+      boolean wrapsMultipleInformers,
       long obsoleteResourceCheckInterval,
       ManagedInformerEventSource<T, ?, ?> managedInformerEventSource) {
     this.comparableResourceVersions = comparableResourceVersions;
     this.obsoleteResourceCheckInterval = obsoleteResourceCheckInterval;
     this.managedInformerEventSource = managedInformerEventSource;
+    if (wrapsMultipleInformers || !comparableResourceVersions) {
+      perNamespaceLatestResourceVersion = new ConcurrentHashMap<>();
+    } else {
+      perNamespaceLatestResourceVersion = null;
+    }
   }
 
   public synchronized void startEventFilteringModify(ResourceID resourceID) {
@@ -145,8 +154,7 @@ public class TemporaryResourceCache<T extends HasMetadata> {
       log.debug("Processing event");
     }
     if (!unknownState) {
-      latestResourceVersion = resource.getMetadata().getResourceVersion();
-      log.debug("Setting latest resource version to: {}", latestResourceVersion);
+      setLatestResourceVersion(resource);
     }
     var cached = cache.get(resourceId);
     EventHandling result = EventHandling.NEW;
@@ -202,15 +210,16 @@ public class TemporaryResourceCache<T extends HasMetadata> {
     //
     // this also prevents resurrecting recently deleted entities for which the delete event
     // has already been processed
-    if (latestResourceVersion != null
+    var latestRV = getLatestResourceVersion(newResource.getMetadata().getNamespace());
+    if (latestRV != null
         && ReconcilerUtilsInternal.compareResourceVersions(
-                latestResourceVersion, newResource.getMetadata().getResourceVersion())
+                latestRV, newResource.getMetadata().getResourceVersion())
             > 0) {
       log.debug(
           "Resource {}: resourceVersion {} is not later than latest {}",
           resourceId,
           newResource.getMetadata().getResourceVersion(),
-          latestResourceVersion);
+          latestRV);
       return;
     }
 
@@ -245,5 +254,24 @@ public class TemporaryResourceCache<T extends HasMetadata> {
 
   public synchronized Optional<T> getResourceFromCache(ResourceID resourceID) {
     return Optional.ofNullable(cache.get(resourceID));
+  }
+
+  private void setLatestResourceVersion(T resource) {
+    if (perNamespaceLatestResourceVersion == null) {
+      latestResourceVersion = resource.getMetadata().getResourceVersion();
+      log.debug("Setting latest resource version to: {}", latestResourceVersion);
+    } else {
+      perNamespaceLatestResourceVersion.put(
+          resource.getMetadata().getNamespace(), resource.getMetadata().getResourceVersion());
+      log.debug("Setting latest resource version to: {} for namesoace", latestResourceVersion);
+    }
+  }
+
+  public String getLatestResourceVersion(String namespace) {
+    if (perNamespaceLatestResourceVersion == null) {
+      return latestResourceVersion;
+    } else {
+      return perNamespaceLatestResourceVersion.get(namespace);
+    }
   }
 }
