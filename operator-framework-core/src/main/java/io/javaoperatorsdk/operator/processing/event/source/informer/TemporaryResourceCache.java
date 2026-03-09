@@ -226,6 +226,7 @@ public class TemporaryResourceCache<T extends HasMetadata> {
     return managedInformerEventSource.manager().lastSyncResourceVersion(namespace);
   }
 
+  // todo obsolete is the good word?
   /**
    * There are (probably) extremely rare circumstances, when we can miss a delete event related to a
    * resources: when we create a resource that is deleted right after by third party and the related
