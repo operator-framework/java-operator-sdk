@@ -23,6 +23,7 @@ import java.time.Duration;
 import java.util.ArrayDeque;
 import java.util.Deque;
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicReference;
 
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
@@ -101,16 +102,18 @@ class MetricsHandlingE2E {
 
   private LocalPortForward portForward(String labelKey, String labelValue, int port) {
     log.info("Waiting for pod with label {}={} to be ready...", labelKey, labelValue);
+    AtomicReference<Pod> portForwardPod = new AtomicReference<>();
+
     await()
         .atMost(Duration.ofMinutes(15))
         .pollInterval(Duration.ofSeconds(10))
-        .until(() -> findReadyPod(labelKey, labelValue).isPresent());
-    var pod =
-        findReadyPod(labelKey, labelValue)
-            .orElseThrow(
-                () ->
-                    new IllegalStateException(
-                        "Pod not found for label " + labelKey + "=" + labelValue));
+        .untilAsserted(
+            () -> {
+              var pod = findReadyPod(labelKey, labelValue);
+              assertThat(pod).isPresent();
+              portForwardPod.set(pod.orElseThrow());
+            });
+    var pod = portForwardPod.get();
     log.info(
         "Pod {} is ready, establishing port-forward on port {}", pod.getMetadata().getName(), port);
     return client
