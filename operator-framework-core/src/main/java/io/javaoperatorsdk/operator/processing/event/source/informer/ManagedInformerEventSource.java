@@ -153,7 +153,14 @@ public abstract class ManagedInformerEventSource<
     if (isRunning()) {
       return;
     }
-    temporaryResourceCache = new TemporaryResourceCache<>(comparableResourceVersions, this);
+    temporaryResourceCache =
+        new TemporaryResourceCache<>(
+            comparableResourceVersions,
+            controllerConfiguration
+                .getConfigurationService()
+                .getExecutorServiceManager()
+                .cachingExecutorService(),
+            this);
     this.cache = new InformerManager<>(client, configuration, this);
     cache.setControllerConfiguration(controllerConfiguration);
     cache.addIndexers(indexers);
@@ -192,9 +199,10 @@ public abstract class ManagedInformerEventSource<
     var res = cache.get(resourceID);
     if (comparableResourceVersions
         && resource.isPresent()
-        && res.filter(
-                r -> ReconcilerUtilsInternal.compareResourceVersions(r, resource.orElseThrow()) > 0)
-            .isEmpty()) {
+        && ReconcilerUtilsInternal.compareResourceVersions(
+                resource.get().getMetadata().getResourceVersion(),
+                manager().lastSyncResourceVersion(resource.get().getMetadata().getNamespace()))
+            > 0) {
       log.debug("Latest resource found in temporary cache for Resource ID: {}", resourceID);
       return resource;
     }

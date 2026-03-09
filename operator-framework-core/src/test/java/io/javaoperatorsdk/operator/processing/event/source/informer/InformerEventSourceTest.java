@@ -19,6 +19,7 @@ import java.time.Duration;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ScheduledExecutorService;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -381,7 +382,8 @@ class InformerEventSourceTest {
     when(mes.manager()).thenReturn(mim);
     when(mim.lastSyncResourceVersion(any())).thenReturn("1");
 
-    temporaryResourceCache = spy(new TemporaryResourceCache<>(true, mes));
+    temporaryResourceCache =
+        spy(new TemporaryResourceCache<>(true, mock(ScheduledExecutorService.class), mes));
     informerEventSource.setTemporalResourceCache(temporaryResourceCache);
   }
 

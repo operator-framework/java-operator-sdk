@@ -16,6 +16,7 @@
 package io.javaoperatorsdk.operator.processing.event.source.informer;
 
 import java.util.Map;
+import java.util.concurrent.ScheduledExecutorService;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -46,8 +47,8 @@ class TemporaryPrimaryResourceCacheTest {
     var mim = mock(InformerManager.class);
     when(mes.manager()).thenReturn(mim);
     when(mim.lastSyncResourceVersion(any())).then(a -> latestSyncVersion);
-
-    temporaryResourceCache = new TemporaryResourceCache<>(true, mes);
+    temporaryResourceCache =
+        new TemporaryResourceCache<>(true, mock(ScheduledExecutorService.class), mes);
   }
 
   @Test
@@ -124,7 +125,8 @@ class TemporaryPrimaryResourceCacheTest {
   @Test
   void nonComparableResourceVersionsDisables() {
     this.temporaryResourceCache =
-        new TemporaryResourceCache<>(false, mock(ManagedInformerEventSource.class));
+        new TemporaryResourceCache<>(
+            false, mock(ScheduledExecutorService.class), mock(ManagedInformerEventSource.class));
 
     this.temporaryResourceCache.putResource(testResource());
 

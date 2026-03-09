@@ -19,6 +19,8 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -72,20 +74,30 @@ public class TemporaryResourceCache<T extends HasMetadata> {
 
   public TemporaryResourceCache(
       boolean comparableResourceVersions,
+      ScheduledExecutorService obsoleteCheckExecutor,
       ManagedInformerEventSource<T, ?, ?> managedInformerEventSource) {
     this(
         comparableResourceVersions,
         DEFAULT_OBSOLETE_RESOURCE_CHECK_INTERVAL,
+        obsoleteCheckExecutor,
         managedInformerEventSource);
   }
 
   TemporaryResourceCache(
       boolean comparableResourceVersions,
       long obsoleteResourceCheckInterval,
+      ScheduledExecutorService obsoleteCheckExecutor,
       ManagedInformerEventSource<T, ?, ?> managedInformerEventSource) {
     this.comparableResourceVersions = comparableResourceVersions;
     this.obsoleteResourceCheckInterval = obsoleteResourceCheckInterval;
     this.managedInformerEventSource = managedInformerEventSource;
+    if (comparableResourceVersions) {
+      obsoleteCheckExecutor.scheduleWithFixedDelay(
+          this::checkObsoleteResources,
+          obsoleteResourceCheckInterval,
+          obsoleteResourceCheckInterval,
+          TimeUnit.MILLISECONDS);
+    }
   }
 
   public synchronized void startEventFilteringModify(ResourceID resourceID) {
@@ -161,7 +173,6 @@ public class TemporaryResourceCache<T extends HasMetadata> {
         result = EventHandling.OBSOLETE;
       }
     }
-    checkObsoleteResources();
     var ed = activeUpdates.get(resourceId);
     if (ed != null && result != EventHandling.OBSOLETE) {
       log.debug("Setting last event for id: {} delete: {}", resourceId, delete);
@@ -227,7 +238,7 @@ public class TemporaryResourceCache<T extends HasMetadata> {
     return managedInformerEventSource.manager().lastSyncResourceVersion(namespace);
   }
 
-  void checkObsoleteResources() {
+  private void checkObsoleteResources() {
     if (System.currentTimeMillis() > lastObsoleteResourceCheck + obsoleteResourceCheckInterval) {
       lastObsoleteResourceCheck = System.currentTimeMillis();
       log.debug("Checking for obsolete resources.");
