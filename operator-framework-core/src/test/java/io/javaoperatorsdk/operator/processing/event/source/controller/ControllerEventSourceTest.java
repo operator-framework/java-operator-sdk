@@ -329,6 +329,8 @@ class ControllerEventSourceTest
               .withOnUpdateFilter(onUpdateFilter)
               .withGenericFilter(genericFilter)
               .withComparableResourceVersions(true)
+              .withObsoleteResourceCacheCheckInterval(
+                  Constants.DEFAULT_OBSOLETE_RESOURCE_CHECK_INTERVAL)
               .buildForController(),
           false);
     }
