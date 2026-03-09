@@ -37,6 +37,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+@SuppressWarnings({"unchecked", "rawtypes"})
 class TemporaryPrimaryResourceCacheTest {
 
   public static final String RESOURCE_VERSION = "2";
@@ -56,7 +57,7 @@ class TemporaryPrimaryResourceCacheTest {
     when(mim.lastSyncResourceVersion(any())).then(a -> latestSyncVersion);
     temporaryResourceCache =
         new TemporaryResourceCache<>(
-            true, mock(ScheduledExecutorService.class), managedInformerEventSource);
+            true, 0, mock(ScheduledExecutorService.class), managedInformerEventSource);
   }
 
   @Test
@@ -134,7 +135,7 @@ class TemporaryPrimaryResourceCacheTest {
   void nonComparableResourceVersionsDisables() {
     this.temporaryResourceCache =
         new TemporaryResourceCache<>(
-            false, mock(ScheduledExecutorService.class), mock(ManagedInformerEventSource.class));
+            false, 0, mock(ScheduledExecutorService.class), mock(ManagedInformerEventSource.class));
 
     this.temporaryResourceCache.putResource(testResource());
 

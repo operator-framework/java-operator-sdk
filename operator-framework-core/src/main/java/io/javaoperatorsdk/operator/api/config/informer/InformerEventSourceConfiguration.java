@@ -15,6 +15,7 @@
  */
 package io.javaoperatorsdk.operator.api.config.informer;
 
+import java.time.Duration;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
@@ -34,6 +35,7 @@ import io.javaoperatorsdk.operator.processing.event.source.filter.OnUpdateFilter
 import io.javaoperatorsdk.operator.processing.event.source.informer.Mappers;
 
 import static io.javaoperatorsdk.operator.api.reconciler.Constants.DEFAULT_COMPARABLE_RESOURCE_VERSION;
+import static io.javaoperatorsdk.operator.api.reconciler.Constants.DEFAULT_OBSOLETE_RESOURCE_CHECK_INTERVAL;
 import static io.javaoperatorsdk.operator.api.reconciler.Constants.SAME_AS_CONTROLLER_NAMESPACES_SET;
 import static io.javaoperatorsdk.operator.api.reconciler.Constants.WATCH_ALL_NAMESPACE_SET;
 import static io.javaoperatorsdk.operator.api.reconciler.Constants.WATCH_CURRENT_NAMESPACE_SET;
@@ -90,6 +92,10 @@ public interface InformerEventSourceConfiguration<R extends HasMetadata> extends
     return Optional.empty();
   }
 
+  boolean comparableResourceVersion();
+
+  Duration getObsoleteResourceCacheCheckInterval();
+
   class DefaultInformerEventSourceConfiguration<R extends HasMetadata>
       implements InformerEventSourceConfiguration<R> {
     private final PrimaryToSecondaryMapper<?> primaryToSecondaryMapper;
@@ -98,6 +104,7 @@ public interface InformerEventSourceConfiguration<R extends HasMetadata> extends
     private final InformerConfiguration<R> informerConfig;
     private final KubernetesClient kubernetesClient;
     private final boolean comparableResourceVersion;
+    private final Duration obsoleteResourceCacheCheckInterval;
 
     protected DefaultInformerEventSourceConfiguration(
         GroupVersionKind groupVersionKind,
@@ -105,13 +112,15 @@ public interface InformerEventSourceConfiguration<R extends HasMetadata> extends
         SecondaryToPrimaryMapper<R> secondaryToPrimaryMapper,
         InformerConfiguration<R> informerConfig,
         KubernetesClient kubernetesClient,
-        boolean comparableResourceVersion) {
+        boolean comparableResourceVersion,
+        Duration obsoleteResourceCacheCheckInterval) {
       this.informerConfig = Objects.requireNonNull(informerConfig);
       this.groupVersionKind = groupVersionKind;
       this.primaryToSecondaryMapper = primaryToSecondaryMapper;
       this.secondaryToPrimaryMapper = secondaryToPrimaryMapper;
       this.kubernetesClient = kubernetesClient;
       this.comparableResourceVersion = comparableResourceVersion;
+      this.obsoleteResourceCacheCheckInterval = obsoleteResourceCacheCheckInterval;
     }
 
     @Override
@@ -144,6 +153,11 @@ public interface InformerEventSourceConfiguration<R extends HasMetadata> extends
     public boolean comparableResourceVersion() {
       return this.comparableResourceVersion;
     }
+
+    @Override
+    public Duration getObsoleteResourceCacheCheckInterval() {
+      return obsoleteResourceCacheCheckInterval;
+    }
   }
 
   @SuppressWarnings({"unused", "UnusedReturnValue"})
@@ -158,6 +172,7 @@ public interface InformerEventSourceConfiguration<R extends HasMetadata> extends
     private SecondaryToPrimaryMapper<R> secondaryToPrimaryMapper;
     private KubernetesClient kubernetesClient;
     private boolean comparableResourceVersion = DEFAULT_COMPARABLE_RESOURCE_VERSION;
+    private Duration obsoleteResourceCacheCheckInterval = DEFAULT_OBSOLETE_RESOURCE_CHECK_INTERVAL;
 
     private Builder(Class<R> resourceClass, Class<? extends HasMetadata> primaryResourceClass) {
       this(resourceClass, primaryResourceClass, null);
@@ -300,6 +315,12 @@ public interface InformerEventSourceConfiguration<R extends HasMetadata> extends
       return this;
     }
 
+    public Builder<R> withObsoleteResourceCacheCheckInterval(
+        Duration obsoleteResourceCacheCheckInterval) {
+      this.obsoleteResourceCacheCheckInterval = obsoleteResourceCacheCheckInterval;
+      return this;
+    }
+
     public void updateFrom(InformerConfiguration<R> informerConfig) {
       if (informerConfig != null) {
         final var informerConfigName = informerConfig.getName();
@@ -340,9 +361,8 @@ public interface InformerEventSourceConfiguration<R extends HasMetadata> extends
                   false)),
           config.build(),
           kubernetesClient,
-          comparableResourceVersion);
+          comparableResourceVersion,
+          obsoleteResourceCacheCheckInterval);
     }
   }
-
-  boolean comparableResourceVersion();
 }

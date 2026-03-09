@@ -383,7 +383,7 @@ class InformerEventSourceTest {
     when(mim.lastSyncResourceVersion(any())).thenReturn("1");
 
     temporaryResourceCache =
-        spy(new TemporaryResourceCache<>(true, mock(ScheduledExecutorService.class), mes));
+        spy(new TemporaryResourceCache<>(true, 0, mock(ScheduledExecutorService.class), mes));
     informerEventSource.setTemporalResourceCache(temporaryResourceCache);
   }
 

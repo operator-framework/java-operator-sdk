@@ -56,7 +56,6 @@ import io.javaoperatorsdk.operator.processing.event.source.controller.ResourceEv
 public class TemporaryResourceCache<T extends HasMetadata> {
 
   private static final Logger log = LoggerFactory.getLogger(TemporaryResourceCache.class);
-  public static final long DEFAULT_OBSOLETE_RESOURCE_CHECK_INTERVAL = 1000 * 60 * 3L;
 
   private final Map<ResourceID, T> cache = new ConcurrentHashMap<>();
   private final Map<ResourceID, EventFilterDetails> activeUpdates = new HashMap<>();
@@ -73,17 +72,6 @@ public class TemporaryResourceCache<T extends HasMetadata> {
   }
 
   public TemporaryResourceCache(
-      boolean comparableResourceVersions,
-      ScheduledExecutorService obsoleteCheckExecutor,
-      ManagedInformerEventSource<T, ?, ?> managedInformerEventSource) {
-    this(
-        comparableResourceVersions,
-        DEFAULT_OBSOLETE_RESOURCE_CHECK_INTERVAL,
-        obsoleteCheckExecutor,
-        managedInformerEventSource);
-  }
-
-  TemporaryResourceCache(
       boolean comparableResourceVersions,
       long obsoleteResourceCheckInterval,
       ScheduledExecutorService obsoleteCheckExecutor,
@@ -238,6 +226,13 @@ public class TemporaryResourceCache<T extends HasMetadata> {
     return managedInformerEventSource.manager().lastSyncResourceVersion(namespace);
   }
 
+  /**
+   * There are (probably) extremely rare circumstances, when we can miss a delete event related to a
+   * resources: when we create a resource that is deleted right after by third party and the related
+   * informer have a disconnected watch and this watch needs to do a re-list when connected again.
+   * In this case neither the ADD nor DELETE event will be propagated to the informer, but we
+   * explicitly add resources to this cache. Those are cleaned up by this check.
+   */
   private void checkObsoleteResources() {
     if (System.currentTimeMillis() >= lastObsoleteResourceCheck + obsoleteResourceCheckInterval) {
       lastObsoleteResourceCheck = System.currentTimeMillis();

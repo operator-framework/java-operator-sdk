@@ -15,6 +15,7 @@
  */
 package io.javaoperatorsdk.operator.api.config.informer;
 
+import java.time.Duration;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
@@ -54,6 +55,7 @@ public class InformerConfiguration<R extends HasMetadata> {
   private Long informerListLimit;
   private FieldSelector fieldSelector;
   private boolean comparableResourceVersions;
+  private Duration obsoleteResourceCacheCheckInterval;
 
   protected InformerConfiguration(
       Class<R> resourceClass,
@@ -68,7 +70,8 @@ public class InformerConfiguration<R extends HasMetadata> {
       ItemStore<R> itemStore,
       Long informerListLimit,
       FieldSelector fieldSelector,
-      boolean comparableResourceVersions) {
+      boolean comparableResourceVersions,
+      Duration obsoleteResourceCacheCheckInterval) {
     this(resourceClass);
     this.name = name;
     this.namespaces = namespaces;
@@ -82,6 +85,7 @@ public class InformerConfiguration<R extends HasMetadata> {
     this.informerListLimit = informerListLimit;
     this.fieldSelector = fieldSelector;
     this.comparableResourceVersions = comparableResourceVersions;
+    this.obsoleteResourceCacheCheckInterval = obsoleteResourceCacheCheckInterval;
   }
 
   private InformerConfiguration(Class<R> resourceClass) {
@@ -117,7 +121,8 @@ public class InformerConfiguration<R extends HasMetadata> {
             original.itemStore,
             original.informerListLimit,
             original.fieldSelector,
-            original.comparableResourceVersions)
+            original.comparableResourceVersions,
+            original.obsoleteResourceCacheCheckInterval)
         .builder;
   }
 
@@ -296,6 +301,10 @@ public class InformerConfiguration<R extends HasMetadata> {
     return comparableResourceVersions;
   }
 
+  public Duration getObsoleteResourceCacheCheckInterval() {
+    return obsoleteResourceCacheCheckInterval;
+  }
+
   @SuppressWarnings("UnusedReturnValue")
   public class Builder {
 
@@ -368,6 +377,8 @@ public class InformerConfiguration<R extends HasMetadata> {
                     .map(f -> new FieldSelector.Field(f.path(), f.value(), f.negated()))
                     .toList()));
         withComparableResourceVersions(informerConfig.comparableResourceVersions());
+        withObsoleteResourceCacheCheckInterval(
+            Duration.ofMillis(informerConfig.obsoleteResourceCacheCheckInterval()));
       }
       return this;
     }
@@ -471,6 +482,13 @@ public class InformerConfiguration<R extends HasMetadata> {
 
     public Builder withComparableResourceVersions(boolean comparableResourceVersions) {
       InformerConfiguration.this.comparableResourceVersions = comparableResourceVersions;
+      return this;
+    }
+
+    public Builder withObsoleteResourceCacheCheckInterval(
+        Duration obsoleteResourceCacheCheckInterval) {
+      InformerConfiguration.this.obsoleteResourceCacheCheckInterval =
+          obsoleteResourceCacheCheckInterval;
       return this;
     }
   }
