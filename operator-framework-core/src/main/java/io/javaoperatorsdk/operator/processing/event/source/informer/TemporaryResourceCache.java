@@ -245,6 +245,7 @@ public class TemporaryResourceCache<T extends HasMetadata> {
                 getLatestResourceVersion(e.getValue().getMetadata().getNamespace()))
             < 0) {
           iterator.remove();
+          // todo test delete event propagation?
           managedInformerEventSource.handleEvent(ResourceAction.DELETED, e.getValue(), null, true);
           log.debug("Removing obsolete resource with ID: {}", e.getKey());
         }
