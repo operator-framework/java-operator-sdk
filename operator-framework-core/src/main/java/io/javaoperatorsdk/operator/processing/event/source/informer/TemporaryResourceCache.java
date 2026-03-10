@@ -235,12 +235,10 @@ public class TemporaryResourceCache<T extends HasMetadata> {
     var iterator = cache.entrySet().iterator();
     while (iterator.hasNext()) {
       var e = iterator.next();
-      var latestResourceVersion =
-          getLastSyncResourceVersion(e.getValue().getMetadata().getNamespace());
-      if ((latestResourceVersion == null
-              || ReconcilerUtilsInternal.compareResourceVersions(
-                      e.getValue().getMetadata().getResourceVersion(), latestResourceVersion)
-                  < 0)
+      if ((ReconcilerUtilsInternal.compareResourceVersions(
+                  e.getValue().getMetadata().getResourceVersion(),
+                  getLastSyncResourceVersion(e.getValue().getMetadata().getNamespace()))
+              < 0)
           // making sure we have the situation where resource is missing from the cache
           && managedInformerEventSource
               .manager()
