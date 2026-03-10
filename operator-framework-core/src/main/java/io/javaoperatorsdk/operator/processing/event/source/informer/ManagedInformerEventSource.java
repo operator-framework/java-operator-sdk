@@ -160,7 +160,7 @@ public abstract class ManagedInformerEventSource<
             controllerConfiguration
                 .getConfigurationService()
                 .getExecutorServiceManager()
-                .cachingExecutorService(),
+                .scheduledExecutorService(),
             this);
     this.cache = new InformerManager<>(client, configuration, this);
     cache.setControllerConfiguration(controllerConfiguration);

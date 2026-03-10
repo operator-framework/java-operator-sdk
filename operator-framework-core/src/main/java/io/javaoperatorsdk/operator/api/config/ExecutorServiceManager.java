@@ -40,7 +40,8 @@ public class ExecutorServiceManager {
   private static final Logger log = LoggerFactory.getLogger(ExecutorServiceManager.class);
   private ExecutorService executor;
   private ExecutorService workflowExecutor;
-  private ScheduledExecutorService cachingExecutorService;
+  private ExecutorService cachingExecutorService;
+  private ScheduledExecutorService scheduledExecutorService;
   private boolean started;
   private ConfigurationService configurationService;
 
@@ -123,14 +124,19 @@ public class ExecutorServiceManager {
     }
   }
 
-  public ScheduledExecutorService cachingExecutorService() {
+  public ExecutorService cachingExecutorService() {
     return cachingExecutorService;
+  }
+
+  public ScheduledExecutorService scheduledExecutorService() {
+    return scheduledExecutorService;
   }
 
   public void start(ConfigurationService configurationService) {
     if (!started) {
       this.configurationService = configurationService; // used to lazy init workflow executor
-      this.cachingExecutorService = Executors.newScheduledThreadPool(0);
+      this.cachingExecutorService = Executors.newCachedThreadPool();
+      this.scheduledExecutorService = Executors.newScheduledThreadPool(0);
       this.executor = new InstrumentedExecutorService(configurationService.getExecutorService());
       started = true;
     }
