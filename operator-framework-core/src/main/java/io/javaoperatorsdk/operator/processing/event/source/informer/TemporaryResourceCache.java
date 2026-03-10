@@ -226,7 +226,6 @@ public class TemporaryResourceCache<T extends HasMetadata> {
     return managedInformerEventSource.manager().lastSyncResourceVersion(namespace);
   }
 
-  // todo obsolete is the good word?
   /**
    * There are (probably) extremely rare circumstances, when we can miss a delete event related to a
    * resources: when we create a resource that is deleted right after by third party and the related
@@ -242,11 +241,15 @@ public class TemporaryResourceCache<T extends HasMetadata> {
       while (iterator.hasNext()) {
         var e = iterator.next();
         if (ReconcilerUtilsInternal.compareResourceVersions(
-                e.getValue().getMetadata().getResourceVersion(),
-                getLatestResourceVersion(e.getValue().getMetadata().getNamespace()))
-            < 0) {
+                    e.getValue().getMetadata().getResourceVersion(),
+                    getLatestResourceVersion(e.getValue().getMetadata().getNamespace()))
+                < 0
+            // making sure we have the situation where resource is missing from the cache
+            && managedInformerEventSource
+                .manager()
+                .get(ResourceID.fromResource(e.getValue()))
+                .isEmpty()) {
           iterator.remove();
-          // todo test delete event propagation?
           managedInformerEventSource.handleEvent(ResourceAction.DELETED, e.getValue(), null, true);
           log.debug("Removing obsolete resource with ID: {}", e.getKey());
         }
