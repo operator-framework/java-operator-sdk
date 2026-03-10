@@ -123,7 +123,7 @@ Operator operator = new Operator(ConfigLoader.getDefault().applyConfigs());
 ```
 
 Built-in providers: `EnvVarConfigProvider`, `PropertiesConfigProvider`, `YamlConfigProvider`,
-and `AgregatePriorityListConfigProvider` for explicit priority ordering.
+and `AggregatePriorityListConfigProvider` for explicit priority ordering.
 
 `ConfigProvider` is a single-method interface, so adapting any config library (MicroProfile Config,
 SmallRye Config, etc.) takes only a few lines:
