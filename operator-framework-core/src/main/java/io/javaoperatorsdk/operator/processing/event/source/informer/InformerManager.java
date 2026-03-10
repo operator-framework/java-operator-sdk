@@ -230,6 +230,18 @@ class InformerManager<R extends HasMetadata, C extends Informable<R>>
     return sources.containsKey(WATCH_ALL_NAMESPACES);
   }
 
+  public boolean isWatchingNamespace(String namespace) {
+    // for cluster scoped resources we can assume
+    // that we watch the whole cluster
+    if (namespace == null) {
+      return true;
+    }
+    if (isWatchingAllNamespaces()) {
+      return true;
+    }
+    return sources.containsKey(namespace);
+  }
+
   private Optional<InformerWrapper<R>> getSource(String namespace) {
     namespace = isWatchingAllNamespaces() || namespace == null ? WATCH_ALL_NAMESPACES : namespace;
     return Optional.ofNullable(sources.get(namespace));

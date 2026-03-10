@@ -188,6 +188,14 @@ public class TemporaryResourceCache<T extends HasMetadata> {
       return;
     }
 
+    // todo unit test
+    // this can happen when we dynamically change the NS
+    if (!managedInformerEventSource
+        .manager()
+        .isWatchingNamespace(newResource.getMetadata().getNamespace())) {
+      return;
+    }
+
     // check against the latestResourceVersion processed by the TemporaryResourceCache
     // If the resource is older, then we can safely ignore.
     //
@@ -223,6 +231,7 @@ public class TemporaryResourceCache<T extends HasMetadata> {
     return managedInformerEventSource.manager().lastSyncResourceVersion(namespace);
   }
 
+  // todo tests with combination of event processing
   /**
    * There are (probably extremely rare) circumstances, when we can miss a delete event related to a
    * resources: when we create a resource that is deleted right after by third party and the related
@@ -235,9 +244,21 @@ public class TemporaryResourceCache<T extends HasMetadata> {
     var iterator = cache.entrySet().iterator();
     while (iterator.hasNext()) {
       var e = iterator.next();
+
+      var ns = e.getValue().getMetadata().getNamespace();
+      // todo unit tests
+      // this can happen if followed namespaces are changed dynamically
+      if (!managedInformerEventSource.manager().isWatchingNamespace(ns)) {
+        log.debug(
+            "Removing resource: {} from cache as part of ghost cleanup. Namespace is not followed"
+                + " anymore: {}",
+            e.getKey(),
+            ns);
+        iterator.remove();
+        continue;
+      }
       if ((ReconcilerUtilsInternal.compareResourceVersions(
-                  e.getValue().getMetadata().getResourceVersion(),
-                  getLastSyncResourceVersion(e.getValue().getMetadata().getNamespace()))
+                  e.getValue().getMetadata().getResourceVersion(), getLastSyncResourceVersion(ns))
               < 0)
           // making sure we have the situation where resource is missing from the cache
           && managedInformerEventSource
