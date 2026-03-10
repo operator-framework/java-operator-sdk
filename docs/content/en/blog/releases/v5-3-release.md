@@ -175,9 +175,9 @@ computed as its desired state, which is useful for debugging and composite workf
 
 ### Informer Health Checks
 
-Informers health status no longer checks `isWacthing`. For ready and startup probes mainly `hasSynced`
-should be taken into the account, but from the point informer started `isWatching` is not suitable
-for liveness checks.
+Informer health checks no longer rely on `isWatching`. For readiness and startup probes, you should
+primarily use `hasSynced`. Once an informer has started, `isWatching` is not suitable for liveness
+checks.
 
 ## Additional Improvements
 
