@@ -62,7 +62,6 @@ public class TemporaryResourceCache<T extends HasMetadata> {
   private final boolean comparableResourceVersions;
 
   private final long obsoleteResourceCheckInterval;
-  private volatile long lastObsoleteResourceCheck = System.currentTimeMillis();
   private final ManagedInformerEventSource<T, ?, ?> managedInformerEventSource;
 
   public enum EventHandling {
@@ -234,25 +233,22 @@ public class TemporaryResourceCache<T extends HasMetadata> {
    * explicitly add resources to this cache. Those are cleaned up by this check.
    */
   private void checkObsoleteResources() {
-    if (System.currentTimeMillis() >= lastObsoleteResourceCheck + obsoleteResourceCheckInterval) {
-      lastObsoleteResourceCheck = System.currentTimeMillis();
-      log.debug("Checking for obsolete resources.");
-      var iterator = cache.entrySet().iterator();
-      while (iterator.hasNext()) {
-        var e = iterator.next();
-        if (ReconcilerUtilsInternal.compareResourceVersions(
-                    e.getValue().getMetadata().getResourceVersion(),
-                    getLatestResourceVersion(e.getValue().getMetadata().getNamespace()))
-                < 0
-            // making sure we have the situation where resource is missing from the cache
-            && managedInformerEventSource
-                .manager()
-                .get(ResourceID.fromResource(e.getValue()))
-                .isEmpty()) {
-          iterator.remove();
-          managedInformerEventSource.handleEvent(ResourceAction.DELETED, e.getValue(), null, true);
-          log.debug("Removing obsolete resource with ID: {}", e.getKey());
-        }
+    log.debug("Checking for obsolete resources.");
+    var iterator = cache.entrySet().iterator();
+    while (iterator.hasNext()) {
+      var e = iterator.next();
+      if (ReconcilerUtilsInternal.compareResourceVersions(
+                  e.getValue().getMetadata().getResourceVersion(),
+                  getLatestResourceVersion(e.getValue().getMetadata().getNamespace()))
+              < 0
+          // making sure we have the situation where resource is missing from the cache
+          && managedInformerEventSource
+              .manager()
+              .get(ResourceID.fromResource(e.getValue()))
+              .isEmpty()) {
+        iterator.remove();
+        managedInformerEventSource.handleEvent(ResourceAction.DELETED, e.getValue(), null, true);
+        log.debug("Removing obsolete resource with ID: {}", e.getKey());
       }
     }
   }
