@@ -156,7 +156,7 @@ public abstract class ManagedInformerEventSource<
     temporaryResourceCache =
         new TemporaryResourceCache<>(
             comparableResourceVersions,
-            configuration.getInformerConfig().getObsoleteResourceCacheCheckInterval().toMillis(),
+            configuration.getInformerConfig().getGhostResourceCacheCheckInterval().toMillis(),
             controllerConfiguration
                 .getConfigurationService()
                 .getExecutorServiceManager()

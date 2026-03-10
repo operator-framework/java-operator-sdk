@@ -61,7 +61,6 @@ public class TemporaryResourceCache<T extends HasMetadata> {
   private final Map<ResourceID, EventFilterDetails> activeUpdates = new HashMap<>();
   private final boolean comparableResourceVersions;
 
-  private final long obsoleteResourceCheckInterval;
   private final ManagedInformerEventSource<T, ?, ?> managedInformerEventSource;
 
   public enum EventHandling {
@@ -72,17 +71,16 @@ public class TemporaryResourceCache<T extends HasMetadata> {
 
   public TemporaryResourceCache(
       boolean comparableResourceVersions,
-      long obsoleteResourceCheckInterval,
-      ScheduledExecutorService obsoleteCheckExecutor,
+      long ghostResourceCheckInterval,
+      ScheduledExecutorService ghostCheckExecutor,
       ManagedInformerEventSource<T, ?, ?> managedInformerEventSource) {
     this.comparableResourceVersions = comparableResourceVersions;
-    this.obsoleteResourceCheckInterval = obsoleteResourceCheckInterval;
     this.managedInformerEventSource = managedInformerEventSource;
     if (comparableResourceVersions) {
-      obsoleteCheckExecutor.scheduleWithFixedDelay(
-          this::checkObsoleteResources,
-          obsoleteResourceCheckInterval,
-          obsoleteResourceCheckInterval,
+      ghostCheckExecutor.scheduleWithFixedDelay(
+          this::checkGhostResources,
+          ghostResourceCheckInterval,
+          ghostResourceCheckInterval,
           TimeUnit.MILLISECONDS);
     }
   }
@@ -232,8 +230,8 @@ public class TemporaryResourceCache<T extends HasMetadata> {
    * In this case neither the ADD nor DELETE event will be propagated to the informer, but we
    * explicitly add resources to this cache. Those are cleaned up by this check.
    */
-  private void checkObsoleteResources() {
-    log.debug("Checking for obsolete resources.");
+  private void checkGhostResources() {
+    log.debug("Checking for ghost resources.");
     var iterator = cache.entrySet().iterator();
     while (iterator.hasNext()) {
       var e = iterator.next();
@@ -248,7 +246,7 @@ public class TemporaryResourceCache<T extends HasMetadata> {
               .isEmpty()) {
         iterator.remove();
         managedInformerEventSource.handleEvent(ResourceAction.DELETED, e.getValue(), null, true);
-        log.debug("Removing obsolete resource with ID: {}", e.getKey());
+        log.debug("Removing ghost resource with ID: {}", e.getKey());
       }
     }
   }

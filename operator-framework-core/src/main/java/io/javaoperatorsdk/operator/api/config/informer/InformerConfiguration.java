@@ -55,7 +55,7 @@ public class InformerConfiguration<R extends HasMetadata> {
   private Long informerListLimit;
   private FieldSelector fieldSelector;
   private Boolean comparableResourceVersions;
-  private Duration obsoleteResourceCacheCheckInterval;
+  private Duration ghostResourceCacheCheckInterval;
 
   protected InformerConfiguration(
       Class<R> resourceClass,
@@ -71,7 +71,7 @@ public class InformerConfiguration<R extends HasMetadata> {
       Long informerListLimit,
       FieldSelector fieldSelector,
       Boolean comparableResourceVersions,
-      Duration obsoleteResourceCacheCheckInterval) {
+      Duration ghostResourceCacheCheckInterval) {
     this(resourceClass);
     this.name = name;
     this.namespaces = namespaces;
@@ -85,7 +85,7 @@ public class InformerConfiguration<R extends HasMetadata> {
     this.informerListLimit = informerListLimit;
     this.fieldSelector = fieldSelector;
     this.comparableResourceVersions = comparableResourceVersions;
-    this.obsoleteResourceCacheCheckInterval = obsoleteResourceCacheCheckInterval;
+    this.ghostResourceCacheCheckInterval = ghostResourceCacheCheckInterval;
   }
 
   private InformerConfiguration(Class<R> resourceClass) {
@@ -122,7 +122,7 @@ public class InformerConfiguration<R extends HasMetadata> {
             original.informerListLimit,
             original.fieldSelector,
             original.comparableResourceVersions,
-            original.obsoleteResourceCacheCheckInterval)
+            original.ghostResourceCacheCheckInterval)
         .builder;
   }
 
@@ -301,8 +301,8 @@ public class InformerConfiguration<R extends HasMetadata> {
     return comparableResourceVersions;
   }
 
-  public Duration getObsoleteResourceCacheCheckInterval() {
-    return obsoleteResourceCacheCheckInterval;
+  public Duration getGhostResourceCacheCheckInterval() {
+    return ghostResourceCacheCheckInterval;
   }
 
   @SuppressWarnings("UnusedReturnValue")
@@ -323,8 +323,8 @@ public class InformerConfiguration<R extends HasMetadata> {
         comparableResourceVersions = DEFAULT_COMPARABLE_RESOURCE_VERSION;
       }
 
-      if (obsoleteResourceCacheCheckInterval == null) {
-        obsoleteResourceCacheCheckInterval = DEFAULT_OBSOLETE_RESOURCE_CHECK_INTERVAL;
+      if (ghostResourceCacheCheckInterval == null) {
+        ghostResourceCacheCheckInterval = DEFAULT_GHOST_RESOURCE_CHECK_INTERVAL;
       }
       return InformerConfiguration.this;
     }
@@ -341,8 +341,8 @@ public class InformerConfiguration<R extends HasMetadata> {
         comparableResourceVersions = DEFAULT_COMPARABLE_RESOURCE_VERSION;
       }
 
-      if (obsoleteResourceCacheCheckInterval == null) {
-        obsoleteResourceCacheCheckInterval = DEFAULT_OBSOLETE_RESOURCE_CHECK_INTERVAL;
+      if (ghostResourceCacheCheckInterval == null) {
+        ghostResourceCacheCheckInterval = DEFAULT_GHOST_RESOURCE_CHECK_INTERVAL;
       }
 
       return InformerConfiguration.this;
@@ -392,8 +392,8 @@ public class InformerConfiguration<R extends HasMetadata> {
                     .map(f -> new FieldSelector.Field(f.path(), f.value(), f.negated()))
                     .toList()));
         withComparableResourceVersions(informerConfig.comparableResourceVersions());
-        withObsoleteResourceCacheCheckInterval(
-            Duration.ofMillis(informerConfig.obsoleteResourceCacheCheckInterval()));
+        withGhostResourceCacheCheckInterval(
+            Duration.ofMillis(informerConfig.ghostResourceCacheCheckInterval()));
       }
       return this;
     }
@@ -500,10 +500,8 @@ public class InformerConfiguration<R extends HasMetadata> {
       return this;
     }
 
-    public Builder withObsoleteResourceCacheCheckInterval(
-        Duration obsoleteResourceCacheCheckInterval) {
-      InformerConfiguration.this.obsoleteResourceCacheCheckInterval =
-          obsoleteResourceCacheCheckInterval;
+    public Builder withGhostResourceCacheCheckInterval(Duration ghostResourceCacheCheckInterval) {
+      InformerConfiguration.this.ghostResourceCacheCheckInterval = ghostResourceCacheCheckInterval;
       return this;
     }
   }

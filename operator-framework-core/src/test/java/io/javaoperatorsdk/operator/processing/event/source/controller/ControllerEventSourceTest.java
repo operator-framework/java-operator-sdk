@@ -64,8 +64,8 @@ class ControllerEventSourceTest
     when(controllerConfig.getConfigurationService()).thenReturn(new BaseConfigurationService());
     var ic = mock(InformerConfiguration.class);
     when(controllerConfig.getInformerConfig()).thenReturn(ic);
-    when(ic.getObsoleteResourceCacheCheckInterval())
-        .thenReturn(Constants.DEFAULT_OBSOLETE_RESOURCE_CHECK_INTERVAL);
+    when(ic.getGhostResourceCacheCheckInterval())
+        .thenReturn(Constants.DEFAULT_GHOST_RESOURCE_CHECK_INTERVAL);
 
     setUpSource(new ControllerEventSource<>(testController), true, controllerConfig);
   }
@@ -329,8 +329,7 @@ class ControllerEventSourceTest
               .withOnUpdateFilter(onUpdateFilter)
               .withGenericFilter(genericFilter)
               .withComparableResourceVersions(true)
-              .withObsoleteResourceCacheCheckInterval(
-                  Constants.DEFAULT_OBSOLETE_RESOURCE_CHECK_INTERVAL)
+              .withGhostResourceCacheCheckInterval(Constants.DEFAULT_GHOST_RESOURCE_CHECK_INTERVAL)
               .buildForController(),
           false);
     }

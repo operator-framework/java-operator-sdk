@@ -88,8 +88,8 @@ class InformerEventSourceTest {
     when(informerEventSourceConfiguration.getInformerConfig()).thenReturn(informerConfig);
     when(informerConfig.getEffectiveNamespaces(any())).thenReturn(DEFAULT_NAMESPACES_SET);
     when(informerEventSourceConfiguration.getResourceClass()).thenReturn(Deployment.class);
-    when(informerConfig.getObsoleteResourceCacheCheckInterval())
-        .thenReturn(Constants.DEFAULT_OBSOLETE_RESOURCE_CHECK_INTERVAL);
+    when(informerConfig.getGhostResourceCacheCheckInterval())
+        .thenReturn(Constants.DEFAULT_GHOST_RESOURCE_CHECK_INTERVAL);
     informerEventSource =
         spy(
             new InformerEventSource<>(informerEventSourceConfiguration, clientMock) {

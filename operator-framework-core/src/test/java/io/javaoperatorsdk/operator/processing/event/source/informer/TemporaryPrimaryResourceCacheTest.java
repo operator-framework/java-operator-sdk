@@ -45,7 +45,7 @@ import static org.mockito.Mockito.when;
 class TemporaryPrimaryResourceCacheTest {
 
   public static final String RESOURCE_VERSION = "2";
-  public static final int OBSOLETE_RESOURCE_CHECK_INTERVAL = 100;
+  public static final int GHOST_RESOURCE_CHECK_INTERVAL = 100;
 
   private TemporaryResourceCache<ConfigMap> temporaryResourceCache;
   private volatile String latestSyncVersion;
@@ -228,7 +228,6 @@ class TemporaryPrimaryResourceCacheTest {
     nextResource.getMetadata().setResourceVersion("3");
     temporaryResourceCache.putResource(nextResource);
 
-    // the result is obsolete
     result = temporaryResourceCache.onAddOrUpdateEvent(ResourceAction.UPDATED, nextResource, null);
     assertThat(result).isEqualTo(EventHandling.OBSOLETE);
   }
@@ -251,7 +250,6 @@ class TemporaryPrimaryResourceCacheTest {
     temporaryResourceCache.putResource(nextResource);
     temporaryResourceCache.doneEventFilterModify(resourceId, "3");
 
-    // the result is obsolete
     latestSyncVersion = "3";
     result = temporaryResourceCache.onAddOrUpdateEvent(ResourceAction.UPDATED, nextResource, null);
     assertThat(result).isEqualTo(EventHandling.OBSOLETE);
@@ -323,14 +321,14 @@ class TemporaryPrimaryResourceCacheTest {
   }
 
   @Test
-  void removalOfObsoleteResources() {
-    withTemporaryResourceCacheForObsoleteHandling();
+  void removalOfGhostResources() {
+    withTemporaryResourceCacheForGhostHandling();
 
     var tr = testResource();
     this.temporaryResourceCache.putResource(tr);
 
     await()
-        .pollDelay(Duration.ofMillis(2 * OBSOLETE_RESOURCE_CHECK_INTERVAL))
+        .pollDelay(Duration.ofMillis(2 * GHOST_RESOURCE_CHECK_INTERVAL))
         .untilAsserted(
             () ->
                 assertThat(temporaryResourceCache.getResourceFromCache(ResourceID.fromResource(tr)))
@@ -348,12 +346,12 @@ class TemporaryPrimaryResourceCacheTest {
   }
 
   @Test
-  void checksObsoleteOnlyWithCertainDelay() {
-    withTemporaryResourceCacheForObsoleteHandling();
+  void checksGhostOnlyWithCertainDelay() {
+    withTemporaryResourceCacheForGhostHandling();
     this.temporaryResourceCache.putResource(testResource());
     latestSyncVersion = "3";
     await()
-        .pollDelay(Duration.ofMillis(OBSOLETE_RESOURCE_CHECK_INTERVAL / 5))
+        .pollDelay(Duration.ofMillis(GHOST_RESOURCE_CHECK_INTERVAL / 5))
         .untilAsserted(
             () ->
                 assertThat(
@@ -371,13 +369,13 @@ class TemporaryPrimaryResourceCacheTest {
   }
 
   @Test
-  void obsoleteResourceIsNotRemovedIfLatestSyncVersionIsOlder() {
-    withTemporaryResourceCacheForObsoleteHandling();
+  void ghostResourceIsNotRemovedIfLatestSyncVersionIsOlder() {
+    withTemporaryResourceCacheForGhostHandling();
     this.temporaryResourceCache.putResource(testResource());
     latestSyncVersion = "1";
 
     await()
-        .pollDelay(Duration.ofMillis(OBSOLETE_RESOURCE_CHECK_INTERVAL * 2))
+        .pollDelay(Duration.ofMillis(GHOST_RESOURCE_CHECK_INTERVAL * 2))
         .untilAsserted(
             () ->
                 assertThat(
@@ -386,11 +384,11 @@ class TemporaryPrimaryResourceCacheTest {
                     .isPresent());
   }
 
-  private void withTemporaryResourceCacheForObsoleteHandling() {
+  private void withTemporaryResourceCacheForGhostHandling() {
     this.temporaryResourceCache =
         new TemporaryResourceCache<>(
             true,
-            OBSOLETE_RESOURCE_CHECK_INTERVAL,
+            GHOST_RESOURCE_CHECK_INTERVAL,
             Executors.newScheduledThreadPool(1),
             managedInformerEventSource);
   }
