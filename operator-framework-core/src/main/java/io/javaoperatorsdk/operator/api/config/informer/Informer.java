@@ -145,7 +145,7 @@ public @interface Informer {
   /**
    * For read-cache-after-write consistency there are some corner cases where we need to check the
    * caches see {@link TemporaryResourceCache} periodically. This is the period in milliseconds.
-   * Applicable only if {@link #comparableResourceVersions()}} is true.
+   * Applicable only if {@link #comparableResourceVersions()} is true.
    *
    * @since 5.3.0
    */

@@ -236,10 +236,7 @@ class InformerManager<R extends HasMetadata, C extends Informable<R>>
   }
 
   String lastSyncResourceVersion(String namespace) {
-    return getSource(namespace)
-        .map(InformerWrapper::getInformer)
-        .orElseThrow()
-        .lastSyncResourceVersion();
+    return getSource(namespace).orElseThrow().getLastSyncResourceVersion();
   }
 
   @Override
