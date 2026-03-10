@@ -188,11 +188,12 @@ public class TemporaryResourceCache<T extends HasMetadata> {
       return;
     }
 
+    var ns = newResource.getMetadata().getNamespace();
     // todo unit test
     // this can happen when we dynamically change the NS
-    if (!managedInformerEventSource
-        .manager()
-        .isWatchingNamespace(newResource.getMetadata().getNamespace())) {
+    if (!managedInformerEventSource.manager().isWatchingNamespace(ns)) {
+      log.debug(
+          "Skipping caching of resource: {} since namespace is now watched: {}", resourceId, ns);
       return;
     }
 
@@ -201,7 +202,7 @@ public class TemporaryResourceCache<T extends HasMetadata> {
     //
     // this also prevents resurrecting recently deleted entities for which the delete event
     // has already been processed
-    var latestRV = getLastSyncResourceVersion(newResource.getMetadata().getNamespace());
+    var latestRV = getLastSyncResourceVersion(ns);
     if (latestRV != null
         && ReconcilerUtilsInternal.compareResourceVersions(
                 latestRV, newResource.getMetadata().getResourceVersion())

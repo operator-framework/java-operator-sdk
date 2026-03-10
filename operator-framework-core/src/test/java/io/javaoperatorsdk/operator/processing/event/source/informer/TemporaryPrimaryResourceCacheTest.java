@@ -58,6 +58,7 @@ class TemporaryPrimaryResourceCacheTest {
     managedInformerEventSource = mock(ManagedInformerEventSource.class);
     var mim = mock(InformerManager.class);
     when(managedInformerEventSource.manager()).thenReturn(mim);
+    when(mim.isWatchingNamespace(any())).thenReturn(true);
     when(mim.lastSyncResourceVersion(any())).then(a -> latestSyncVersion);
     temporaryResourceCache =
         new TemporaryResourceCache<>(

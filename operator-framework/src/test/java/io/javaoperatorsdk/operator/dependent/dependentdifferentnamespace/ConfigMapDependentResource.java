@@ -19,9 +19,13 @@ import java.util.HashMap;
 
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.ObjectMeta;
+import io.javaoperatorsdk.operator.api.config.informer.Informer;
+import io.javaoperatorsdk.operator.api.reconciler.Constants;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.CRUDNoGCKubernetesDependentResource;
+import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependent;
 
+@KubernetesDependent(informer = @Informer(namespaces = Constants.WATCH_ALL_NAMESPACES))
 public class ConfigMapDependentResource
     extends CRUDNoGCKubernetesDependentResource<
         ConfigMap, DependentDifferentNamespaceCustomResource> {
