@@ -227,7 +227,7 @@ public class TemporaryResourceCache<T extends HasMetadata> {
   }
 
   /**
-   * There are (probably) extremely rare circumstances, when we can miss a delete event related to a
+   * There are (probably extremely rare) circumstances, when we can miss a delete event related to a
    * resources: when we create a resource that is deleted right after by third party and the related
    * informer have a disconnected watch and this watch needs to do a re-list when connected again.
    * In this case neither the ADD nor DELETE event will be propagated to the informer, but we
