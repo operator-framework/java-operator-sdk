@@ -19,6 +19,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.UnaryOperator;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -60,6 +61,7 @@ public class TemporaryResourceCache<T extends HasMetadata> {
   private String latestResourceVersion;
 
   private final Map<ResourceID, EventFilterDetails> activeUpdates = new HashMap<>();
+  private final UnaryOperator<T> transformationFunction;
 
   public enum EventHandling {
     DEFER,
@@ -68,7 +70,13 @@ public class TemporaryResourceCache<T extends HasMetadata> {
   }
 
   public TemporaryResourceCache(boolean comparableResourceVersions) {
+    this(comparableResourceVersions, t -> t);
+  }
+
+  public TemporaryResourceCache(
+      boolean comparableResourceVersions, UnaryOperator<T> transformationFunction) {
     this.comparableResourceVersions = comparableResourceVersions;
+    this.transformationFunction = transformationFunction;
   }
 
   public synchronized void startEventFilteringModify(ResourceID resourceID) {
@@ -204,7 +212,7 @@ public class TemporaryResourceCache<T extends HasMetadata> {
           "Temporarily moving ahead to target version {} for resource id: {}",
           newResource.getMetadata().getResourceVersion(),
           resourceId);
-      cache.put(resourceId, newResource);
+      cache.put(resourceId, transformationFunction.apply(newResource));
     }
   }
 
