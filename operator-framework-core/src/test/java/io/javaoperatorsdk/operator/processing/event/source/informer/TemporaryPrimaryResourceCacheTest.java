@@ -274,7 +274,7 @@ class TemporaryPrimaryResourceCacheTest {
             ResourceAction.UPDATED, nextResource, testResource);
     // the result is deferred
     assertThat(result).isEqualTo(EventHandling.DEFER);
-    temporaryResourceCache.putResource(testResource);
+    temporaryResourceCache.putResource(nextResource);
     var postEvent = temporaryResourceCache.doneEventFilterModify(resourceId, "3");
 
     // there is no post event because the done call claimed responsibility for rv 3
