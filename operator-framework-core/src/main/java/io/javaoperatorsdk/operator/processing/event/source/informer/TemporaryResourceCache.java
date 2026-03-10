@@ -193,7 +193,7 @@ public class TemporaryResourceCache<T extends HasMetadata> {
     //
     // this also prevents resurrecting recently deleted entities for which the delete event
     // has already been processed
-    var latestRV = getLatestResourceVersion(newResource.getMetadata().getNamespace());
+    var latestRV = getLastSyncResourceVersion(newResource.getMetadata().getNamespace());
     if (latestRV != null
         && ReconcilerUtilsInternal.compareResourceVersions(
                 latestRV, newResource.getMetadata().getResourceVersion())
@@ -219,7 +219,7 @@ public class TemporaryResourceCache<T extends HasMetadata> {
     }
   }
 
-  private String getLatestResourceVersion(String namespace) {
+  private String getLastSyncResourceVersion(String namespace) {
     return managedInformerEventSource.manager().lastSyncResourceVersion(namespace);
   }
 
@@ -235,10 +235,12 @@ public class TemporaryResourceCache<T extends HasMetadata> {
     var iterator = cache.entrySet().iterator();
     while (iterator.hasNext()) {
       var e = iterator.next();
-      if (ReconcilerUtilsInternal.compareResourceVersions(
-                  e.getValue().getMetadata().getResourceVersion(),
-                  getLatestResourceVersion(e.getValue().getMetadata().getNamespace()))
-              < 0
+      var latestResourceVersion =
+          getLastSyncResourceVersion(e.getValue().getMetadata().getNamespace());
+      if ((latestResourceVersion == null
+              || ReconcilerUtilsInternal.compareResourceVersions(
+                      e.getValue().getMetadata().getResourceVersion(), latestResourceVersion)
+                  < 0)
           // making sure we have the situation where resource is missing from the cache
           && managedInformerEventSource
               .manager()
