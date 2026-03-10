@@ -91,7 +91,7 @@ it is not. Websocket can be disconnected (actually happens on purpose sometimes)
 
 Let's consider the following operator:
  - we have a custom resource `PodPrefix` where the spec contains only one field: `podNamePrexix`,
- - goal of the operator is to create a pod with name that has the prefix and a random sequence
+ - goal of the operator is to create a pod with name that has the prefix and a random sequence suffix
  - it should never run two pods at once, if the `podNamePrefix` changes it should delete
    the actual pod and after that create a new one
  - the status of the custom resource should contain the `generatedPodName`
@@ -117,16 +117,13 @@ public UpdateControl<PodPrefix> reconcile(PodPrefix primary, Context<PodPrefix> 
     } else {
         // creates new pod
        var newPod = context.getClient().resource(createPodWithOwnerReference(primary)).serviceSideApply();
-       return UpdateControl.patchStatus(setPodNameToStatus(primary,newPod));
+       return UpdateControl.patchStatus(setGeneratedPodNameToStatus(primary,newPod));
     }
 }
 
 @Override
 public List<EventSource<?, WebPage>> prepareEventSources(EventSourceContext<WebPage> context) {
-    
-    // Code omitted for adding InformerEventsSource for the pod
-   
-   
+    // Code omitted for adding InformerEventsSource for the Pod
 }
 ```
 
@@ -136,10 +133,35 @@ the reconciliation.
 
 Now consider the following sequence of events:
 
-1. We create a `PodPrefix` with `podNamePrefix`: "first-pod-prefix".
+1. We create a `PodPrefix` with `spec.podNamePrefix`: `first-pod-prefix`.
 2. Concurrently:
    - The reconciliation logic runs and creates a Pod with a name generated suffix: "first-pod-prefix-a3j3ka";
    also sets this to the status and updates the custom resource status.  
    - While the reconciliation is running we update the custom resource to have the value 
-    "second-pod-prefix"
+    `second-pod-prefix`
 3. The update of the custom resource triggers the reconciliation.
+
+When the spec change triggers the reconciliation in point 3. there is absolutely no guarantee that:
+- created pod will be already visible, this `currentPod` might be just empty
+- the `status.generatedPodName` will be visible 
+
+Since both are backed with an informer and the cache of those informers are eventually consistent with our updates.
+Therefore, the next reconiliation would create a new Pod, and we just missed the requirement to not have two
+Pods running at the same time. In addition to that controller will override the status. Altough in case of Kubernetes
+resource we anyway can find the existing Pods later with owner references, but in case if we would manage a 
+non-Kuberetes resource we would not notice that we created a resource before.
+
+So can we have stronger guarantees regarding caches? It turns out we can now...
+
+## Achieving read-cache-after-write consistency
+
+
+
+
+
+## Filtering events for our own updates
+
+
+TODO:
+- filter events
+- reschedule
