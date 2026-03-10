@@ -54,7 +54,7 @@ public class InformerConfiguration<R extends HasMetadata> {
   private ItemStore<R> itemStore;
   private Long informerListLimit;
   private FieldSelector fieldSelector;
-  private boolean comparableResourceVersions;
+  private Boolean comparableResourceVersions;
   private Duration obsoleteResourceCacheCheckInterval;
 
   protected InformerConfiguration(
@@ -70,7 +70,7 @@ public class InformerConfiguration<R extends HasMetadata> {
       ItemStore<R> itemStore,
       Long informerListLimit,
       FieldSelector fieldSelector,
-      boolean comparableResourceVersions,
+      Boolean comparableResourceVersions,
       Duration obsoleteResourceCacheCheckInterval) {
     this(resourceClass);
     this.name = name;
@@ -319,6 +319,13 @@ public class InformerConfiguration<R extends HasMetadata> {
       }
       // to avoid potential NPE
       followControllerNamespaceChanges = false;
+      if (comparableResourceVersions == null) {
+        comparableResourceVersions = DEFAULT_COMPARABLE_RESOURCE_VERSION;
+      }
+
+      if (obsoleteResourceCacheCheckInterval == null) {
+        obsoleteResourceCacheCheckInterval = DEFAULT_OBSOLETE_RESOURCE_CHECK_INTERVAL;
+      }
       return InformerConfiguration.this;
     }
 
@@ -330,6 +337,14 @@ public class InformerConfiguration<R extends HasMetadata> {
       if (followControllerNamespaceChanges == null) {
         followControllerNamespaceChanges = DEFAULT_FOLLOW_CONTROLLER_NAMESPACE_CHANGES;
       }
+      if (comparableResourceVersions == null) {
+        comparableResourceVersions = DEFAULT_COMPARABLE_RESOURCE_VERSION;
+      }
+
+      if (obsoleteResourceCacheCheckInterval == null) {
+        obsoleteResourceCacheCheckInterval = DEFAULT_OBSOLETE_RESOURCE_CHECK_INTERVAL;
+      }
+
       return InformerConfiguration.this;
     }
 

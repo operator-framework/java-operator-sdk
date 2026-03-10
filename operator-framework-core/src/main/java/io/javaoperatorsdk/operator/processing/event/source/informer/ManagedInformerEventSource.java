@@ -67,10 +67,10 @@ public abstract class ManagedInformerEventSource<
   protected TemporaryResourceCache<R> temporaryResourceCache;
   protected MixedOperation client;
 
-  protected ManagedInformerEventSource(
-      String name, MixedOperation client, C configuration, boolean comparableResourceVersions) {
+  protected ManagedInformerEventSource(String name, MixedOperation client, C configuration) {
     super(configuration.getResourceClass(), name);
-    this.comparableResourceVersions = comparableResourceVersions;
+    this.comparableResourceVersions =
+        configuration.getInformerConfig().isComparableResourceVersions();
     this.client = client;
     this.configuration = configuration;
   }
