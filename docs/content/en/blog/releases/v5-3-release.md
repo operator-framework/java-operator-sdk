@@ -173,6 +173,12 @@ Dependent resources now record their desired state in the `Context` during recon
 allows reconcilers and downstream dependents in a workflow to inspect what a dependent resource
 computed as its desired state, which is useful for debugging and composite workflows.
 
+### Informer Health Checks
+
+Informers health status no longer checks `isWacthing`. For ready and startup probes mainly `hasSynced`
+should be taken into the account, but from the point informer started `isWatching` is not suitable
+for liveness checks.
+
 ## Additional Improvements
 
 - **Annotation removal using locking**: Finalizer and annotation management no longer uses
