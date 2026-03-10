@@ -30,7 +30,7 @@ jobs:
         uses: actions/checkout@v6
 
       - name: Setup Minikube-Kubernetes
-        uses: manusa/actions-setup-minikube@v2.16.0
+        uses: manusa/actions-setup-minikube@v2.16.1
         with:
           minikube version: 'v1.38.1'
           # Use the latest versions supported by minikube, otherwise GitHub it will
