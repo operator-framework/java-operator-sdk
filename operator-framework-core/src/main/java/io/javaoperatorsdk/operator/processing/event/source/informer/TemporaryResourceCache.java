@@ -192,7 +192,9 @@ public class TemporaryResourceCache<T extends HasMetadata> {
     // this can happen when we dynamically change the followed namespace list
     if (!managedInformerEventSource.manager().isWatchingNamespace(ns)) {
       log.debug(
-          "Skipping caching of resource: {} since namespace is now watched: {}", resourceId, ns);
+          "Skipping caching of resource: {} since namespace is not being watched: {}",
+          resourceId,
+          ns);
       return;
     }
 
