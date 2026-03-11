@@ -42,7 +42,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @SuppressWarnings({"unchecked", "rawtypes"})
-class TemporaryPrimaryResourceCacheTest {
+class TemporaryResourceCacheTest {
 
   public static final String RESOURCE_VERSION = "2";
   public static final int GHOST_RESOURCE_CHECK_INTERVAL = 100;
