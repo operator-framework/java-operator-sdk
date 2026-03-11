@@ -189,8 +189,7 @@ public class TemporaryResourceCache<T extends HasMetadata> {
     }
 
     var ns = newResource.getMetadata().getNamespace();
-    // todo unit test
-    // this can happen when we dynamically change the NS
+    // this can happen when we dynamically change the followed namespace list
     if (!managedInformerEventSource.manager().isWatchingNamespace(ns)) {
       log.debug(
           "Skipping caching of resource: {} since namespace is now watched: {}", resourceId, ns);
@@ -247,7 +246,6 @@ public class TemporaryResourceCache<T extends HasMetadata> {
       var e = iterator.next();
 
       var ns = e.getValue().getMetadata().getNamespace();
-      // todo unit tests
       // this can happen if followed namespaces are changed dynamically
       if (!managedInformerEventSource.manager().isWatchingNamespace(ns)) {
         log.debug(

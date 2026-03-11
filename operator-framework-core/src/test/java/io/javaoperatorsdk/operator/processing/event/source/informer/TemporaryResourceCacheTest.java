@@ -385,6 +385,42 @@ class TemporaryResourceCacheTest {
                     .isPresent());
   }
 
+  @Test
+  void ghostRemovalRemovesResourcesOnNotFollowedNamespaces() {
+    withTemporaryResourceCacheForGhostHandling();
+
+    var tr = testResource();
+    temporaryResourceCache.putResource(tr);
+
+    assertThat(temporaryResourceCache.getResourceFromCache(ResourceID.fromResource(tr)))
+        .isPresent();
+
+    // simulate namespace no longer being watched
+    var mim = managedInformerEventSource.manager();
+    when(mim.isWatchingNamespace(tr.getMetadata().getNamespace())).thenReturn(false);
+
+    await()
+        .untilAsserted(
+            () ->
+                assertThat(temporaryResourceCache.getResourceFromCache(ResourceID.fromResource(tr)))
+                    .isEmpty());
+
+    // no delete event should be fired for resources removed due to namespace change
+    verify(managedInformerEventSource, times(0))
+        .handleEvent(any(), any(), any(), any(Boolean.class));
+  }
+
+  @Test
+  void doNotCacheResourceOnPutIfNamespaceIsNotFollowedAnymore() {
+    var mim = managedInformerEventSource.manager();
+    when(mim.isWatchingNamespace("default")).thenReturn(false);
+
+    var tr = testResource();
+    temporaryResourceCache.putResource(tr);
+
+    assertThat(temporaryResourceCache.getResourceFromCache(ResourceID.fromResource(tr))).isEmpty();
+  }
+
   private void withTemporaryResourceCacheForGhostHandling() {
     this.temporaryResourceCache =
         new TemporaryResourceCache<>(
