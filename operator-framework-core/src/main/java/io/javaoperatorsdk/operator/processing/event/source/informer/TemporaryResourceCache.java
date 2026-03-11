@@ -231,7 +231,6 @@ public class TemporaryResourceCache<T extends HasMetadata> {
     return managedInformerEventSource.manager().lastSyncResourceVersion(namespace);
   }
 
-  // todo tests with combination of event processing
   /**
    * There are (probably extremely rare) circumstances, when we can miss a delete event related to a
    * resources: when we create a resource that is deleted right after by third party and the related
