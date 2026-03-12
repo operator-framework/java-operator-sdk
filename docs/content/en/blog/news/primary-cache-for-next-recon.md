@@ -10,9 +10,10 @@ author: >-
 Read-cache-after-write consistency feature replaces this functionality. (since version 5.3.0)
 
 > It provides this functionality also for secondary resources and optimistic locking
-is not required anymore. See [details here](./../../docs/documentation/reconciler.md#read-cache-after-write-consistency-and-event-filtering).
-{{% /alert %}}
+is not required anymore. See the [docs](./../../docs/documentation/reconciler.md#read-cache-after-write-consistency-and-event-filtering) and
+related [blog post](read-after-write-consistency.md) for details.
 
+{{% /alert %}}
 
 We recently released v5.1 of Java Operator SDK (JOSDK). One of the highlights of this release is related to a topic of
 so-called
