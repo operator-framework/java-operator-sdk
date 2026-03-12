@@ -65,14 +65,14 @@ resources come and go.
 
 ```java
 MeterRegistry registry; // initialize your registry
-Metrics metrics = MicrometerMetricsV2.newMicrometerMetricsV2Builder(registry).build();
+Metrics metrics = MicrometerMetricsV2.newBuilder(registry).build();
 Operator operator = new Operator(client, o -> o.withMetrics(metrics));
 ```
 
 Optionally attach a `namespace` tag to per-reconciliation counters (disabled by default):
 
 ```java
-Metrics metrics = MicrometerMetricsV2.newMicrometerMetricsV2Builder(registry)
+Metrics metrics = MicrometerMetricsV2.newBuilder(registry)
         .withNamespaceAsTag()
         .build();
 ```
