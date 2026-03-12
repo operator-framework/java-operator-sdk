@@ -77,7 +77,7 @@ public class MicrometerMetricsV2 implements Metrics {
    * @return a MicrometerMetricsV2 instance configured to not collect per-resource metrics
    * @see MicrometerMetricsV2Builder
    */
-  public static MicrometerMetricsV2Builder newMicrometerMetricsV2Builder(MeterRegistry registry) {
+  public static MicrometerMetricsV2Builder newBuilder(MeterRegistry registry) {
     return new MicrometerMetricsV2Builder(registry);
   }
 
