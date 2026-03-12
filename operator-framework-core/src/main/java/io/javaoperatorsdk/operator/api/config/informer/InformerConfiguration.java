@@ -15,6 +15,7 @@
  */
 package io.javaoperatorsdk.operator.api.config.informer;
 
+import java.time.Duration;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
@@ -53,7 +54,8 @@ public class InformerConfiguration<R extends HasMetadata> {
   private ItemStore<R> itemStore;
   private Long informerListLimit;
   private FieldSelector fieldSelector;
-  private boolean comparableResourceVersions;
+  private Boolean comparableResourceVersions;
+  private Duration ghostResourceCacheCheckInterval;
 
   protected InformerConfiguration(
       Class<R> resourceClass,
@@ -68,7 +70,8 @@ public class InformerConfiguration<R extends HasMetadata> {
       ItemStore<R> itemStore,
       Long informerListLimit,
       FieldSelector fieldSelector,
-      boolean comparableResourceVersions) {
+      Boolean comparableResourceVersions,
+      Duration ghostResourceCacheCheckInterval) {
     this(resourceClass);
     this.name = name;
     this.namespaces = namespaces;
@@ -82,6 +85,7 @@ public class InformerConfiguration<R extends HasMetadata> {
     this.informerListLimit = informerListLimit;
     this.fieldSelector = fieldSelector;
     this.comparableResourceVersions = comparableResourceVersions;
+    this.ghostResourceCacheCheckInterval = ghostResourceCacheCheckInterval;
   }
 
   private InformerConfiguration(Class<R> resourceClass) {
@@ -117,7 +121,8 @@ public class InformerConfiguration<R extends HasMetadata> {
             original.itemStore,
             original.informerListLimit,
             original.fieldSelector,
-            original.comparableResourceVersions)
+            original.comparableResourceVersions,
+            original.ghostResourceCacheCheckInterval)
         .builder;
   }
 
@@ -296,6 +301,10 @@ public class InformerConfiguration<R extends HasMetadata> {
     return comparableResourceVersions;
   }
 
+  public Duration getGhostResourceCacheCheckInterval() {
+    return ghostResourceCacheCheckInterval;
+  }
+
   @SuppressWarnings("UnusedReturnValue")
   public class Builder {
 
@@ -310,6 +319,13 @@ public class InformerConfiguration<R extends HasMetadata> {
       }
       // to avoid potential NPE
       followControllerNamespaceChanges = false;
+      if (comparableResourceVersions == null) {
+        comparableResourceVersions = DEFAULT_COMPARABLE_RESOURCE_VERSION;
+      }
+
+      if (ghostResourceCacheCheckInterval == null) {
+        ghostResourceCacheCheckInterval = DEFAULT_GHOST_RESOURCE_CHECK_INTERVAL;
+      }
       return InformerConfiguration.this;
     }
 
@@ -321,6 +337,14 @@ public class InformerConfiguration<R extends HasMetadata> {
       if (followControllerNamespaceChanges == null) {
         followControllerNamespaceChanges = DEFAULT_FOLLOW_CONTROLLER_NAMESPACE_CHANGES;
       }
+      if (comparableResourceVersions == null) {
+        comparableResourceVersions = DEFAULT_COMPARABLE_RESOURCE_VERSION;
+      }
+
+      if (ghostResourceCacheCheckInterval == null) {
+        ghostResourceCacheCheckInterval = DEFAULT_GHOST_RESOURCE_CHECK_INTERVAL;
+      }
+
       return InformerConfiguration.this;
     }
 
@@ -368,6 +392,8 @@ public class InformerConfiguration<R extends HasMetadata> {
                     .map(f -> new FieldSelector.Field(f.path(), f.value(), f.negated()))
                     .toList()));
         withComparableResourceVersions(informerConfig.comparableResourceVersions());
+        withGhostResourceCacheCheckInterval(
+            Duration.ofMillis(informerConfig.ghostResourceCacheCheckInterval()));
       }
       return this;
     }
@@ -471,6 +497,11 @@ public class InformerConfiguration<R extends HasMetadata> {
 
     public Builder withComparableResourceVersions(boolean comparableResourceVersions) {
       InformerConfiguration.this.comparableResourceVersions = comparableResourceVersions;
+      return this;
+    }
+
+    public Builder withGhostResourceCacheCheckInterval(Duration ghostResourceCacheCheckInterval) {
+      InformerConfiguration.this.ghostResourceCacheCheckInterval = ghostResourceCacheCheckInterval;
       return this;
     }
   }

@@ -67,10 +67,10 @@ public abstract class ManagedInformerEventSource<
   protected TemporaryResourceCache<R> temporaryResourceCache;
   protected MixedOperation client;
 
-  protected ManagedInformerEventSource(
-      String name, MixedOperation client, C configuration, boolean comparableResourceVersions) {
+  protected ManagedInformerEventSource(String name, MixedOperation client, C configuration) {
     super(configuration.getResourceClass(), name);
-    this.comparableResourceVersions = comparableResourceVersions;
+    this.comparableResourceVersions =
+        configuration.getInformerConfig().isComparableResourceVersions();
     this.client = client;
     this.configuration = configuration;
   }
@@ -153,7 +153,15 @@ public abstract class ManagedInformerEventSource<
     if (isRunning()) {
       return;
     }
-    temporaryResourceCache = new TemporaryResourceCache<>(comparableResourceVersions);
+    temporaryResourceCache =
+        new TemporaryResourceCache<>(
+            comparableResourceVersions,
+            configuration.getInformerConfig().getGhostResourceCacheCheckInterval().toMillis(),
+            controllerConfiguration
+                .getConfigurationService()
+                .getExecutorServiceManager()
+                .scheduledExecutorService(),
+            this);
     this.cache = new InformerManager<>(client, configuration, this);
     cache.setControllerConfiguration(controllerConfiguration);
     cache.addIndexers(indexers);
@@ -183,18 +191,14 @@ public abstract class ManagedInformerEventSource<
 
   @Override
   public Optional<R> get(ResourceID resourceID) {
-    // The order of these two lookups matters. If we queried the informer cache first,
-    // a race condition could occur: we might not find the resource there yet, then
-    // process an informer event that evicts the temporary resource cache entry. At that
-    // point the resource would already be present in the informer cache, but we would
-    // have missed it in both caches during this call.
     Optional<R> resource = temporaryResourceCache.getResourceFromCache(resourceID);
     var res = cache.get(resourceID);
     if (comparableResourceVersions
         && resource.isPresent()
-        && res.filter(
-                r -> ReconcilerUtilsInternal.compareResourceVersions(r, resource.orElseThrow()) > 0)
-            .isEmpty()) {
+        && ReconcilerUtilsInternal.compareResourceVersions(
+                resource.get().getMetadata().getResourceVersion(),
+                manager().lastSyncResourceVersion(resource.get().getMetadata().getNamespace()))
+            > 0) {
       log.debug("Latest resource found in temporary cache for Resource ID: {}", resourceID);
       return resource;
     }

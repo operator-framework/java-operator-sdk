@@ -30,6 +30,7 @@ import io.javaoperatorsdk.operator.api.config.BaseConfigurationService;
 import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.config.ResolvedControllerConfiguration;
 import io.javaoperatorsdk.operator.api.config.informer.InformerConfiguration;
+import io.javaoperatorsdk.operator.api.reconciler.Constants;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
 import io.javaoperatorsdk.operator.processing.Controller;
@@ -60,8 +61,11 @@ class ControllerEventSourceTest
 
   @BeforeEach
   public void setup() {
-
     when(controllerConfig.getConfigurationService()).thenReturn(new BaseConfigurationService());
+    var ic = mock(InformerConfiguration.class);
+    when(controllerConfig.getInformerConfig()).thenReturn(ic);
+    when(ic.getGhostResourceCacheCheckInterval())
+        .thenReturn(Constants.DEFAULT_GHOST_RESOURCE_CHECK_INTERVAL);
 
     setUpSource(new ControllerEventSource<>(testController), true, controllerConfig);
   }
@@ -325,6 +329,7 @@ class ControllerEventSourceTest
               .withOnUpdateFilter(onUpdateFilter)
               .withGenericFilter(genericFilter)
               .withComparableResourceVersions(true)
+              .withGhostResourceCacheCheckInterval(Constants.DEFAULT_GHOST_RESOURCE_CHECK_INTERVAL)
               .buildForController(),
           false);
     }

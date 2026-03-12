@@ -35,8 +35,6 @@ import io.javaoperatorsdk.operator.processing.event.source.PrimaryToSecondaryMap
 import io.javaoperatorsdk.operator.processing.event.source.ResourceAction;
 import io.javaoperatorsdk.operator.processing.event.source.informer.TemporaryResourceCache.EventHandling;
 
-import static io.javaoperatorsdk.operator.api.reconciler.Constants.DEFAULT_COMPARABLE_RESOURCE_VERSION;
-
 /**
  * Wraps informer(s) so they are connected to the eventing system of the framework. Note that since
  * this is built on top of Fabric8 client Informers, it also supports caching resources using
@@ -58,29 +56,18 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
 
   public InformerEventSource(
       InformerEventSourceConfiguration<R> configuration, EventSourceContext<P> context) {
-    this(
-        configuration,
-        configuration.getKubernetesClient().orElse(context.getClient()),
-        configuration.comparableResourceVersion());
-  }
-
-  InformerEventSource(InformerEventSourceConfiguration<R> configuration, KubernetesClient client) {
-    this(configuration, client, DEFAULT_COMPARABLE_RESOURCE_VERSION);
+    this(configuration, configuration.getKubernetesClient().orElse(context.getClient()));
   }
 
   @SuppressWarnings({"unchecked", "rawtypes"})
-  private InformerEventSource(
-      InformerEventSourceConfiguration<R> configuration,
-      KubernetesClient client,
-      boolean comparableResourceVersions) {
+  InformerEventSource(InformerEventSourceConfiguration<R> configuration, KubernetesClient client) {
     super(
         configuration.name(),
         configuration
             .getGroupVersionKind()
             .map(gvk -> client.genericKubernetesResources(gvk.apiVersion(), gvk.getKind()))
             .orElseGet(() -> (MixedOperation) client.resources(configuration.getResourceClass())),
-        configuration,
-        comparableResourceVersions);
+        configuration);
     // If there is a primary to secondary mapper there is no need for primary to secondary index.
     primaryToSecondaryMapper = configuration.getPrimaryToSecondaryMapper();
     if (useSecondaryToPrimaryIndex()) {
