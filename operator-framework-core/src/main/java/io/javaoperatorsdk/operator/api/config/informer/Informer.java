@@ -27,9 +27,11 @@ import io.javaoperatorsdk.operator.processing.event.source.filter.GenericFilter;
 import io.javaoperatorsdk.operator.processing.event.source.filter.OnAddFilter;
 import io.javaoperatorsdk.operator.processing.event.source.filter.OnDeleteFilter;
 import io.javaoperatorsdk.operator.processing.event.source.filter.OnUpdateFilter;
+import io.javaoperatorsdk.operator.processing.event.source.informer.TemporaryResourceCache;
 
 import static io.javaoperatorsdk.operator.api.reconciler.Constants.DEFAULT_COMPARABLE_RESOURCE_VERSION;
 import static io.javaoperatorsdk.operator.api.reconciler.Constants.DEFAULT_FOLLOW_CONTROLLER_NAMESPACE_CHANGES;
+import static io.javaoperatorsdk.operator.api.reconciler.Constants.DEFAULT_GHOST_RESOURCE_CHECK_INTERVAL_MILLIS;
 import static io.javaoperatorsdk.operator.api.reconciler.Constants.NO_LONG_VALUE_SET;
 import static io.javaoperatorsdk.operator.api.reconciler.Constants.NO_VALUE_SET;
 
@@ -139,4 +141,13 @@ public @interface Informer {
    * @since 5.3.0
    */
   boolean comparableResourceVersions() default DEFAULT_COMPARABLE_RESOURCE_VERSION;
+
+  /**
+   * For read-cache-after-write consistency there are some corner cases where we need to check the
+   * caches see {@link TemporaryResourceCache} periodically. This is the period in milliseconds.
+   * Applicable only if {@link #comparableResourceVersions()} is true.
+   *
+   * @since 5.3.0
+   */
+  long ghostResourceCacheCheckInterval() default DEFAULT_GHOST_RESOURCE_CHECK_INTERVAL_MILLIS;
 }

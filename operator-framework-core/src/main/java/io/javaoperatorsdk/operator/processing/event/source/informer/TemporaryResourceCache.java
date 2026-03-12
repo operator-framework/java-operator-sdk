@@ -19,6 +19,8 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -56,10 +58,10 @@ public class TemporaryResourceCache<T extends HasMetadata> {
   private static final Logger log = LoggerFactory.getLogger(TemporaryResourceCache.class);
 
   private final Map<ResourceID, T> cache = new ConcurrentHashMap<>();
-  private final boolean comparableResourceVersions;
-  private String latestResourceVersion;
-
   private final Map<ResourceID, EventFilterDetails> activeUpdates = new HashMap<>();
+  private final boolean comparableResourceVersions;
+
+  private final ManagedInformerEventSource<T, ?, ?> managedInformerEventSource;
 
   public enum EventHandling {
     DEFER,
@@ -67,8 +69,20 @@ public class TemporaryResourceCache<T extends HasMetadata> {
     NEW
   }
 
-  public TemporaryResourceCache(boolean comparableResourceVersions) {
+  public TemporaryResourceCache(
+      boolean comparableResourceVersions,
+      long ghostResourceCheckInterval,
+      ScheduledExecutorService ghostCheckExecutor,
+      ManagedInformerEventSource<T, ?, ?> managedInformerEventSource) {
     this.comparableResourceVersions = comparableResourceVersions;
+    this.managedInformerEventSource = managedInformerEventSource;
+    if (comparableResourceVersions) {
+      ghostCheckExecutor.scheduleWithFixedDelay(
+          this::checkGhostResources,
+          ghostResourceCheckInterval,
+          ghostResourceCheckInterval,
+          TimeUnit.MILLISECONDS);
+    }
   }
 
   public synchronized void startEventFilteringModify(ResourceID resourceID) {
@@ -126,10 +140,6 @@ public class TemporaryResourceCache<T extends HasMetadata> {
     if (log.isDebugEnabled()) {
       log.debug("Processing event");
     }
-    if (!unknownState) {
-      latestResourceVersion = resource.getMetadata().getResourceVersion();
-      log.debug("Setting latest resource version to: {}", latestResourceVersion);
-    }
     var cached = cache.get(resourceId);
     EventHandling result = EventHandling.NEW;
     if (cached != null) {
@@ -178,20 +188,31 @@ public class TemporaryResourceCache<T extends HasMetadata> {
       return;
     }
 
+    var ns = newResource.getMetadata().getNamespace();
+    // this can happen when we dynamically change the followed namespace list
+    if (!managedInformerEventSource.manager().isWatchingNamespace(ns)) {
+      log.debug(
+          "Skipping caching of resource: {} since namespace is not being watched: {}",
+          resourceId,
+          ns);
+      return;
+    }
+
     // check against the latestResourceVersion processed by the TemporaryResourceCache
     // If the resource is older, then we can safely ignore.
     //
     // this also prevents resurrecting recently deleted entities for which the delete event
     // has already been processed
-    if (latestResourceVersion != null
+    var latestRV = getLastSyncResourceVersion(ns);
+    if (latestRV != null
         && ReconcilerUtilsInternal.compareResourceVersions(
-                latestResourceVersion, newResource.getMetadata().getResourceVersion())
+                latestRV, newResource.getMetadata().getResourceVersion())
             > 0) {
       log.debug(
           "Resource {}: resourceVersion {} is not later than latest {}",
           resourceId,
           newResource.getMetadata().getResourceVersion(),
-          latestResourceVersion);
+          latestRV);
       return;
     }
 
@@ -205,6 +226,49 @@ public class TemporaryResourceCache<T extends HasMetadata> {
           newResource.getMetadata().getResourceVersion(),
           resourceId);
       cache.put(resourceId, newResource);
+    }
+  }
+
+  private String getLastSyncResourceVersion(String namespace) {
+    return managedInformerEventSource.manager().lastSyncResourceVersion(namespace);
+  }
+
+  /**
+   * There are (probably extremely rare) circumstances, when we can miss a delete event related to a
+   * resources: when we create a resource that is deleted right after by third party and the related
+   * informer have a disconnected watch and this watch needs to do a re-list when connected again.
+   * In this case neither the ADD nor DELETE event will be propagated to the informer, but we
+   * explicitly add resources to this cache. Those are cleaned up by this check.
+   */
+  private void checkGhostResources() {
+    log.debug("Checking for ghost resources.");
+    var iterator = cache.entrySet().iterator();
+    while (iterator.hasNext()) {
+      var e = iterator.next();
+
+      var ns = e.getValue().getMetadata().getNamespace();
+      // this can happen if followed namespaces are changed dynamically
+      if (!managedInformerEventSource.manager().isWatchingNamespace(ns)) {
+        log.debug(
+            "Removing resource: {} from cache as part of ghost cleanup. Namespace is not followed"
+                + " anymore: {}",
+            e.getKey(),
+            ns);
+        iterator.remove();
+        continue;
+      }
+      if ((ReconcilerUtilsInternal.compareResourceVersions(
+                  e.getValue().getMetadata().getResourceVersion(), getLastSyncResourceVersion(ns))
+              < 0)
+          // making sure we have the situation where resource is missing from the cache
+          && managedInformerEventSource
+              .manager()
+              .get(ResourceID.fromResource(e.getValue()))
+              .isEmpty()) {
+        iterator.remove();
+        managedInformerEventSource.handleEvent(ResourceAction.DELETED, e.getValue(), null, true);
+        log.debug("Removing ghost resource with ID: {}", e.getKey());
+      }
     }
   }
 

@@ -15,6 +15,7 @@
  */
 package io.javaoperatorsdk.operator.api.reconciler;
 
+import java.time.Duration;
 import java.util.Collections;
 import java.util.Set;
 
@@ -42,6 +43,10 @@ public final class Constants {
   public static final String CONTROLLER_NAME = "controller.name";
   public static final boolean DEFAULT_FOLLOW_CONTROLLER_NAMESPACE_CHANGES = true;
   public static final boolean DEFAULT_COMPARABLE_RESOURCE_VERSION = true;
+
+  public static final long DEFAULT_GHOST_RESOURCE_CHECK_INTERVAL_MILLIS = 3 * 60 * 1000;
+  public static final Duration DEFAULT_GHOST_RESOURCE_CHECK_INTERVAL =
+      Duration.ofMillis(DEFAULT_GHOST_RESOURCE_CHECK_INTERVAL_MILLIS);
 
   private Constants() {}
 }

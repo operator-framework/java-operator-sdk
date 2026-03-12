@@ -23,7 +23,10 @@
         </Console>
     </Appenders>
     <Loggers>
-        <Root level="debug">
+        <Logger level="debug" name="io.javaoperatorsdk.operator" additivity="false">
+            <AppenderRef ref="Console"/>
+        </Logger>
+        <Root level="info">
             <AppenderRef ref="Console"/>
         </Root>
     </Loggers>

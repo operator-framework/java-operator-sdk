@@ -23,6 +23,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.function.Function;
@@ -40,6 +41,7 @@ public class ExecutorServiceManager {
   private ExecutorService executor;
   private ExecutorService workflowExecutor;
   private ExecutorService cachingExecutorService;
+  private ScheduledExecutorService scheduledExecutorService;
   private boolean started;
   private ConfigurationService configurationService;
 
@@ -126,10 +128,15 @@ public class ExecutorServiceManager {
     return cachingExecutorService;
   }
 
+  public ScheduledExecutorService scheduledExecutorService() {
+    return scheduledExecutorService;
+  }
+
   public void start(ConfigurationService configurationService) {
     if (!started) {
       this.configurationService = configurationService; // used to lazy init workflow executor
       this.cachingExecutorService = Executors.newCachedThreadPool();
+      this.scheduledExecutorService = Executors.newScheduledThreadPool(0);
       this.executor = new InstrumentedExecutorService(configurationService.getExecutorService());
       started = true;
     }
