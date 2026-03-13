@@ -22,7 +22,7 @@
   <parent>
     <groupId>io.javaoperatorsdk</groupId>
     <artifactId>sample-operators</artifactId>
-    <version>5.3.4-SNAPSHOT</version>
+    <version>999-SNAPSHOT</version>
   </parent>
 
   <artifactId>sample-operations</artifactId>
@@ -106,11 +106,6 @@
           <to>
             <image>operations-operator</image>
           </to>
-          <container>
-            <jvmFlags>
-              <jvmFlag>-Dlog4j.configurationFile=/config/log4j2.xml</jvmFlag>
-            </jvmFlags>
-          </container>
         </configuration>
       </plugin>
       <plugin>
