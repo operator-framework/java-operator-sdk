@@ -171,9 +171,9 @@ copy with the highest resource version is returned.
 
 ### Record Desired State in Context
 
-Dependent resources now record their desired state in the `Context` during reconciliation. This
-allows reconcilers and downstream dependents in a workflow to inspect what a dependent resource
-computed as its desired state, which is useful for debugging and composite workflows.
+Dependent resources now record their desired state in the `Context` during reconciliation. This allows reconcilers and
+downstream dependents in a workflow to inspect what a dependent resource computed as its desired state and guarantees
+that the desired state is computed only once per reconciliation.
 
 ### Informer Health Checks
 
