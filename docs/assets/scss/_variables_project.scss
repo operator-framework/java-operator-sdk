@@ -30,7 +30,7 @@ $link-hover-color: darken($link-color, 15%);
 
 // Override link colors only in document content
 .td-content {
-  a {
+  a:not(.btn) {
     color: $link-color !important;
 
     &:hover {
