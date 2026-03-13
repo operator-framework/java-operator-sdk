@@ -170,7 +170,7 @@ Although with optimistic locking we were able to overcome this issue, see [this 
 
 {{% alert color=success %}}
 This changed in Kubernetes guidelines. Now if we are able to pars the `resourceVersion` as an integer
-we can use numerical comparison. See related [KEP](https://github.com/michaelasp/enhancements/tree/master/keps/sig-api-machinery/5504-comparable-resource-version)
+we can use numerical comparison. See related [KEP](https://github.com/michaelasp/enhancements/tree/master/keps/sig-api-machinery/5504-comparable-resource-version).
 {{% /alert %}}
 
 From this point the idea of the algorithm is very simple:
@@ -234,7 +234,6 @@ However, this way we significantly reduce the number of reconciliations, thus ma
 ## Conclusion
 
 ## Notes
-
 
 TODO:
 - alternatives => deferring reconciliation, this is optimized for throughput
