@@ -231,6 +231,17 @@ However, this way we significantly reduce the number of reconciliations, thus ma
 
 ## Additional considerations and alternatives
 
+An alternative approach would be that when we do an update we don't trigger the next reconciliation until the 
+target resource is not in the Informers cache. The pro side of this is that we don't have to maintain an 
+additional cache of the resource, just the target resource version; therefore there this appraoch might have
+a smaller memory footprint, but not necessarily. 
+
+On the other hand, when we do a request the response object is always deserialized, regardless if we are going
+to cache it or not. This object in most cases will be cached for a very short time; and later garbage collected.
+
+
+
+
 ## Conclusion
 
 ## Notes
