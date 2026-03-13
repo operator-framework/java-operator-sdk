@@ -25,7 +25,7 @@ Java Operator SDK is a production-ready framework for building Kubernetes Operat
 java-operator-sdk/
 ├── operator-framework-core/        # Core reconciliation engine and API
 ├── operator-framework/             # Main operator framework implementation
-├── operator-framework-junit5/      # Testing utilities and extensions
+├── operator-framework-junit/      # Testing utilities and extensions
 ├── operator-framework-bom/         # Bill of Materials for dependency management
 ├── micrometer-support/             # Metrics integration
 ├── open-telemetry-support/         # Distributed tracing support
@@ -121,7 +121,7 @@ java-operator-sdk/
 
 ### Integration Tests
 
-- Use `LocallyRunOperatorExtension` or `OperatorExtension` from `operator-framework-junit5`
+- Use `LocallyRunOperatorExtension` or `OperatorExtension` from `operator-framework-junit`
 - Test against real Kubernetes API (typically via test cluster like minikube or kind)
 - Suffix with `IT` (e.g., `MyReconcilerIT`)
 - Located in `src/test/java`
