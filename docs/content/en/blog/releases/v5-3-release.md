@@ -1,6 +1,6 @@
 ---
 title: Version 5.3 Released!
-date: 2026-03-07
+date: 2026-03-13
 author: >-
   [Attila Mészáros](https://github.com/csviri)
 ---
@@ -54,8 +54,7 @@ If your reconciler relied on being re-triggered by its own writes, a new `resche
 > in-flight updates. Use `context.getSecondaryResources(..)` or `InformerEventSource.get(ResourceID)`
 > instead.
 
-See the [reconciler docs](/docs/documentation/reconciler#read-cache-after-write-consistency-and-event-filtering)
-and the [deep-dive blog post](/blog/news/read-after-write-consistency) for full details.
+See the [reconciler docs](/docs/documentation/reconciler#read-cache-after-write-consistency-and-event-filtering) for details.
 
 ### MicrometerMetricsV2
 
