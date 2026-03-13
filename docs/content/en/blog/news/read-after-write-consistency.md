@@ -14,8 +14,7 @@ and naturally also for subsequent reconciliations.
 
 I briefly [talked about this](https://www.youtube.com/watch?v=HrwHh5Yh6AM&t=1387s) topic at KubeCon last year.
 
-```java 
-
+```java
 public UpdateControl<WebPage> reconcile(WebPage webPage, Context<WebPage> context) {
     
     ConfigMap managedConfigMap = prepareConfigMap(webPage);
@@ -25,8 +24,8 @@ public UpdateControl<WebPage> reconcile(WebPage webPage, Context<WebPage> contex
     // fresh resource instantly available from our update in the caches
     var upToDateResource = context.getSecondaryResource(ConfigMap.class);
     
-    // from now on built in update methods by default use this feature;
-    // it is guaranteed that resource  changes will be visible for next reconciliation
+    // from now on built-in update methods by default use this feature;
+    // it is guaranteed that resource changes will be visible for next reconciliation
     return UpdateControl.patchStatus(alterStatusObject(webPage));
 }
 ```
@@ -106,7 +105,7 @@ public UpdateControl<PrefixedPod> reconcile(PrefixedPod primary, Context<Prefixe
     Optional<Pod> currentPod = context.getSecondaryResource(Pod.class);
     
     if (currentPod.isPresent()) {
-        if (podNameHasPrefix(primary.getSpec().getPodNamePrexix() ,currentPod.get())) {
+        if (podNameHasPrefix(primary.getSpec().getPodNamePrefix() ,currentPod.get())) {
             // all ok we can return
             return UpdateControl.noUpdate();
         } else {
@@ -123,8 +122,8 @@ public UpdateControl<PrefixedPod> reconcile(PrefixedPod primary, Context<Prefixe
 }
 
 @Override
-public List<EventSource<?, WebPage>> prepareEventSources(EventSourceContext<WebPage> context) {
-    // Code omitted for adding InformerEventsSource for the Pod
+public List<EventSource<?, PrefixedPod>> prepareEventSources(EventSourceContext<PrefixedPod> context) {
+    // Code omitted for adding InformerEventSource for the Pod
 }
 ```
 
@@ -171,7 +170,7 @@ Although with optimistic locking we were able to overcome this issue — see [th
 
 {{% alert color=success %}}
 This changed in the Kubernetes guidelines. Now, if we can parse the `resourceVersion` as an integer,
-we can use numerical comparison. See the related [KEP](https://github.com/michaelasp/enhancements/tree/master/keps/sig-api-machinery/5504-comparable-resource-version).
+we can use numerical comparison. See the related [KEP](https://github.com/kubernetes/enhancements/tree/master/keps/sig-api-machinery/5504-comparable-resource-version).
 {{% /alert %}}
 
 From this point the idea of the algorithm is very simple:
