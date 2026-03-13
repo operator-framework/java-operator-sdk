@@ -5,11 +5,11 @@ author: >-
   [Attila Mészáros](https://github.com/csviri)
 ---
 
-**TL;DR:** 
-In version 5.3.0 we introduced strong consistency guarantees for updates. 
-You can now update resources (both your custom resoure and managed resource)
-and the framwork will guaratee that these updates will be instantly visible, 
-thus when accessing resources from caches; 
+**TL;DR:**
+In version 5.3.0 we introduced strong consistency guarantees for updates with a new API.
+You can now update resources (both your custom resource and managed resources)
+and the framework will guarantee that these updates will be instantly visible
+when accessing resources from caches,
 and naturally also for subsequent reconciliations.
 
 I briefly [talked about this](https://www.youtube.com/watch?v=HrwHh5Yh6AM&t=1387s) topic at KubeCon last year.
@@ -31,36 +31,36 @@ public UpdateControl<WebPage> reconcile(WebPage webPage, Context<WebPage> contex
 }
 ```
 
-In addition to that framework will automatically filter events for your own updates,
-so those are not triggering the reconciliation again.
+In addition to that, the framework will automatically filter events for your own updates,
+so they don't trigger the reconciliation again.
 
 {{% alert color=success %}}
 **This should significantly simplify controller development, and will make reconciliation
 much simpler to reason about!**
 {{% /alert %}}
 
-This post will deep dive in this topic, explore the details and rationale behind it.
+This post will deep dive into this topic, exploring the details and rationale behind it.
 
 See the related umbrella [issue](https://github.com/operator-framework/java-operator-sdk/issues/2944) on GitHub.
 
 ## Informers and eventual consistency
 
-First we have to understand a fundamental building block of Kubernetes operators: Informers.
-Since there is plentiful accessible information about this topic, just in a nutshell, informers:
+First, we have to understand a fundamental building block of Kubernetes operators: Informers.
+Since there is plentiful accessible information about this topic, here's a brief summary. Informers:
 
-1. Watches Kubernetes resources - K8S API sends events if a resource changes to the client 
-   though a websocket, An event usually contains the whole resource. (There are some exceptions, see Bookmarks).
-   See details about watch as K8S API concept in the [official docs](https://kubernetes.io/docs/reference/using-api/api-concepts/#semantics-for-watch). 
-2. Caches the actual latest state of the resource.
-3. If an informer receives and event in which the `metadata.resourceVersion` is different from the version 
-   in the cached resource it call the event handled, thus in our case triggers the reconciliation.
+1. Watch Kubernetes resources — the K8S API sends events if a resource changes to the client
+   through a websocket. An event usually contains the whole resource. (There are some exceptions, see Bookmarks.)
+   See details about watch as a K8S API concept in the [official docs](https://kubernetes.io/docs/reference/using-api/api-concepts/#semantics-for-watch).
+2. Cache the latest state of the resource.
+3. If an informer receives an event in which the `metadata.resourceVersion` is different from the version
+   in the cached resource, it calls the event handler, thus in our case triggering the reconciliation.
 
-A controller is usually composed of multiple informers, one is tracking the primary resources, and
-there are also informers registered for each (secondary) resource we manage. 
-Informers are great since we don't have to poll the Kubernetes API, it is push based; and they provide 
+A controller is usually composed of multiple informers: one tracking the primary resource, and
+additional informers registered for each (secondary) resource we manage.
+Informers are great since we don't have to poll the Kubernetes API — it is push-based. They also provide
 a cache, so reconciliations are very fast since they work on top of cached resources.
 
-Now let's take a look on the flow when we do an update to a resources:
+Now let's take a look at the flow when we update a resource:
 
 
 ```mermaid
@@ -83,25 +83,25 @@ graph LR
     classDef k8s fill:#326CE5,stroke:#1A4AAF,color:#fff
 ```
 
-It is easy to see that, the cache of the informer is eventually consistent with the update we sent from the reconciler.
-It usually just takes a very short time (few milliseconds) to sync the caches until everything is ok. Well, sometimes 
-it is not. Websocket can be disconnected (actually happens on purpose sometimes), the API Server is slow etc.
+It is easy to see that the cache of the informer is eventually consistent with the update we sent from the reconciler.
+It usually takes only a very short time (a few milliseconds) to sync the caches and everything is fine. Well, sometimes
+it isn't. The websocket can be disconnected (which actually happens on purpose sometimes), the API Server can be slow, etc.
 
 
 ## The problem(s) we try to solve
 
 Let's consider an operator with the following requirements:
- - we have a custom resource `PodPrefix` where the spec contains only one field: `podNamePrexix`,
- - goal of the operator is to create a pod with name that has the prefix and a random sequence suffix
- - it should never run two pods at once, if the `podNamePrefix` changes it should delete
-   the actual pod and after that create a new one
+ - we have a custom resource `PrefixedPod` where the spec contains only one field: `podNamePrefix`
+ - the goal of the operator is to create a Pod with a name that has the prefix and a random suffix
+ - it should never run two Pods at once; if the `podNamePrefix` changes, it should delete
+   the current Pod and then create a new one
  - the status of the custom resource should contain the `generatedPodName`
 
-How the code would look like in 5.2.x:
+How the code would look in 5.2.x:
 
 ```java 
 
-public UpdateControl<PodPrefix> reconcile(PodPrefix primary, Context<PodPrefix> context) {
+public UpdateControl<PrefixedPod> reconcile(PrefixedPod primary, Context<PrefixedPod> context) {
     
     Optional<Pod> currentPod = context.getSecondaryResource(Pod.class);
     
@@ -112,12 +112,12 @@ public UpdateControl<PodPrefix> reconcile(PodPrefix primary, Context<PodPrefix> 
         } else {
             // deletes the current pod with different name pattern
             context.getClient().resource(currentPod.get()).delete();
-            // it returns pod delete event will trigger the reconciliation
+           // return; pod delete event will trigger the reconciliation
            return UpdateControl.noUpdate();
         }
     } else {
         // creates new pod
-       var newPod = context.getClient().resource(createPodWithOwnerReference(primary)).serviceSideApply();
+       var newPod = context.getClient().resource(createPodWithOwnerReference(primary)).serverSideApply();
        return UpdateControl.patchStatus(setGeneratedPodNameToStatus(primary,newPod));
     }
 }
@@ -128,58 +128,58 @@ public List<EventSource<?, WebPage>> prepareEventSources(EventSourceContext<WebP
 }
 ```
 
-That is quite simple if there is a pod with different name prefix we delete it, otherwise we create the pod
-and update the status. The pod is created with an owner reference so any update on pod will trigger
+That is quite simple: if there is a Pod with a different name prefix we delete it, otherwise we create the Pod
+and update the status. The Pod is created with an owner reference, so any update on the Pod will trigger
 the reconciliation.
 
 Now consider the following sequence of events:
 
-1. We create a `PodPrefix` with `spec.podNamePrefix`: `first-pod-prefix`.
+1. We create a `PrefixedPod` with `spec.podNamePrefix`: `first-pod-prefix`.
 2. Concurrently:
-   - The reconciliation logic runs and creates a Pod with a name generated suffix: "first-pod-prefix-a3j3ka";
-   also sets this to the status and updates the custom resource status.  
-   - While the reconciliation is running we update the custom resource to have the value 
-    `second-pod-prefix`
+   - The reconciliation logic runs and creates a Pod with a generated name suffix: "first-pod-prefix-a3j3ka";
+   it also sets this in the status and updates the custom resource status.
+   - While the reconciliation is running, we update the custom resource to have the value
+    `second-pod-prefix`.
 3. The update of the custom resource triggers the reconciliation.
 
-When the spec change triggers the reconciliation in point 3. there is absolutely no guarantee that:
-- created pod will be already visible, this `currentPod` might be just empty
-- the `status.generatedPodName` will be visible 
+When the spec change triggers the reconciliation in point 3, there is absolutely **no guarantee** that:
+- the created Pod will already be visible — `currentPod` might simply be empty
+- the `status.generatedPodName` will be visible
 
-Since both are backed with an informer and the cache of those informers are eventually consistent with our updates.
-Therefore, the next reconiliation would create a new Pod, and we just missed the requirement to not have two
-Pods running at the same time. In addition to that controller will override the status. Altough in case of Kubernetes
-resource we anyway can find the existing Pods later with owner references, but in case if we would manage a 
-non-Kuberetes resource we would not notice that we created a resource before.
+Since both are backed by an informer and the caches of those informers are only eventually consistent with our updates,
+the next reconciliation would create a new Pod, violating the requirement to not have two
+Pods running at the same time. In addition, the controller would override the status. Although in the case of a Kubernetes
+resource we can still find the existing Pods later via owner references, if we were managing a
+non-Kubernetes (external) resource we would not notice that we had already created one.
 
 So can we have stronger guarantees regarding caches? It turns out we can now...
 
 ## Achieving read-cache-after-write consistency
 
-When we send an update (applies also on various create and patch) requests to Kubernetes API, in the response
-we receive the up-to-date resource, with the resource version that is the most recent at that point.
-The idea of the implementation is that we can cache the response in a cache on top the Informer's cache. 
-We call this cache `TemporaryResourceCache` (TRC) and among caching such responses has also role for event filtering
+When we send an update (this also applies to various create and patch requests) to the Kubernetes API, in the response
+we receive the up-to-date resource with the resource version that is the most recent at that point.
+The idea is that we can cache this response in a cache on top of the Informer's cache.
+We call this cache `TemporaryResourceCache` (TRC), and besides caching such responses, it also plays a role in event filtering
 as we will see later.
 
-Note that the challenge here was in the past, when to evict this response from the TRC. We eventually
-will receive an event in informer and the informer cache will be propagated with an up-to-date resource.
-But was not possible to tell reliably about an event that it contains a resource that it was a result 
-of an update prior or after our update. The reason is that Kubernetes documentation stated that the
-`metadata.resourceVersion` should be considered as a string, and should be matched only with equality.
-Although with optimistic locking we were able to overcome this issue, see [this blogpost](primary-cache-for-next-recon.md).
+Note that the challenge in the past was knowing when to evict this response from the TRC. Eventually,
+we will receive an event in the informer and the informer cache will be populated with an up-to-date resource.
+But it was not possible to reliably tell whether an event contained a resource that was the result
+of an update before or after our own update. The reason is that the Kubernetes documentation stated that
+`metadata.resourceVersion` should be treated as an opaque string and matched only with equality.
+Although with optimistic locking we were able to overcome this issue — see [this blog post](primary-cache-for-next-recon.md).
 
 {{% alert color=success %}}
-This changed in Kubernetes guidelines. Now if we are able to pars the `resourceVersion` as an integer
-we can use numerical comparison. See related [KEP](https://github.com/michaelasp/enhancements/tree/master/keps/sig-api-machinery/5504-comparable-resource-version).
+This changed in the Kubernetes guidelines. Now, if we can parse the `resourceVersion` as an integer,
+we can use numerical comparison. See the related [KEP](https://github.com/michaelasp/enhancements/tree/master/keps/sig-api-machinery/5504-comparable-resource-version).
 {{% /alert %}}
 
 From this point the idea of the algorithm is very simple:
 
-1. After update kubernetes resource cache the response in TRC if the Informer's cache.
-2. If the informer propagates an event, check if it's resource version is same or larger 
-   or equals than the one in the TRC, if yes, evict the resource from TRC.
-3. If the controller reads a resource from the cache first it checks if it in TRC then in Informers cache.
+1. After updating a Kubernetes resource, cache the response in the TRC.
+2. When the informer propagates an event, check if its resource version is greater than or equal to
+   the one in the TRC. If yes, evict the resource from the TRC.
+3. When the controller reads a resource from cache, it checks the TRC first, then falls back to the Informer's cache.
     
 
 ```mermaid
@@ -219,21 +219,21 @@ sequenceDiagram
 
 ## Filtering events for our own updates
 
-When update a resource, eventually the informer will propagate an event that will trigger the reconciliation.
-However, this is mostly not something that is desired. Since we know we already know that point the up-to-date
-resource, we would like to be notified only if that resource is changed after our change.
-Therefore, in addition to the caching of the resource we also filter out the events which contains a resource
-version that is older or has the same resource version as our cached resource.
+When we update a resource, eventually the informer will propagate an event that would trigger a reconciliation.
+However, this is mostly not desired. Since we already have the up-to-date resource at that point,
+we would like to be notified only if the resource is changed after our change.
+Therefore, in addition to caching the resource, we also filter out events that contain a resource
+version older than or equal to our cached resource version.
 
-Note that the implementation of this is relatively complex. Since while doing the update we want to record all the 
-events that we received meanwhile, and make a decision to propagate any further if the update request if complete.
+Note that the implementation of this is relatively complex, since while performing the update we want to record all the
+events received in the meantime and decide whether to propagate them further once the update request is complete.
 
-However, this way we significantly reduce the number of reconciliations, thus making the whole process much more efficient.  
+However, this way we significantly reduce the number of reconciliations, making the whole process much more efficient.  
 
 ### The case for instant reschedule
 
-We realize that some of our users might rely on the fact that the reconciliation is triggered by own updates.
-To support backwards compatibility or rather migration path, we provide now a way to instruct the framework 
+We realize that some of our users might rely on the fact that reconciliation is triggered by their own updates.
+To support backwards compatibility, or rather a migration path, we now provide a way to instruct the framework
 to queue an instant reconciliation:
 
 ```java
@@ -247,37 +247,37 @@ public UpdateControl<WebPage> reconcile(WebPage webPage, Context<WebPage> contex
 
 ## Additional considerations and alternatives
 
-An alternative approach would be that when we do an update we don't trigger the next reconciliation until the 
-target resource is not in the Informers cache. The pro side of this is that we don't have to maintain an 
-additional cache of the resource, just the target resource version; therefore there this appraoch might have
-a smaller memory footprint, but not necessarily. This the related [KEP](https://github.com/kubernetes/enhancements/tree/master/keps/sig-api-machinery/5647-stale-controller-handling#proposal)
-that takes this approach. 
+An alternative approach would be to not trigger the next reconciliation until the
+target resource appears in the Informer's cache. The upside is that we don't have to maintain an
+additional cache of the resource, just the target resource version; therefore this approach might have
+a smaller memory footprint, but not necessarily. See the related [KEP](https://github.com/kubernetes/enhancements/tree/master/keps/sig-api-machinery/5647-stale-controller-handling#proposal)
+that takes this approach.
 
-On the other hand, when we do a request the response object is always deserialized, regardless if we are going
-to cache it or not. This object in most cases will be cached for a very short time; and later garbage collected.
+On the other hand, when we make a request, the response object is always deserialized regardless of whether we are going
+to cache it or not. This object in most cases will be cached for a very short time and later garbage collected.
 Therefore, the memory overhead should be minimal.
 
-Having the TRC has an additional advantage, since we have the resource instantly in our cashes, we can in 
-the same reconciliation elegantly continue on reconciliation and reconcile resources that are depending
-on the latest state. More concretely helps also for our [Dependent resources / Workflow](../../docs/documentation/dependent-resource-and-workflows/workflows.md#reconcile-sample) 
-which rely on up-to-date caches. In this sense, this is much more optimal regarding throughput.
+Having the TRC has an additional advantage: since we have the resource instantly in our caches, we can
+elegantly continue the reconciliation in the same pass and reconcile resources that depend
+on the latest state. More concretely, this also helps with our [Dependent Resources / Workflows](../../docs/documentation/dependent-resource-and-workflows/workflows.md#reconcile-sample)
+which rely on up-to-date caches. In this sense, this approach is much more optimal regarding throughput.
 
 ## Conclusion
 
-I personally worked on a prototype of an Operator which was depending on an unreleased version of JOSDK already 
-implementing these features. The most obvious gain was how much simpler the reasoning is in some cases and how it reduces the corner
-cases that we would have to solve otherwise with [expectation pattern](https://ahmet.im/blog/controller-pitfalls/#expectations-pattern)
-or other facilities. 
+I personally worked on a prototype of an operator that depended on an unreleased version of JOSDK already
+implementing these features. The most obvious gain was how much simpler the reasoning became in some cases and how it reduced the corner
+cases that we would otherwise have to solve with the [expectation pattern](https://ahmet.im/blog/controller-pitfalls/#expectations-pattern)
+or other facilities.
 
 ## Special thanks
 
-I would like to thank all the contributors that directly or indirectly contributed like [metacosm](https://github.com/metacosm),
-[manusa](https://github.com/manusa) and [xstefank](https://github.com/xstefank).
+I would like to thank all the contributors who directly or indirectly contributed, including [metacosm](https://github.com/metacosm),
+[manusa](https://github.com/manusa), and [xstefank](https://github.com/xstefank).
 
-Last but certainly not least, specially thanks to [Steven Hawkins](https://github.com/shawkins) 
-with who maintains the Informer implementation in [fabric8 Kubernetes client](https://github.com/fabric8io/kubernetes-client),
-implemented the first version of the algorithms, then we together iterated multiple times on it.
+Last but certainly not least, special thanks to [Steven Hawkins](https://github.com/shawkins),
+who maintains the Informer implementation in the [fabric8 Kubernetes client](https://github.com/fabric8io/kubernetes-client)
+and implemented the first version of the algorithms. We then iterated on it together multiple times.
 Covering all the edge cases was quite an effort.
-Just to as a highlight I put here the [last one](https://github.com/operator-framework/java-operator-sdk/issues/3208).
+Just as a highlight, I'll mention the [last one](https://github.com/operator-framework/java-operator-sdk/issues/3208).
 
 Thank you!
