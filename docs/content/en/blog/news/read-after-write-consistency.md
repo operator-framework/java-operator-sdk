@@ -1,7 +1,6 @@
 ---
 title: Welcome read-cache-after-write consistency!
-# todo issue with this?
-#date: 2026-03-25
+date: 2026-03-13
 author: >-
   [Attila Mészáros](https://github.com/csviri)
 ---
@@ -41,6 +40,8 @@ much simpler to reason about!**
 {{% /alert %}}
 
 This post will deep dive in this topic, explore the details and rationale behind it.
+
+See the related umbrella [issue](https://github.com/operator-framework/java-operator-sdk/issues/2944) on GitHub.
 
 ## Informers and eventual consistency
 
@@ -229,24 +230,54 @@ events that we received meanwhile, and make a decision to propagate any further 
 
 However, this way we significantly reduce the number of reconciliations, thus making the whole process much more efficient.  
 
+### The case for instant reschedule
+
+We realize that some of our users might rely on the fact that the reconciliation is triggered by own updates.
+To support backwards compatibility or rather migration path, we provide now a way to instruct the framework 
+to queue an instant reconciliation:
+
+```java
+public UpdateControl<WebPage> reconcile(WebPage webPage, Context<WebPage> context) {
+ 
+    // omitted reconciliation logic
+    
+   return UpdateControl.<WebPage>noUpdate().reschedule();
+}
+```
+
 ## Additional considerations and alternatives
 
 An alternative approach would be that when we do an update we don't trigger the next reconciliation until the 
 target resource is not in the Informers cache. The pro side of this is that we don't have to maintain an 
 additional cache of the resource, just the target resource version; therefore there this appraoch might have
-a smaller memory footprint, but not necessarily. 
+a smaller memory footprint, but not necessarily. This the related [KEP](https://github.com/kubernetes/enhancements/tree/master/keps/sig-api-machinery/5647-stale-controller-handling#proposal)
+that takes this approach. 
 
 On the other hand, when we do a request the response object is always deserialized, regardless if we are going
 to cache it or not. This object in most cases will be cached for a very short time; and later garbage collected.
+Therefore, the memory overhead should be minimal.
 
-
-
+Having the TRC has an additional advantage, since we have the resource instantly in our cashes, we can in 
+the same reconciliation elegantly continue on reconciliation and reconcile resources that are depending
+on the latest state. More concretely helps also for our [Dependent resources / Workflow](../../docs/documentation/dependent-resource-and-workflows/workflows.md#reconcile-sample) 
+which rely on up-to-date caches. In this sense, this is much more optimal regarding throughput.
 
 ## Conclusion
 
-## Notes
+I personally worked on a prototype of an Operator which was depending on an unreleased version of JOSDK already 
+implementing these features. The most obvious gain was how much simpler the reasoning is in some cases and how it reduces the corner
+cases that we would have to solve otherwise with [expectation pattern](https://ahmet.im/blog/controller-pitfalls/#expectations-pattern)
+or other facilities. 
 
-TODO:
-- alternatives => deferring reconciliation, this is optimized for throughput
-- filter events
-- reschedule
+## Special thanks
+
+I would like to thank all the contributors that directly or indirectly contributed like [metacosm](https://github.com/metacosm),
+[manusa](https://github.com/manusa) and [xstefank](https://github.com/xstefank).
+
+Last but certainly not least, specially thanks to [Steven Hawkins](https://github.com/shawkins) 
+with who maintains the Informer implementation in [fabric8 Kubernetes client](https://github.com/fabric8io/kubernetes-client),
+implemented the first version of the algorithms, then we together iterated multiple times on it.
+Covering all the edge cases was quite an effort.
+Just to as a highlight I put here the [last one](https://github.com/operator-framework/java-operator-sdk/issues/3208).
+
+Thank you!

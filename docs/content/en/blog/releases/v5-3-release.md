@@ -54,7 +54,8 @@ If your reconciler relied on being re-triggered by its own writes, a new `resche
 > in-flight updates. Use `context.getSecondaryResources(..)` or `InformerEventSource.get(ResourceID)`
 > instead.
 
-See the [reconciler docs](/docs/documentation/reconciler#read-cache-after-write-consistency-and-event-filtering) for details.
+See the related [blog post](../news/read-after-write-consistency.md) 
+and [reconciler docs](/docs/documentation/reconciler#read-cache-after-write-consistency-and-event-filtering) for details.
 
 ### MicrometerMetricsV2
 
