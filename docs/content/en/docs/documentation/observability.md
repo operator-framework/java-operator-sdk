@@ -88,14 +88,14 @@ The simplest way to create an instance:
 
 ```java
 MeterRegistry registry; // initialize your registry implementation
-Metrics metrics = MicrometerMetricsV2.newMicrometerMetricsV2Builder(registry).build();
+Metrics metrics = MicrometerMetricsV2.newBuilder(registry).build();
 ```
 
 Optionally, include a `namespace` tag on per-reconciliation counters (disabled by default to avoid unexpected
 cardinality increases in existing deployments):
 
 ```java
-Metrics metrics = MicrometerMetricsV2.newMicrometerMetricsV2Builder(registry)
+Metrics metrics = MicrometerMetricsV2.newBuilder(registry)
         .withNamespaceAsTag()
         .build();
 ```
@@ -103,7 +103,7 @@ Metrics metrics = MicrometerMetricsV2.newMicrometerMetricsV2Builder(registry)
 You can also supply a custom timer configuration for `reconciliations.execution.duration`:
 
 ```java
-Metrics metrics = MicrometerMetricsV2.newMicrometerMetricsV2Builder(registry)
+Metrics metrics = MicrometerMetricsV2.newBuilder(registry)
         .withExecutionTimerConfig(builder -> builder.publishPercentiles(0.5, 0.95, 0.99))
         .build();
 ```
