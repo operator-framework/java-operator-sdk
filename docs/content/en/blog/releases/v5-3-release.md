@@ -150,6 +150,9 @@ operator.register(new MyReconciler(), configLoader.applyControllerConfigs(MyReco
 See the [configuration docs](/docs/documentation/configuration#loading-configuration-from-external-sources)
 for the full list of supported keys.
 
+> **Note**: This new configuration mechanism is useful when using the SDK by itself. Framework (Spring Boot, Quarkus, …)
+> integrations usually provide their own configuration mechanisms that should be used instead of this new mechanism.
+
 ### MDC Improvements
 
 **MDC in workflow execution**: MDC context is now propagated through workflow (dependent resource
