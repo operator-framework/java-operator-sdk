@@ -21,7 +21,7 @@
 
   <groupId>io.javaoperatorsdk</groupId>
   <artifactId>java-operator-sdk</artifactId>
-  <version>5.3.6-SNAPSHOT</version>
+  <version>999-SNAPSHOT</version>
   <packaging>pom</packaging>
   <name>Operator SDK for Java</name>
   <description>Java SDK for implementing Kubernetes operators</description>
@@ -70,7 +70,7 @@
     <sonar.organization>java-operator-sdk</sonar.organization>
     <sonar.host.url>https://sonarcloud.io</sonar.host.url>
     <fabric8-httpclient-impl.name>jdk</fabric8-httpclient-impl.name>
-    <junit.version>6.1.0</junit.version>
+    <junit.version>6.0.3</junit.version>
     <fabric8-client.version>7.7.0</fabric8-client.version>
     <slf4j.version>2.0.18</slf4j.version>
     <log4j.version>2.26.0</log4j.version>
@@ -85,7 +85,7 @@
     <caffeine.version>3.2.4</caffeine.version>
     <mustache.version>0.9.14</mustache.version>
     <commons.io.version>2.22.0</commons.io.version>
-    <java.diff.version>4.17</java.diff.version>
+    <java.diff.version>4.16</java.diff.version>
 
     <fmt-maven-plugin.version>2.11</fmt-maven-plugin.version>
     <maven-compiler-plugin.version>3.15.0</maven-compiler-plugin.version>
