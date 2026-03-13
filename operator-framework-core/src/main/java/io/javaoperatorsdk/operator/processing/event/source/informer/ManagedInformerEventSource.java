@@ -155,13 +155,7 @@ public abstract class ManagedInformerEventSource<
     }
     temporaryResourceCache =
         new TemporaryResourceCache<>(
-            comparableResourceVersions,
-            configuration.getInformerConfig().getGhostResourceCacheCheckInterval().toMillis(),
-            controllerConfiguration
-                .getConfigurationService()
-                .getExecutorServiceManager()
-                .scheduledExecutorService(),
-            this);
+            comparableResourceVersions,this);
     this.cache = new InformerManager<>(client, configuration, this);
     cache.setControllerConfiguration(controllerConfiguration);
     cache.addIndexers(indexers);

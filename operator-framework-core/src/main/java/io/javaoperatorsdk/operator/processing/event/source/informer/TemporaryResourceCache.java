@@ -71,18 +71,9 @@ public class TemporaryResourceCache<T extends HasMetadata> {
 
   public TemporaryResourceCache(
       boolean comparableResourceVersions,
-      long ghostResourceCheckInterval,
-      ScheduledExecutorService ghostCheckExecutor,
       ManagedInformerEventSource<T, ?, ?> managedInformerEventSource) {
     this.comparableResourceVersions = comparableResourceVersions;
     this.managedInformerEventSource = managedInformerEventSource;
-    if (comparableResourceVersions) {
-      ghostCheckExecutor.scheduleWithFixedDelay(
-          this::checkGhostResources,
-          ghostResourceCheckInterval,
-          ghostResourceCheckInterval,
-          TimeUnit.MILLISECONDS);
-    }
   }
 
   public synchronized void startEventFilteringModify(ResourceID resourceID) {
@@ -240,7 +231,7 @@ public class TemporaryResourceCache<T extends HasMetadata> {
    * In this case neither the ADD nor DELETE event will be propagated to the informer, but we
    * explicitly add resources to this cache. Those are cleaned up by this check.
    */
-  private void checkGhostResources() {
+  public void checkGhostResources() {
     log.debug("Checking for ghost resources.");
     var iterator = cache.entrySet().iterator();
     while (iterator.hasNext()) {
