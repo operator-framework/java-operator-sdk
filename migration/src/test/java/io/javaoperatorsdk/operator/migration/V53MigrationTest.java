@@ -1,0 +1,171 @@
+/*
+ * Copyright Java Operator SDK Authors
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *         http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package io.javaoperatorsdk.operator.migration;
+
+import static org.openrewrite.java.Assertions.java;
+import static org.openrewrite.maven.Assertions.pomXml;
+
+import org.junit.jupiter.api.Test;
+import org.openrewrite.test.RecipeSpec;
+import org.openrewrite.test.RewriteTest;
+
+class V53MigrationTest implements RewriteTest {
+
+  @Override
+  public void defaults(RecipeSpec spec) {
+    spec.recipeFromResources("io.javaoperatorsdk.operator.migration.V5_3Migration");
+  }
+
+  @Test
+  void renamesJUnitModuleInMaven() {
+    rewriteRun(
+        pomXml(
+            """
+            <project>
+              <modelVersion>4.0.0</modelVersion>
+              <groupId>com.example</groupId>
+              <artifactId>test</artifactId>
+              <version>1.0</version>
+              <dependencies>
+                <dependency>
+                  <groupId>io.javaoperatorsdk</groupId>
+                  <artifactId>operator-framework-junit-5</artifactId>
+                  <version>5.2.0</version>
+                  <scope>test</scope>
+                </dependency>
+              </dependencies>
+            </project>
+            """,
+            """
+            <project>
+              <modelVersion>4.0.0</modelVersion>
+              <groupId>com.example</groupId>
+              <artifactId>test</artifactId>
+              <version>1.0</version>
+              <dependencies>
+                <dependency>
+                  <groupId>io.javaoperatorsdk</groupId>
+                  <artifactId>operator-framework-junit</artifactId>
+                  <version>5.2.0</version>
+                  <scope>test</scope>
+                </dependency>
+              </dependencies>
+            </project>
+            """));
+  }
+
+  @Test
+  void renamesMetricsMethods() {
+    rewriteRun(
+        // language=java
+        java(
+            """
+            package io.javaoperatorsdk.operator.api.monitoring;
+
+            import java.util.Map;
+            import io.fabric8.kubernetes.api.model.HasMetadata;
+            import io.javaoperatorsdk.operator.api.reconciler.RetryInfo;
+            import io.javaoperatorsdk.operator.processing.event.Event;
+            import io.javaoperatorsdk.operator.processing.event.ResourceID;
+
+            public interface Metrics {
+              default void receivedEvent(Event event, Map<String, Object> metadata) {}
+              default void reconcileCustomResource(HasMetadata resource, RetryInfo retryInfo, Map<String, Object> metadata) {}
+              default void reconciliationExecutionStarted(HasMetadata resource, Map<String, Object> metadata) {}
+              default void reconciliationExecutionFinished(HasMetadata resource, Map<String, Object> metadata) {}
+              default void failedReconciliation(HasMetadata resource, RetryInfo retryInfo, Exception exception, Map<String, Object> metadata) {}
+              default void finishedReconciliation(HasMetadata resource, Map<String, Object> metadata) {}
+              default void cleanupDoneFor(ResourceID resourceID, Map<String, Object> metadata) {}
+            }
+            """,
+            """
+            package io.javaoperatorsdk.operator.api.monitoring;
+
+            import java.util.Map;
+            import io.fabric8.kubernetes.api.model.HasMetadata;
+            import io.javaoperatorsdk.operator.api.reconciler.RetryInfo;
+            import io.javaoperatorsdk.operator.processing.event.Event;
+            import io.javaoperatorsdk.operator.processing.event.ResourceID;
+
+            public interface Metrics {
+              default void eventReceived(Event event, Map<String, Object> metadata) {}
+              default void reconciliationSubmitted(HasMetadata resource, RetryInfo retryInfo, Map<String, Object> metadata) {}
+              default void reconciliationStarted(HasMetadata resource, Map<String, Object> metadata) {}
+              default void reconciliationSucceeded(HasMetadata resource, Map<String, Object> metadata) {}
+              default void reconciliationFailed(HasMetadata resource, RetryInfo retryInfo, Exception exception, Map<String, Object> metadata) {}
+              default void reconciliationFinished(HasMetadata resource, Map<String, Object> metadata) {}
+              default void cleanupDone(ResourceID resourceID, Map<String, Object> metadata) {}
+            }
+            """));
+  }
+
+  @Test
+  void renamesMetricsMethodCallsInImplementation() {
+    rewriteRun(
+        // Stub for the Metrics interface
+        // language=java
+        java(
+            """
+            package io.javaoperatorsdk.operator.api.monitoring;
+
+            import java.util.Map;
+
+            public interface Metrics {
+              default void receivedEvent(Object event, Map<String, Object> metadata) {}
+              default void reconcileCustomResource(Object resource, Object retryInfo, Map<String, Object> metadata) {}
+            }
+            """),
+        // Implementation that overrides the old method names
+        // language=java
+        java(
+            """
+            package com.example;
+
+            import java.util.Map;
+            import io.javaoperatorsdk.operator.api.monitoring.Metrics;
+
+            public class MyMetrics implements Metrics {
+              @Override
+              public void receivedEvent(Object event, Map<String, Object> metadata) {
+                System.out.println("event received");
+              }
+
+              @Override
+              public void reconcileCustomResource(Object resource, Object retryInfo, Map<String, Object> metadata) {
+                System.out.println("reconcile");
+              }
+            }
+            """,
+            """
+            package com.example;
+
+            import java.util.Map;
+            import io.javaoperatorsdk.operator.api.monitoring.Metrics;
+
+            public class MyMetrics implements Metrics {
+              @Override
+              public void eventReceived(Object event, Map<String, Object> metadata) {
+                System.out.println("event received");
+              }
+
+              @Override
+              public void reconciliationSubmitted(Object resource, Object retryInfo, Map<String, Object> metadata) {
+                System.out.println("reconcile");
+              }
+            }
+            """));
+  }
+}

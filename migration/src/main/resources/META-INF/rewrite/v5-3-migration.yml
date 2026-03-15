@@ -1,0 +1,75 @@
+#
+# Copyright Java Operator SDK Authors
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#         http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+
+---
+type: specs.openrewrite.org/v1beta/recipe
+name: io.javaoperatorsdk.operator.migration.V5_3Migration
+displayName: Migrate to Java Operator SDK v5.3
+description: >-
+  Migrates Java Operator SDK from v5.2 to v5.3, including the JUnit module
+  rename and Metrics interface method renames.
+recipeList:
+  - io.javaoperatorsdk.operator.migration.RenameJUnitModule
+  - io.javaoperatorsdk.operator.migration.MetricsMethodRenames
+  - io.javaoperatorsdk.operator.migration.RemoveMonitorSizeOf
+---
+type: specs.openrewrite.org/v1beta/recipe
+name: io.javaoperatorsdk.operator.migration.RenameJUnitModule
+displayName: Rename JUnit module artifact
+description: >-
+  Renames the operator-framework-junit-5 artifact to operator-framework-junit.
+recipeList:
+  - org.openrewrite.maven.ChangeArtifactId:
+      groupId: io.javaoperatorsdk
+      oldArtifactId: operator-framework-junit-5
+      newArtifactId: operator-framework-junit
+---
+type: specs.openrewrite.org/v1beta/recipe
+name: io.javaoperatorsdk.operator.migration.MetricsMethodRenames
+displayName: Rename Metrics interface methods
+description: >-
+  Renames methods on the Metrics interface to match the new v5.3 API.
+recipeList:
+  - org.openrewrite.java.ChangeMethodName:
+      methodPattern: "io.javaoperatorsdk.operator.api.monitoring.Metrics reconcileCustomResource(..)"
+      newMethodName: reconciliationSubmitted
+  - org.openrewrite.java.ChangeMethodName:
+      methodPattern: "io.javaoperatorsdk.operator.api.monitoring.Metrics reconciliationExecutionStarted(..)"
+      newMethodName: reconciliationStarted
+  - org.openrewrite.java.ChangeMethodName:
+      methodPattern: "io.javaoperatorsdk.operator.api.monitoring.Metrics reconciliationExecutionFinished(..)"
+      newMethodName: reconciliationSucceeded
+  - org.openrewrite.java.ChangeMethodName:
+      methodPattern: "io.javaoperatorsdk.operator.api.monitoring.Metrics failedReconciliation(..)"
+      newMethodName: reconciliationFailed
+  - org.openrewrite.java.ChangeMethodName:
+      methodPattern: "io.javaoperatorsdk.operator.api.monitoring.Metrics finishedReconciliation(..)"
+      newMethodName: reconciliationFinished
+  - org.openrewrite.java.ChangeMethodName:
+      methodPattern: "io.javaoperatorsdk.operator.api.monitoring.Metrics cleanupDoneFor(..)"
+      newMethodName: cleanupDone
+  - org.openrewrite.java.ChangeMethodName:
+      methodPattern: "io.javaoperatorsdk.operator.api.monitoring.Metrics receivedEvent(..)"
+      newMethodName: eventReceived
+---
+type: specs.openrewrite.org/v1beta/recipe
+name: io.javaoperatorsdk.operator.migration.RemoveMonitorSizeOf
+displayName: Remove monitorSizeOf method invocations
+description: >-
+  Removes calls to the monitorSizeOf method which was removed in v5.3.
+recipeList:
+  - org.openrewrite.java.RemoveMethodInvocations:
+      methodPattern: "io.javaoperatorsdk.operator.api.monitoring.Metrics monitorSizeOf(..)"
