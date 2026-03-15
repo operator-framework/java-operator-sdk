@@ -15,12 +15,12 @@
  */
 package io.javaoperatorsdk.operator.migration;
 
-import static org.openrewrite.java.Assertions.java;
-import static org.openrewrite.maven.Assertions.pomXml;
-
 import org.junit.jupiter.api.Test;
 import org.openrewrite.test.RecipeSpec;
 import org.openrewrite.test.RewriteTest;
+
+import static org.openrewrite.java.Assertions.java;
+import static org.openrewrite.maven.Assertions.pomXml;
 
 class V53MigrationTest implements RewriteTest {
 
