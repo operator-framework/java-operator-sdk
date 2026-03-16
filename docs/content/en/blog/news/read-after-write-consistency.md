@@ -283,7 +283,7 @@ Thank you!
 
 ## Related
 
-- Same initiative in golang [controller-runtime]((https://github.com/kubernetes-sigs/controller-runtime/issues/3320))
+- Same initiative in golang [controller-runtime](https://github.com/kubernetes-sigs/controller-runtime/issues/3320)
 - [Comparable Resource Versions](https://github.com/kubernetes/enhancements/tree/master/keps/sig-api-machinery/5504-comparable-resource-version) in Kubernetes
 - [Stale Controller Handling](https://github.com/kubernetes/enhancements/tree/master/keps/sig-api-machinery/5647-stale-controller-handling) KEP
 
