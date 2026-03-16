@@ -280,3 +280,10 @@ Covering all the edge cases was quite an effort.
 Just as a highlight, I'll mention the [last one](https://github.com/operator-framework/java-operator-sdk/issues/3208).
 
 Thank you!
+
+## Related
+
+- Same initiative in golang [controller-runtime](https://github.com/kubernetes-sigs/controller-runtime/issues/3320)
+- [Comparable Resource Versions](https://github.com/kubernetes/enhancements/tree/master/keps/sig-api-machinery/5504-comparable-resource-version) in Kubernetes
+- [Stale Controller Handling](https://github.com/kubernetes/enhancements/tree/master/keps/sig-api-machinery/5647-stale-controller-handling) KEP
+
