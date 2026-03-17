@@ -191,7 +191,7 @@ public abstract class ManagedInformerEventSource<
 
   @Override
   public Optional<R> get(ResourceID resourceID) {
-    // order of getting those resource from cache matters
+    // The order of reading from these caches matters
     Optional<R> resource = temporaryResourceCache.getResourceFromCache(resourceID);
     var res = cache.get(resourceID);
     if (comparableResourceVersions
