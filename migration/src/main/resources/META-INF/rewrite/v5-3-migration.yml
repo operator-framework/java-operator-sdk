@@ -22,9 +22,22 @@ description: >-
   Migrates Java Operator SDK from v5.2 to v5.3, including the JUnit module
   rename and Metrics interface method renames.
 recipeList:
+  - io.javaoperatorsdk.operator.migration.UpgradeJOSDKVersion
   - io.javaoperatorsdk.operator.migration.RenameJUnitModule
   - io.javaoperatorsdk.operator.migration.MetricsMethodRenames
   - io.javaoperatorsdk.operator.migration.RemoveMonitorSizeOf
+---
+type: specs.openrewrite.org/v1beta/recipe
+name: io.javaoperatorsdk.operator.migration.UpgradeJOSDKVersion
+displayName: Upgrade Java Operator SDK version to 5.3.0
+description: >-
+  Upgrades all io.javaoperatorsdk dependencies from 5.2.x to 5.3.0.
+recipeList:
+  - org.openrewrite.maven.UpgradeDependencyVersion:
+      groupId: io.javaoperatorsdk
+      artifactId: "*"
+      newVersion: 5.3.0
+      versionPattern: "5.2.*"
 ---
 type: specs.openrewrite.org/v1beta/recipe
 name: io.javaoperatorsdk.operator.migration.RenameJUnitModule
@@ -32,10 +45,11 @@ displayName: Rename JUnit module artifact
 description: >-
   Renames the operator-framework-junit-5 artifact to operator-framework-junit.
 recipeList:
-  - org.openrewrite.maven.ChangeArtifactId:
-      groupId: io.javaoperatorsdk
+  - org.openrewrite.maven.ChangeDependencyGroupIdAndArtifactId:
+      oldGroupId: io.javaoperatorsdk
       oldArtifactId: operator-framework-junit-5
       newArtifactId: operator-framework-junit
+      newVersion: 5.3.0
 ---
 type: specs.openrewrite.org/v1beta/recipe
 name: io.javaoperatorsdk.operator.migration.MetricsMethodRenames
@@ -46,24 +60,36 @@ recipeList:
   - org.openrewrite.java.ChangeMethodName:
       methodPattern: "io.javaoperatorsdk.operator.api.monitoring.Metrics reconcileCustomResource(..)"
       newMethodName: reconciliationSubmitted
+      matchOverrides: true
   - org.openrewrite.java.ChangeMethodName:
       methodPattern: "io.javaoperatorsdk.operator.api.monitoring.Metrics reconciliationExecutionStarted(..)"
       newMethodName: reconciliationStarted
+      matchOverrides: true
   - org.openrewrite.java.ChangeMethodName:
       methodPattern: "io.javaoperatorsdk.operator.api.monitoring.Metrics reconciliationExecutionFinished(..)"
       newMethodName: reconciliationSucceeded
+      matchOverrides: true
   - org.openrewrite.java.ChangeMethodName:
       methodPattern: "io.javaoperatorsdk.operator.api.monitoring.Metrics failedReconciliation(..)"
       newMethodName: reconciliationFailed
+      matchOverrides: true
   - org.openrewrite.java.ChangeMethodName:
       methodPattern: "io.javaoperatorsdk.operator.api.monitoring.Metrics finishedReconciliation(..)"
       newMethodName: reconciliationFinished
+      matchOverrides: true
+  - org.openrewrite.java.AddMethodParameter:
+      methodPattern: "io.javaoperatorsdk.operator.api.monitoring.Metrics reconciliationFinished(..)"
+      parameterType: io.javaoperatorsdk.operator.api.reconciler.RetryInfo
+      parameterName: retryInfo
+      parameterIndex: 1
   - org.openrewrite.java.ChangeMethodName:
       methodPattern: "io.javaoperatorsdk.operator.api.monitoring.Metrics cleanupDoneFor(..)"
       newMethodName: cleanupDone
+      matchOverrides: true
   - org.openrewrite.java.ChangeMethodName:
       methodPattern: "io.javaoperatorsdk.operator.api.monitoring.Metrics receivedEvent(..)"
       newMethodName: eventReceived
+      matchOverrides: true
 ---
 type: specs.openrewrite.org/v1beta/recipe
 name: io.javaoperatorsdk.operator.migration.RemoveMonitorSizeOf

@@ -59,7 +59,7 @@ class V53MigrationTest implements RewriteTest {
                 <dependency>
                   <groupId>io.javaoperatorsdk</groupId>
                   <artifactId>operator-framework-junit</artifactId>
-                  <version>5.2.0</version>
+                  <version>5.3.0</version>
                   <scope>test</scope>
                 </dependency>
               </dependencies>
@@ -76,38 +76,33 @@ class V53MigrationTest implements RewriteTest {
             package io.javaoperatorsdk.operator.api.monitoring;
 
             import java.util.Map;
-            import io.fabric8.kubernetes.api.model.HasMetadata;
-            import io.javaoperatorsdk.operator.api.reconciler.RetryInfo;
-            import io.javaoperatorsdk.operator.processing.event.Event;
-            import io.javaoperatorsdk.operator.processing.event.ResourceID;
 
             public interface Metrics {
-              default void receivedEvent(Event event, Map<String, Object> metadata) {}
-              default void reconcileCustomResource(HasMetadata resource, RetryInfo retryInfo, Map<String, Object> metadata) {}
-              default void reconciliationExecutionStarted(HasMetadata resource, Map<String, Object> metadata) {}
-              default void reconciliationExecutionFinished(HasMetadata resource, Map<String, Object> metadata) {}
-              default void failedReconciliation(HasMetadata resource, RetryInfo retryInfo, Exception exception, Map<String, Object> metadata) {}
-              default void finishedReconciliation(HasMetadata resource, Map<String, Object> metadata) {}
-              default void cleanupDoneFor(ResourceID resourceID, Map<String, Object> metadata) {}
+              default void receivedEvent(Object event, Map<String, Object> metadata) {}
+              default void reconcileCustomResource(Object resource, Object retryInfo, Map<String, Object> metadata) {}
+              default void reconciliationExecutionStarted(Object resource, Map<String, Object> metadata) {}
+              default void reconciliationExecutionFinished(Object resource, Map<String, Object> metadata) {}
+              default void failedReconciliation(Object resource, Object retryInfo, Exception exception, Map<String, Object> metadata) {}
+              default void finishedReconciliation(Object resource, Map<String, Object> metadata) {}
+              default void cleanupDoneFor(Object resourceID, Map<String, Object> metadata) {}
             }
             """,
             """
             package io.javaoperatorsdk.operator.api.monitoring;
 
-            import java.util.Map;
-            import io.fabric8.kubernetes.api.model.HasMetadata;
             import io.javaoperatorsdk.operator.api.reconciler.RetryInfo;
-            import io.javaoperatorsdk.operator.processing.event.Event;
-            import io.javaoperatorsdk.operator.processing.event.ResourceID;
+
+            import java.util.Map;
 
             public interface Metrics {
-              default void eventReceived(Event event, Map<String, Object> metadata) {}
-              default void reconciliationSubmitted(HasMetadata resource, RetryInfo retryInfo, Map<String, Object> metadata) {}
-              default void reconciliationStarted(HasMetadata resource, Map<String, Object> metadata) {}
-              default void reconciliationSucceeded(HasMetadata resource, Map<String, Object> metadata) {}
-              default void reconciliationFailed(HasMetadata resource, RetryInfo retryInfo, Exception exception, Map<String, Object> metadata) {}
-              default void reconciliationFinished(HasMetadata resource, Map<String, Object> metadata) {}
-              default void cleanupDone(ResourceID resourceID, Map<String, Object> metadata) {}
+              default void eventReceived(Object event, Map<String, Object> metadata) {}
+              default void reconciliationSubmitted(Object resource, Object retryInfo, Map<String, Object> metadata) {}
+              default void reconciliationStarted(Object resource, Map<String, Object> metadata) {}
+              default void reconciliationSucceeded(Object resource, Map<String, Object> metadata) {}
+              default void reconciliationFailed(Object resource, Object retryInfo, Exception exception, Map<String, Object> metadata) {}
+
+                default void reconciliationFinished(Object resource, RetryInfo retryInfo, Map<String, Object> metadata) {}
+              default void cleanupDone(Object resourceID, Map<String, Object> metadata) {}
             }
             """));
   }
@@ -126,6 +121,16 @@ class V53MigrationTest implements RewriteTest {
             public interface Metrics {
               default void receivedEvent(Object event, Map<String, Object> metadata) {}
               default void reconcileCustomResource(Object resource, Object retryInfo, Map<String, Object> metadata) {}
+            }
+            """,
+            """
+            package io.javaoperatorsdk.operator.api.monitoring;
+
+            import java.util.Map;
+
+            public interface Metrics {
+              default void eventReceived(Object event, Map<String, Object> metadata) {}
+              default void reconciliationSubmitted(Object resource, Object retryInfo, Map<String, Object> metadata) {}
             }
             """),
         // Implementation that overrides the old method names
