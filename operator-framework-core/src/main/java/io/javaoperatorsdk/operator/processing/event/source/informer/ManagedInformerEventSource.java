@@ -194,15 +194,28 @@ public abstract class ManagedInformerEventSource<
     // The order of reading from these caches matters
     Optional<R> resource = temporaryResourceCache.getResourceFromCache(resourceID);
     var res = cache.get(resourceID);
-    if (comparableResourceVersions
-        && resource.isPresent()
-        && (res.isEmpty()
-            || ReconcilerUtilsInternal.compareResourceVersions(
-                    resource.get().getMetadata().getResourceVersion(),
-                    res.get().getMetadata().getResourceVersion())
-                > 0)) {
-      log.debug("Latest resource found in temporary cache for Resource ID: {}", resourceID);
-      return resource;
+    if (comparableResourceVersions && resource.isPresent()) {
+      var comp =
+          ReconcilerUtilsInternal.compareResourceVersions(
+              resource.get().getMetadata().getResourceVersion(),
+              manager().lastSyncResourceVersion(resource.get().getMetadata().getNamespace()));
+      if (comp > 0) {
+        log.debug("Latest resource found in temporary cache for Resource ID: {}", resourceID);
+        return resource;
+      } else {
+        log.debug(
+            "Latest resource not found in temporary but was obsolete: {}. Re-reading the informer"
+                + " cache: {}",
+            resourceID,
+            res.isEmpty());
+        if (res.isEmpty()) {
+          // re-reading resource from informer cache since an add even might have received
+          // after the first read.
+          return cache.get(resourceID);
+        } else {
+          return res;
+        }
+      }
     }
     log.debug(
         "Resource found in temp cache: {}, or older, in temporary cache. Found in informer cache"
