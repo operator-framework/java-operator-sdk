@@ -56,6 +56,10 @@ public class RemoveMethodDeclaration extends Recipe {
       @Override
       public J.MethodDeclaration visitMethodDeclaration(
           J.MethodDeclaration method, ExecutionContext ctx) {
+        if (method.getMethodType() != null && matcher.matches(method.getMethodType())) {
+          //noinspection DataFlowIssue
+          return null;
+        }
         var classDecl = getCursor().firstEnclosing(J.ClassDeclaration.class);
         if (classDecl != null && matcher.matches(method, classDecl)) {
           //noinspection DataFlowIssue

@@ -176,9 +176,9 @@ class V53MigrationTest implements RewriteTest {
   }
 
   @Test
-  void removesMonitorSizeOfFromImplementation() {
+  void removesMonitorSizeOfFromImplementationWithGenerics() {
     rewriteRun(
-        // Stub for the Metrics interface
+        // Stub for the Metrics interface with generic monitorSizeOf
         // language=java
         java(
             """
@@ -188,7 +188,7 @@ class V53MigrationTest implements RewriteTest {
 
             public interface Metrics {
               default void eventReceived(Object event, Map<String, Object> metadata) {}
-              default Map<String, Object> monitorSizeOf(Map<String, Object> map) { return map; }
+              default <T extends Map<?, ?>> T monitorSizeOf(T map, String name) { return map; }
             }
             """,
             """
@@ -200,7 +200,7 @@ class V53MigrationTest implements RewriteTest {
               default void eventReceived(Object event, Map<String, Object> metadata) {}
             }
             """),
-        // Implementation that overrides monitorSizeOf
+        // Implementation that overrides monitorSizeOf with generic signature
         // language=java
         java(
             """
@@ -216,7 +216,7 @@ class V53MigrationTest implements RewriteTest {
               }
 
               @Override
-              public Map<String, Object> monitorSizeOf(Map<String, Object> map) {
+              public <T extends Map<?, ?>> T monitorSizeOf(T map, String name) {
                 System.out.println("monitoring size");
                 return map;
               }
@@ -233,6 +233,30 @@ class V53MigrationTest implements RewriteTest {
               public void eventReceived(Object event, Map<String, Object> metadata) {
                 System.out.println("event");
               }
+            }
+            """),
+        // Implementation without @Override annotation
+        // language=java
+        java(
+            """
+            package com.example;
+
+            import java.util.Map;
+            import io.javaoperatorsdk.operator.api.monitoring.Metrics;
+
+            public class AnotherMetrics implements Metrics {
+              public <T extends Map<?, ?>> T monitorSizeOf(T map, String name) {
+                return map;
+              }
+            }
+            """,
+            """
+            package com.example;
+
+            import java.util.Map;
+            import io.javaoperatorsdk.operator.api.monitoring.Metrics;
+
+            public class AnotherMetrics implements Metrics {
             }
             """));
   }
