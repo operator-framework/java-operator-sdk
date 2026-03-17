@@ -194,11 +194,6 @@ public abstract class ManagedInformerEventSource<
     // order of getting those resource from cache matters
     Optional<R> resource = temporaryResourceCache.getResourceFromCache(resourceID);
     var res = cache.get(resourceID);
-    if (log.isDebugEnabled()) {
-      log.debug(
-          "Latest sync version: {}",
-          manager().lastSyncResourceVersion(resourceID.getNamespace().orElse(null)));
-    }
     if (comparableResourceVersions
         && resource.isPresent()
         // it can happen here that we receive an event after we read the resource from the informer
@@ -207,7 +202,7 @@ public abstract class ManagedInformerEventSource<
         && (res.isEmpty()
             || ReconcilerUtilsInternal.compareResourceVersions(
                     resource.get().getMetadata().getResourceVersion(),
-                    manager().lastSyncResourceVersion(resource.get().getMetadata().getNamespace()))
+                    res.get().getMetadata().getResourceVersion())
                 > 0)) {
       log.debug("Latest resource found in temporary cache for Resource ID: {}", resourceID);
       return resource;
