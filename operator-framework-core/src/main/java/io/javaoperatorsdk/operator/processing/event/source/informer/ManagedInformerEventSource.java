@@ -193,6 +193,11 @@ public abstract class ManagedInformerEventSource<
   public Optional<R> get(ResourceID resourceID) {
     Optional<R> resource = temporaryResourceCache.getResourceFromCache(resourceID);
     var res = cache.get(resourceID);
+    if (log.isDebugEnabled()) {
+      log.debug(
+          "Latest sync version: {}",
+          manager().lastSyncResourceVersion(resourceID.getNamespace().orElse(null)));
+    }
     if (comparableResourceVersions
         && resource.isPresent()
         && ReconcilerUtilsInternal.compareResourceVersions(
@@ -203,8 +208,9 @@ public abstract class ManagedInformerEventSource<
       return resource;
     }
     log.debug(
-        "Resource not found, or older, in temporary cache. Found in informer cache {}, for"
-            + " Resource ID: {}",
+        "Resource found in temp cache: {}, or older, in temporary cache. Found in informer cache"
+            + " {}, for Resource ID: {}",
+        resource.isPresent(),
         res.isPresent(),
         resourceID);
     return res;
