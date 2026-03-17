@@ -176,6 +176,68 @@ class V53MigrationTest implements RewriteTest {
   }
 
   @Test
+  void removesMonitorSizeOfFromImplementation() {
+    rewriteRun(
+        // Stub for the Metrics interface
+        // language=java
+        java(
+            """
+            package io.javaoperatorsdk.operator.api.monitoring;
+
+            import java.util.Map;
+
+            public interface Metrics {
+              default void eventReceived(Object event, Map<String, Object> metadata) {}
+              default Map<String, Object> monitorSizeOf(Map<String, Object> map) { return map; }
+            }
+            """,
+            """
+            package io.javaoperatorsdk.operator.api.monitoring;
+
+            import java.util.Map;
+
+            public interface Metrics {
+              default void eventReceived(Object event, Map<String, Object> metadata) {}
+            }
+            """),
+        // Implementation that overrides monitorSizeOf
+        // language=java
+        java(
+            """
+            package com.example;
+
+            import java.util.Map;
+            import io.javaoperatorsdk.operator.api.monitoring.Metrics;
+
+            public class MyMetrics implements Metrics {
+              @Override
+              public void eventReceived(Object event, Map<String, Object> metadata) {
+                System.out.println("event");
+              }
+
+              @Override
+              public Map<String, Object> monitorSizeOf(Map<String, Object> map) {
+                System.out.println("monitoring size");
+                return map;
+              }
+            }
+            """,
+            """
+            package com.example;
+
+            import java.util.Map;
+            import io.javaoperatorsdk.operator.api.monitoring.Metrics;
+
+            public class MyMetrics implements Metrics {
+              @Override
+              public void eventReceived(Object event, Map<String, Object> metadata) {
+                System.out.println("event");
+              }
+            }
+            """));
+  }
+
+  @Test
   void addsRetryInfoParameterToReconciliationFinished() {
     rewriteRun(
         // language=java
