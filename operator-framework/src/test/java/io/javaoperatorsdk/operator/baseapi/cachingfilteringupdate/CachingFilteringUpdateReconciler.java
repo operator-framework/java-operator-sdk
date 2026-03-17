@@ -58,7 +58,8 @@ public class CachingFilteringUpdateReconciler
         .getResourceVersion()
         .equals(updated.getMetadata().getResourceVersion())) {
       issueFound.set(true);
-      throw new IllegalStateException("Error for resource: " + ResourceID.fromResource(resource));
+      throw new IllegalStateException(
+          "Update error for resource: " + ResourceID.fromResource(resource));
     }
 
     ensureStatusExists(resource);
