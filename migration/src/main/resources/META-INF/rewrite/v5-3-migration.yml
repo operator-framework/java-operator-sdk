@@ -70,6 +70,10 @@ recipeList:
       methodPattern: "io.javaoperatorsdk.operator.api.monitoring.Metrics reconciliationExecutionFinished(..)"
       newMethodName: reconciliationSucceeded
       matchOverrides: true
+  - org.openrewrite.java.AddNullMethodArgument:
+      methodPattern: "io.javaoperatorsdk.operator.api.monitoring.Metrics failedReconciliation(..)"
+      argumentIndex: 1
+      parameterType: io.javaoperatorsdk.operator.api.reconciler.RetryInfo
   - org.openrewrite.java.ChangeMethodName:
       methodPattern: "io.javaoperatorsdk.operator.api.monitoring.Metrics failedReconciliation(..)"
       newMethodName: reconciliationFailed
@@ -79,6 +83,10 @@ recipeList:
       parameterType: io.javaoperatorsdk.operator.api.reconciler.RetryInfo
       parameterName: retryInfo
       parameterIndex: 1
+  - org.openrewrite.java.AddNullMethodArgument:
+      methodPattern: "io.javaoperatorsdk.operator.api.monitoring.Metrics finishedReconciliation(..)"
+      argumentIndex: 1
+      parameterType: io.javaoperatorsdk.operator.api.reconciler.RetryInfo
   - org.openrewrite.java.ChangeMethodName:
       methodPattern: "io.javaoperatorsdk.operator.api.monitoring.Metrics finishedReconciliation(..)"
       newMethodName: reconciliationFinished

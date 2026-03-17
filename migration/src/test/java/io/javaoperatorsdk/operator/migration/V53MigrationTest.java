@@ -280,6 +280,73 @@ class V53MigrationTest implements RewriteTest {
   }
 
   @Test
+  void addsNullRetryInfoArgumentToInvocations() {
+    rewriteRun(
+        // Stub for the Metrics interface with old method names
+        // language=java
+        java(
+            """
+            package io.javaoperatorsdk.operator.api.monitoring;
+
+            import java.util.Map;
+
+            public interface Metrics {
+              default void failedReconciliation(Object resource, Exception exception, Map<String, Object> metadata) {}
+              default void finishedReconciliation(Object resource, Map<String, Object> metadata) {}
+            }
+            """,
+            """
+            package io.javaoperatorsdk.operator.api.monitoring;
+
+            import io.javaoperatorsdk.operator.api.reconciler.RetryInfo;
+
+            import java.util.Map;
+
+            public interface Metrics {
+                default void reconciliationFailed(Object resource, RetryInfo retryInfo, Exception exception, Map<String, Object> metadata) {}
+
+                default void reconciliationFinished(Object resource, RetryInfo retryInfo, Map<String, Object> metadata) {}
+            }
+            """),
+        // Stub for RetryInfo
+        // language=java
+        java(
+            """
+            package io.javaoperatorsdk.operator.api.reconciler;
+            public interface RetryInfo {}
+            """),
+        // Class that calls the old methods
+        // language=java
+        java(
+            """
+            package com.example;
+
+            import java.util.Map;
+            import io.javaoperatorsdk.operator.api.monitoring.Metrics;
+
+            public class MetricsCaller {
+              public void report(Metrics metrics, Object resource, Exception ex, Map<String, Object> meta) {
+                metrics.failedReconciliation(resource, ex, meta);
+                metrics.finishedReconciliation(resource, meta);
+              }
+            }
+            """,
+            """
+            package com.example;
+
+            import java.util.Map;
+            import io.javaoperatorsdk.operator.api.monitoring.Metrics;
+
+            public class MetricsCaller {
+              public void report(Metrics metrics, Object resource, Exception ex, Map<String, Object> meta) {
+                metrics.reconciliationFailed(resource, null, ex, meta);
+                metrics.reconciliationFinished(resource, null, meta);
+              }
+            }
+            """));
+  }
+
+  @Test
   void relocatesResourceActionImport() {
     rewriteRun(
         // Stub for the old ResourceAction location
