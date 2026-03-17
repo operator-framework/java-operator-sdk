@@ -15,58 +15,136 @@
  */
 package io.javaoperatorsdk.operator.migration;
 
+import java.util.Objects;
+
 import org.openrewrite.ExecutionContext;
+import org.openrewrite.NlsRewrite;
 import org.openrewrite.Option;
 import org.openrewrite.Recipe;
 import org.openrewrite.TreeVisitor;
 import org.openrewrite.java.JavaIsoVisitor;
-import org.openrewrite.java.MethodMatcher;
 import org.openrewrite.java.tree.J;
-
-import com.fasterxml.jackson.annotation.JsonCreator;
-import com.fasterxml.jackson.annotation.JsonProperty;
+import org.openrewrite.java.tree.JavaType;
 
 public class RemoveMethodDeclaration extends Recipe {
 
   @Option(
-      displayName = "Method pattern",
-      description = "A method pattern used to find matching method declarations.",
-      example = "com.example.Foo bar(..)")
-  private final String methodPattern;
+      displayName = "Interface name",
+      description = "Fully qualified or simple name of the interface.",
+      example = "com.example.YourInterface")
+  String interfaceName;
 
-  @JsonCreator
-  public RemoveMethodDeclaration(@JsonProperty("methodPattern") String methodPattern) {
-    this.methodPattern = methodPattern;
-  }
+  @Option(
+      displayName = "Method name",
+      description = "Name of the method to remove.",
+      example = "removedMethod")
+  String methodName;
 
   @Override
   public String getDisplayName() {
-    return "Remove method declaration";
+    return "Remove obsolete method from implementing classes";
   }
 
   @Override
-  public String getDescription() {
-    return "Removes method declarations matching the given method pattern.";
+  public @NlsRewrite.Description String getDescription() {
+    return "Remove obsolete method from implementing classes";
   }
 
   @Override
   public TreeVisitor<?, ExecutionContext> getVisitor() {
-    var matcher = new MethodMatcher(methodPattern, true);
-    return new JavaIsoVisitor<>() {
+    return new JavaIsoVisitor<ExecutionContext>() {
+
+      @Override
+      public J.ClassDeclaration visitClassDeclaration(
+          J.ClassDeclaration classDecl, ExecutionContext ctx) {
+        J.ClassDeclaration cd = super.visitClassDeclaration(classDecl, ctx);
+
+        if (cd.getType() == null || !typeMatchesOrImplements(cd.getType())) {
+          return cd;
+        }
+
+        // Mutate the type info in place to remove the method from the declared methods list,
+        // so all AST nodes sharing this type reference stay consistent.
+        var type = cd.getType();
+        if (type instanceof JavaType.Class classType) {
+          var updatedMethods =
+              classType.getMethods().stream().filter(m -> !m.getName().equals(methodName)).toList();
+          classType.unsafeSet(
+              classType.getTypeParameters(),
+              classType.getSupertype(),
+              classType.getOwningClass(),
+              classType.getAnnotations(),
+              classType.getInterfaces(),
+              classType.getMembers(),
+              updatedMethods);
+        }
+
+        return cd;
+      }
+
       @Override
       public J.MethodDeclaration visitMethodDeclaration(
           J.MethodDeclaration method, ExecutionContext ctx) {
-        if (method.getMethodType() != null && matcher.matches(method.getMethodType())) {
+        if (!method.getSimpleName().equals(methodName)) {
+          return super.visitMethodDeclaration(method, ctx);
+        }
+
+        J.ClassDeclaration classDecl = getCursor().firstEnclosing(J.ClassDeclaration.class);
+        if (classDecl == null || classDecl.getType() == null) {
+          return super.visitMethodDeclaration(method, ctx);
+        }
+
+        if (typeMatchesOrImplements(classDecl.getType())) {
           //noinspection DataFlowIssue
           return null;
         }
-        var classDecl = getCursor().firstEnclosing(J.ClassDeclaration.class);
-        if (classDecl != null && matcher.matches(method, classDecl)) {
-          //noinspection DataFlowIssue
-          return null;
-        }
+
         return super.visitMethodDeclaration(method, ctx);
       }
+
+      private boolean typeMatchesOrImplements(JavaType.FullyQualified type) {
+        for (var iface : type.getInterfaces()) {
+          if (iface.getFullyQualifiedName().equals(interfaceName)
+              || typeMatchesOrImplements(iface)) {
+            return true;
+          }
+        }
+        var supertype = type.getSupertype();
+        if (supertype != null && !supertype.getFullyQualifiedName().equals("java.lang.Object")) {
+          return typeMatchesOrImplements(supertype);
+        }
+        return false;
+      }
     };
+  }
+
+  public String getInterfaceName() {
+    return interfaceName;
+  }
+
+  public void setInterfaceName(String interfaceName) {
+    this.interfaceName = interfaceName;
+  }
+
+  public String getMethodName() {
+    return methodName;
+  }
+
+  public void setMethodName(String methodName) {
+    this.methodName = methodName;
+  }
+
+  @Override
+  public boolean equals(Object o) {
+    if (o == null || getClass() != o.getClass()) return false;
+    if (!super.equals(o)) return false;
+    RemoveMethodDeclaration that = (RemoveMethodDeclaration) o;
+    return Objects.equals(interfaceName, that.interfaceName)
+        && Objects.equals(methodName, that.methodName);
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(super.hashCode(), interfaceName, methodName);
   }
 }

@@ -73,3 +73,9 @@ The following table shows the relevant method renames:
 Other changes:
 - `reconciliationFinished(..)` method is extended with `RetryInfo`
 - `monitorSizeOf(..)` method is removed.
+
+## ResourceAction relocation
+
+The `ResourceAction` enum has been removed from
+`io.javaoperatorsdk.operator.processing.event.source.controller` use the one in package
+`io.javaoperatorsdk.operator.processing.event.source.ResourceAction`; thus update your imports accordingly.

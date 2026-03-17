@@ -26,6 +26,7 @@ recipeList:
   - io.javaoperatorsdk.operator.migration.RenameJUnitModule
   - io.javaoperatorsdk.operator.migration.MetricsMethodRenames
   - io.javaoperatorsdk.operator.migration.RemoveMonitorSizeOf
+  - io.javaoperatorsdk.operator.migration.RelocateResourceAction
 ---
 type: specs.openrewrite.org/v1beta/recipe
 name: io.javaoperatorsdk.operator.migration.UpgradeJOSDKVersion
@@ -98,11 +99,18 @@ recipeList:
 ---
 type: specs.openrewrite.org/v1beta/recipe
 name: io.javaoperatorsdk.operator.migration.RemoveMonitorSizeOf
-displayName: Remove monitorSizeOf method
-description: >-
-  Removes the monitorSizeOf method declarations and invocations which were removed in v5.3.
+displayName: Remove MonitorSizeOf
 recipeList:
-  - org.openrewrite.java.RemoveMethodInvocations:
-      methodPattern: "io.javaoperatorsdk.operator.api.monitoring.Metrics monitorSizeOf(..)"
   - io.javaoperatorsdk.operator.migration.RemoveMethodDeclaration:
-      methodPattern: "io.javaoperatorsdk.operator.api.monitoring.Metrics monitorSizeOf(..)"
+      interfaceName: io.javaoperatorsdk.operator.api.monitoring.Metrics
+      methodName: monitorSizeOf
+---
+type: specs.openrewrite.org/v1beta/recipe
+name: io.javaoperatorsdk.operator.migration.RelocateResourceAction
+displayName: Relocate ResourceAction class
+description: >-
+  Moves ResourceAction import from the controller sub-package to the event source package.
+recipeList:
+  - org.openrewrite.java.ChangeType:
+      oldFullyQualifiedTypeName: io.javaoperatorsdk.operator.processing.event.source.controller.ResourceAction
+      newFullyQualifiedTypeName: io.javaoperatorsdk.operator.processing.event.source.ResourceAction

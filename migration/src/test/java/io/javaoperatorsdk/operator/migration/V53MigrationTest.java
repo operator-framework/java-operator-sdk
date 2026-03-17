@@ -178,7 +178,7 @@ class V53MigrationTest implements RewriteTest {
   @Test
   void removesMonitorSizeOfFromImplementationWithGenerics() {
     rewriteRun(
-        // Stub for the Metrics interface with generic monitorSizeOf
+        // Stub for the Metrics interface (unchanged, from JOSDK library)
         // language=java
         java(
             """
@@ -189,15 +189,6 @@ class V53MigrationTest implements RewriteTest {
             public interface Metrics {
               default void eventReceived(Object event, Map<String, Object> metadata) {}
               default <T extends Map<?, ?>> T monitorSizeOf(T map, String name) { return map; }
-            }
-            """,
-            """
-            package io.javaoperatorsdk.operator.api.monitoring;
-
-            import java.util.Map;
-
-            public interface Metrics {
-              default void eventReceived(Object event, Map<String, Object> metadata) {}
             }
             """),
         // Implementation that overrides monitorSizeOf with generic signature
@@ -284,6 +275,51 @@ class V53MigrationTest implements RewriteTest {
 
             public interface Metrics {
                 default void reconciliationFinished(Object resource, RetryInfo retryInfo, Map<String, Object> metadata) {}
+            }
+            """));
+  }
+
+  @Test
+  void relocatesResourceActionImport() {
+    rewriteRun(
+        // Stub for the old ResourceAction location
+        // language=java
+        java(
+            """
+            package io.javaoperatorsdk.operator.processing.event.source.controller;
+
+            public class ResourceAction {
+            }
+            """,
+            """
+            package io.javaoperatorsdk.operator.processing.event.source;
+
+            public class ResourceAction {
+            }
+            """),
+        // Class that imports ResourceAction from the old package
+        // language=java
+        java(
+            """
+            package com.example;
+
+            import io.javaoperatorsdk.operator.processing.event.source.controller.ResourceAction;
+
+            public class MyHandler {
+              public void handle(ResourceAction action) {
+                System.out.println(action);
+              }
+            }
+            """,
+            """
+            package com.example;
+
+            import io.javaoperatorsdk.operator.processing.event.source.ResourceAction;
+
+            public class MyHandler {
+              public void handle(ResourceAction action) {
+                System.out.println(action);
+              }
             }
             """));
   }
