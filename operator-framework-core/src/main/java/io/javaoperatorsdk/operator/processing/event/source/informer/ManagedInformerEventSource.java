@@ -191,6 +191,7 @@ public abstract class ManagedInformerEventSource<
 
   @Override
   public Optional<R> get(ResourceID resourceID) {
+    // order of getting those resource from cache matters
     Optional<R> resource = temporaryResourceCache.getResourceFromCache(resourceID);
     var res = cache.get(resourceID);
     if (log.isDebugEnabled()) {
@@ -200,10 +201,16 @@ public abstract class ManagedInformerEventSource<
     }
     if (comparableResourceVersions
         && resource.isPresent()
-        && ReconcilerUtilsInternal.compareResourceVersions(
-                resource.get().getMetadata().getResourceVersion(),
-                manager().lastSyncResourceVersion(resource.get().getMetadata().getNamespace()))
-            > 0) {
+        // it can happen here that we receive an event after we read the resource from the informer
+        // cache
+        // that bumps the lastSync version, but we read the resource before. In that case we want to
+        // return
+        // the resource from temp cache.
+        && (res.isEmpty()
+            || ReconcilerUtilsInternal.compareResourceVersions(
+                    resource.get().getMetadata().getResourceVersion(),
+                    manager().lastSyncResourceVersion(resource.get().getMetadata().getNamespace()))
+                > 0)) {
       log.debug("Latest resource found in temporary cache for Resource ID: {}", resourceID);
       return resource;
     }
