@@ -22,7 +22,7 @@ Add the following to your `pom.xml` and run `mvn rewrite:run`:
     <dependency>
       <groupId>io.javaoperatorsdk</groupId>
       <artifactId>migration</artifactId>
-      <version>5.3.0</version>
+      <version>5.3.1</version>
     </dependency>
   </dependencies>
 </plugin>
