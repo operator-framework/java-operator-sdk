@@ -202,10 +202,8 @@ public abstract class ManagedInformerEventSource<
     if (comparableResourceVersions
         && resource.isPresent()
         // it can happen here that we receive an event after we read the resource from the informer
-        // cache
-        // that bumps the lastSync version, but we read the resource before. In that case we want to
-        // return
-        // the resource from temp cache.
+        // cache that bumps the lastSync version, but we read the resource before. In that case we
+        // want to return the resource from temp cache.
         && (res.isEmpty()
             || ReconcilerUtilsInternal.compareResourceVersions(
                     resource.get().getMetadata().getResourceVersion(),
