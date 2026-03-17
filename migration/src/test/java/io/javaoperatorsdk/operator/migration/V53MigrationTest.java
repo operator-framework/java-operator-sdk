@@ -82,7 +82,7 @@ class V53MigrationTest implements RewriteTest {
               default void reconcileCustomResource(Object resource, Object retryInfo, Map<String, Object> metadata) {}
               default void reconciliationExecutionStarted(Object resource, Map<String, Object> metadata) {}
               default void reconciliationExecutionFinished(Object resource, Map<String, Object> metadata) {}
-              default void failedReconciliation(Object resource, Object retryInfo, Exception exception, Map<String, Object> metadata) {}
+              default void failedReconciliation(Object resource, Exception exception, Map<String, Object> metadata) {}
               default void finishedReconciliation(Object resource, Map<String, Object> metadata) {}
               default void cleanupDoneFor(Object resourceID, Map<String, Object> metadata) {}
             }
@@ -99,7 +99,8 @@ class V53MigrationTest implements RewriteTest {
               default void reconciliationSubmitted(Object resource, Object retryInfo, Map<String, Object> metadata) {}
               default void reconciliationStarted(Object resource, Map<String, Object> metadata) {}
               default void reconciliationSucceeded(Object resource, Map<String, Object> metadata) {}
-              default void reconciliationFailed(Object resource, Object retryInfo, Exception exception, Map<String, Object> metadata) {}
+
+                default void reconciliationFailed(Object resource, RetryInfo retryInfo, Exception exception, Map<String, Object> metadata) {}
 
                 default void reconciliationFinished(Object resource, RetryInfo retryInfo, Map<String, Object> metadata) {}
               default void cleanupDone(Object resourceID, Map<String, Object> metadata) {}
@@ -170,6 +171,33 @@ class V53MigrationTest implements RewriteTest {
               public void reconciliationSubmitted(Object resource, Object retryInfo, Map<String, Object> metadata) {
                 System.out.println("reconcile");
               }
+            }
+            """));
+  }
+
+  @Test
+  void addsRetryInfoParameterToReconciliationFinished() {
+    rewriteRun(
+        // language=java
+        java(
+            """
+            package io.javaoperatorsdk.operator.api.monitoring;
+
+            import java.util.Map;
+
+            public interface Metrics {
+              default void finishedReconciliation(Object resource, Map<String, Object> metadata) {}
+            }
+            """,
+            """
+            package io.javaoperatorsdk.operator.api.monitoring;
+
+            import io.javaoperatorsdk.operator.api.reconciler.RetryInfo;
+
+            import java.util.Map;
+
+            public interface Metrics {
+                default void reconciliationFinished(Object resource, RetryInfo retryInfo, Map<String, Object> metadata) {}
             }
             """));
   }

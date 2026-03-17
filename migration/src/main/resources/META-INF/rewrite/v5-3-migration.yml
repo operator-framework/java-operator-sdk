@@ -73,6 +73,11 @@ recipeList:
       methodPattern: "io.javaoperatorsdk.operator.api.monitoring.Metrics failedReconciliation(..)"
       newMethodName: reconciliationFailed
       matchOverrides: true
+  - org.openrewrite.java.AddMethodParameter:
+      methodPattern: "io.javaoperatorsdk.operator.api.monitoring.Metrics reconciliationFailed(..)"
+      parameterType: io.javaoperatorsdk.operator.api.reconciler.RetryInfo
+      parameterName: retryInfo
+      parameterIndex: 1
   - org.openrewrite.java.ChangeMethodName:
       methodPattern: "io.javaoperatorsdk.operator.api.monitoring.Metrics finishedReconciliation(..)"
       newMethodName: reconciliationFinished
@@ -93,9 +98,11 @@ recipeList:
 ---
 type: specs.openrewrite.org/v1beta/recipe
 name: io.javaoperatorsdk.operator.migration.RemoveMonitorSizeOf
-displayName: Remove monitorSizeOf method invocations
+displayName: Remove monitorSizeOf method
 description: >-
-  Removes calls to the monitorSizeOf method which was removed in v5.3.
+  Removes the monitorSizeOf method declarations and invocations which were removed in v5.3.
 recipeList:
   - org.openrewrite.java.RemoveMethodInvocations:
+      methodPattern: "io.javaoperatorsdk.operator.api.monitoring.Metrics monitorSizeOf(..)"
+  - io.javaoperatorsdk.operator.migration.RemoveMethodDeclaration:
       methodPattern: "io.javaoperatorsdk.operator.api.monitoring.Metrics monitorSizeOf(..)"
