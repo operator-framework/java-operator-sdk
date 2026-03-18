@@ -205,10 +205,9 @@ public abstract class ManagedInformerEventSource<
       // this needs to happen after comparison to ensure correctness
       var resFromInformer = cache.get(resourceID);
       log.debug(
-          "Resource {} in temp cache; {}found in informer cache"
-              + ", for Resource ID: {}",
+          "Resource {} in temp cache; {}found in informer cache" + ", for Resource ID: {}",
           resource.isPresent() ? "obsolete" : "not found",
-          resFromInformer.isPresent() ? "", : "not ",
+          resFromInformer.isPresent() ? "" : "not ",
           resourceID);
       return resFromInformer;
     }
