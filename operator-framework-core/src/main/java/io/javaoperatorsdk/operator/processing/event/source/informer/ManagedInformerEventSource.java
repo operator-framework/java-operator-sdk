@@ -202,6 +202,7 @@ public abstract class ManagedInformerEventSource<
       log.debug("Latest resource found in temporary cache for Resource ID: {}", resourceID);
       return resource;
     } else {
+      // this needs to happen after comparison to ensure correctness
       var resFromInformer = cache.get(resourceID);
       log.debug(
           "Resource found in temp cache: {}, or older, in temporary cache. Found in informer cache"
