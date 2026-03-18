@@ -220,6 +220,11 @@ checks.
 
 `reconciliationFinished(..)` is extended with `RetryInfo`. `monitorSizeOf(..)` is removed.
 
+### `ResourceAction` relocated
+
+`ResourceAction` in `io.javaoperatorsdk.operator.processing.event.source.controller` has been
+removed. Use `io.javaoperatorsdk.operator.processing.event.source.ResourceAction` instead.
+
 See the full [migration guide](/docs/migration/v5-3-migration) for details.
 
 ## Getting Started

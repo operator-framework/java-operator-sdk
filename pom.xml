@@ -54,6 +54,7 @@
     <module>caffeine-bounded-cache-support</module>
     <module>bootstrapper-maven-plugin</module>
     <module>test-index-processor</module>
+    <module>migration</module>
   </modules>
 
   <scm>

@@ -3,6 +3,30 @@ title: Migrating from v5.2 to v5.3
 description: Migrating from v5.2 to v5.3
 ---
 
+## Automated Migration with OpenRewrite
+
+You can automatically apply all the migration changes described below using [OpenRewrite](https://docs.openrewrite.org/).
+Add the following to your `pom.xml` and run `mvn rewrite:run`:
+
+```xml
+<plugin>
+  <groupId>org.openrewrite.maven</groupId>
+  <artifactId>rewrite-maven-plugin</artifactId>
+  <version>6.33.0</version>
+  <configuration>
+    <activeRecipes>
+      <recipe>io.javaoperatorsdk.operator.migration.V5_3Migration</recipe>
+    </activeRecipes>
+  </configuration>
+  <dependencies>
+    <dependency>
+      <groupId>io.javaoperatorsdk</groupId>
+      <artifactId>migration</artifactId>
+      <version>5.3.1</version>
+    </dependency>
+  </dependencies>
+</plugin>
+```
 
 ## Rename of JUnit module
 
@@ -49,3 +73,9 @@ The following table shows the relevant method renames:
 Other changes:
 - `reconciliationFinished(..)` method is extended with `RetryInfo`
 - `monitorSizeOf(..)` method is removed.
+
+## ResourceAction relocation
+
+The `ResourceAction` enum has been removed from
+`io.javaoperatorsdk.operator.processing.event.source.controller` use the one in package
+`io.javaoperatorsdk.operator.processing.event.source.ResourceAction`; thus update your imports accordingly.
