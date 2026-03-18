@@ -43,11 +43,23 @@ public class CachingFilteringUpdateReconciler
       CachingFilteringUpdateCustomResource resource,
       Context<CachingFilteringUpdateCustomResource> context) {
 
-    context.resourceOperations().serverSideApply(prepareCM(resource));
+    context.resourceOperations().serverSideApply(prepareCM(resource, 1));
     var cachedCM = context.getSecondaryResource(ConfigMap.class);
     if (cachedCM.isEmpty()) {
       issueFound.set(true);
       throw new IllegalStateException("Error for resource: " + ResourceID.fromResource(resource));
+    }
+
+    var updated = context.resourceOperations().serverSideApply(prepareCM(resource, 2));
+    cachedCM = context.getSecondaryResource(ConfigMap.class);
+    if (!cachedCM
+        .orElseThrow()
+        .getMetadata()
+        .getResourceVersion()
+        .equals(updated.getMetadata().getResourceVersion())) {
+      issueFound.set(true);
+      throw new IllegalStateException(
+          "Update error for resource: " + ResourceID.fromResource(resource));
     }
 
     ensureStatusExists(resource);
@@ -55,7 +67,7 @@ public class CachingFilteringUpdateReconciler
     return UpdateControl.patchStatus(resource);
   }
 
-  private static ConfigMap prepareCM(CachingFilteringUpdateCustomResource p) {
+  private static ConfigMap prepareCM(CachingFilteringUpdateCustomResource p, int num) {
     var cm =
         new ConfigMapBuilder()
             .withMetadata(
@@ -63,7 +75,7 @@ public class CachingFilteringUpdateReconciler
                     .withName(p.getMetadata().getName())
                     .withNamespace(p.getMetadata().getNamespace())
                     .build())
-            .withData(Map.of("name", p.getMetadata().getName()))
+            .withData(Map.of("name", p.getMetadata().getName(), "num", "" + num))
             .build();
     cm.addOwnerReference(p);
     return cm;

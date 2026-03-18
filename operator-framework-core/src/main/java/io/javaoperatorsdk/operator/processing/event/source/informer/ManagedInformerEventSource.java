@@ -191,8 +191,8 @@ public abstract class ManagedInformerEventSource<
 
   @Override
   public Optional<R> get(ResourceID resourceID) {
+    // The order of reading from these caches matters
     Optional<R> resource = temporaryResourceCache.getResourceFromCache(resourceID);
-    var res = cache.get(resourceID);
     if (comparableResourceVersions
         && resource.isPresent()
         && ReconcilerUtilsInternal.compareResourceVersions(
@@ -201,13 +201,16 @@ public abstract class ManagedInformerEventSource<
             > 0) {
       log.debug("Latest resource found in temporary cache for Resource ID: {}", resourceID);
       return resource;
+    } else {
+      // this needs to happen after comparison to ensure correctness
+      var resFromInformer = cache.get(resourceID);
+      log.debug(
+          "Resource {} in temp cache; {}found in informer cache" + ", for Resource ID: {}",
+          resource.isPresent() ? "obsolete" : "not found",
+          resFromInformer.isPresent() ? "" : "not ",
+          resourceID);
+      return resFromInformer;
     }
-    log.debug(
-        "Resource not found, or older, in temporary cache. Found in informer cache {}, for"
-            + " Resource ID: {}",
-        res.isPresent(),
-        resourceID);
-    return res;
   }
 
   /**
