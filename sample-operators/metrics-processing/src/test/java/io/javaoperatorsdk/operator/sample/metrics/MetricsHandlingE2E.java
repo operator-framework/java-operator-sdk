@@ -44,6 +44,8 @@ import io.javaoperatorsdk.operator.junit.LocallyRunOperatorExtension;
 import io.javaoperatorsdk.operator.sample.metrics.customresource.MetricsHandlingCustomResource1;
 import io.javaoperatorsdk.operator.sample.metrics.customresource.MetricsHandlingCustomResource2;
 import io.javaoperatorsdk.operator.sample.metrics.customresource.MetricsHandlingSpec;
+import io.micrometer.prometheusmetrics.PrometheusConfig;
+import io.micrometer.prometheusmetrics.PrometheusMeterRegistry;
 
 import static io.javaoperatorsdk.operator.sample.metrics.MetricsHandlingSampleOperator.isLocal;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -55,12 +57,10 @@ class MetricsHandlingE2E {
   static final Logger log = LoggerFactory.getLogger(MetricsHandlingE2E.class);
   static final String OBSERVABILITY_NAMESPACE = "observability";
   static final int PROMETHEUS_PORT = 9090;
-  static final int OTEL_COLLECTOR_PORT = 4318;
   public static final Duration TEST_DURATION = Duration.ofSeconds(60);
   public static final String NAME_LABEL_KEY = "app.kubernetes.io/name";
 
   private LocalPortForward prometheusPortForward;
-  private LocalPortForward otelCollectorPortForward;
 
   static final KubernetesClient client = new KubernetesClientBuilder().build();
 
@@ -73,7 +73,15 @@ class MetricsHandlingE2E {
               .withReconciler(new MetricsHandlingReconciler1())
               .withReconciler(new MetricsHandlingReconciler2())
               .withConfigurationService(
-                  c -> c.withMetrics(MetricsHandlingSampleOperator.initOTLPMetrics(true)))
+                  c -> {
+                    var registry = new PrometheusMeterRegistry(PrometheusConfig.DEFAULT);
+                    try {
+                      MetricsHandlingSampleOperator.startMetricsServer(registry);
+                    } catch (IOException e) {
+                      throw new UncheckedIOException(e);
+                    }
+                    c.withMetrics(MetricsHandlingSampleOperator.initMetrics(registry));
+                  })
               .build()
           : ClusterDeployedOperatorExtension.builder()
               .withOperatorDeployment(
@@ -87,17 +95,13 @@ class MetricsHandlingE2E {
   void setupObservability() {
     log.info("Setting up observability stack...");
     installObservabilityServices();
+    createOperatorServiceMonitor();
     prometheusPortForward = portForward(NAME_LABEL_KEY, "prometheus", PROMETHEUS_PORT);
-    if (isLocal()) {
-      otelCollectorPortForward =
-          portForward(NAME_LABEL_KEY, "otel-collector-collector", OTEL_COLLECTOR_PORT);
-    }
   }
 
   @AfterAll
   void cleanup() throws IOException {
     closePortForward(prometheusPortForward);
-    closePortForward(otelCollectorPortForward);
   }
 
   private LocalPortForward portForward(String labelKey, String labelValue, int port) {
@@ -279,6 +283,52 @@ class MetricsHandlingE2E {
     } catch (Exception e) {
       throw new RuntimeException(e);
     }
+  }
+
+  /**
+   * Creates a ServiceMonitor so Prometheus scrapes the operator's /metrics endpoint. For local
+   * runs, Prometheus scrapes localhost:8080; for remote, it scrapes the operator service.
+   */
+  private void createOperatorServiceMonitor() {
+    String namespace = operator.getNamespace();
+    log.info("Creating operator Service and ServiceMonitor in namespace {}", namespace);
+
+    String yaml =
+        """
+        apiVersion: v1
+        kind: Service
+        metadata:
+          name: metrics-processing-operator-metrics
+          namespace: %s
+          labels:
+            app: metrics-processing-operator
+        spec:
+          ports:
+          - name: metrics
+            port: 8080
+            targetPort: 8080
+            protocol: TCP
+          selector:
+            app: metrics-processing-operator
+        ---
+        apiVersion: monitoring.coreos.com/v1
+        kind: ServiceMonitor
+        metadata:
+          name: metrics-processing-operator
+          namespace: %s
+        spec:
+          selector:
+            matchLabels:
+              app: metrics-processing-operator
+          endpoints:
+          - port: metrics
+            path: /metrics
+            interval: 10s
+        """
+            .formatted(namespace, namespace);
+
+    client.load(new ByteArrayInputStream(yaml.getBytes(StandardCharsets.UTF_8))).createOrReplace();
+    log.info("ServiceMonitor created for operator metrics");
   }
 
   private void installObservabilityServices() {

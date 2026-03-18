@@ -98,7 +98,7 @@ A ready-to-use **Grafana dashboard** is included at
 
 The
 [`metrics-processing` sample operator](https://github.com/java-operator-sdk/java-operator-sdk/tree/main/sample-operators/metrics-processing)
-provides a complete end-to-end setup with Prometheus, Grafana, and an OpenTelemetry Collector,
+provides a complete end-to-end setup with Prometheus and Grafana,
 installable via `observability/install-observability.sh`. This is a good starting point for
 verifying metrics in a real cluster.
 

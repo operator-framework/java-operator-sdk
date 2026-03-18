@@ -39,6 +39,10 @@ spec:
       - name: operator
         image: metrics-processing-operator
         imagePullPolicy: Never
+        ports:
+        - name: metrics
+          containerPort: 8080
+          protocol: TCP
 
 ---
 apiVersion: rbac.authorization.k8s.io/v1

@@ -16,22 +16,18 @@
 package io.javaoperatorsdk.operator.sample.metrics;
 
 import java.io.IOException;
-import java.io.InputStream;
+import java.io.OutputStream;
+import java.net.InetSocketAddress;
 import java.time.Duration;
-import java.util.HashMap;
-import java.util.Map;
 
 import org.jspecify.annotations.NonNull;
-import org.jspecify.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.yaml.snakeyaml.Yaml;
 
 import io.javaoperatorsdk.operator.Operator;
 import io.javaoperatorsdk.operator.api.monitoring.Metrics;
 import io.javaoperatorsdk.operator.monitoring.micrometer.MicrometerMetricsV2;
 import io.micrometer.core.instrument.Clock;
-import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.binder.jvm.ClassLoaderMetrics;
 import io.micrometer.core.instrument.binder.jvm.JvmGcMetrics;
 import io.micrometer.core.instrument.binder.jvm.JvmMemoryMetrics;
@@ -41,12 +37,15 @@ import io.micrometer.core.instrument.binder.system.UptimeMetrics;
 import io.micrometer.core.instrument.composite.CompositeMeterRegistry;
 import io.micrometer.core.instrument.logging.LoggingMeterRegistry;
 import io.micrometer.core.instrument.logging.LoggingRegistryConfig;
-import io.micrometer.registry.otlp.OtlpConfig;
-import io.micrometer.registry.otlp.OtlpMeterRegistry;
+import io.micrometer.prometheusmetrics.PrometheusConfig;
+import io.micrometer.prometheusmetrics.PrometheusMeterRegistry;
+
+import com.sun.net.httpserver.HttpServer;
 
 public class MetricsHandlingSampleOperator {
 
   private static final Logger log = LoggerFactory.getLogger(MetricsHandlingSampleOperator.class);
+  static final int METRICS_PORT = 8080;
 
   public static boolean isLocal() {
     String deployment = System.getProperty("test.deployment");
@@ -55,14 +54,13 @@ public class MetricsHandlingSampleOperator {
     return !remote;
   }
 
-  /**
-   * Based on env variables a different flavor of Reconciler is used, showcasing how the same logic
-   * can be implemented using the low level and higher level APIs.
-   */
-  public static void main(String[] args) {
+  public static void main(String[] args) throws IOException {
     log.info("Metrics Handling Sample Operator starting!");
 
-    Metrics metrics = initOTLPMetrics(isLocal());
+    var registry = new PrometheusMeterRegistry(PrometheusConfig.DEFAULT);
+    startMetricsServer(registry);
+
+    Metrics metrics = initMetrics(registry);
     Operator operator =
         new Operator(o -> o.withStopOnInformerErrorDuringStartup(false).withMetrics(metrics));
     operator.register(new MetricsHandlingReconciler1());
@@ -70,35 +68,12 @@ public class MetricsHandlingSampleOperator {
     operator.start();
   }
 
-  public static @NonNull Metrics initOTLPMetrics(boolean localRun) {
-    CompositeMeterRegistry compositeRegistry = new CompositeMeterRegistry();
-
-    // Add OTLP registry
-    Map<String, String> configProperties = loadConfigFromYaml();
-    if (localRun) {
-      configProperties.put("otlp.url", "http://localhost:4318/v1/metrics");
-    }
-    var otlpConfig =
-        new OtlpConfig() {
-          @Override
-          public @Nullable String get(String key) {
-            return configProperties.get(key);
-          }
-
-          @Override
-          public Map<String, String> resourceAttributes() {
-            return Map.of("service.name", "josdk", "operator", "metrics-processing");
-          }
-        };
-
-    MeterRegistry otlpRegistry = new OtlpMeterRegistry(otlpConfig, Clock.SYSTEM);
-    compositeRegistry.add(otlpRegistry);
-
+  public static @NonNull Metrics initMetrics(PrometheusMeterRegistry registry) {
     // enable to easily see propagated metrics
     String enableConsoleLogging = System.getenv("METRICS_CONSOLE_LOGGING");
     if ("true".equalsIgnoreCase(enableConsoleLogging)) {
       log.info("Console metrics logging enabled");
-      LoggingMeterRegistry loggingRegistry =
+      var loggingRegistry =
           new LoggingMeterRegistry(
               new LoggingRegistryConfig() {
                 @Override
@@ -112,40 +87,46 @@ public class MetricsHandlingSampleOperator {
                 }
               },
               Clock.SYSTEM);
-      compositeRegistry.add(loggingRegistry);
+      var composite = new CompositeMeterRegistry();
+      composite.add(registry);
+      composite.add(loggingRegistry);
+
+      log.info("Registering JVM and system metrics...");
+      new JvmMemoryMetrics().bindTo(composite);
+      new JvmGcMetrics().bindTo(composite);
+      new JvmThreadMetrics().bindTo(composite);
+      new ClassLoaderMetrics().bindTo(composite);
+      new ProcessorMetrics().bindTo(composite);
+      new UptimeMetrics().bindTo(composite);
+
+      return MicrometerMetricsV2.newBuilder(composite).build();
     }
+
     // Register JVM and system metrics
     log.info("Registering JVM and system metrics...");
-    new JvmMemoryMetrics().bindTo(compositeRegistry);
-    new JvmGcMetrics().bindTo(compositeRegistry);
-    new JvmThreadMetrics().bindTo(compositeRegistry);
-    new ClassLoaderMetrics().bindTo(compositeRegistry);
-    new ProcessorMetrics().bindTo(compositeRegistry);
-    new UptimeMetrics().bindTo(compositeRegistry);
+    new JvmMemoryMetrics().bindTo(registry);
+    new JvmGcMetrics().bindTo(registry);
+    new JvmThreadMetrics().bindTo(registry);
+    new ClassLoaderMetrics().bindTo(registry);
+    new ProcessorMetrics().bindTo(registry);
+    new UptimeMetrics().bindTo(registry);
 
-    return MicrometerMetricsV2.newBuilder(compositeRegistry).build();
+    return MicrometerMetricsV2.newBuilder(registry).build();
   }
 
-  @SuppressWarnings("unchecked")
-  private static Map<String, String> loadConfigFromYaml() {
-    Map<String, String> configMap = new HashMap<>();
-    try (InputStream inputStream =
-        MetricsHandlingSampleOperator.class.getResourceAsStream("/otlp-config.yaml")) {
-      if (inputStream == null) {
-        log.warn("otlp-config.yaml not found in resources, using default OTLP configuration");
-        return configMap;
-      }
-      Yaml yaml = new Yaml();
-      Map<String, Object> yamlData = yaml.load(inputStream);
-      // Navigate to otlp section and map properties directly
-      Map<String, Object> otlp = (Map<String, Object>) yamlData.get("otlp");
-      if (otlp != null) {
-        otlp.forEach((key, value) -> configMap.put("otlp." + key, value.toString()));
-      }
-      log.info("Loaded OTLP configuration from otlp-config.yaml: {}", configMap);
-    } catch (IOException e) {
-      log.error("Error loading otlp-config.yaml", e);
-    }
-    return configMap;
+  static void startMetricsServer(PrometheusMeterRegistry registry) throws IOException {
+    HttpServer server = HttpServer.create(new InetSocketAddress(METRICS_PORT), 0);
+    server.createContext(
+        "/metrics",
+        exchange -> {
+          String response = registry.scrape();
+          exchange.getResponseHeaders().set("Content-Type", "text/plain; charset=utf-8");
+          exchange.sendResponseHeaders(200, response.getBytes().length);
+          try (OutputStream os = exchange.getResponseBody()) {
+            os.write(response.getBytes());
+          }
+        });
+    server.start();
+    log.info("Prometheus metrics endpoint started on port {}", METRICS_PORT);
   }
 }

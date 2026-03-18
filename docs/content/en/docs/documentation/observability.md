@@ -128,9 +128,7 @@ All meters use `controller.name` as their primary tag. Counters optionally carry
 \* `namespace` tag is only included when `withNamespaceAsTag()` is enabled.
 
 The execution timer uses explicit boundaries (10ms, 50ms, 100ms, 250ms, 500ms, 1s, 2s, 5s, 10s, 30s) to ensure
-compatibility with `histogram_quantile()` queries in Prometheus. This is important when using the OpenTelemetry Protocol (OTLP) registry, where
-`publishPercentileHistogram()` would otherwise produce Base2 Exponential Histograms that are incompatible with classic
-`_bucket` queries.
+compatibility with `histogram_quantile()` queries in Prometheus.
 
 > **Note on Prometheus metric names**: The exact Prometheus metric name suffix depends on the `MeterRegistry` in use.
 > For `PrometheusMeterRegistry` the timer is exposed as `reconciliations_execution_duration_seconds_*`. For
@@ -144,8 +142,8 @@ A ready-to-use Grafana dashboard is available at
 It visualizes all of the metrics listed above, including reconciliation throughput, error rates, queue depth, active
 executions, resource counts, and execution duration histograms and heatmaps.
 
-The dashboard is designed to work with metrics exported via OpenTelemetry Collector to Prometheus, as set up by the
-observability sample (see below).
+The dashboard is designed to work with metrics scraped directly by Prometheus from the operator's `/metrics` endpoint,
+as set up by the observability sample (see below).
 
 #### Exploring metrics end-to-end
 
@@ -155,7 +153,7 @@ includes a full end-to-end test,
 [`MetricsHandlingE2E`](https://github.com/java-operator-sdk/java-operator-sdk/blob/main/sample-operators/metrics-processing/src/test/java/io/javaoperatorsdk/operator/sample/metrics/MetricsHandlingE2E.java),
 that:
 
-1. Installs a local observability stack (Prometheus, Grafana, OpenTelemetry Collector) via
+1. Installs a local observability stack (Prometheus, Grafana) via
    `observability/install-observability.sh`. That imports also the Grafana dashboards.
 2. Runs two reconcilers that produce both successful and failing reconciliations over a sustained period
 3. Verifies that the expected metrics appear in Prometheus
