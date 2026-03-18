@@ -19,6 +19,8 @@ import java.io.*;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.time.Duration;
 import java.util.ArrayDeque;
 import java.util.Deque;
@@ -61,47 +63,193 @@ class MetricsHandlingE2E {
   public static final String NAME_LABEL_KEY = "app.kubernetes.io/name";
 
   private LocalPortForward prometheusPortForward;
+  private Process prometheusProcess;
 
   static final KubernetesClient client = new KubernetesClientBuilder().build();
 
-  MetricsHandlingE2E() throws FileNotFoundException {}
+  MetricsHandlingE2E() {}
 
-  @RegisterExtension
-  AbstractOperatorExtension operator =
-      isLocal()
-          ? LocallyRunOperatorExtension.builder()
-              .withReconciler(new MetricsHandlingReconciler1())
-              .withReconciler(new MetricsHandlingReconciler2())
-              .withConfigurationService(
-                  c -> {
-                    var registry = new PrometheusMeterRegistry(PrometheusConfig.DEFAULT);
-                    try {
-                      MetricsHandlingSampleOperator.startMetricsServer(registry);
-                    } catch (IOException e) {
-                      throw new UncheckedIOException(e);
-                    }
-                    c.withMetrics(MetricsHandlingSampleOperator.initMetrics(registry));
-                  })
-              .build()
-          : ClusterDeployedOperatorExtension.builder()
-              .withOperatorDeployment(
-                  new KubernetesClientBuilder()
-                      .build()
-                      .load(new FileInputStream("k8s/operator.yaml"))
-                      .items())
-              .build();
+  static final PrometheusMeterRegistry prometheusRegistry =
+      isLocal() ? new PrometheusMeterRegistry(PrometheusConfig.DEFAULT) : null;
+
+  @RegisterExtension AbstractOperatorExtension operator = createOperatorExtension();
+
+  private static AbstractOperatorExtension createOperatorExtension() {
+    if (!isLocal()) {
+      try {
+        return ClusterDeployedOperatorExtension.builder()
+            .withOperatorDeployment(
+                new KubernetesClientBuilder()
+                    .build()
+                    .load(new FileInputStream("k8s/operator.yaml"))
+                    .items())
+            .build();
+      } catch (FileNotFoundException e) {
+        throw new UncheckedIOException(e);
+      }
+    }
+    try {
+      MetricsHandlingSampleOperator.startMetricsServer(prometheusRegistry);
+    } catch (IOException e) {
+      throw new UncheckedIOException(e);
+    }
+    return LocallyRunOperatorExtension.builder()
+        .withReconciler(new MetricsHandlingReconciler1())
+        .withReconciler(new MetricsHandlingReconciler2())
+        .withConfigurationService(
+            c -> c.withMetrics(MetricsHandlingSampleOperator.initMetrics(prometheusRegistry)))
+        .build();
+  }
 
   @BeforeAll
-  void setupObservability() {
-    log.info("Setting up observability stack...");
-    installObservabilityServices();
-    createOperatorServiceMonitor();
-    prometheusPortForward = portForward(NAME_LABEL_KEY, "prometheus", PROMETHEUS_PORT);
+  void setupObservability() throws Exception {
+    if (isLocal()) {
+      log.info("Starting local Prometheus...");
+      startLocalPrometheus();
+    } else {
+      log.info("Setting up observability stack in cluster...");
+      installObservabilityServices();
+      createOperatorServiceMonitor();
+      prometheusPortForward = portForward(NAME_LABEL_KEY, "prometheus", PROMETHEUS_PORT);
+    }
   }
 
   @AfterAll
   void cleanup() throws IOException {
+    if (prometheusProcess != null) {
+      log.info("Stopping local Prometheus...");
+      prometheusProcess.destroyForcibly();
+    }
     closePortForward(prometheusPortForward);
+  }
+
+  private void startLocalPrometheus() throws Exception {
+    // Get the prometheus binary via the download script
+    String promBinary = getPrometheusBinary();
+
+    // Create a temporary prometheus.yml that scrapes the local operator metrics endpoint
+    Path promDir = Files.createTempDirectory("prometheus-test");
+    Path promConfig = promDir.resolve("prometheus.yml");
+    Files.writeString(
+        promConfig,
+        """
+        global:
+          scrape_interval: 5s
+          evaluation_interval: 5s
+        scrape_configs:
+          - job_name: 'operator'
+            static_configs:
+              - targets: ['localhost:%d']
+        """
+            .formatted(MetricsHandlingSampleOperator.METRICS_PORT));
+    log.info("Prometheus config written to {}", promConfig);
+
+    Path dataDir = promDir.resolve("data");
+    Files.createDirectories(dataDir);
+
+    ProcessBuilder pb =
+        new ProcessBuilder(
+            promBinary,
+            "--config.file=" + promConfig,
+            "--storage.tsdb.path=" + dataDir,
+            "--web.listen-address=0.0.0.0:" + PROMETHEUS_PORT,
+            "--log.level=warn");
+    pb.redirectErrorStream(true);
+    prometheusProcess = pb.start();
+
+    // Log Prometheus output in a background daemon thread
+    var outputReader = prometheusProcess.getInputStream();
+    Thread logThread =
+        new Thread(
+            () -> {
+              try (var reader = new BufferedReader(new InputStreamReader(outputReader))) {
+                String line;
+                while ((line = reader.readLine()) != null) {
+                  log.info("Prometheus: {}", line);
+                }
+              } catch (IOException e) {
+                // process terminated
+              }
+            },
+            "prometheus-output");
+    logThread.setDaemon(true);
+    logThread.start();
+
+    // Wait for Prometheus to be ready
+    await()
+        .atMost(Duration.ofSeconds(30))
+        .pollInterval(Duration.ofSeconds(1))
+        .untilAsserted(
+            () -> {
+              var conn =
+                  (HttpURLConnection)
+                      new URL("http://localhost:" + PROMETHEUS_PORT + "/-/ready").openConnection();
+              conn.setConnectTimeout(1000);
+              conn.setReadTimeout(1000);
+              assertThat(conn.getResponseCode()).isEqualTo(200);
+            });
+    log.info("Local Prometheus is ready on port {}", PROMETHEUS_PORT);
+  }
+
+  private String getPrometheusBinary() throws Exception {
+    File scriptFile = findObservabilityFile("get-prometheus.sh");
+    log.info("Running get-prometheus.sh to obtain Prometheus binary...");
+
+    ProcessBuilder pb = new ProcessBuilder("/bin/sh", scriptFile.getAbsolutePath());
+    pb.redirectErrorStream(false);
+    Process process = pb.start();
+
+    // Read stderr for progress messages
+    Thread stderrThread =
+        new Thread(
+            () -> {
+              try (var reader =
+                  new BufferedReader(new InputStreamReader(process.getErrorStream()))) {
+                String line;
+                while ((line = reader.readLine()) != null) {
+                  log.info("get-prometheus: {}", line);
+                }
+              } catch (IOException e) {
+                // done
+              }
+            },
+            "get-prometheus-stderr");
+    stderrThread.setDaemon(true);
+    stderrThread.start();
+
+    // Read stdout — last line is the binary path
+    String binaryPath;
+    try (var reader = new BufferedReader(new InputStreamReader(process.getInputStream()))) {
+      binaryPath = reader.lines().reduce((first, second) -> second).orElse(null);
+    }
+
+    int exitCode = process.waitFor();
+    if (exitCode != 0 || binaryPath == null || binaryPath.isBlank()) {
+      throw new IllegalStateException(
+          "get-prometheus.sh failed (exit code " + exitCode + "), output: " + binaryPath);
+    }
+
+    log.info("Prometheus binary: {}", binaryPath);
+    return binaryPath;
+  }
+
+  private File findObservabilityFile(String fileName) {
+    try {
+      File projectRoot = new File(".").getCanonicalFile();
+      while (projectRoot != null && !new File(projectRoot, "observability").exists()) {
+        projectRoot = projectRoot.getParentFile();
+      }
+      if (projectRoot == null) {
+        throw new IllegalStateException("Could not find observability directory");
+      }
+      File file = new File(projectRoot, "observability/" + fileName);
+      if (!file.exists()) {
+        throw new IllegalStateException("File not found: " + file.getAbsolutePath());
+      }
+      return file;
+    } catch (IOException e) {
+      throw new UncheckedIOException(e);
+    }
   }
 
   private LocalPortForward portForward(String labelKey, String labelValue, int port) {
@@ -163,7 +311,7 @@ class MetricsHandlingE2E {
     operator.create(createResource(MetricsHandlingCustomResource1.class, "test-fail-1", 1));
     operator.create(createResource(MetricsHandlingCustomResource2.class, "test-fail-2", 1));
 
-    // Continuously trigger reconciliations for ~50 seconds by alternating between
+    // Continuously trigger reconciliations for ~60 seconds by alternating between
     // creating new resources, updating specs of existing ones, and deleting older dynamic ones
     long deadline = System.currentTimeMillis() + TEST_DURATION.toMillis();
     int counter = 0;
@@ -226,9 +374,7 @@ class MetricsHandlingE2E {
     assertMetricPresent(prometheusUrl, "reconciliations_success_total", Duration.ofSeconds(30));
     assertMetricPresent(prometheusUrl, "reconciliations_failure_total", Duration.ofSeconds(30));
     assertMetricPresent(
-        prometheusUrl,
-        "reconciliations_execution_duration_milliseconds_count",
-        Duration.ofSeconds(30));
+        prometheusUrl, "reconciliations_execution_duration_seconds_count", Duration.ofSeconds(30));
 
     log.info("All metrics verified successfully in Prometheus");
   }
@@ -286,8 +432,8 @@ class MetricsHandlingE2E {
   }
 
   /**
-   * Creates a ServiceMonitor so Prometheus scrapes the operator's /metrics endpoint. For local
-   * runs, Prometheus scrapes localhost:8080; for remote, it scrapes the operator service.
+   * Creates a ServiceMonitor so Prometheus scrapes the operator's /metrics endpoint (remote mode
+   * only).
    */
   private void createOperatorServiceMonitor() {
     String namespace = operator.getNamespace();
@@ -333,27 +479,11 @@ class MetricsHandlingE2E {
 
   private void installObservabilityServices() {
     try {
-      // Find the observability script relative to project root
-      File projectRoot = new File(".").getCanonicalFile();
-      while (projectRoot != null && !new File(projectRoot, "observability").exists()) {
-        projectRoot = projectRoot.getParentFile();
-      }
-
-      if (projectRoot == null) {
-        throw new IllegalStateException("Could not find observability directory");
-      }
-
-      File scriptFile = new File(projectRoot, "observability/install-observability.sh");
-      if (!scriptFile.exists()) {
-        throw new IllegalStateException(
-            "Observability script not found at: " + scriptFile.getAbsolutePath());
-      }
+      File scriptFile = findObservabilityFile("install-observability.sh");
       log.info("Running observability setup script: {}", scriptFile.getAbsolutePath());
 
-      // Run the install-observability.sh script
       ProcessBuilder processBuilder = new ProcessBuilder("/bin/sh", scriptFile.getAbsolutePath());
       processBuilder.redirectErrorStream(true);
-
       processBuilder.environment().putAll(System.getenv());
       Process process = processBuilder.start();
       BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));

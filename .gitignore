@@ -17,3 +17,6 @@ target/
 .aider*
 
 docs/content/en/docs/testindex/
+
+# Downloaded Prometheus binary
+observability/.prometheus/
