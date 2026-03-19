@@ -92,6 +92,11 @@ else
 fi
 echo -e "${GREEN}✓ OpenTelemetry Operator installation started${NC}"
 
+# Wait for OpenTelemetry Operator to be ready (webhook must be serving before we create CRs)
+echo -e "${YELLOW}Waiting for OpenTelemetry Operator deployment to be ready...${NC}"
+kubectl wait --for=condition=Available deployment/opentelemetry-operator -n observability --timeout=120s
+echo -e "${GREEN}✓ OpenTelemetry Operator deployment is ready${NC}"
+
 # Install kube-prometheus-stack (includes Prometheus + Grafana)
 echo -e "\n${YELLOW}Installing Prometheus and Grafana stack...${NC}"
 if helm list -n observability | grep -q kube-prometheus-stack; then
@@ -110,9 +115,9 @@ else
 fi
 echo -e "${GREEN}✓ Prometheus and Grafana installation started${NC}"
 
-# Create OpenTelemetry Collector instance
+# Create OpenTelemetry Collector instance (retry until webhook is fully serving)
 echo -e "\n${YELLOW}Creating OpenTelemetry Collector...${NC}"
-cat <<EOF | kubectl apply -f -
+COLLECTOR_YAML=$(cat <<'EOF'
 apiVersion: opentelemetry.io/v1beta1
 kind: OpenTelemetryCollector
 metadata:
@@ -168,7 +173,19 @@ spec:
           processors: [memory_limiter, batch]
           exporters: [debug]
 EOF
-echo -e "${GREEN}✓ OpenTelemetry Collector created${NC}"
+)
+for i in $(seq 1 20); do
+    if echo "$COLLECTOR_YAML" | kubectl apply -f - 2>/dev/null; then
+        echo -e "${GREEN}✓ OpenTelemetry Collector created${NC}"
+        break
+    fi
+    if [ "$i" -eq 20 ]; then
+        echo -e "${RED}✗ Failed to create OpenTelemetry Collector after 20 attempts${NC}"
+        exit 1
+    fi
+    echo -e "${YELLOW}  Webhook not ready yet, retrying ($i/20)...${NC}"
+    sleep 5
+done
 
 # Create ServiceMonitor for OpenTelemetry Collector
 echo -e "\n${YELLOW}Creating ServiceMonitor for OpenTelemetry...${NC}"
