@@ -15,7 +15,6 @@
  */
 package io.javaoperatorsdk.operator.config.loader.provider;
 
-import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.UncheckedIOException;
@@ -52,8 +51,8 @@ public class YamlConfigProvider implements ConfigProvider {
   /**
    * Loads YAML from the given file path.
    *
-   * @throws UncheckedIOException if the file cannot be read. Does not throw exception if the file
-   *     not exists.
+   * @throws UncheckedIOException if the file cannot be read. Does not throw an exception if the
+   *     file does not exist.
    */
   public YamlConfigProvider(String path) {
     this(Path.of(path));
@@ -62,8 +61,8 @@ public class YamlConfigProvider implements ConfigProvider {
   /**
    * Loads YAML from the given file path.
    *
-   * @throws UncheckedIOException if the file cannot be read. Does not throw exception if the file
-   *     not exists.
+   * @throws UncheckedIOException if the file cannot be read. Does not throw an exception if the
+   *     file does not exist.
    */
   public YamlConfigProvider(Path path) {
     this.data = load(path);
@@ -96,7 +95,7 @@ public class YamlConfigProvider implements ConfigProvider {
 
   @SuppressWarnings("unchecked")
   private static Map<String, Object> load(Path path) {
-    if (!new File(path.toString()).exists()) {
+    if (!Files.exists(path)) {
       log.warn("{} does not exist", path);
       return Map.of();
     }
