@@ -94,7 +94,7 @@ echo -e "${GREEN}✓ OpenTelemetry Operator installation started${NC}"
 
 # Wait for OpenTelemetry Operator to be ready (webhook must be serving before we create CRs)
 echo -e "${YELLOW}Waiting for OpenTelemetry Operator deployment to be ready...${NC}"
-kubectl wait --for=condition=available deployment/opentelemetry-operator -n observability --timeout=120s
+kubectl wait --for=condition=Available deployment/opentelemetry-operator -n observability --timeout=120s
 echo -e "${GREEN}✓ OpenTelemetry Operator deployment is ready${NC}"
 
 # Install kube-prometheus-stack (includes Prometheus + Grafana)
