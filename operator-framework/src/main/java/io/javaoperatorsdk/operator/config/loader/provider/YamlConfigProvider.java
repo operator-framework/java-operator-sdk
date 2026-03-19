@@ -15,6 +15,7 @@
  */
 package io.javaoperatorsdk.operator.config.loader.provider;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.UncheckedIOException;
@@ -22,6 +23,9 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Map;
 import java.util.Optional;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import io.javaoperatorsdk.operator.config.loader.ConfigProvider;
 
@@ -39,6 +43,8 @@ import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
  */
 public class YamlConfigProvider implements ConfigProvider {
 
+  private static final Logger log = LoggerFactory.getLogger(YamlConfigProvider.class);
+
   private static final ObjectMapper MAPPER = new ObjectMapper(new YAMLFactory());
 
   private final Map<String, Object> data;
@@ -46,7 +52,18 @@ public class YamlConfigProvider implements ConfigProvider {
   /**
    * Loads YAML from the given file path.
    *
-   * @throws UncheckedIOException if the file cannot be read
+   * @throws UncheckedIOException if the file cannot be read. Does not throw exception if the file
+   *     not exists.
+   */
+  public YamlConfigProvider(String path) {
+    this(Path.of(path));
+  }
+
+  /**
+   * Loads YAML from the given file path.
+   *
+   * @throws UncheckedIOException if the file cannot be read. Does not throw exception if the file
+   *     not exists.
    */
   public YamlConfigProvider(Path path) {
     this.data = load(path);
@@ -79,6 +96,11 @@ public class YamlConfigProvider implements ConfigProvider {
 
   @SuppressWarnings("unchecked")
   private static Map<String, Object> load(Path path) {
+    if (!new File(path.toString()).exists()) {
+      log.warn("{} does not exist", path);
+      return Map.of();
+    }
+
     try (InputStream in = Files.newInputStream(path)) {
       Map<String, Object> result = MAPPER.readValue(in, Map.class);
       return result != null ? result : Map.of();

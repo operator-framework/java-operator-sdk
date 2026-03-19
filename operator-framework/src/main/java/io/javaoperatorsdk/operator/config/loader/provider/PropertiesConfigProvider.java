@@ -15,6 +15,7 @@
  */
 package io.javaoperatorsdk.operator.config.loader.provider;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.UncheckedIOException;
@@ -22,6 +23,9 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Optional;
 import java.util.Properties;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import io.javaoperatorsdk.operator.config.loader.ConfigProvider;
 
@@ -34,6 +38,8 @@ import io.javaoperatorsdk.operator.config.loader.ConfigProvider;
  */
 public class PropertiesConfigProvider implements ConfigProvider {
 
+  private static final Logger log = LoggerFactory.getLogger(PropertiesConfigProvider.class);
+
   private final Properties properties;
 
   /** Returns a {@link PropertiesConfigProvider} backed by {@link System#getProperties()}. */
@@ -44,7 +50,18 @@ public class PropertiesConfigProvider implements ConfigProvider {
   /**
    * Loads properties from the given file path.
    *
-   * @throws UncheckedIOException if the file cannot be read
+   * @throws UncheckedIOException if the file cannot be read. Does not throw exception if the file
+   *     not exists.
+   */
+  public PropertiesConfigProvider(String path) {
+    this(Path.of(path));
+  }
+
+  /**
+   * Loads properties from the given file path.
+   *
+   * @throws UncheckedIOException if the file cannot be read. Does not throw exception if the file
+   *     not exists.
    */
   public PropertiesConfigProvider(Path path) {
     this.properties = load(path);
@@ -68,6 +85,11 @@ public class PropertiesConfigProvider implements ConfigProvider {
   }
 
   private static Properties load(Path path) {
+    if (!new File(path.toString()).exists()) {
+      log.warn("{} does not exist", path);
+      return new Properties();
+    }
+
     try (InputStream in = Files.newInputStream(path)) {
       Properties props = new Properties();
       props.load(in);
