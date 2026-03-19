@@ -16,7 +16,6 @@
 package io.javaoperatorsdk.operator.config.loader.provider;
 
 import java.io.IOException;
-import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Duration;
@@ -27,7 +26,6 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 import static org.assertj.core.api.Assertions.assertThatIllegalArgumentException;
 
 class YamlConfigProviderTest {
@@ -135,10 +133,9 @@ class YamlConfigProviderTest {
   }
 
   @Test
-  void throwsUncheckedIOExceptionForMissingFile(@TempDir Path dir) {
+  void returnsEmptyForNonExistingFile(@TempDir Path dir) {
     Path missing = dir.resolve("does-not-exist.yaml");
-    assertThatExceptionOfType(UncheckedIOException.class)
-        .isThrownBy(() -> new YamlConfigProvider(missing))
-        .withMessageContaining("does-not-exist.yaml");
+    var provider = new YamlConfigProvider(missing);
+    assertThat(provider.getValue("any.key", String.class)).isEmpty();
   }
 }
