@@ -18,10 +18,12 @@ package io.javaoperatorsdk.operator.workflow.bulkactivationcondition;
 import java.time.Duration;
 
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
+import io.javaoperatorsdk.annotation.Sample;
 import io.javaoperatorsdk.operator.junit.LocallyRunOperatorExtension;
 import io.javaoperatorsdk.operator.processing.event.NoEventSourceForClassException;
 
@@ -39,25 +41,37 @@ import static org.awaitility.Awaitility.await;
  *   └── SecretBulkDependentResource  (activationCondition = AlwaysTrueActivation)
  * </pre>
  *
- * <p>On first reconciliation with only a primary resource present: the ConfigMap precondition fails
- * → JOSDK calls markDependentsForDelete() → NodeDeleteExecutor fires for SecretBulkDependent →
+ * <p>On first reconciliation the ConfigMap precondition fails → JOSDK calls
+ * markDependentsForDelete() → NodeDeleteExecutor fires for SecretBulkDependent →
  * SecretBulkDependent.getSecondaryResources() calls eventSourceRetriever.getEventSourceFor() → the
  * Secret event source was never registered (NodeReconcileExecutor never ran) →
  * NoEventSourceForClassException.
  *
  * <p>This test FAILS on unfixed JOSDK, demonstrating the bug.
  */
+@Disabled("Reproducer for https://github.com/operator-framework/java-operator-sdk/issues/3249")
+@Sample(
+    tldr = "Bulk Dependent Resource with Activation Condition Bug Reproducer",
+    description =
+        """
+        Reproducer for a bug where NodeDeleteExecutor fires for a BulkDependentResource \
+        with an activationCondition before its event source has been registered, \
+        causing NoEventSourceForClassException. Triggered when a parent dependent \
+        has a failing reconcilePrecondition on first reconciliation.
+        """)
 public class BulkActivationConditionIT {
+
+  static final BulkActivationConditionReconciler reconciler =
+      new BulkActivationConditionReconciler();
 
   @RegisterExtension
   static LocallyRunOperatorExtension extension =
-      LocallyRunOperatorExtension.builder()
-          .withReconciler(new BulkActivationConditionReconciler())
-          .build();
+      LocallyRunOperatorExtension.builder().withReconciler(reconciler).build();
 
   @BeforeEach
-  void resetError() {
-    BulkActivationConditionReconciler.lastError.set(null);
+  void reset() {
+    reconciler.lastError.set(null);
+    reconciler.callCount.set(0);
   }
 
   @Test
@@ -70,21 +84,16 @@ public class BulkActivationConditionIT {
             .build());
     extension.create(primary);
 
-    // Wait for the error to arrive — the ConfigMap precondition always fails,
-    // so JOSDK should attempt NodeDeleteExecutor for the Secret bulk dependent.
-    await()
-        .atMost(Duration.ofSeconds(30))
-        .until(() -> BulkActivationConditionReconciler.lastError.get() != null);
+    // Wait for reconcile() or updateErrorStatus() to be called — whichever comes first.
+    // If the bug is present, updateErrorStatus() fires (no reconcile() call); if fixed,
+    // reconcile() runs cleanly.
+    await().atMost(Duration.ofSeconds(30)).until(() -> reconciler.callCount.get() > 0);
 
-    // On unfixed JOSDK this fails: lastError is a NoEventSourceForClassException (or wraps one).
-    // The assertion below demonstrates the bug by asserting the exception should NOT be present.
-    Exception error = BulkActivationConditionReconciler.lastError.get();
-    assertThat(error)
+    // On unfixed JOSDK this fails: lastError contains NoEventSourceForClassException.
+    assertThat(reconciler.lastError.get())
         .as(
             "NodeDeleteExecutor must not throw NoEventSourceForClassException when the"
-                + " activationCondition-gated event source was never registered."
-                + " Actual error: %s",
-            error)
+                + " activationCondition-gated event source was never registered")
         .satisfies(
             e -> {
               Throwable t = e;

@@ -15,6 +15,7 @@
  */
 package io.javaoperatorsdk.operator.workflow.bulkactivationcondition;
 
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
 import io.javaoperatorsdk.operator.api.reconciler.*;
@@ -47,12 +48,17 @@ import io.javaoperatorsdk.operator.api.reconciler.dependent.Dependent;
 public class BulkActivationConditionReconciler
     implements Reconciler<BulkActivationConditionCustomResource> {
 
-  static final AtomicReference<Exception> lastError = new AtomicReference<>();
+  /** Tracks how many times reconcile() or updateErrorStatus() has been called. */
+  final AtomicInteger callCount = new AtomicInteger();
+
+  /** Set when updateErrorStatus() is invoked; null means no error occurred. */
+  final AtomicReference<Exception> lastError = new AtomicReference<>();
 
   @Override
   public UpdateControl<BulkActivationConditionCustomResource> reconcile(
       BulkActivationConditionCustomResource primary,
       Context<BulkActivationConditionCustomResource> context) {
+    callCount.incrementAndGet();
     return UpdateControl.noUpdate();
   }
 
@@ -62,6 +68,7 @@ public class BulkActivationConditionReconciler
       Context<BulkActivationConditionCustomResource> context,
       Exception e) {
     lastError.set(e);
+    callCount.incrementAndGet();
     return ErrorStatusUpdateControl.noStatusUpdate();
   }
 }
