@@ -43,8 +43,9 @@ public class SecretBulkDependentResource
     extends KubernetesDependentResource<Secret, BulkActivationConditionCustomResource>
     implements CRUDKubernetesBulkDependentResource<Secret, BulkActivationConditionCustomResource> {
 
-  public static final String LABEL_KEY = "reproducer";
-  public static final String LABEL_VALUE = "bulk-activation-condition";
+  static final String NAME = "secret";
+  static final String LABEL_KEY = "reproducer";
+  static final String LABEL_VALUE = "bulk-activation-condition";
 
   @Override
   public Map<ResourceID, Secret> desiredResources(

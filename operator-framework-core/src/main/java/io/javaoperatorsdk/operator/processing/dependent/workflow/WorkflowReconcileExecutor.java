@@ -246,6 +246,10 @@ class WorkflowReconcileExecutor<P extends HasMetadata> extends AbstractWorkflowE
     // so if the activation condition was false, this node is not meant to be deleted.
     var dependents = dependentResourceNode.getParents();
     if (activationConditionMet) {
+      // make sure we register the dependent's event source if it hasn't been added already
+      // this might be needed in corner cases such as
+      // https://github.com/operator-framework/java-operator-sdk/issues/3249
+      registerOrDeregisterEventSourceBasedOnActivation(true, dependentResourceNode);
       createOrGetResultFor(dependentResourceNode).markForDelete();
       if (dependents.isEmpty()) {
         bottomNodes.add(dependentResourceNode);

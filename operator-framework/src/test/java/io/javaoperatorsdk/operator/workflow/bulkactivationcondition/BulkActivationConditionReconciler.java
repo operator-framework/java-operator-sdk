@@ -20,6 +20,7 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import io.javaoperatorsdk.operator.api.reconciler.*;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.Dependent;
+import io.javaoperatorsdk.operator.processing.retry.GradualRetry;
 
 /**
  * Workflow:
@@ -40,11 +41,14 @@ import io.javaoperatorsdk.operator.api.reconciler.dependent.Dependent;
           type = ConfigMapDependentResource.class,
           reconcilePrecondition = AlwaysFailingPrecondition.class),
       @Dependent(
+          name = SecretBulkDependentResource.NAME,
           type = SecretBulkDependentResource.class,
           activationCondition = AlwaysTrueActivation.class,
           dependsOn = "configmap")
-    })
-@ControllerConfiguration
+    },
+    handleExceptionsInReconciler = true)
+@GradualRetry(maxAttempts = 0)
+@ControllerConfiguration(maxReconciliationInterval = @MaxReconciliationInterval(interval = 0))
 public class BulkActivationConditionReconciler
     implements Reconciler<BulkActivationConditionCustomResource> {
 
@@ -58,17 +62,21 @@ public class BulkActivationConditionReconciler
   public UpdateControl<BulkActivationConditionCustomResource> reconcile(
       BulkActivationConditionCustomResource primary,
       Context<BulkActivationConditionCustomResource> context) {
+    final var workflowResult =
+        context
+            .managedWorkflowAndDependentResourceContext()
+            .getWorkflowReconcileResult()
+            .orElseThrow();
+    final var erroredDependents = workflowResult.getErroredDependents();
+    if (!erroredDependents.isEmpty()) {
+      final var exception =
+          erroredDependents.get(
+              workflowResult
+                  .getDependentResourceByName(SecretBulkDependentResource.NAME)
+                  .orElseThrow());
+      lastError.set(exception);
+    }
     callCount.incrementAndGet();
     return UpdateControl.noUpdate();
-  }
-
-  @Override
-  public ErrorStatusUpdateControl<BulkActivationConditionCustomResource> updateErrorStatus(
-      BulkActivationConditionCustomResource primary,
-      Context<BulkActivationConditionCustomResource> context,
-      Exception e) {
-    lastError.set(e);
-    callCount.incrementAndGet();
-    return ErrorStatusUpdateControl.noStatusUpdate();
   }
 }

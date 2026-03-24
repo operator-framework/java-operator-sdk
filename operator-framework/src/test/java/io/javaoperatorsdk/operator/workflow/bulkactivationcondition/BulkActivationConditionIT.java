@@ -18,14 +18,12 @@ package io.javaoperatorsdk.operator.workflow.bulkactivationcondition;
 import java.time.Duration;
 
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
 import io.javaoperatorsdk.annotation.Sample;
 import io.javaoperatorsdk.operator.junit.LocallyRunOperatorExtension;
-import io.javaoperatorsdk.operator.processing.event.NoEventSourceForClassException;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
@@ -49,7 +47,6 @@ import static org.awaitility.Awaitility.await;
  *
  * <p>This test FAILS on unfixed JOSDK, demonstrating the bug.
  */
-@Disabled("Reproducer for https://github.com/operator-framework/java-operator-sdk/issues/3249")
 @Sample(
     tldr = "Bulk Dependent Resource with Activation Condition Bug Reproducer",
     description =
@@ -84,25 +81,11 @@ public class BulkActivationConditionIT {
             .build());
     extension.create(primary);
 
-    // Wait for reconcile() or updateErrorStatus() to be called — whichever comes first.
-    // If the bug is present, updateErrorStatus() fires (no reconcile() call); if fixed,
-    // reconcile() runs cleanly.
-    await().atMost(Duration.ofSeconds(30)).until(() -> reconciler.callCount.get() > 0);
+    // Wait for reconcile() to be called.
+    // If the bug is present, SecretBulkDependentResource will be in error and lastError will be set
+    await().atMost(Duration.ofSeconds(10)).until(() -> reconciler.callCount.get() == 1);
 
     // On unfixed JOSDK this fails: lastError contains NoEventSourceForClassException.
-    assertThat(reconciler.lastError.get())
-        .as(
-            "NodeDeleteExecutor must not throw NoEventSourceForClassException when the"
-                + " activationCondition-gated event source was never registered")
-        .satisfies(
-            e -> {
-              Throwable t = e;
-              while (t != null) {
-                assertThat(t)
-                    .as("Cause chain should not contain NoEventSourceForClassException")
-                    .isNotInstanceOf(NoEventSourceForClassException.class);
-                t = t.getCause();
-              }
-            });
+    assertThat(reconciler.lastError.get()).isNull();
   }
 }
