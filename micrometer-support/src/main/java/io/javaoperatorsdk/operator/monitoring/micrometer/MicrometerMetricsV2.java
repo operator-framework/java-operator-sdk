@@ -62,6 +62,8 @@ public class MicrometerMetricsV2 implements Metrics {
 
   public static final String RECONCILIATION_EXECUTION_DURATION =
       RECONCILIATIONS + "execution.duration";
+  public static final String NO_NAMESPACE = "NO_NAMESPCAVE";
+  public static final String UNKNOWN_ACTION = "UNKNOWN";
 
   private final MeterRegistry registry;
   private final Map<String, AtomicInteger> gauges = new ConcurrentHashMap<>();
@@ -177,10 +179,10 @@ public class MicrometerMetricsV2 implements Metrics {
     } else {
       incrementCounter(
           EVENTS_RECEIVED,
-          "NO_NAMESPACE",
+          null,
           metadata,
           Tag.of(EVENT, event.getClass().getSimpleName()),
-          Tag.of(ACTION, "UNKNOWN"));
+          Tag.of(ACTION, UNKNOWN_ACTION));
     }
   }
 
@@ -250,6 +252,8 @@ public class MicrometerMetricsV2 implements Metrics {
   private void addNamespaceTag(String namespace, List<Tag> tags) {
     if (includeNamespaceTag && namespace != null && !namespace.isBlank()) {
       addTag(NAMESPACE, namespace, tags);
+    } else {
+      addTag(NAMESPACE, NO_NAMESPACE, tags);
     }
   }
 
