@@ -62,7 +62,7 @@ public class MicrometerMetricsV2 implements Metrics {
 
   public static final String RECONCILIATION_EXECUTION_DURATION =
       RECONCILIATIONS + "execution.duration";
-  public static final String NO_NAMESPACE = "NO_NAMESPCAVE";
+  public static final String NO_NAMESPACE = "NO_NAMESPACE";
   public static final String UNKNOWN_ACTION = "UNKNOWN";
 
   private final MeterRegistry registry;
