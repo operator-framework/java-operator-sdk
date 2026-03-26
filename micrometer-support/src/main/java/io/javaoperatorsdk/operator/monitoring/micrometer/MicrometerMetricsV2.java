@@ -176,7 +176,11 @@ public class MicrometerMetricsV2 implements Metrics {
           Tag.of(ACTION, resourceEvent.getAction().toString()));
     } else {
       incrementCounter(
-          EVENTS_RECEIVED, null, metadata, Tag.of(EVENT, event.getClass().getSimpleName()));
+          EVENTS_RECEIVED,
+          "NO_NAMESPACE",
+          metadata,
+          Tag.of(EVENT, event.getClass().getSimpleName()),
+          Tag.of(ACTION, "UNKNOWN"));
     }
   }
 
