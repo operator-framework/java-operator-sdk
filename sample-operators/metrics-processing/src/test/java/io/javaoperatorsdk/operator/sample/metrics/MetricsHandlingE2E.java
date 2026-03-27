@@ -260,7 +260,6 @@ class MetricsHandlingE2E {
               log.info("{}: {}", query, result);
               assertThat(result).contains("\"status\":\"success\"");
               for (String expected : expectedSubstrings) {
-                log.info("Checking if result: {} contains expected: {}", result, expected);
                 assertThat(result).contains(expected);
               }
             });
