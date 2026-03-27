@@ -18,6 +18,7 @@ package io.javaoperatorsdk.operator.sample.metrics;
 import java.io.*;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.ArrayDeque;
@@ -226,24 +227,48 @@ class MetricsHandlingE2E {
         "reconciliations_execution_duration_milliseconds_count",
         Duration.ofSeconds(30));
 
+    // First verify events_received_total exists at all (from ResourceEvents)
+    assertMetricPresent(prometheusUrl, "events_received_total", Duration.ofSeconds(30));
+
+    // Verify timer event source events are recorded.
+    // Timer events are not ResourceEvents, so they get action="unknown".
+    // The namespace comes from the event's ResourceID (same as the associated resource).
+    // The "exported_namespace" label is used because OTel collector's
+    // resource_to_telemetry_conversion renames Micrometer's "namespace" tag.
+    assertMetricPresent(
+        prometheusUrl,
+        "events_received_total{action=\"unknown\"}",
+        Duration.ofSeconds(30),
+        "events_received_total",
+        "unknown");
+
     log.info("All metrics verified successfully in Prometheus");
   }
 
   private void assertMetricPresent(String prometheusUrl, String metricName, Duration timeout) {
+    assertMetricPresent(prometheusUrl, metricName, timeout, metricName);
+  }
+
+  private void assertMetricPresent(
+      String prometheusUrl, String query, Duration timeout, String... expectedSubstrings) {
     await()
         .atMost(timeout)
         .pollInterval(Duration.ofSeconds(5))
         .untilAsserted(
             () -> {
-              String result = queryPrometheus(prometheusUrl, metricName);
-              log.info("{}: {}", metricName, result);
+              String result = queryPrometheus(prometheusUrl, query);
+              log.info("{}: {}", query, result);
               assertThat(result).contains("\"status\":\"success\"");
-              assertThat(result).contains(metricName);
+              for (String expected : expectedSubstrings) {
+                log.info("Checking if result: {} contains expected: {}", result, expected);
+                assertThat(result).contains(expected);
+              }
             });
   }
 
   private String queryPrometheus(String prometheusUrl, String query) throws IOException {
-    String urlString = prometheusUrl + "/api/v1/query?query=" + query;
+    String urlString =
+        prometheusUrl + "/api/v1/query?query=" + URLEncoder.encode(query, StandardCharsets.UTF_8);
     URL url = new URL(urlString);
     HttpURLConnection connection = (HttpURLConnection) url.openConnection();
     connection.setRequestMethod("GET");

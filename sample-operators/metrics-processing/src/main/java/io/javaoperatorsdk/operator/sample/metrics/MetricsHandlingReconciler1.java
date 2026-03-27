@@ -15,14 +15,42 @@
  */
 package io.javaoperatorsdk.operator.sample.metrics;
 
+import java.util.List;
+
+import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration;
+import io.javaoperatorsdk.operator.api.reconciler.EventSourceContext;
+import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
+import io.javaoperatorsdk.operator.processing.event.ResourceID;
+import io.javaoperatorsdk.operator.processing.event.source.EventSource;
+import io.javaoperatorsdk.operator.processing.event.source.timer.TimerEventSource;
 import io.javaoperatorsdk.operator.sample.metrics.customresource.MetricsHandlingCustomResource1;
 
 @ControllerConfiguration
 public class MetricsHandlingReconciler1
     extends AbstractMetricsHandlingReconciler<MetricsHandlingCustomResource1> {
 
+  private static final long TIMER_DELAY = 5000;
+
+  private final TimerEventSource<MetricsHandlingCustomResource1> timerEventSource;
+
   public MetricsHandlingReconciler1() {
     super(100);
+    timerEventSource = new TimerEventSource<>();
+  }
+
+  @SuppressWarnings("unchecked")
+  @Override
+  public List<EventSource<?, MetricsHandlingCustomResource1>> prepareEventSources(
+      EventSourceContext<MetricsHandlingCustomResource1> context) {
+    return List.of((EventSource) timerEventSource);
+  }
+
+  @Override
+  public UpdateControl<MetricsHandlingCustomResource1> reconcile(
+      MetricsHandlingCustomResource1 resource, Context<MetricsHandlingCustomResource1> context) {
+    var result = super.reconcile(resource, context);
+    timerEventSource.scheduleOnce(ResourceID.fromResource(resource), TIMER_DELAY);
+    return result;
   }
 }
