@@ -227,14 +227,18 @@ class MetricsHandlingE2E {
         "reconciliations_execution_duration_milliseconds_count",
         Duration.ofSeconds(30));
 
+    // First verify events_received_total exists at all (from ResourceEvents)
+    assertMetricPresent(prometheusUrl, "events_received_total", Duration.ofSeconds(30));
+
     // Verify timer event source events are recorded with "no_namespace" tag
-    // Timer events are not ResourceEvents so they have no namespace
+    // Timer events are not ResourceEvents so they have no namespace.
+    // exported_namespace is needed because of otel collector.
     assertMetricPresent(
         prometheusUrl,
-        "events_received_total{namespace=\"no_namespace\"}",
+        "events_received_total{namespace=\"exported_namespace\"}",
         Duration.ofSeconds(30),
         "events_received_total",
-        "no_namespace");
+        "exported_namespace");
 
     log.info("All metrics verified successfully in Prometheus");
   }
@@ -254,6 +258,7 @@ class MetricsHandlingE2E {
               log.info("{}: {}", query, result);
               assertThat(result).contains("\"status\":\"success\"");
               for (String expected : expectedSubstrings) {
+                log.info("Checking if result: {} contains expected: {}", result, expected);
                 assertThat(result).contains(expected);
               }
             });
