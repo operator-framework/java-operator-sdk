@@ -179,7 +179,7 @@ public class MicrometerMetricsV2 implements Metrics {
     } else {
       incrementCounter(
           EVENTS_RECEIVED,
-          null,
+          event.getRelatedCustomResourceID().getNamespace().orElse(null),
           metadata,
           Tag.of(EVENT, event.getClass().getSimpleName()),
           Tag.of(ACTION, UNKNOWN_ACTION_TAG));

@@ -230,15 +230,17 @@ class MetricsHandlingE2E {
     // First verify events_received_total exists at all (from ResourceEvents)
     assertMetricPresent(prometheusUrl, "events_received_total", Duration.ofSeconds(30));
 
-    // Verify timer event source events are recorded with "no_namespace" tag
-    // Timer events are not ResourceEvents so they have no namespace.
-    // exported_namespace is needed because of otel collector.
+    // Verify timer event source events are recorded.
+    // Timer events are not ResourceEvents, so they get action="unknown".
+    // The namespace comes from the event's ResourceID (same as the associated resource).
+    // The "exported_namespace" label is used because OTel collector's
+    // resource_to_telemetry_conversion renames Micrometer's "namespace" tag.
     assertMetricPresent(
         prometheusUrl,
-        "events_received_total{exported_namespace=\"no_namespace\"}",
+        "events_received_total{action=\"unknown\"}",
         Duration.ofSeconds(30),
         "events_received_total",
-        "exported_namespace");
+        "unknown");
 
     log.info("All metrics verified successfully in Prometheus");
   }
