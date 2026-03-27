@@ -250,10 +250,12 @@ public class MicrometerMetricsV2 implements Metrics {
   }
 
   private void addNamespaceTag(String namespace, List<Tag> tags) {
-    if (includeNamespaceTag && namespace != null && !namespace.isBlank()) {
-      addTag(NAMESPACE, namespace, tags);
-    } else {
-      addTag(NAMESPACE, NO_NAMESPACE, tags);
+    if (includeNamespaceTag) {
+      if (namespace != null && !namespace.isBlank()) {
+        addTag(NAMESPACE, namespace, tags);
+      } else {
+        addTag(NAMESPACE, NO_NAMESPACE, tags);
+      }
     }
   }
 
