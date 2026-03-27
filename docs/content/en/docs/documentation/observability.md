@@ -123,7 +123,7 @@ All meters use `controller.name` as their primary tag. Counters optionally carry
 | `reconciliations.success.total`      | counter | `controller.name`, `namespace`*                   | Number of successfully finished reconciliations                  |
 | `reconciliations.failure.total`      | counter | `controller.name`, `namespace`*                   | Number of failed reconciliations                                 |
 | `reconciliations.retries.total`      | counter | `controller.name`, `namespace`*                   | Number of reconciliation retries                                 |
-| `events.received`                    | counter | `controller.name`, `event`, `action`, `namespace`* | Number of events received by the controller                      |
+| `events.received`                    | counter | `controller.name`, `event`, `action`, `namespace` | Number of Kubernetes events received by the controller           |
 
 \* `namespace` tag is only included when `withNamespaceAsTag()` is enabled.
 
