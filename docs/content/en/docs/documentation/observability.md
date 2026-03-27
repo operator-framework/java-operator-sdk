@@ -113,17 +113,17 @@ Metrics metrics = MicrometerMetricsV2.newBuilder(registry)
 All meters use `controller.name` as their primary tag. Counters optionally carry a `namespace` tag when
 `withNamespaceAsTag()` is enabled.
 
-| Meter name (Micrometer)              | Type    | Tags                                              | Description                                                     |
-|--------------------------------------|---------|---------------------------------------------------|-----------------------------------------------------------------|
-| `reconciliations.active`             | gauge   | `controller.name`                                 | Number of reconciler executions currently executing             |
-| `reconciliations.queue`              | gauge   | `controller.name`                                 | Number of resources currently queued for reconciliation         |
-| `custom_resources`                   | gauge   | `controller.name`                                 | Number of custom resources tracked by the controller            |
-| `reconciliations.execution.duration` | timer   | `controller.name`                                 | Reconciliation execution duration with explicit bucket histogram |
-| `reconciliations.started.total`      | counter | `controller.name`, `namespace`*                   | Number of reconciliations started (including retries)           |
-| `reconciliations.success.total`      | counter | `controller.name`, `namespace`*                   | Number of successfully finished reconciliations                 |
-| `reconciliations.failure.total`      | counter | `controller.name`, `namespace`*                   | Number of failed reconciliations                                |
-| `reconciliations.retries.total`      | counter | `controller.name`, `namespace`*                   | Number of reconciliation retries                                |
-| `events.received`                    | counter | `controller.name`, `event`, `action`, `namespace`* | Number of events received by the controller           |
+| Meter name (Micrometer)              | Type    | Tags                                               | Description                                                      |
+|--------------------------------------|---------|----------------------------------------------------|------------------------------------------------------------------|
+| `reconciliations.active`             | gauge   | `controller.name`                                  | Number of reconciler executions currently executing              |
+| `reconciliations.queue`              | gauge   | `controller.name`                                  | Number of resources currently queued for reconciliation          |
+| `custom_resources`                   | gauge   | `controller.name`                                  | Number of custom resources tracked by the controller             |
+| `reconciliations.execution.duration` | timer   | `controller.name`                                  | Reconciliation execution duration with explicit bucket histogram |
+| `reconciliations.started.total`      | counter | `controller.name`, `namespace`*                    | Number of reconciliations started (including retries)            |
+| `reconciliations.success.total`      | counter | `controller.name`, `namespace`*                    | Number of successfully finished reconciliations                  |
+| `reconciliations.failure.total`      | counter | `controller.name`, `namespace`*                    | Number of failed reconciliations                                 |
+| `reconciliations.retries.total`      | counter | `controller.name`, `namespace`*                    | Number of reconciliation retries                                 |
+| `events.received`                    | counter | `controller.name`, `event`, `action`, `namespace`* | Number of events received by the controller                      |
 
 \* `namespace` tag is only included when `withNamespaceAsTag()` is enabled.
 The execution timer uses explicit boundaries (10ms, 50ms, 100ms, 250ms, 500ms, 1s, 2s, 5s, 10s, 30s) to ensure
