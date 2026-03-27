@@ -18,6 +18,7 @@ package io.javaoperatorsdk.operator.sample.metrics;
 import java.io.*;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.ArrayDeque;
@@ -226,24 +227,41 @@ class MetricsHandlingE2E {
         "reconciliations_execution_duration_milliseconds_count",
         Duration.ofSeconds(30));
 
+    // Verify timer event source events are recorded with "no_namespace" tag
+    // Timer events are not ResourceEvents so they have no namespace
+    assertMetricPresent(
+        prometheusUrl,
+        "events_received_total{namespace=\"no_namespace\"}",
+        Duration.ofSeconds(30),
+        "events_received_total",
+        "no_namespace");
+
     log.info("All metrics verified successfully in Prometheus");
   }
 
   private void assertMetricPresent(String prometheusUrl, String metricName, Duration timeout) {
+    assertMetricPresent(prometheusUrl, metricName, timeout, metricName);
+  }
+
+  private void assertMetricPresent(
+      String prometheusUrl, String query, Duration timeout, String... expectedSubstrings) {
     await()
         .atMost(timeout)
         .pollInterval(Duration.ofSeconds(5))
         .untilAsserted(
             () -> {
-              String result = queryPrometheus(prometheusUrl, metricName);
-              log.info("{}: {}", metricName, result);
+              String result = queryPrometheus(prometheusUrl, query);
+              log.info("{}: {}", query, result);
               assertThat(result).contains("\"status\":\"success\"");
-              assertThat(result).contains(metricName);
+              for (String expected : expectedSubstrings) {
+                assertThat(result).contains(expected);
+              }
             });
   }
 
   private String queryPrometheus(String prometheusUrl, String query) throws IOException {
-    String urlString = prometheusUrl + "/api/v1/query?query=" + query;
+    String urlString =
+        prometheusUrl + "/api/v1/query?query=" + URLEncoder.encode(query, StandardCharsets.UTF_8);
     URL url = new URL(urlString);
     HttpURLConnection connection = (HttpURLConnection) url.openConnection();
     connection.setRequestMethod("GET");

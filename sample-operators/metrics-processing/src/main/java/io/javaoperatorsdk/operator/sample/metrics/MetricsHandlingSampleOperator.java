@@ -123,7 +123,7 @@ public class MetricsHandlingSampleOperator {
     new ProcessorMetrics().bindTo(compositeRegistry);
     new UptimeMetrics().bindTo(compositeRegistry);
 
-    return MicrometerMetricsV2.newBuilder(compositeRegistry).build();
+    return MicrometerMetricsV2.newBuilder(compositeRegistry).withNamespaceAsTag().build();
   }
 
   @SuppressWarnings("unchecked")
