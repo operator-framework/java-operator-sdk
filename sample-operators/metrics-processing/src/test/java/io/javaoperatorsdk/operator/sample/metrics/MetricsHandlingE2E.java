@@ -235,7 +235,7 @@ class MetricsHandlingE2E {
     // exported_namespace is needed because of otel collector.
     assertMetricPresent(
         prometheusUrl,
-        "events_received_total{namespace=\"exported_namespace\"}",
+        "events_received_total{exported_namespace=\"no_namespace\"}",
         Duration.ofSeconds(30),
         "events_received_total",
         "exported_namespace");
