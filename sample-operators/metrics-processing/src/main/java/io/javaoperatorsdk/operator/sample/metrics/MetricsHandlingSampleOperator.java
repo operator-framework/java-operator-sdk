@@ -23,9 +23,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 
-import io.javaoperatorsdk.operator.config.loader.ConfigProvider;
-import io.javaoperatorsdk.operator.config.loader.provider.EnvVarConfigProvider;
-import io.javaoperatorsdk.operator.config.loader.provider.YamlConfigProvider;
 import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 import org.slf4j.Logger;
@@ -34,6 +31,11 @@ import org.yaml.snakeyaml.Yaml;
 
 import io.javaoperatorsdk.operator.Operator;
 import io.javaoperatorsdk.operator.api.monitoring.Metrics;
+import io.javaoperatorsdk.operator.config.loader.ConfigLoader;
+import io.javaoperatorsdk.operator.config.loader.ConfigProvider;
+import io.javaoperatorsdk.operator.config.loader.provider.AggregatePriorityListConfigProvider;
+import io.javaoperatorsdk.operator.config.loader.provider.EnvVarConfigProvider;
+import io.javaoperatorsdk.operator.config.loader.provider.YamlConfigProvider;
 import io.javaoperatorsdk.operator.monitoring.micrometer.MicrometerMetricsV2;
 import io.micrometer.core.instrument.Clock;
 import io.micrometer.core.instrument.MeterRegistry;
@@ -70,12 +72,17 @@ public class MetricsHandlingSampleOperator {
     var configProviders = new ArrayList<ConfigProvider>();
     configProviders.add(new EnvVarConfigProvider());
     configProviders.add(new YamlConfigProvider(Path.of("/config/config.yaml")));
+    var configLoader = new ConfigLoader(new AggregatePriorityListConfigProvider(configProviders));
 
     Metrics metrics = initOTLPMetrics(isLocal());
     Operator operator =
-        new Operator(o -> o.withStopOnInformerErrorDuringStartup(false).withMetrics(metrics));
-    operator.register(new MetricsHandlingReconciler1());
-    operator.register(new MetricsHandlingReconciler2());
+        new Operator(o -> configLoader.applyConfigs().andThen(k -> k.withMetrics(metrics)));
+    operator.register(
+        new MetricsHandlingReconciler1(),
+        configLoader.applyControllerConfigs(MetricsHandlingReconciler1.NAME));
+    operator.register(
+        new MetricsHandlingReconciler2(),
+        configLoader.applyControllerConfigs(MetricsHandlingReconciler2.NAME));
     operator.start();
   }
 

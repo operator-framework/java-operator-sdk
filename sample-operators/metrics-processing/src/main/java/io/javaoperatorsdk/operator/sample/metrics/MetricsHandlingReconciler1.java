@@ -26,9 +26,13 @@ import io.javaoperatorsdk.operator.processing.event.source.EventSource;
 import io.javaoperatorsdk.operator.processing.event.source.timer.TimerEventSource;
 import io.javaoperatorsdk.operator.sample.metrics.customresource.MetricsHandlingCustomResource1;
 
-@ControllerConfiguration
+import static io.javaoperatorsdk.operator.sample.metrics.MetricsHandlingReconciler1.NAME;
+
+@ControllerConfiguration(name = NAME)
 public class MetricsHandlingReconciler1
     extends AbstractMetricsHandlingReconciler<MetricsHandlingCustomResource1> {
+
+  public static final String NAME = "MetricsHandlingReconciler1";
 
   private static final long TIMER_DELAY = 5000;
 

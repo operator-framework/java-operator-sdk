@@ -77,8 +77,7 @@ class MetricsHandlingE2E {
               .withConfigurationService(
                   c -> c.withMetrics(MetricsHandlingSampleOperator.initOTLPMetrics(true)))
               .build()
-          : ClusterDeployedOperatorExtension.builder()
-              .build();
+          : ClusterDeployedOperatorExtension.builder().build();
 
   @BeforeAll
   void setup() {
@@ -105,10 +104,9 @@ class MetricsHandlingE2E {
 
   private void helmInstall() {
     try {
-      var chartPath = findProjectRoot("helm").toPath()
-          .resolve("helm/generic-helm-chart").toString();
-      var valuesUrl = MetricsHandlingE2E.class.getClassLoader()
-          .getResource("helm-values.yaml");
+      var chartPath =
+          findProjectRoot("helm").toPath().resolve("helm/generic-helm-chart").toString();
+      var valuesUrl = MetricsHandlingE2E.class.getClassLoader().getResource("helm-values.yaml");
       if (valuesUrl == null) {
         throw new IllegalStateException("helm-values.yaml not found on classpath");
       }
@@ -116,11 +114,18 @@ class MetricsHandlingE2E {
       var namespace = operator.getNamespace();
 
       log.info("Installing helm release '{}' into namespace '{}'", HELM_RELEASE_NAME, namespace);
-      runCommand("helm", "install", HELM_RELEASE_NAME, chartPath,
-          "-f", valuesPath,
-          "--namespace", namespace,
+      runCommand(
+          "helm",
+          "install",
+          HELM_RELEASE_NAME,
+          chartPath,
+          "-f",
+          valuesPath,
+          "--namespace",
+          namespace,
           "--wait",
-          "--timeout", "2m");
+          "--timeout",
+          "2m");
       log.info("Helm release '{}' installed successfully", HELM_RELEASE_NAME);
     } catch (Exception e) {
       throw new RuntimeException("Failed to install helm chart", e);
@@ -131,10 +136,15 @@ class MetricsHandlingE2E {
     try {
       var namespace = operator.getNamespace();
       log.info("Uninstalling helm release '{}' from namespace '{}'", HELM_RELEASE_NAME, namespace);
-      runCommand("helm", "uninstall", HELM_RELEASE_NAME,
-          "--namespace", namespace,
+      runCommand(
+          "helm",
+          "uninstall",
+          HELM_RELEASE_NAME,
+          "--namespace",
+          namespace,
           "--wait",
-          "--timeout", "2m");
+          "--timeout",
+          "2m");
       log.info("Helm release '{}' uninstalled successfully", HELM_RELEASE_NAME);
     } catch (Exception e) {
       log.warn("Failed to uninstall helm release", e);
@@ -347,8 +357,11 @@ class MetricsHandlingE2E {
 
   private void installObservabilityServices() {
     try {
-      File scriptFile = findProjectRoot("observability").toPath()
-          .resolve("observability/install-observability.sh").toFile();
+      File scriptFile =
+          findProjectRoot("observability")
+              .toPath()
+              .resolve("observability/install-observability.sh")
+              .toFile();
       log.info("Running observability setup script: {}", scriptFile.getAbsolutePath());
       runCommand("/bin/sh", scriptFile.getAbsolutePath());
       log.info("Observability stack is ready");
@@ -370,9 +383,7 @@ class MetricsHandlingE2E {
   }
 
   private static void runCommand(String... command) throws IOException, InterruptedException {
-    var process = new ProcessBuilder(command)
-        .redirectErrorStream(true)
-        .start();
+    var process = new ProcessBuilder(command).redirectErrorStream(true).start();
     try (var reader = new BufferedReader(new InputStreamReader(process.getInputStream()))) {
       String line;
       while ((line = reader.readLine()) != null) {
