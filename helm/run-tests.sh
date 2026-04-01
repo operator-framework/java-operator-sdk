@@ -24,7 +24,7 @@ PLUGIN_URL="https://github.com/helm-unittest/helm-unittest"
 # Install helm-unittest plugin if not already installed
 if ! helm plugin list | grep -q "${PLUGIN_NAME}"; then
   echo "Installing helm-unittest plugin..."
-  helm plugin install "${PLUGIN_URL}"
+  helm plugin install --verify=false "${PLUGIN_URL}"
 fi
 
 echo "Running helm unit tests..."
