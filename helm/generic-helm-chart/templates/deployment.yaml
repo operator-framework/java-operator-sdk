@@ -52,7 +52,7 @@ spec:
       - name: operator
         securityContext:
           {{- toYaml .Values.securityContext | nindent 12 }}
-        image: "{{ required \"A valid .Values.image.repository is required\" .Values.image.repository }}:{{ include "generic-operator.imageTag" . }}"
+        image: "{{ required "A valid .Values.image.repository is required" .Values.image.repository }}:{{ include "generic-operator.imageTag" . }}"
         imagePullPolicy: {{ .Values.image.pullPolicy }}
         env:
         - name: OPERATOR_NAMESPACE
