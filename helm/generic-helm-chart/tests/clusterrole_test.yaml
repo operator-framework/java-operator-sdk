@@ -1,0 +1,271 @@
+#
+# Copyright Java Operator SDK Authors
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#         http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+
+suite: ClusterRole tests
+templates:
+  - clusterrole.yaml
+set:
+  image.repository: example.com/my-operator
+tests:
+  - it: should create ClusterRole when rbac.create is true
+    asserts:
+      - isKind:
+          of: ClusterRole
+      - hasDocuments:
+          count: 1
+
+  - it: should not create ClusterRole when rbac.create is false
+    set:
+      rbac.create: false
+    asserts:
+      - hasDocuments:
+          count: 0
+
+  - it: should always include event permissions
+    asserts:
+      - contains:
+          path: rules
+          content:
+            apiGroups:
+              - ""
+            resources:
+              - events
+            verbs:
+              - create
+              - patch
+
+  - it: should add primary resource rules with default verbs
+    set:
+      primaryResources:
+        - apiGroup: "example.com"
+          resources:
+            - myresources
+    asserts:
+      - contains:
+          path: rules
+          content:
+            apiGroups:
+              - "example.com"
+            resources:
+              - myresources
+            verbs:
+              - get
+              - list
+              - watch
+              - patch
+              - update
+      - contains:
+          path: rules
+          content:
+            apiGroups:
+              - "example.com"
+            resources:
+              - myresources/status
+            verbs:
+              - get
+              - patch
+              - update
+
+  - it: should use custom verbs for primary resources
+    set:
+      primaryResources:
+        - apiGroup: "example.com"
+          resources:
+            - myresources
+          verbs:
+            - get
+            - list
+    asserts:
+      - contains:
+          path: rules
+          content:
+            apiGroups:
+              - "example.com"
+            resources:
+              - myresources
+            verbs:
+              - get
+              - list
+
+  - it: should use custom status verbs for primary resources
+    set:
+      primaryResources:
+        - apiGroup: "example.com"
+          resources:
+            - myresources
+          statusVerbs:
+            - get
+    asserts:
+      - contains:
+          path: rules
+          content:
+            apiGroups:
+              - "example.com"
+            resources:
+              - myresources/status
+            verbs:
+              - get
+
+  - it: should add secondary resource rules with default verbs
+    set:
+      secondaryResources:
+        - apiGroup: ""
+          resources:
+            - configmaps
+            - secrets
+    asserts:
+      - contains:
+          path: rules
+          content:
+            apiGroups:
+              - ""
+            resources:
+              - configmaps
+              - secrets
+            verbs:
+              - get
+              - list
+              - watch
+              - create
+              - update
+              - patch
+              - delete
+
+  - it: should use custom verbs for secondary resources
+    set:
+      secondaryResources:
+        - apiGroup: ""
+          resources:
+            - configmaps
+          verbs:
+            - get
+            - list
+            - watch
+    asserts:
+      - contains:
+          path: rules
+          content:
+            apiGroups:
+              - ""
+            resources:
+              - configmaps
+            verbs:
+              - get
+              - list
+              - watch
+
+  - it: should not include lease rules when leader election is disabled
+    asserts:
+      - notContains:
+          path: rules
+          content:
+            apiGroups:
+              - coordination.k8s.io
+          any: true
+
+  - it: should include lease rules when leader election is enabled
+    set:
+      leaderElection.enabled: true
+    asserts:
+      - contains:
+          path: rules
+          content:
+            apiGroups:
+              - coordination.k8s.io
+            resources:
+              - leases
+            verbs:
+              - get
+              - list
+              - watch
+              - create
+              - update
+              - patch
+              - delete
+
+  - it: should handle multiple primary and secondary resources
+    set:
+      primaryResources:
+        - apiGroup: "example.com"
+          resources:
+            - foos
+        - apiGroup: "other.io"
+          resources:
+            - bars
+      secondaryResources:
+        - apiGroup: ""
+          resources:
+            - configmaps
+        - apiGroup: "apps"
+          resources:
+            - deployments
+    asserts:
+      - contains:
+          path: rules
+          content:
+            apiGroups:
+              - "example.com"
+            resources:
+              - foos
+            verbs:
+              - get
+              - list
+              - watch
+              - patch
+              - update
+      - contains:
+          path: rules
+          content:
+            apiGroups:
+              - "other.io"
+            resources:
+              - bars
+            verbs:
+              - get
+              - list
+              - watch
+              - patch
+              - update
+      - contains:
+          path: rules
+          content:
+            apiGroups:
+              - ""
+            resources:
+              - configmaps
+            verbs:
+              - get
+              - list
+              - watch
+              - create
+              - update
+              - patch
+              - delete
+      - contains:
+          path: rules
+          content:
+            apiGroups:
+              - "apps"
+            resources:
+              - deployments
+            verbs:
+              - get
+              - list
+              - watch
+              - create
+              - update
+              - patch
+              - delete

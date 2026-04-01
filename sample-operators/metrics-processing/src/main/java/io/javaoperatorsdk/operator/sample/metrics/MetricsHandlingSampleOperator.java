@@ -17,10 +17,15 @@ package io.javaoperatorsdk.operator.sample.metrics;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.file.Path;
 import java.time.Duration;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 
+import io.javaoperatorsdk.operator.config.loader.ConfigProvider;
+import io.javaoperatorsdk.operator.config.loader.provider.EnvVarConfigProvider;
+import io.javaoperatorsdk.operator.config.loader.provider.YamlConfigProvider;
 import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 import org.slf4j.Logger;
@@ -61,6 +66,10 @@ public class MetricsHandlingSampleOperator {
    */
   public static void main(String[] args) {
     log.info("Metrics Handling Sample Operator starting!");
+
+    var configProviders = new ArrayList<ConfigProvider>();
+    configProviders.add(new EnvVarConfigProvider());
+    configProviders.add(new YamlConfigProvider(Path.of("/config/config.yaml")));
 
     Metrics metrics = initOTLPMetrics(isLocal());
     Operator operator =

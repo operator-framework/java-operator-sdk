@@ -1,0 +1,64 @@
+#
+# Copyright Java Operator SDK Authors
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#         http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+
+suite: ClusterRoleBinding tests
+templates:
+  - clusterrolebinding.yaml
+set:
+  image.repository: example.com/my-operator
+tests:
+  - it: should create ClusterRoleBinding when rbac.create is true
+    asserts:
+      - isKind:
+          of: ClusterRoleBinding
+      - hasDocuments:
+          count: 1
+
+  - it: should not create ClusterRoleBinding when rbac.create is false
+    set:
+      rbac.create: false
+    asserts:
+      - hasDocuments:
+          count: 0
+
+  - it: should reference the correct ClusterRole
+    asserts:
+      - equal:
+          path: roleRef.kind
+          value: ClusterRole
+      - equal:
+          path: roleRef.name
+          value: RELEASE-NAME-generic-operator-chart
+      - equal:
+          path: roleRef.apiGroup
+          value: rbac.authorization.k8s.io
+
+  - it: should reference the correct ServiceAccount
+    asserts:
+      - equal:
+          path: subjects[0].kind
+          value: ServiceAccount
+      - equal:
+          path: subjects[0].name
+          value: RELEASE-NAME-generic-operator-chart
+
+  - it: should use custom service account name
+    set:
+      serviceAccount.name: "my-sa"
+    asserts:
+      - equal:
+          path: subjects[0].name
+          value: my-sa

@@ -101,6 +101,11 @@
           <to>
             <image>metrics-processing-operator</image>
           </to>
+          <container>
+            <jvmFlags>
+              <jvmFlag>-Dlog4j.configurationFile=/config/log4j2.xml</jvmFlag>
+            </jvmFlags>
+          </container>
         </configuration>
       </plugin>
       <plugin>
