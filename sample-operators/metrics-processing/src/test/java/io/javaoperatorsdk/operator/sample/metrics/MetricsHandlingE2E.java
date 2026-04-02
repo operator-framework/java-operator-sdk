@@ -111,7 +111,7 @@ class MetricsHandlingE2E {
         throw new IllegalStateException("helm-values.yaml not found on classpath");
       }
       var valuesPath = new File(valuesUrl.toURI()).getAbsolutePath();
-      var namespace = operator.getNamespace();
+      var namespace = getNamespace();
 
       log.info("Installing helm release '{}' into namespace '{}'", HELM_RELEASE_NAME, namespace);
       runCommand(
@@ -132,9 +132,14 @@ class MetricsHandlingE2E {
     }
   }
 
+  private String getNamespace() {
+    var ns = operator.getNamespace();
+    return ns == null ? "default" : ns;
+  }
+
   private void helmUninstall() {
     try {
-      var namespace = operator.getNamespace();
+      var namespace = getNamespace();
       log.info("Uninstalling helm release '{}' from namespace '{}'", HELM_RELEASE_NAME, namespace);
       runCommand(
           "helm",
