@@ -55,13 +55,6 @@ public class MetricsHandlingSampleOperator {
 
   private static final Logger log = LoggerFactory.getLogger(MetricsHandlingSampleOperator.class);
 
-  public static boolean isLocal() {
-    String deployment = System.getProperty("test.deployment");
-    boolean remote = (deployment != null && deployment.equals("remote"));
-    log.info("Running the operator {} ", remote ? "remotely" : "locally");
-    return !remote;
-  }
-
   /**
    * Based on env variables a different flavor of Reconciler is used, showcasing how the same logic
    * can be implemented using the low level and higher level APIs.
@@ -163,5 +156,13 @@ public class MetricsHandlingSampleOperator {
       log.error("Error loading otlp-config.yaml", e);
     }
     return configMap;
+  }
+
+  // only for testing purposes
+  public static boolean isLocal() {
+    String deployment = System.getProperty("test.deployment");
+    boolean remote = (deployment != null && deployment.equals("remote"));
+    log.info("Running the operator {} ", remote ? "remotely" : "locally");
+    return !remote;
   }
 }
