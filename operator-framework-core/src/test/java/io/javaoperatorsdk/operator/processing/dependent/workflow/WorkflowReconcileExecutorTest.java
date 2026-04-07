@@ -730,6 +730,17 @@ class WorkflowReconcileExecutorTest extends AbstractWorkflowExecutorTest {
   }
 
   @Test
+  void oneDependentWithActivationCondition() {
+    var workflow =
+        new WorkflowBuilder<TestCustomResource>()
+            .addDependentResourceAndConfigure(dr1)
+            .withActivationCondition(notMetCondition)
+            .build();
+    workflow.reconcile(new TestCustomResource(), mockContext);
+    assertThat(executionHistory).notReconciled(dr1);
+  }
+
+  @Test
   void resultFromReadyConditionShouldBeAvailableIfExisting() {
     final var result = Integer.valueOf(42);
     final var resultCondition =
