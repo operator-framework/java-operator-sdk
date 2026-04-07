@@ -255,7 +255,6 @@ class WorkflowReconcileExecutor<P extends HasMetadata> extends AbstractWorkflowE
     if (activationConditionMet) {
       // make sure we register the dependent's event source if it hasn't been added already
       // this might be needed in corner cases such as
-      // https://github.com/operator-framework/java-operator-sdk/issues/3249
       registerOrDeregisterEventSourceBasedOnActivation(true, dependentResourceNode);
       createOrGetResultFor(dependentResourceNode).markForDelete();
       if (dependents.isEmpty()) {
@@ -264,11 +263,11 @@ class WorkflowReconcileExecutor<P extends HasMetadata> extends AbstractWorkflowE
         dependents.forEach(d -> markDependentsForDelete(d, bottomNodes));
       }
     } else {
-      // this is for an edge case when there is only one resource but that is not active
-      createOrGetResultFor(dependentResourceNode).markAsVisited();
       if (dependents.isEmpty()) {
+        createOrGetResultFor(dependentResourceNode).markAsVisited();
         handleNodeExecutionFinish(dependentResourceNode);
       } else {
+        createOrGetResultFor(dependentResourceNode).markForDelete();
         dependents.forEach(d -> markDependentsForDelete(d, bottomNodes));
       }
     }

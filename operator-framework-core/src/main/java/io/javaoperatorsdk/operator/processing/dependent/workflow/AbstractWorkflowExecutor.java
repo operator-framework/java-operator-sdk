@@ -157,6 +157,13 @@ abstract class AbstractWorkflowExecutor<P extends HasMetadata> {
     return condition
         .map(
             c -> {
+              synchronized (this) {
+                Optional<DetailedCondition.Result> existingResult =
+                    createOrGetResultFor(dependentResource).getConditionResult(c.type());
+                if (existingResult.isPresent()) {
+                  return existingResult.get();
+                }
+              }
               final DetailedCondition.Result<?> r = c.detailedIsMet(dr, primary, context);
               synchronized (this) {
                 results
