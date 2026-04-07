@@ -238,6 +238,13 @@ class WorkflowReconcileExecutor<P extends HasMetadata> extends AbstractWorkflowE
     bottomNodes.forEach(this::handleDelete);
   }
 
+  private <R> void markDependentsForDelete(
+      DependentResourceNode<R, P> dependentResourceNode, Set<DependentResourceNode> bottomNodes) {
+    boolean activationConditionMet =
+        isConditionMet(dependentResourceNode.getActivationCondition(), dependentResourceNode);
+    markDependentsForDelete(dependentResourceNode, bottomNodes, activationConditionMet);
+  }
+
   private void markDependentsForDelete(
       DependentResourceNode<?, P> dependentResourceNode,
       Set<DependentResourceNode> bottomNodes,
@@ -254,7 +261,7 @@ class WorkflowReconcileExecutor<P extends HasMetadata> extends AbstractWorkflowE
       if (dependents.isEmpty()) {
         bottomNodes.add(dependentResourceNode);
       } else {
-        dependents.forEach(d -> markDependentsForDelete(d, bottomNodes, true));
+        dependents.forEach(d -> markDependentsForDelete(d, bottomNodes));
       }
     } else {
       // this is for an edge case when there is only one resource but that is not active
@@ -262,7 +269,7 @@ class WorkflowReconcileExecutor<P extends HasMetadata> extends AbstractWorkflowE
       if (dependents.isEmpty()) {
         handleNodeExecutionFinish(dependentResourceNode);
       } else {
-        dependents.forEach(d -> markDependentsForDelete(d, bottomNodes, true));
+        dependents.forEach(d -> markDependentsForDelete(d, bottomNodes));
       }
     }
   }
