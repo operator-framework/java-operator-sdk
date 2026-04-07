@@ -139,9 +139,6 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
 
   @Override
   public synchronized void start() {
-    if (isRunning()) {
-      return;
-    }
     super.start();
     // this makes sure that on first reconciliation all resources are
     // present on the index
