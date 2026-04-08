@@ -22,6 +22,8 @@ import io.javaoperatorsdk.operator.sample.metrics.customresource.MetricsHandling
 public class MetricsHandlingReconciler2
     extends AbstractMetricsHandlingReconciler<MetricsHandlingCustomResource2> {
 
+  public static final String NAME = "MetricsHandlingReconciler2";
+
   public MetricsHandlingReconciler2() {
     super(150);
   }

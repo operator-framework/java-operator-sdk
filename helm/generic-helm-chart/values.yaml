@@ -1,0 +1,130 @@
+#
+# Copyright Java Operator SDK Authors
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#         http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+
+# Default values for generic JOSDK operator chart
+
+replicaCount: 1
+
+image:
+  repository: ""  # REQUIRED: set to your operator image
+  pullPolicy: IfNotPresent
+  tag: ""  # Overrides the image tag whose default is the chart appVersion
+
+imagePullSecrets: []
+nameOverride: ""
+fullnameOverride: ""
+
+serviceAccount:
+  create: true
+  annotations: {}
+  name: ""
+
+podAnnotations: {}
+
+podSecurityContext:
+  fsGroup: 9999
+  runAsUser: 9999
+  runAsGroup: 9999
+
+securityContext:
+  allowPrivilegeEscalation: false
+  capabilities:
+    drop:
+    - ALL
+  readOnlyRootFilesystem: true
+
+resources:
+  limits:
+    cpu: 500m
+    memory: 512Mi
+  requests:
+    cpu: 100m
+    memory: 128Mi
+
+# Leader election configuration
+leaderElection:
+  enabled: false
+
+# Operator configuration
+operator:
+  # Namespace to watch (empty for all namespaces)
+  watchNamespace: ""
+  # Additional environment variables for the operator container
+  env: []
+  #  - name: MY_VAR
+  #    value: "my-value"
+
+# Operator config files mounted at /config/
+operatorConfig:
+  # Operator configuration YAML (config.yaml)
+  config: |
+    # see options here: https://javaoperatorsdk.io/docs/documentation/configuration/#loading-configuration-from-external-sources
+  # Log4j2 configuration XML (log4j2.xml)
+  log4j2: |
+    <?xml version="1.0" encoding="UTF-8"?>
+    <Configuration xmlns="https://logging.apache.org/xml/ns"
+                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                   xsi:schemaLocation="
+                       https://logging.apache.org/xml/ns
+                       https://logging.apache.org/xml/ns/log4j-config-2.xsd" monitorInterval="60">
+        <Appenders>
+            <Console name="Console" target="SYSTEM_OUT">
+                <PatternLayout pattern="%d %threadId %-30c{1.} [%-5level] %msg %n%throwable"/>
+            </Console>
+        </Appenders>
+        <Loggers>
+            <Root level="INFO">
+                <AppenderRef ref="Console"/>
+            </Root>
+        </Loggers>
+    </Configuration>
+
+# Primary resources - custom resources that the operator reconciles
+# These get full CRUD + status permissions in the ClusterRole
+primaryResources: []
+#  - apiGroup: "example.com"
+#    resources:
+#    - myresources
+#    # optional: custom verbs (defaults to get, list, watch, patch, update)
+#    verbs: []
+#    # optional: custom status verbs (defaults to get, patch, update)
+#    statusVerbs: []
+
+# Secondary resources - resources that the operator creates/manages
+# These get full CRUD permissions in the ClusterRole
+secondaryResources: []
+#  - apiGroup: ""
+#    resources:
+#    - configmaps
+#    - secrets
+#    # optional: custom verbs (defaults to get, list, watch, create, update, patch, delete)
+#    verbs: []
+
+# Additional containers to add to the operator pod (sidecars)
+extraContainers: []
+
+# Additional init containers to add to the operator pod
+extraInitContainers: []
+
+# Additional volumes to add to the operator pod
+extraVolumes: []
+
+# Additional volume mounts to add to the operator container
+extraVolumeMounts: []
+
+# RBAC configuration
+rbac:
+  create: true

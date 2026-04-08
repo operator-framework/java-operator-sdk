@@ -1,0 +1,290 @@
+#
+# Copyright Java Operator SDK Authors
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#         http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+
+suite: Deployment tests
+templates:
+  - deployment.yaml
+set:
+  image.repository: example.com/my-operator
+tests:
+  - it: should render a Deployment with default values
+    asserts:
+      - isKind:
+          of: Deployment
+      - equal:
+          path: spec.replicas
+          value: 1
+      - equal:
+          path: spec.template.spec.containers[0].name
+          value: operator
+      - equal:
+          path: spec.template.spec.containers[0].image
+          value: "example.com/my-operator:0.1.0"
+      - equal:
+          path: spec.template.spec.containers[0].imagePullPolicy
+          value: IfNotPresent
+
+  - it: should set custom replica count
+    documentSelector:
+      path: kind
+      value: Deployment
+    set:
+      replicaCount: 3
+    asserts:
+      - equal:
+          path: spec.replicas
+          value: 3
+
+  - it: should set custom image tag
+    documentSelector:
+      path: kind
+      value: Deployment
+    set:
+      image.tag: "1.2.3"
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].image
+          value: "example.com/my-operator:1.2.3"
+
+  - it: should inject OPERATOR_NAMESPACE env var
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: OPERATOR_NAMESPACE
+            valueFrom:
+              fieldRef:
+                fieldPath: metadata.namespace
+
+  - it: should set WATCH_NAMESPACE when configured
+    documentSelector:
+      path: kind
+      value: Deployment
+    set:
+      operator.watchNamespace: "my-namespace"
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: WATCH_NAMESPACE
+            value: "my-namespace"
+
+  - it: should not set WATCH_NAMESPACE when empty
+    asserts:
+      - notContains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: WATCH_NAMESPACE
+          any: true
+
+  - it: should add custom env vars
+    documentSelector:
+      path: kind
+      value: Deployment
+    set:
+      operator.env:
+        - name: MY_VAR
+          value: "my-value"
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: MY_VAR
+            value: "my-value"
+
+  - it: should add env var from secret reference
+    documentSelector:
+      path: kind
+      value: Deployment
+    set:
+      operator.env:
+        - name: SECRET_VAR
+          valueFrom:
+            secretKeyRef:
+              name: my-secret
+              key: password
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: SECRET_VAR
+            valueFrom:
+              secretKeyRef:
+                name: my-secret
+                key: password
+
+  - it: should add multiple custom env vars
+    documentSelector:
+      path: kind
+      value: Deployment
+    set:
+      operator.env:
+        - name: VAR_ONE
+          value: "one"
+        - name: VAR_TWO
+          value: "two"
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: VAR_ONE
+            value: "one"
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: VAR_TWO
+            value: "two"
+
+  - it: should mount config volume
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].volumeMounts
+          content:
+            name: config
+            mountPath: /config
+            readOnly: true
+      - contains:
+          path: spec.template.spec.volumes
+          content:
+            name: config
+            configMap:
+              name: RELEASE-NAME-generic-operator-chart-config
+
+  - it: should add extra volumes and volume mounts
+    documentSelector:
+      path: kind
+      value: Deployment
+    set:
+      extraVolumes:
+        - name: my-secret
+          secret:
+            secretName: my-secret
+      extraVolumeMounts:
+        - name: my-secret
+          mountPath: /secrets
+          readOnly: true
+    asserts:
+      - contains:
+          path: spec.template.spec.volumes
+          content:
+            name: my-secret
+            secret:
+              secretName: my-secret
+      - contains:
+          path: spec.template.spec.containers[0].volumeMounts
+          content:
+            name: my-secret
+            mountPath: /secrets
+            readOnly: true
+
+  - it: should add extra sidecar containers
+    documentSelector:
+      path: kind
+      value: Deployment
+    set:
+      extraContainers:
+        - name: sidecar
+          image: sidecar:latest
+    asserts:
+      - contains:
+          path: spec.template.spec.containers
+          content:
+            name: sidecar
+            image: sidecar:latest
+
+  - it: should add extra init containers
+    documentSelector:
+      path: kind
+      value: Deployment
+    set:
+      extraInitContainers:
+        - name: init
+          image: init:latest
+    asserts:
+      - contains:
+          path: spec.template.spec.initContainers
+          content:
+            name: init
+            image: init:latest
+
+  - it: should set pod security context
+    asserts:
+      - equal:
+          path: spec.template.spec.securityContext.runAsUser
+          value: 9999
+      - equal:
+          path: spec.template.spec.securityContext.fsGroup
+          value: 9999
+
+  - it: should set container security context
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].securityContext.allowPrivilegeEscalation
+          value: false
+      - equal:
+          path: spec.template.spec.containers[0].securityContext.readOnlyRootFilesystem
+          value: true
+
+  - it: should set pod annotations
+    documentSelector:
+      path: kind
+      value: Deployment
+    set:
+      podAnnotations:
+        prometheus.io/scrape: "true"
+    asserts:
+      - equal:
+          path: spec.template.metadata.annotations["prometheus.io/scrape"]
+          value: "true"
+
+  - it: should set resource limits and requests
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].resources.limits.cpu
+          value: 500m
+      - equal:
+          path: spec.template.spec.containers[0].resources.limits.memory
+          value: 512Mi
+      - equal:
+          path: spec.template.spec.containers[0].resources.requests.cpu
+          value: 100m
+      - equal:
+          path: spec.template.spec.containers[0].resources.requests.memory
+          value: 128Mi
+
+  - it: should set image pull secrets
+    documentSelector:
+      path: kind
+      value: Deployment
+    set:
+      imagePullSecrets:
+        - name: my-registry
+    asserts:
+      - contains:
+          path: spec.template.spec.imagePullSecrets
+          content:
+            name: my-registry
+
+  - it: should use fullnameOverride for service account reference
+    documentSelector:
+      path: kind
+      value: Deployment
+    set:
+      fullnameOverride: "my-operator"
+    asserts:
+      - equal:
+          path: spec.template.spec.serviceAccountName
+          value: my-operator

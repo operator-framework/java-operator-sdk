@@ -1,0 +1,97 @@
+#
+# Copyright Java Operator SDK Authors
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#         http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+
+{{- if .Values.rbac.create }}
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: {{ include "generic-operator.fullname" . }}
+  labels:
+    {{- include "generic-operator.labels" . | nindent 4 }}
+rules:
+{{- /* Primary resources - the custom resources the operator reconciles */}}
+{{- range .Values.primaryResources }}
+- apiGroups:
+  - {{ .apiGroup | quote }}
+  resources:
+  {{- range .resources }}
+  - {{ . }}
+  {{- end }}
+  verbs:
+  {{- if .verbs }}
+  {{- range .verbs }}
+  - {{ . }}
+  {{- end }}
+  {{- else }}
+  {{- include "generic-operator.primaryVerbs" $ | nindent 2 }}
+  {{- end }}
+- apiGroups:
+  - {{ .apiGroup | quote }}
+  resources:
+  {{- range .resources }}
+  - {{ . }}/status
+  {{- end }}
+  verbs:
+  {{- if .statusVerbs }}
+  {{- range .statusVerbs }}
+  - {{ . }}
+  {{- end }}
+  {{- else }}
+  {{- include "generic-operator.primaryStatusVerbs" $ | nindent 2 }}
+  {{- end }}
+{{- end }}
+{{- /* Secondary resources - resources managed by the operator */}}
+{{- range .Values.secondaryResources }}
+- apiGroups:
+  - {{ .apiGroup | quote }}
+  resources:
+  {{- range .resources }}
+  - {{ . }}
+  {{- end }}
+  verbs:
+  {{- if .verbs }}
+  {{- range .verbs }}
+  - {{ . }}
+  {{- end }}
+  {{- else }}
+  {{- include "generic-operator.secondaryVerbs" $ | nindent 2 }}
+  {{- end }}
+{{- end }}
+# Event permissions - for recording events
+- apiGroups:
+  - ""
+  resources:
+  - events
+  verbs:
+  - create
+  - patch
+{{- /* Leader election - Lease permissions */}}
+{{- if .Values.leaderElection.enabled }}
+# Lease permissions - for leader election
+- apiGroups:
+  - coordination.k8s.io
+  resources:
+  - leases
+  verbs:
+  - get
+  - list
+  - watch
+  - create
+  - update
+  - patch
+  - delete
+{{- end }}
+{{- end }}

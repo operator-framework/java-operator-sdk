@@ -59,13 +59,14 @@ class MetricsHandlingE2E {
   static final int OTEL_COLLECTOR_PORT = 4318;
   public static final Duration TEST_DURATION = Duration.ofSeconds(60);
   public static final String NAME_LABEL_KEY = "app.kubernetes.io/name";
+  static final String HELM_RELEASE_NAME = "metrics-processing";
 
   private LocalPortForward prometheusPortForward;
   private LocalPortForward otelCollectorPortForward;
 
   static final KubernetesClient client = new KubernetesClientBuilder().build();
 
-  MetricsHandlingE2E() throws FileNotFoundException {}
+  MetricsHandlingE2E() {}
 
   @RegisterExtension
   AbstractOperatorExtension operator =
@@ -76,18 +77,15 @@ class MetricsHandlingE2E {
               .withConfigurationService(
                   c -> c.withMetrics(MetricsHandlingSampleOperator.initOTLPMetrics(true)))
               .build()
-          : ClusterDeployedOperatorExtension.builder()
-              .withOperatorDeployment(
-                  new KubernetesClientBuilder()
-                      .build()
-                      .load(new FileInputStream("k8s/operator.yaml"))
-                      .items())
-              .build();
+          : ClusterDeployedOperatorExtension.builder().build();
 
   @BeforeAll
-  void setupObservability() {
+  void setup() {
     log.info("Setting up observability stack...");
     installObservabilityServices();
+    if (!isLocal()) {
+      helmInstall();
+    }
     prometheusPortForward = portForward(NAME_LABEL_KEY, "prometheus", PROMETHEUS_PORT);
     if (isLocal()) {
       otelCollectorPortForward =
@@ -97,8 +95,65 @@ class MetricsHandlingE2E {
 
   @AfterAll
   void cleanup() throws IOException {
+    if (!isLocal()) {
+      helmUninstall();
+    }
     closePortForward(prometheusPortForward);
     closePortForward(otelCollectorPortForward);
+  }
+
+  private void helmInstall() {
+    try {
+      var chartPath =
+          findProjectRoot("helm").toPath().resolve("helm/generic-helm-chart").toString();
+      var valuesUrl = MetricsHandlingE2E.class.getClassLoader().getResource("helm-values.yaml");
+      if (valuesUrl == null) {
+        throw new IllegalStateException("helm-values.yaml not found on classpath");
+      }
+      var valuesPath = new File(valuesUrl.toURI()).getAbsolutePath();
+      var namespace = getNamespace();
+
+      log.info("Installing helm release '{}' into namespace '{}'", HELM_RELEASE_NAME, namespace);
+      runCommand(
+          "helm",
+          "install",
+          HELM_RELEASE_NAME,
+          chartPath,
+          "-f",
+          valuesPath,
+          "--namespace",
+          namespace,
+          "--wait",
+          "--timeout",
+          "2m");
+      log.info("Helm release '{}' installed successfully", HELM_RELEASE_NAME);
+    } catch (Exception e) {
+      throw new RuntimeException("Failed to install helm chart", e);
+    }
+  }
+
+  private String getNamespace() {
+    var ns = operator.getNamespace();
+    return ns == null ? "default" : ns;
+  }
+
+  private void helmUninstall() {
+    try {
+      var namespace = getNamespace();
+      log.info("Uninstalling helm release '{}' from namespace '{}'", HELM_RELEASE_NAME, namespace);
+      runCommand(
+          "helm",
+          "uninstall",
+          HELM_RELEASE_NAME,
+          "--namespace",
+          namespace,
+          "--wait",
+          "--timeout",
+          "2m");
+      log.info("Helm release '{}' uninstalled successfully", HELM_RELEASE_NAME);
+    } catch (Exception e) {
+      log.warn("Failed to uninstall helm release", e);
+    }
   }
 
   private LocalPortForward portForward(String labelKey, String labelValue, int port) {
@@ -307,43 +362,43 @@ class MetricsHandlingE2E {
 
   private void installObservabilityServices() {
     try {
-      // Find the observability script relative to project root
-      File projectRoot = new File(".").getCanonicalFile();
-      while (projectRoot != null && !new File(projectRoot, "observability").exists()) {
-        projectRoot = projectRoot.getParentFile();
-      }
-
-      if (projectRoot == null) {
-        throw new IllegalStateException("Could not find observability directory");
-      }
-
-      File scriptFile = new File(projectRoot, "observability/install-observability.sh");
-      if (!scriptFile.exists()) {
-        throw new IllegalStateException(
-            "Observability script not found at: " + scriptFile.getAbsolutePath());
-      }
+      File scriptFile =
+          findProjectRoot("observability")
+              .toPath()
+              .resolve("observability/install-observability.sh")
+              .toFile();
       log.info("Running observability setup script: {}", scriptFile.getAbsolutePath());
-
-      // Run the install-observability.sh script
-      ProcessBuilder processBuilder = new ProcessBuilder("/bin/sh", scriptFile.getAbsolutePath());
-      processBuilder.redirectErrorStream(true);
-
-      processBuilder.environment().putAll(System.getenv());
-      Process process = processBuilder.start();
-      BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
-      String line;
-      while ((line = reader.readLine()) != null) {
-        log.info("Observability setup: {}", line);
-      }
-
-      int exitCode = process.waitFor();
-      if (exitCode != 0) {
-        log.warn("Observability setup script returned exit code: {}", exitCode);
-      }
+      runCommand("/bin/sh", scriptFile.getAbsolutePath());
       log.info("Observability stack is ready");
     } catch (Exception e) {
       log.error("Failed to setup observability stack", e);
       throw new RuntimeException(e);
+    }
+  }
+
+  private static File findProjectRoot(String marker) throws IOException {
+    File dir = new File(".").getCanonicalFile();
+    while (dir != null && !new File(dir, marker).exists()) {
+      dir = dir.getParentFile();
+    }
+    if (dir == null) {
+      throw new IllegalStateException("Could not find '" + marker + "' directory in project root");
+    }
+    return dir;
+  }
+
+  private static void runCommand(String... command) throws IOException, InterruptedException {
+    var process = new ProcessBuilder(command).redirectErrorStream(true).start();
+    try (var reader = new BufferedReader(new InputStreamReader(process.getInputStream()))) {
+      String line;
+      while ((line = reader.readLine()) != null) {
+        log.info("{}: {}", command[0], line);
+      }
+    }
+    int exitCode = process.waitFor();
+    if (exitCode != 0) {
+      throw new IllegalStateException(
+          String.join(" ", command) + " failed with exit code: " + exitCode);
     }
   }
 }
