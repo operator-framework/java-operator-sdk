@@ -69,7 +69,7 @@ class PerResourcePollingEventSourceIT {
             });
 
     operator.delete(resource(NAME_2));
-    Thread.sleep(10000 + POLL_PERIOD);
+    Thread.sleep(1000 + POLL_PERIOD);
 
     var fe1 = reconciler.getNumberOfFetchExecution(NAME_1);
     var fe2 = reconciler.getNumberOfFetchExecution(NAME_2);
@@ -77,7 +77,7 @@ class PerResourcePollingEventSourceIT {
         .pollInterval(Duration.ofMillis(POLL_PERIOD))
         .untilAsserted(
             () -> assertThat(reconciler.getNumberOfFetchExecution(NAME_1)).isGreaterThan(fe1 + 5));
-    assertThat(reconciler.getNumberOfExecutions(NAME_2)).isLessThanOrEqualTo(fe2 + 1);
+    assertThat(reconciler.getNumberOfFetchExecution(NAME_2)).isEqualTo(fe2);
   }
 
   private PerResourceEventSourceCustomResource resource(String name) {
