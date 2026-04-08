@@ -42,6 +42,7 @@ import io.fabric8.kubernetes.api.model.Namespaced;
 import io.fabric8.kubernetes.api.model.apiextensions.v1.CustomResourceDefinition;
 import io.fabric8.kubernetes.client.CustomResource;
 import io.fabric8.kubernetes.client.KubernetesClient;
+import io.fabric8.kubernetes.client.KubernetesClientBuilder;
 import io.fabric8.kubernetes.client.LocalPortForward;
 import io.javaoperatorsdk.operator.Operator;
 import io.javaoperatorsdk.operator.ReconcilerUtilsInternal;
@@ -349,6 +350,13 @@ public class LocallyRunOperatorExtension extends AbstractOperatorExtension {
       beforeStartHook.accept(this);
     }
 
+    // ExtensionContext.Store.CloseableResource registered in the class-level (parent) context
+    // is invoked by JUnit when the class scope closes
+    var classContext = oneNamespacePerClass ? context : context.getParent().orElse(context);
+    classContext
+        .getStore(ExtensionContext.Namespace.create(LocallyRunOperatorExtension.class))
+        .computeIfAbsent(CrdCleanup.class, ignored -> new CrdCleanup());
+
     LOGGER.debug("Starting the operator locally");
     this.operator.start();
   }
@@ -357,18 +365,12 @@ public class LocallyRunOperatorExtension extends AbstractOperatorExtension {
   protected void after(ExtensionContext context) {
     super.after(context);
 
-    var kubernetesClient = getInfrastructureKubernetesClient();
-
-    var iterator = appliedCRDs.iterator();
-    while (iterator.hasNext()) {
-      deleteCrd(iterator.next(), kubernetesClient);
-      iterator.remove();
-    }
+    var infrastructureKubernetesClient = getInfrastructureKubernetesClient();
 
     // if the client is used for infra client, we should not close it
     // either test or operator should close this client
-    if (getKubernetesClient() != getInfrastructureKubernetesClient()) {
-      kubernetesClient.close();
+    if (getKubernetesClient() != infrastructureKubernetesClient) {
+      infrastructureKubernetesClient.close();
     }
 
     try {
@@ -387,12 +389,27 @@ public class LocallyRunOperatorExtension extends AbstractOperatorExtension {
     localPortForwards.clear();
   }
 
-  private void deleteCrd(AppliedCRD appliedCRD, KubernetesClient client) {
-    if (!deleteCRDs) {
-      LOGGER.debug("Skipping deleting CRD because of configuration: {}", appliedCRD);
-      return;
+  private static class CrdCleanup implements ExtensionContext.Store.CloseableResource {
+    @Override
+    public void close() {
+      // Create a fresh client for cleanup since operator clients may already be closed.
+      try (var client = new KubernetesClientBuilder().build()) {
+        var iterator = appliedCRDs.iterator();
+        while (iterator.hasNext()) {
+          var appliedCRD = iterator.next();
+          iterator.remove();
+          if (!deleteCRDs) {
+            LOGGER.debug("Skipping deleting CRD because of configuration: {}", appliedCRD);
+            continue;
+          }
+          try {
+            appliedCRD.delete(client);
+          } catch (Exception e) {
+            LOGGER.warn("Failed to delete CRD: {}. Continuing with remaining CRDs.", appliedCRD, e);
+          }
+        }
+      }
     }
-    appliedCRD.delete(client);
   }
 
   private sealed interface AppliedCRD permits AppliedCRD.FileCRD, AppliedCRD.InstanceCRD {
