@@ -105,6 +105,49 @@ tests:
             name: MY_VAR
             value: "my-value"
 
+  - it: should add env var from secret reference
+    documentSelector:
+      path: kind
+      value: Deployment
+    set:
+      operator.env:
+        - name: SECRET_VAR
+          valueFrom:
+            secretKeyRef:
+              name: my-secret
+              key: password
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: SECRET_VAR
+            valueFrom:
+              secretKeyRef:
+                name: my-secret
+                key: password
+
+  - it: should add multiple custom env vars
+    documentSelector:
+      path: kind
+      value: Deployment
+    set:
+      operator.env:
+        - name: VAR_ONE
+          value: "one"
+        - name: VAR_TWO
+          value: "two"
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: VAR_ONE
+            value: "one"
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: VAR_TWO
+            value: "two"
+
   - it: should mount config volume
     asserts:
       - contains:
