@@ -100,7 +100,7 @@ class WorkflowReconcileExecutor<P extends HasMetadata> extends AbstractWorkflowE
           isConditionMet(dependentResourceNode.getReconcilePrecondition(), dependentResourceNode);
     }
     if (!reconcileConditionMet || !activationConditionMet) {
-      handleReconcileOrActivationConditionNotMet(dependentResourceNode, activationConditionMet);
+      handleReconcileOrActivationConditionNotMet(dependentResourceNode);
     } else {
       submit(dependentResourceNode, new NodeReconcileExecutor<>(dependentResourceNode), RECONCILE);
     }
@@ -183,7 +183,10 @@ class WorkflowReconcileExecutor<P extends HasMetadata> extends AbstractWorkflowE
     @SuppressWarnings("unchecked")
     protected void doRun(DependentResourceNode<R, P> dependentResourceNode) {
       boolean deletePostConditionMet = true;
-      if (isConditionMet(dependentResourceNode.getActivationCondition(), dependentResourceNode)) {
+      var active =
+          isConditionMet(dependentResourceNode.getActivationCondition(), dependentResourceNode);
+      registerOrDeregisterEventSourceBasedOnActivation(active, dependentResourceNode);
+      if (active) {
         // GarbageCollected status is irrelevant here, as this method is only called when a
         // precondition does not hold,
         // a deleter should be deleted even if it is otherwise garbage collected
@@ -194,7 +197,6 @@ class WorkflowReconcileExecutor<P extends HasMetadata> extends AbstractWorkflowE
         deletePostConditionMet =
             isConditionMet(dependentResourceNode.getDeletePostcondition(), dependentResourceNode);
       }
-
       createOrGetResultFor(dependentResourceNode).markAsVisited();
       if (deletePostConditionMet) {
         handleDependentDeleted(dependentResourceNode);
@@ -232,38 +234,20 @@ class WorkflowReconcileExecutor<P extends HasMetadata> extends AbstractWorkflowE
   }
 
   private void handleReconcileOrActivationConditionNotMet(
-      DependentResourceNode<?, P> dependentResourceNode, boolean activationConditionMet) {
+      DependentResourceNode<?, P> dependentResourceNode) {
     Set<DependentResourceNode> bottomNodes = new HashSet<>();
-    markDependentsForDelete(dependentResourceNode, bottomNodes, activationConditionMet);
+    markDependentsForDelete(dependentResourceNode, bottomNodes);
     bottomNodes.forEach(this::handleDelete);
   }
 
   private void markDependentsForDelete(
-      DependentResourceNode<?, P> dependentResourceNode,
-      Set<DependentResourceNode> bottomNodes,
-      boolean activationConditionMet) {
-    // this is a check so the activation condition is not evaluated twice,
-    // so if the activation condition was false, this node is not meant to be deleted.
+      DependentResourceNode<?, P> dependentResourceNode, Set<DependentResourceNode> bottomNodes) {
     var dependents = dependentResourceNode.getParents();
-    if (activationConditionMet) {
-      // make sure we register the dependent's event source if it hasn't been added already
-      // this might be needed in corner cases such as
-      // https://github.com/operator-framework/java-operator-sdk/issues/3249
-      registerOrDeregisterEventSourceBasedOnActivation(true, dependentResourceNode);
-      createOrGetResultFor(dependentResourceNode).markForDelete();
-      if (dependents.isEmpty()) {
-        bottomNodes.add(dependentResourceNode);
-      } else {
-        dependents.forEach(d -> markDependentsForDelete(d, bottomNodes, true));
-      }
+    createOrGetResultFor(dependentResourceNode).markForDelete();
+    if (dependents.isEmpty()) {
+      bottomNodes.add(dependentResourceNode);
     } else {
-      // this is for an edge case when there is only one resource but that is not active
-      createOrGetResultFor(dependentResourceNode).markAsVisited();
-      if (dependents.isEmpty()) {
-        handleNodeExecutionFinish(dependentResourceNode);
-      } else {
-        dependents.forEach(d -> markDependentsForDelete(d, bottomNodes, true));
-      }
+      dependents.forEach(d -> markDependentsForDelete(d, bottomNodes));
     }
   }
 

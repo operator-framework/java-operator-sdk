@@ -45,6 +45,7 @@ class WorkflowReconcileExecutorTest extends AbstractWorkflowExecutorTest {
   Context<TestCustomResource> mockContext = spy(Context.class);
 
   ExecutorService executorService = Executors.newCachedThreadPool();
+  EventSourceRetriever eventSourceRetriever = mock(EventSourceRetriever.class);
 
   TestDependent dr3 = new TestDependent("DR_3");
   TestDependent dr4 = new TestDependent("DR_4");
@@ -56,7 +57,7 @@ class WorkflowReconcileExecutorTest extends AbstractWorkflowExecutorTest {
     when(mockContext.managedWorkflowAndDependentResourceContext())
         .thenReturn(mock(ManagedWorkflowAndDependentResourceContext.class));
     when(mockContext.getWorkflowExecutorService()).thenReturn(executorService);
-    when(mockContext.eventSourceRetriever()).thenReturn(mock(EventSourceRetriever.class));
+    when(mockContext.eventSourceRetriever()).thenReturn(eventSourceRetriever);
   }
 
   @Test
@@ -691,6 +692,52 @@ class WorkflowReconcileExecutorTest extends AbstractWorkflowExecutorTest {
 
     assertThat(executionHistory).deleted(drDeleter2);
     verify(condition, times(1)).isMet(any(), any(), any());
+  }
+
+  @Test
+  @SuppressWarnings("unchecked")
+  void activationConditionEventSourceRegistrationWithParentWithFalsePrecondition() {
+    var workflow =
+        new WorkflowBuilder<TestCustomResource>()
+            .addDependentResourceAndConfigure(dr1)
+            .withReconcilePrecondition(notMetCondition)
+            .addDependentResourceAndConfigure(drDeleter)
+            .withActivationCondition(notMetCondition)
+            .dependsOn(dr1)
+            .build();
+
+    workflow.reconcile(new TestCustomResource(), mockContext);
+    assertThat(executionHistory).notReconciled(dr1, drDeleter);
+    verify(eventSourceRetriever, never()).dynamicallyRegisterEventSource(any());
+    verify(eventSourceRetriever, times(1)).dynamicallyDeRegisterEventSource(any());
+  }
+
+  @Test
+  @SuppressWarnings("unchecked")
+  void activationConditionEventSourceRegistration() {
+    var workflow =
+        new WorkflowBuilder<TestCustomResource>()
+            .addDependentResourceAndConfigure(dr1)
+            .addDependentResourceAndConfigure(drDeleter)
+            .withActivationCondition(notMetCondition)
+            .dependsOn(dr1)
+            .build();
+
+    workflow.reconcile(new TestCustomResource(), mockContext);
+    assertThat(executionHistory).reconciled(dr1).notReconciled(drDeleter);
+    verify(eventSourceRetriever, never()).dynamicallyRegisterEventSource(any());
+    verify(eventSourceRetriever, atLeast(1)).dynamicallyDeRegisterEventSource(any());
+  }
+
+  @Test
+  void oneDependentWithActivationCondition() {
+    var workflow =
+        new WorkflowBuilder<TestCustomResource>()
+            .addDependentResourceAndConfigure(dr1)
+            .withActivationCondition(notMetCondition)
+            .build();
+    workflow.reconcile(new TestCustomResource(), mockContext);
+    assertThat(executionHistory).notReconciled(dr1);
   }
 
   @Test

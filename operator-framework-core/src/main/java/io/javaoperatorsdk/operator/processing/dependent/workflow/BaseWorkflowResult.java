@@ -172,6 +172,15 @@ class BaseWorkflowResult implements WorkflowResult {
       return deletePostconditionResult != null && !deletePostconditionResult.isSuccess();
     }
 
+    public Optional<DetailedCondition.Result> getConditionResult(Condition.Type conditionType) {
+      return switch (conditionType) {
+        case ACTIVATION -> Optional.ofNullable(activationConditionResult);
+        case DELETE -> Optional.ofNullable(deletePostconditionResult);
+        case READY -> Optional.ofNullable(readyPostconditionResult);
+        case RECONCILE -> Optional.ofNullable(reconcilePostconditionResult);
+      };
+    }
+
     public boolean isReady() {
       return readyPostconditionResult == null || readyPostconditionResult.isSuccess();
     }
