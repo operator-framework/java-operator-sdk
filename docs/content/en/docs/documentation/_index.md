@@ -19,7 +19,7 @@ This section contains detailed documentation for all Java Operator SDK features 
 
 - **[Eventing](eventing/)** - Understanding the event-driven model
 - **[Accessing Resources in Caches](working-with-es-caches/)** - How to access resources in caches
-- **[Operations](operations/)** - Operations-related features including observability
+- **[Operations](operations/)** - Helm chart, metrics, and logging
 - **[Other Features](features/)** - Additional capabilities and integrations
 
 Each guide includes practical examples and best practices to help you build robust, production-ready operators.
