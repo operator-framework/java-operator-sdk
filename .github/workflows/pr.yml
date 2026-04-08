@@ -29,7 +29,7 @@ jobs:
           ./mvnw ${MAVEN_ARGS} spotless:check --file pom.xml
           ./mvnw -N license:check --file pom.xml
       - name: Run unit tests
-        run: ./mvnw ${MAVEN_ARGS} clean install -Pno-apt --file pom.xml
+        run: ./mvnw ${MAVEN_ARGS} clean install --file pom.xml
 
   build:
     uses: ./.github/workflows/build.yml
