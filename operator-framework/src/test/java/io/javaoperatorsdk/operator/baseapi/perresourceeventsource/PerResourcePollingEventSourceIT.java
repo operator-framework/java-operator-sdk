@@ -15,6 +15,8 @@
  */
 package io.javaoperatorsdk.operator.baseapi.perresourceeventsource;
 
+import java.time.Duration;
+
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
@@ -22,6 +24,7 @@ import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
 import io.javaoperatorsdk.annotation.Sample;
 import io.javaoperatorsdk.operator.junit.LocallyRunOperatorExtension;
 
+import static io.javaoperatorsdk.operator.baseapi.perresourceeventsource.PerResourcePollingEventSourceTestReconciler.POLL_PERIOD;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
 
@@ -49,13 +52,14 @@ class PerResourcePollingEventSourceIT {
    * works with the underling mechanisms in event source manager and other parts of the system.
    */
   @Test
-  void fetchedAndReconciledMultipleTimes() {
+  void fetchedAndReconciledMultipleTimes() throws InterruptedException {
     operator.create(resource(NAME_1));
     operator.create(resource(NAME_2));
 
     var reconciler =
         operator.getReconcilerOfType(PerResourcePollingEventSourceTestReconciler.class);
     await()
+        .pollInterval(Duration.ofMillis(POLL_PERIOD))
         .untilAsserted(
             () -> {
               assertThat(reconciler.getNumberOfExecutions(NAME_1)).isGreaterThan(2);
@@ -63,6 +67,17 @@ class PerResourcePollingEventSourceIT {
               assertThat(reconciler.getNumberOfExecutions(NAME_2)).isGreaterThan(2);
               assertThat(reconciler.getNumberOfFetchExecution(NAME_2)).isGreaterThan(2);
             });
+
+    operator.delete(resource(NAME_2));
+    Thread.sleep(1000 + POLL_PERIOD);
+
+    var fe1 = reconciler.getNumberOfFetchExecution(NAME_1);
+    var fe2 = reconciler.getNumberOfFetchExecution(NAME_2);
+    await()
+        .pollInterval(Duration.ofMillis(POLL_PERIOD))
+        .untilAsserted(
+            () -> assertThat(reconciler.getNumberOfFetchExecution(NAME_1)).isGreaterThan(fe1 + 5));
+    assertThat(reconciler.getNumberOfFetchExecution(NAME_2)).isEqualTo(fe2);
   }
 
   private PerResourceEventSourceCustomResource resource(String name) {
