@@ -31,7 +31,7 @@ import io.javaoperatorsdk.operator.api.reconciler.dependent.Dependent;
           type = ConfigMapDependentResource.class,
           reconcilePrecondition = FalseReconcilePrecondition.class),
       @Dependent(
-          type = SecretDependentResource.class,
+          type = NotAvailableDependentResource.class,
           activationCondition = FalseActivationCondition.class,
           dependsOn = "configmap")
     })

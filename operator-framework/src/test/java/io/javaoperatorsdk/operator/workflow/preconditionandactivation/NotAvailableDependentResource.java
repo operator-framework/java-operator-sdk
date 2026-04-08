@@ -16,18 +16,18 @@
 package io.javaoperatorsdk.operator.workflow.preconditionandactivation;
 
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
-import io.fabric8.kubernetes.api.model.Secret;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.CRUDKubernetesDependentResource;
 
-public class SecretDependentResource
-    extends CRUDKubernetesDependentResource<Secret, PreconditionAndActivationCustomResource> {
+public class NotAvailableDependentResource
+    extends CRUDKubernetesDependentResource<
+        NotAvailableCustomResource, PreconditionAndActivationCustomResource> {
 
   @Override
-  protected Secret desired(
+  protected NotAvailableCustomResource desired(
       PreconditionAndActivationCustomResource primary,
       Context<PreconditionAndActivationCustomResource> context) {
-    Secret secret = new Secret();
+    NotAvailableCustomResource secret = new NotAvailableCustomResource();
     secret.setMetadata(
         new ObjectMetaBuilder()
             .withName(primary.getMetadata().getName())
