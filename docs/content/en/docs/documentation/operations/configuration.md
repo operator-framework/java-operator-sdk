@@ -1,6 +1,6 @@
 ---
 title: Configurations
-weight: 55
+weight: 89
 ---
 
 The Java Operator SDK (JOSDK) provides abstractions that work great out of the box. However, we recognize that default behavior isn't always suitable for every use case. Numerous configuration options help you tailor the framework to your specific needs.
