@@ -1,6 +1,6 @@
 ---
 title: Glossary
-weight: 100
+weight: 150
 ---
 
 - **Primary Resource** - The resource representing the desired state that the controller works to achieve. While often a Custom Resource, it can also be a native Kubernetes resource (Deployment, ConfigMap, etc.).

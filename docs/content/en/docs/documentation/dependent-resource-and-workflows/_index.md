@@ -1,6 +1,6 @@
 ---
 title: Dependent resources and workflows
-weight: 70
+weight: 80
 ---
 
 Dependent resources and workflows are features sometimes referenced as higher

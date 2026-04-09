@@ -1,6 +1,6 @@
 ---
 title: Architecture and Internals
-weight: 85
+weight: 90
 ---
 
 This document provides an overview of the Java Operator SDK's internal structure and components to help developers understand and contribute to the project. While not a comprehensive reference, it introduces core concepts that should make other components easier to understand.

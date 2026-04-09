@@ -23,14 +23,6 @@ public class DeploymentReconciler
 }
 ```
 
-## Leader Election
-
-Operators are typically deployed with a single active instance. However, you can deploy multiple instances where only one (the "leader") processes events. This is achieved through "leader election."
-
-While all instances run and start their event sources to populate caches, only the leader processes events. If the leader crashes, other instances are already warmed up and ready to take over when a new leader is elected.
-
-See sample configuration in the [E2E test](https://github.com/java-operator-sdk/java-operator-sdk/blob/8865302ac0346ee31f2d7b348997ec2913d5922b/sample-operators/leader-election/src/main/java/io/javaoperatorsdk/operator/sample/LeaderElectionTestOperator.java#L21-L23).
-
 ## Automatic CRD Generation
 
 **Note:** This feature is provided by the [Fabric8 Kubernetes Client](https://github.com/fabric8io/kubernetes-client), not JOSDK itself.
