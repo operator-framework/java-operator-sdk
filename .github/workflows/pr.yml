@@ -39,6 +39,6 @@ jobs:
     steps:
       - uses: actions/checkout@v6
       - name: Set up Helm
-        uses: azure/setup-helm@v4
+        uses: azure/setup-helm@v5
       - name: Run Helm unit tests
         run: ./helm/run-tests.sh
