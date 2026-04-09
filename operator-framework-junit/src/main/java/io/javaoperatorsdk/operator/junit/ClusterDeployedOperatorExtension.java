@@ -97,7 +97,8 @@ public class ClusterDeployedOperatorExtension extends AbstractOperatorExtension 
         crd.createOrReplace();
         Thread.sleep(CRD_READY_WAIT); // readiness is not applicable for CRD, just wait a little
         var crdList = crd.get();
-        LOGGER.debug("Applied CRD with name: {}",
+        LOGGER.debug(
+            "Applied CRD with name: {}",
             (crdList != null && !crdList.isEmpty() && crdList.get(0) != null)
                 ? crdList.get(0).getMetadata().getName()
                 : crdFile.getName());

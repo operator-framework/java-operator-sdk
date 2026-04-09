@@ -429,8 +429,7 @@ public class LocallyRunOperatorExtension extends AbstractOperatorExtension {
       public void delete(KubernetesClient client) {
         try {
           LOGGER.debug("Deleting CRD: {}", crdString);
-          final var items =
-              client.load(new ByteArrayInputStream(crdString.getBytes())).items();
+          final var items = client.load(new ByteArrayInputStream(crdString.getBytes())).items();
           if (items == null || items.isEmpty() || items.get(0) == null) {
             LOGGER.warn("Could not determine CRD name from yaml: {}", path);
             return;
