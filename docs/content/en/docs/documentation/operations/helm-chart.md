@@ -1,6 +1,6 @@
 ---
 title: Generic Helm Chart
-weight: 86
+weight: 76
 ---
 
 A generic, reusable Helm chart for deploying Java operators built with JOSDK is available at

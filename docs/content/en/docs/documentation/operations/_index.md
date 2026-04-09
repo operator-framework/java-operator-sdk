@@ -1,6 +1,6 @@
 ---
 title: Operations
-weight: 85
+weight: 70
 ---
 
 This section covers operations-related features for running and managing operators in production.

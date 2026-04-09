@@ -1,6 +1,6 @@
 ---
 title: Leader Election
-weight: 89
+weight: 74
 ---
 
 When running multiple replicas of an operator for high availability, leader election ensures that
