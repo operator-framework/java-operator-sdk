@@ -49,13 +49,13 @@ jobs:
           cache: 'maven'
 
       - name: Build SDK
-        run: mvn install -DskipTests
+        run: ./mvnw install -DskipTests
 
       - name: Run integration tests in local mode
         run: |
-          mvn test -P end-to-end-tests -pl ${{ matrix.sample }}
+          ./mvnw test -P end-to-end-tests -pl ${{ matrix.sample }}
 
       - name: Run E2E tests as a deployment
         run: |
           eval $(minikube -p minikube docker-env)
-          mvn jib:dockerBuild test -P end-to-end-tests -Dtest.deployment=remote -pl ${{ matrix.sample }}
+          ./mvnw jib:dockerBuild test -P end-to-end-tests -Dtest.deployment=remote -pl ${{ matrix.sample }}
