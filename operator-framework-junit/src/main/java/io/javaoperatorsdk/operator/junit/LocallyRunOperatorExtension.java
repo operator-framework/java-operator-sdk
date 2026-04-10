@@ -28,7 +28,9 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Stream;
@@ -42,6 +44,7 @@ import io.fabric8.kubernetes.api.model.Namespaced;
 import io.fabric8.kubernetes.api.model.apiextensions.v1.CustomResourceDefinition;
 import io.fabric8.kubernetes.client.CustomResource;
 import io.fabric8.kubernetes.client.KubernetesClient;
+import io.fabric8.kubernetes.client.KubernetesClientBuilder;
 import io.fabric8.kubernetes.client.LocalPortForward;
 import io.javaoperatorsdk.operator.Operator;
 import io.javaoperatorsdk.operator.ReconcilerUtilsInternal;
@@ -58,6 +61,7 @@ public class LocallyRunOperatorExtension extends AbstractOperatorExtension {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(LocallyRunOperatorExtension.class);
   private static final int CRD_DELETE_TIMEOUT = 5000;
+  private static final int CRD_DELETE_WAIT_TIMEOUT = 60000;
   private static final Set<AppliedCRD> appliedCRDs = new HashSet<>();
   private static final boolean deleteCRDs =
       Boolean.parseBoolean(System.getProperty("testsuite.deleteCRDs", "true"));
@@ -349,6 +353,13 @@ public class LocallyRunOperatorExtension extends AbstractOperatorExtension {
       beforeStartHook.accept(this);
     }
 
+    // ExtensionContext.Store.CloseableResource registered in the class-level (parent) context
+    // is invoked by JUnit when the class scope closes
+    var classContext = oneNamespacePerClass ? context : context.getParent().orElse(context);
+    classContext
+        .getStore(ExtensionContext.Namespace.create(LocallyRunOperatorExtension.class))
+        .computeIfAbsent(CrdCleanup.class, ignored -> new CrdCleanup());
+
     LOGGER.debug("Starting the operator locally");
     this.operator.start();
   }
@@ -357,18 +368,12 @@ public class LocallyRunOperatorExtension extends AbstractOperatorExtension {
   protected void after(ExtensionContext context) {
     super.after(context);
 
-    var kubernetesClient = getInfrastructureKubernetesClient();
-
-    var iterator = appliedCRDs.iterator();
-    while (iterator.hasNext()) {
-      deleteCrd(iterator.next(), kubernetesClient);
-      iterator.remove();
-    }
+    var infrastructureKubernetesClient = getInfrastructureKubernetesClient();
 
     // if the client is used for infra client, we should not close it
     // either test or operator should close this client
-    if (getKubernetesClient() != getInfrastructureKubernetesClient()) {
-      kubernetesClient.close();
+    if (getKubernetesClient() != infrastructureKubernetesClient) {
+      infrastructureKubernetesClient.close();
     }
 
     try {
@@ -387,12 +392,27 @@ public class LocallyRunOperatorExtension extends AbstractOperatorExtension {
     localPortForwards.clear();
   }
 
-  private void deleteCrd(AppliedCRD appliedCRD, KubernetesClient client) {
-    if (!deleteCRDs) {
-      LOGGER.debug("Skipping deleting CRD because of configuration: {}", appliedCRD);
-      return;
+  private static class CrdCleanup implements ExtensionContext.Store.CloseableResource {
+    @Override
+    public void close() {
+      // Create a fresh client for cleanup since operator clients may already be closed.
+      try (var client = new KubernetesClientBuilder().build()) {
+        var iterator = appliedCRDs.iterator();
+        while (iterator.hasNext()) {
+          var appliedCRD = iterator.next();
+          iterator.remove();
+          if (!deleteCRDs) {
+            LOGGER.debug("Skipping deleting CRD because of configuration: {}", appliedCRD);
+            continue;
+          }
+          try {
+            appliedCRD.delete(client);
+          } catch (Exception e) {
+            LOGGER.warn("Failed to delete CRD: {}. Continuing with remaining CRDs.", appliedCRD, e);
+          }
+        }
+      }
     }
-    appliedCRD.delete(client);
   }
 
   private sealed interface AppliedCRD permits AppliedCRD.FileCRD, AppliedCRD.InstanceCRD {
@@ -409,8 +429,25 @@ public class LocallyRunOperatorExtension extends AbstractOperatorExtension {
       public void delete(KubernetesClient client) {
         try {
           LOGGER.debug("Deleting CRD: {}", crdString);
-          final var crd = client.load(new ByteArrayInputStream(crdString.getBytes()));
-          crd.withTimeoutInMillis(CRD_DELETE_TIMEOUT).delete();
+          final var items = client.load(new ByteArrayInputStream(crdString.getBytes())).items();
+          if (items == null || items.isEmpty() || items.get(0) == null) {
+            LOGGER.warn("Could not determine CRD name from yaml: {}", path);
+            return;
+          }
+          final var crdName = items.get(0).getMetadata().getName();
+          client
+              .apiextensions()
+              .v1()
+              .customResourceDefinitions()
+              .withName(crdName)
+              .withTimeoutInMillis(CRD_DELETE_TIMEOUT)
+              .delete();
+          client
+              .apiextensions()
+              .v1()
+              .customResourceDefinitions()
+              .withName(crdName)
+              .waitUntilCondition(Objects::isNull, CRD_DELETE_WAIT_TIMEOUT, TimeUnit.MILLISECONDS);
           LOGGER.debug("Deleted CRD with path: {}", path);
         } catch (Exception ex) {
           LOGGER.warn(
@@ -423,17 +460,28 @@ public class LocallyRunOperatorExtension extends AbstractOperatorExtension {
 
       @Override
       public void delete(KubernetesClient client) {
-        String type = customResourceDefinition.getMetadata().getName();
+        String crdName = customResourceDefinition.getMetadata().getName();
         try {
-          LOGGER.debug("Deleting CustomResourceDefinition instance CRD: {}", type);
-          final var crd = client.resource(customResourceDefinition);
-          crd.withTimeoutInMillis(CRD_DELETE_TIMEOUT).delete();
-          LOGGER.debug("Deleted CustomResourceDefinition instance CRD: {}", type);
+          LOGGER.debug("Deleting CustomResourceDefinition instance CRD: {}", crdName);
+          client
+              .apiextensions()
+              .v1()
+              .customResourceDefinitions()
+              .withName(crdName)
+              .withTimeoutInMillis(CRD_DELETE_TIMEOUT)
+              .delete();
+          client
+              .apiextensions()
+              .v1()
+              .customResourceDefinitions()
+              .withName(crdName)
+              .waitUntilCondition(Objects::isNull, CRD_DELETE_WAIT_TIMEOUT, TimeUnit.MILLISECONDS);
+          LOGGER.debug("Deleted CustomResourceDefinition instance CRD: {}", crdName);
         } catch (Exception ex) {
           LOGGER.warn(
               "Cannot delete CustomResourceDefinition instance CRD: {}. You might need to delete it"
                   + " manually.",
-              type,
+              crdName,
               ex);
         }
       }
