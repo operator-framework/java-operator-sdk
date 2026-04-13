@@ -12,11 +12,10 @@ limitations.
 
 Rate limiting is by default turned **off**, since correct configuration depends on the reconciler
 implementation, in particular, on how long a typical reconciliation takes.
-(The parallelism of reconciliation itself can be limited via
-[`ConfigurationService`](https://github.com/java-operator-sdk/java-operator-sdk/blob/ce4d996ee073ebef5715737995fc3d33f4751275/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/api/config/ConfigurationService.java#L120-L120)
-by configuring the `ExecutorService` appropriately.)
 
-## Default Rate Limiter
+Rate limiting is configured per controller, see [ControllerConfiguration](https://github.com/operator-framework/java-operator-sdk/blob/e976fb80d62f6bd0f714d78cec0a7a38d9b4a928/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/api/config/ControllerConfiguration.java#L81).
+
+## The default LinearRateLimiter
 
 We provide a generic rate limiter implementation:
 [`LinearRateLimiter`](https://github.com/java-operator-sdk/java-operator-sdk/blob/main/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/processing/event/rate/LinearRateLimiter.java).
@@ -40,7 +39,7 @@ they stay within their own rate limits.
 ## Custom Rate Limiter
 
 You can provide your own rate limiter by implementing the
-[`RateLimiter`](https://github.com/java-operator-sdk/java-operator-sdk/blob/ce4d996ee073ebef5715737995fc3d33f4751275/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/processing/event/rate/RateLimiter.java)
+[`RateLimiter`](https://github.com/java-operator-sdk/java-operator-sdk/blob/main/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/processing/event/rate/RateLimiter.java)
 interface and setting it either through:
 
 - explicit [configuration](operations/configuration.md), or
