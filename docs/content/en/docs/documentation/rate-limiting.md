@@ -17,12 +17,12 @@ implementation, in particular, on how long a typical reconciliation takes.
 by configuring the `ExecutorService` appropriately.)
 
 We provide a generic rate limiter implementation:
-[`PeriodRateLimiter`](https://github.com/java-operator-sdk/java-operator-sdk/blob/main/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/processing/event/rate/PeriodRateLimiter.java)
+[`LinearRateLimiter`](https://github.com/java-operator-sdk/java-operator-sdk/blob/main/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/processing/event/rate/LinearRateLimiter.java)
 .
 You can provide your own rate limiter by implementing the [`RateLimiter`](https://github.com/java-operator-sdk/java-operator-sdk/blob/ce4d996ee073ebef5715737995fc3d33f4751275/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/processing/event/rate/RateLimiter.java)
 interface.
 
-You can set this custom implementation using explicit [configuration](./operations/configuration.md) or using the `rateLimiter`
+You can set this custom implementation using explicit [configuration](operations/configuration.md) or using the `rateLimiter`
 field of the `@ControllerConfiguration` annotation. 
 For the annotation approach, similarly to `Retry` implementations,
 `RateLimiter` implementations must provide an accessible, no-arg constructor for instantiation
