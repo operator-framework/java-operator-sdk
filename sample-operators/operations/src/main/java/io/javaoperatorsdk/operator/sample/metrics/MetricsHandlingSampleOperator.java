@@ -96,7 +96,7 @@ public class MetricsHandlingSampleOperator {
 
           @Override
           public Map<String, String> resourceAttributes() {
-            return Map.of("service.name", "josdk", "operator", "metrics-processing");
+            return Map.of("service.name", "josdk", "operator", "operations");
           }
         };
 
