@@ -1,6 +1,6 @@
 ---
 title: Logging
-weight: 72
+weight: 82
 ---
 
 ## Contextual Info for Logging with MDC
