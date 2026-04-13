@@ -1,6 +1,6 @@
 ---
 title: Working with EventSource caches
-weight: 48
+weight: 49
 ---
 
 As described in [Event sources and related topics](eventing.md), event sources serve as the backbone

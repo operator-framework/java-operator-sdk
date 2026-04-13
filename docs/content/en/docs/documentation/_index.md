@@ -14,6 +14,7 @@ This section contains detailed documentation for all Java Operator SDK features 
 - **[Dependent Resources & Workflows](dependent-resource-and-workflows/)** - Managing resource relationships
 - **[Configuration](configuration/)** - Customizing operator behavior
 - **[Error Handling & Retries](error-handling-retries/)** - Managing failures gracefully
+- **[Rate Limiting](rate-limiting/)** - Controlling reconciliation frequency per resource
 
 ## Advanced Features
 

@@ -1,0 +1,52 @@
+---
+title: Rate limiting
+weight: 47
+---
+
+It is possible to rate limit reconciliation on a per-resource basis. The rate limit takes
+precedence over retry/reschedule configurations: for example, even if a retry would reschedule a reconciliation
+but this request would make the resource go over its rate limit, the next
+reconciliation will be postponed according to the rate limiting rules. Note that the
+reconciliation is never cancelled, it will just be executed as early as possible based on rate
+limitations.
+
+Rate limiting is by default turned **off**, since correct configuration depends on the reconciler
+implementation, in particular, on how long a typical reconciliation takes.
+
+Rate limiting is configured per controller, see [ControllerConfiguration](https://github.com/operator-framework/java-operator-sdk/blob/e976fb80d62f6bd0f714d78cec0a7a38d9b4a928/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/api/config/ControllerConfiguration.java#L81).
+
+## The default LinearRateLimiter
+
+We provide a generic rate limiter implementation:
+[`LinearRateLimiter`](https://github.com/java-operator-sdk/java-operator-sdk/blob/main/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/processing/event/rate/LinearRateLimiter.java).
+
+To configure it, use the `@RateLimited` annotation on your `Reconciler` class. The following
+configuration limits each resource to reconcile at most twice within a 3 second interval:
+
+```java
+@RateLimited(maxReconciliations = 2, within = 3, unit = TimeUnit.SECONDS)
+@ControllerConfiguration
+public class MyReconciler implements Reconciler<MyCR> {
+
+}
+```
+
+Thus, if a given resource was reconciled twice in one second, no further reconciliation for this
+resource will happen before two seconds have elapsed. Note that, since rate limiting is on a
+per-resource basis, other resources can still be reconciled at the same time, as long as
+they stay within their own rate limits.
+
+## Custom Rate Limiter
+
+You can provide your own rate limiter by implementing the
+[`RateLimiter`](https://github.com/java-operator-sdk/java-operator-sdk/blob/main/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/processing/event/rate/RateLimiter.java)
+interface and setting it either through:
+
+- explicit [configuration](operations/configuration.md), or
+- the `rateLimiter` field of the `@ControllerConfiguration` annotation.
+
+For the annotation approach, similarly to `Retry` implementations,
+`RateLimiter` implementations must provide an accessible, no-arg constructor for instantiation
+purposes and can further be automatically configured from your own annotation, provided that
+your `RateLimiter` implementation also implements the `AnnotationConfigurable` interface,
+parameterized by your custom annotation type.
