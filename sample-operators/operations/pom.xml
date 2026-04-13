@@ -83,6 +83,11 @@
       <scope>compile</scope>
     </dependency>
     <dependency>
+      <groupId>org.eclipse.jetty</groupId>
+      <artifactId>jetty-server</artifactId>
+      <version>12.1.0</version>
+    </dependency>
+    <dependency>
       <groupId>io.javaoperatorsdk</groupId>
       <artifactId>operator-framework-junit</artifactId>
       <scope>test</scope>
