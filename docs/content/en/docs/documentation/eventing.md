@@ -1,6 +1,6 @@
 ---
 title: Event sources and related topics
-weight: 47
+weight: 48
 ---
 
 ## Handling Related Events with Event Sources
@@ -250,51 +250,6 @@ or any non-positive number.
 
 The automatic retries are not affected by this feature so a reconciliation will be re-triggered
 on error, according to the specified retry policy, regardless of this maximum interval setting.
-
-## Rate Limiting
-
-It is possible to rate limit reconciliation on a per-resource basis. The rate limit also takes
-precedence over retry/re-schedule configurations: for example, even if a retry was scheduled for
-the next second but this request would make the resource go over its rate limit, the next
-reconciliation will be postponed according to the rate limiting rules. Note that the
-reconciliation is never cancelled, it will just be executed as early as possible based on rate
-limitations.
-
-Rate limiting is by default turned **off**, since correct configuration depends on the reconciler
-implementation, in particular, on how long a typical reconciliation takes.
-(The parallelism of reconciliation itself can be
-limited  [`ConfigurationService`](https://github.com/java-operator-sdk/java-operator-sdk/blob/ce4d996ee073ebef5715737995fc3d33f4751275/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/api/config/ConfigurationService.java#L120-L120)
-by configuring the `ExecutorService` appropriately.)
-
-A default rate limiter implementation is provided, see:
-[`PeriodRateLimiter`](https://github.com/java-operator-sdk/java-operator-sdk/blob/ce4d996ee073ebef5715737995fc3d33f4751275/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/processing/event/rate/PeriodRateLimiter.java#L14-L14)
-.
-Users can override it by implementing their own
-[`RateLimiter`](https://github.com/java-operator-sdk/java-operator-sdk/blob/ce4d996ee073ebef5715737995fc3d33f4751275/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/processing/event/rate/RateLimiter.java)
-and specifying this custom implementation using the `rateLimiter` field of the
-`@ControllerConfiguration` annotation. Similarly to the `Retry` implementations,
-`RateLimiter` implementations must provide an accessible, no-arg constructor for instantiation
-purposes and can further be automatically configured from your own, provided annotation provided
-your `RateLimiter` implementation also implements the `AnnotationConfigurable` interface,
-parameterized by your custom annotation type.
-
-To configure the default rate limiter use the `@RateLimited` annotation on your
-`Reconciler` class. The following configuration limits each resource to reconcile at most twice
-within a 3 second interval:
-
-```java
-
-@RateLimited(maxReconciliations = 2, within = 3, unit = TimeUnit.SECONDS)
-@ControllerConfiguration
-public class MyReconciler implements Reconciler<MyCR> {
-
-}
-```
-
-Thus, if a given resource was reconciled twice in one second, no further reconciliation for this
-resource will happen before two seconds have elapsed. Note that, since rate is limited on a
-per-resource basis, other resources can still be reconciled at the same time, as long, of course,
-that they stay within their own rate limits.
 
 ## Optimizing Caches
 
