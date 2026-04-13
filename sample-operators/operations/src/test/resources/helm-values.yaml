@@ -14,15 +14,15 @@
 # limitations under the License.
 #
 
-# Helm values for metrics-processing operator E2E test deployment
+# Helm values for operations operator E2E test deployment
 # Used with the generic-operator-chart from helm/generic-helm-chart/
 
 image:
-  repository: metrics-processing-operator
+  repository: operations-operator
   pullPolicy: Never
   tag: "latest"
 
-nameOverride: "metrics-processing-operator"
+nameOverride: "operations-operator"
 
 resources: {}
 

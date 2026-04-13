@@ -97,7 +97,7 @@ A ready-to-use **Grafana dashboard** is included at
 [`observability/josdk-operator-metrics-dashboard.json`](https://github.com/java-operator-sdk/java-operator-sdk/blob/main/observability/josdk-operator-metrics-dashboard.json).
 
 The
-[`metrics-processing` sample operator](https://github.com/java-operator-sdk/java-operator-sdk/tree/main/sample-operators/metrics-processing)
+[`operations` sample operator](https://github.com/java-operator-sdk/java-operator-sdk/tree/main/sample-operators/operations)
 provides a complete end-to-end setup with Prometheus, Grafana, and an OpenTelemetry Collector,
 installable via `observability/install-observability.sh`. This is a good starting point for
 verifying metrics in a real cluster.
