@@ -1,6 +1,6 @@
 ---
 title: Dependent resources
-weight: 75
+weight: 73
 ---
 
 ## Motivations and Goals
