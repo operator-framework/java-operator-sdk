@@ -23,6 +23,9 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.eclipse.jetty.server.Server;
+import org.eclipse.jetty.server.handler.ContextHandler;
+import org.eclipse.jetty.server.handler.ContextHandlerCollection;
 import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 import org.slf4j.Logger;
@@ -59,7 +62,7 @@ public class MetricsHandlingSampleOperator {
    * Based on env variables a different flavor of Reconciler is used, showcasing how the same logic
    * can be implemented using the low level and higher level APIs.
    */
-  public static void main(String[] args) {
+  public static void main(String[] args) throws Exception {
     log.info("Metrics Handling Sample Operator starting!");
 
     var configProviders = new ArrayList<ConfigProvider>();
@@ -77,6 +80,13 @@ public class MetricsHandlingSampleOperator {
         new MetricsHandlingReconciler2(),
         configLoader.applyControllerConfigs(MetricsHandlingReconciler2.NAME));
     operator.start();
+
+    var startup = new ContextHandler(new StartupHandler(operator), "/startup");
+    var readiness = new ContextHandler(new ReadinessHandler(operator), "/ready");
+    Server server = new Server(8080);
+    server.setHandler(new ContextHandlerCollection(startup, readiness));
+    server.start();
+    log.info("Health probe server started on port 8080");
   }
 
   public static @NonNull Metrics initOTLPMetrics(boolean localRun) {

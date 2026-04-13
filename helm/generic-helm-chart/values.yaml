@@ -128,3 +128,19 @@ extraVolumeMounts: []
 # RBAC configuration
 rbac:
   create: true
+
+# Health probes configuration
+probes:
+  port: 8080
+  startup:
+    enabled: false
+    path: /startup
+    initialDelaySeconds: 1
+    periodSeconds: 3
+    failureThreshold: 20
+  readiness:
+    enabled: false
+    path: /ready
+    initialDelaySeconds: 5
+    periodSeconds: 5
+    failureThreshold: 3

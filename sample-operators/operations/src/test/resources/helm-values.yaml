@@ -33,3 +33,9 @@ primaryResources:
     - metricshandlingcustomresource1s
     - metricshandlingcustomresource2s
 
+probes:
+  startup:
+    enabled: true
+  readiness:
+    enabled: true
+
