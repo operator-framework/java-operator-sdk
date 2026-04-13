@@ -59,7 +59,7 @@ class MetricsHandlingE2E {
   static final int OTEL_COLLECTOR_PORT = 4318;
   public static final Duration TEST_DURATION = Duration.ofSeconds(60);
   public static final String NAME_LABEL_KEY = "app.kubernetes.io/name";
-  static final String HELM_RELEASE_NAME = "metrics-processing";
+  static final String HELM_RELEASE_NAME = "operations";
 
   private LocalPortForward prometheusPortForward;
   private LocalPortForward otelCollectorPortForward;
