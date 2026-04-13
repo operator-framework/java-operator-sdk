@@ -4,10 +4,10 @@ weight: 47
 ---
 
 It is possible to rate limit reconciliation on a per-resource basis. The rate limit takes
-precedence over retry/re-schedule configurations: for example, even if retry would re-schedule a reconciliation
+precedence over retry/reschedule configurations: for example, even if a retry would reschedule a reconciliation
 but this request would make the resource go over its rate limit, the next
 reconciliation will be postponed according to the rate limiting rules. Note that the
-reconciliation is never canceled, it will just be executed as early as possible based on rate
+reconciliation is never cancelled, it will just be executed as early as possible based on rate
 limitations.
 
 Rate limiting is by default turned **off**, since correct configuration depends on the reconciler
