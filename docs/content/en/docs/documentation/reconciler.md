@@ -98,13 +98,11 @@ typically instructs the framework to remove the finalizer after the dependent
 resource are cleaned up in `cleanup` implementation.
 
 ```java
-
 public DeleteControl cleanup(MyCustomResource customResource,Context context){
         // omitted code
     
         return DeleteControl.defaultDelete();
-        }
-
+}
 ```
 
 However, it is possible to instruct the SDK to not remove the finalizer, this allows to clean up
