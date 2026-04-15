@@ -27,7 +27,7 @@ import io.javaoperatorsdk.operator.api.reconciler.dependent.Dependent;
 @Workflow(
     dependents = {
       @Dependent(
-          type = ConfigMapDependentResource.class,
+          type = NotAvailableDependentResource.class,
           activationCondition = FalseActivationCondition.class)
     })
 @ControllerConfiguration

@@ -15,25 +15,24 @@
  */
 package io.javaoperatorsdk.operator.workflow.onedependentactivationcondition;
 
-import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.CRUDKubernetesDependentResource;
 
-public class ConfigMapDependentResource
+public class NotAvailableDependentResource
     extends CRUDKubernetesDependentResource<
-        ConfigMap, OneDependentActivationConditionCustomResource> {
+        NotAvailableCustomResource, OneDependentActivationConditionCustomResource> {
 
   @Override
-  protected ConfigMap desired(
+  protected NotAvailableCustomResource desired(
       OneDependentActivationConditionCustomResource primary,
       Context<OneDependentActivationConditionCustomResource> context) {
-    ConfigMap configMap = new ConfigMap();
-    configMap.setMetadata(
+    NotAvailableCustomResource resource = new NotAvailableCustomResource();
+    resource.setMetadata(
         new ObjectMetaBuilder()
             .withName(primary.getMetadata().getName())
             .withNamespace(primary.getMetadata().getNamespace())
             .build());
-    return configMap;
+    return resource;
   }
 }
