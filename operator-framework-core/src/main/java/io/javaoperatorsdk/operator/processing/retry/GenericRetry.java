@@ -90,6 +90,10 @@ public class GenericRetry implements Retry, AnnotationConfigurable<GradualRetry>
     return this;
   }
 
+  public GenericRetry setMaxInterval(Duration maxInterval) {
+    return setMaxInterval(maxInterval.toMillis());
+  }
+
   public GenericRetry withoutMaxInterval() {
     this.maxInterval = -1;
     return this;
