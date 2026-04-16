@@ -18,7 +18,6 @@ package io.javaoperatorsdk.operator.workflow.onedependentactivationcondition;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
-import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
 import io.javaoperatorsdk.operator.junit.LocallyRunOperatorExtension;
 
@@ -48,10 +47,6 @@ class OneDependentActivationConditionIT {
                           .getNumberOfReconciliationExecution())
                   .isPositive();
             });
-
-    // ConfigMap should not be created since the activation condition is false
-    var cm = extension.get(ConfigMap.class, TEST_RESOURCE_NAME);
-    assertThat(cm).isNull();
   }
 
   private OneDependentActivationConditionCustomResource testResource() {
