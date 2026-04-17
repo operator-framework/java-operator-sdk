@@ -51,9 +51,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
-class MetricsHandlingE2E {
+class OperationsE2E {
 
-  static final Logger log = LoggerFactory.getLogger(MetricsHandlingE2E.class);
+  static final Logger log = LoggerFactory.getLogger(OperationsE2E.class);
   static final String OBSERVABILITY_NAMESPACE = "observability";
   static final int PROMETHEUS_PORT = 9090;
   static final int OTEL_COLLECTOR_PORT = 4318;
@@ -66,7 +66,7 @@ class MetricsHandlingE2E {
 
   static final KubernetesClient client = new KubernetesClientBuilder().build();
 
-  MetricsHandlingE2E() {}
+  OperationsE2E() {}
 
   @RegisterExtension
   AbstractOperatorExtension operator =
@@ -106,7 +106,7 @@ class MetricsHandlingE2E {
     try {
       var chartPath =
           findProjectRoot("helm").toPath().resolve("helm/generic-helm-chart").toString();
-      var valuesUrl = MetricsHandlingE2E.class.getClassLoader().getResource("helm-values.yaml");
+      var valuesUrl = OperationsE2E.class.getClassLoader().getResource("helm-values.yaml");
       if (valuesUrl == null) {
         throw new IllegalStateException("helm-values.yaml not found on classpath");
       }
@@ -388,11 +388,15 @@ class MetricsHandlingE2E {
   }
 
   private static void runCommand(String... command) throws IOException, InterruptedException {
-    var process = new ProcessBuilder(command).redirectErrorStream(true).start();
-    try (var reader = new BufferedReader(new InputStreamReader(process.getInputStream()))) {
+    var process = new ProcessBuilder(command).start();
+    try (var stdoutReader = new BufferedReader(new InputStreamReader(process.getInputStream()));
+        var stderrReader = new BufferedReader(new InputStreamReader(process.getErrorStream()))) {
       String line;
-      while ((line = reader.readLine()) != null) {
+      while ((line = stdoutReader.readLine()) != null) {
         log.info("{}: {}", command[0], line);
+      }
+      while ((line = stderrReader.readLine()) != null) {
+        log.error("{}: {}", command[0], line);
       }
     }
     int exitCode = process.waitFor();
