@@ -79,14 +79,14 @@ public class MetricsHandlingSampleOperator {
     operator.register(
         new MetricsHandlingReconciler2(),
         configLoader.applyControllerConfigs(MetricsHandlingReconciler2.NAME));
-    operator.start();
-
     var startup = new ContextHandler(new StartupHandler(operator), "/startup");
     var readiness = new ContextHandler(new ReadinessHandler(operator), "/ready");
     Server server = new Server(8080);
     server.setHandler(new ContextHandlerCollection(startup, readiness));
     server.start();
     log.info("Health probe server started on port 8080");
+
+    operator.start();
   }
 
   public static @NonNull Metrics initOTLPMetrics(boolean localRun) {
