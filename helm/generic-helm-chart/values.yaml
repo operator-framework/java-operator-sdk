@@ -134,13 +134,13 @@ probes:
   port: 8080
   startup:
     enabled: false
-    path: /startup
+    path: /healthz
     initialDelaySeconds: 1
     periodSeconds: 3
     failureThreshold: 20
   readiness:
     enabled: false
-    path: /ready
+    path: /healthz
     initialDelaySeconds: 5
     periodSeconds: 5
     failureThreshold: 3

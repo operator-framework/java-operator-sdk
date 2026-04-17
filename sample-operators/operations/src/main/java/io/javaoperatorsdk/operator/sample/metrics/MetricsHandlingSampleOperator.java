@@ -25,7 +25,6 @@ import java.util.Map;
 
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.handler.ContextHandler;
-import org.eclipse.jetty.server.handler.ContextHandlerCollection;
 import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 import org.slf4j.Logger;
@@ -79,10 +78,9 @@ public class MetricsHandlingSampleOperator {
     operator.register(
         new MetricsHandlingReconciler2(),
         configLoader.applyControllerConfigs(MetricsHandlingReconciler2.NAME));
-    var startup = new ContextHandler(new StartupHandler(operator), "/startup");
-    var readiness = new ContextHandler(new ReadinessHandler(operator), "/ready");
+    var health = new ContextHandler(new HealthHandler(operator), "/healthz");
     Server server = new Server(8080);
-    server.setHandler(new ContextHandlerCollection(startup, readiness));
+    server.setHandler(health);
     server.start();
     log.info("Health probe server started on port 8080");
 
