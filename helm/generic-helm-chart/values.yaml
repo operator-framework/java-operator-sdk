@@ -136,7 +136,7 @@ probes:
     enabled: false
     path: /healthz
     initialDelaySeconds: 1
-    periodSeconds: 3
+    periodSeconds: 10
     failureThreshold: 20
   readiness:
     enabled: false
