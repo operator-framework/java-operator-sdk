@@ -17,38 +17,43 @@ API.
 | `isStarted()` | `true` once the operator and all its controllers have fully started |
 | `allEventSourcesAreHealthy()` | `true` when every registered event source (informers, polling sources, etc.) reports a healthy status |
 | `unhealthyEventSources()` | returns a map of controller name → unhealthy event sources, useful for diagnostics |
+| `unhealthyInformerWrappingEventSourceHealthIndicator()` | returns a map of controller name → unhealthy informer-wrapping event sources, each exposing per-informer details via `InformerHealthIndicator` (`hasSynced()`, `isWatching()`, `isRunning()`, `getTargetNamespace()`) |
 
-These map naturally to Kubernetes probes:
+In most cases a single readiness probe backed by `allEventSourcesAreHealthy()` is sufficient: before the
+operator has fully started the informers will not have synced yet, so the check naturally covers the startup
+case as well. Once running, it detects runtime degradation such as a lost watch connection.
 
-- **Startup probe** → `isStarted()` — fails until all informers have synced and the operator is ready to
-  reconcile.
-- **Readiness probe** → `allEventSourcesAreHealthy()` — fails if an informer loses its watch connection
-  or any event source reports an unhealthy status.
+### Fine-Grained Informer Diagnostics
 
-## Setting Up Probe Endpoints
+For advanced use cases — such as exposing per-informer health in a diagnostic endpoint or logging which
+specific namespace lost its watch — `unhealthyInformerWrappingEventSourceHealthIndicator()` gives access to
+individual `InformerHealthIndicator` instances. Each indicator exposes `hasSynced()`, `isWatching()`,
+`isRunning()`, and `getTargetNamespace()`. This is typically not needed for a standard health probe but can
+be valuable for operational dashboards or troubleshooting.
 
-The example below uses [Jetty](https://eclipse.dev/jetty/) to expose health probe endpoints. Any HTTP
+## Setting Up a Probe Endpoint
+
+The example below uses [Jetty](https://eclipse.dev/jetty/) to expose a `/healthz` endpoint. Any HTTP
 server library works — the key is calling the `RuntimeInfo` methods to determine the response code.
 
 ```java
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.handler.ContextHandler;
-import org.eclipse.jetty.server.handler.ContextHandlerCollection;
 
 Operator operator = new Operator();
 operator.register(new MyReconciler());
-operator.start();
 
-var startup = new ContextHandler(new StartupHandler(operator), "/startup");
-var readiness = new ContextHandler(new ReadinessHandler(operator), "/ready");
+// start the health server before the operator so probes can be queried during startup
+var health = new ContextHandler(new HealthHandler(operator), "/healthz");
 Server server = new Server(8080);
-server.setHandler(new ContextHandlerCollection(startup, readiness));
+server.setHandler(health);
 server.start();
+
+operator.start();
 ```
 
-Where `StartupHandler` and `ReadinessHandler` extend `org.eclipse.jetty.server.Handler.Abstract` and
-check `operator.getRuntimeInfo().isStarted()` and
-`operator.getRuntimeInfo().allEventSourcesAreHealthy()` respectively.
+Where `HealthHandler` extends `org.eclipse.jetty.server.Handler.Abstract` and checks
+`operator.getRuntimeInfo().allEventSourcesAreHealthy()`.
 
 See the
 [`operations` sample operator](https://github.com/java-operator-sdk/java-operator-sdk/tree/main/sample-operators/operations)
@@ -56,7 +61,7 @@ for a complete working example.
 
 ## Kubernetes Deployment Configuration
 
-Once your operator exposes probe endpoints, configure them in your Deployment manifest:
+Once your operator exposes the probe endpoint, configure a readiness probe in your Deployment manifest:
 
 ```yaml
 containers:
@@ -64,25 +69,17 @@ containers:
   ports:
   - name: probes
     containerPort: 8080
-  startupProbe:
-    httpGet:
-      path: /startup
-      port: probes
-    initialDelaySeconds: 1
-    periodSeconds: 3
-    failureThreshold: 20
   readinessProbe:
     httpGet:
-      path: /ready
+      path: /healthz
       port: probes
     initialDelaySeconds: 5
     periodSeconds: 5
     failureThreshold: 3
 ```
 
-The startup probe gives the operator time to start (up to ~60 s with the settings above). Once the startup
-probe succeeds, the readiness probe takes over and will mark the pod as not-ready if any event source
-becomes unhealthy.
+The readiness probe will mark the pod as not-ready until all informers have synced. After that, it
+continues to monitor event source health at runtime.
 
 ## Helm Chart Support
 
@@ -92,12 +89,9 @@ Enable them in your `values.yaml`:
 ```yaml
 probes:
   port: 8080
-  startup:
-    enabled: true
-    path: /startup
   readiness:
     enabled: true
-    path: /ready
+    path: /healthz
 ```
 
 All probe timing parameters (`initialDelaySeconds`, `periodSeconds`, `failureThreshold`) have sensible

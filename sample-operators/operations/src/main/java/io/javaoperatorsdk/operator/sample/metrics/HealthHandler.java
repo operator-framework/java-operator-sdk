@@ -25,20 +25,26 @@ import org.eclipse.jetty.util.Callback;
 
 import io.javaoperatorsdk.operator.Operator;
 
-public class StartupHandler extends Handler.Abstract {
+/**
+ * Combined health endpoint that checks whether all event sources (informers, polling sources, etc.)
+ * are healthy. Before the operator has fully started the informers will not have synced yet, so
+ * this endpoint naturally covers the startup case as well.
+ */
+public class HealthHandler extends Handler.Abstract {
 
   private final Operator operator;
 
-  public StartupHandler(Operator operator) {
+  public HealthHandler(Operator operator) {
     this.operator = operator;
   }
 
   @Override
   public boolean handle(Request request, Response response, Callback callback) {
-    if (operator.getRuntimeInfo().isStarted()) {
-      sendMessage(response, 200, "started", callback);
+    var runtimeInfo = operator.getRuntimeInfo();
+    if (runtimeInfo.isStarted() && runtimeInfo.allEventSourcesAreHealthy()) {
+      sendMessage(response, 200, "healthy", callback);
     } else {
-      sendMessage(response, 400, "not started yet", callback);
+      sendMessage(response, 503, "not healthy", callback);
     }
     return true;
   }
