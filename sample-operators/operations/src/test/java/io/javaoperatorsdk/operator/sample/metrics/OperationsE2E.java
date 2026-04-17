@@ -96,7 +96,7 @@ class OperationsE2E {
   @AfterAll
   void cleanup() throws IOException {
     if (!isLocal()) {
-//      helmUninstall();
+      //      helmUninstall();
     }
     closePortForward(prometheusPortForward);
     closePortForward(otelCollectorPortForward);
