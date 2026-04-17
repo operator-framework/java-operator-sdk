@@ -96,7 +96,7 @@ class OperationsE2E {
   @AfterAll
   void cleanup() throws IOException {
     if (!isLocal()) {
-      helmUninstall();
+//      helmUninstall();
     }
     closePortForward(prometheusPortForward);
     closePortForward(otelCollectorPortForward);
@@ -125,7 +125,7 @@ class OperationsE2E {
           namespace,
           "--wait",
           "--timeout",
-          "2m");
+          "5m");
       log.info("Helm release '{}' installed successfully", HELM_RELEASE_NAME);
     } catch (Exception e) {
       throw new RuntimeException("Failed to install helm chart", e);
