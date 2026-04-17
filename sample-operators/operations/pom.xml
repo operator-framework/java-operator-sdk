@@ -25,10 +25,10 @@
     <version>5.3.4-SNAPSHOT</version>
   </parent>
 
-  <artifactId>sample-metrics-processing</artifactId>
+  <artifactId>sample-operations</artifactId>
   <packaging>jar</packaging>
-  <name>Operator SDK - Samples - Metrics processing</name>
-  <description>Showcases to handle metrics setup and deploys related tooling and dashboards</description>
+  <name>Operator SDK - Samples - Operations</name>
+  <description>Showcases operations related features setup like metrics, and deploys related tooling and dashboards</description>
 
   <dependencyManagement>
     <dependencies>
@@ -83,6 +83,11 @@
       <scope>compile</scope>
     </dependency>
     <dependency>
+      <groupId>org.eclipse.jetty</groupId>
+      <artifactId>jetty-server</artifactId>
+      <version>12.1.8</version>
+    </dependency>
+    <dependency>
       <groupId>io.javaoperatorsdk</groupId>
       <artifactId>operator-framework-junit</artifactId>
       <scope>test</scope>
@@ -99,7 +104,7 @@
             <image>gcr.io/distroless/java17-debian11</image>
           </from>
           <to>
-            <image>metrics-processing-operator</image>
+            <image>operations-operator</image>
           </to>
           <container>
             <jvmFlags>

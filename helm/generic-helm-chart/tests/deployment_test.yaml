@@ -288,3 +288,57 @@ tests:
       - equal:
           path: spec.template.spec.serviceAccountName
           value: my-operator
+
+  - it: should not include probes by default
+    asserts:
+      - isNull:
+          path: spec.template.spec.containers[0].startupProbe
+      - isNull:
+          path: spec.template.spec.containers[0].readinessProbe
+
+  - it: should add startup probe when enabled
+    documentSelector:
+      path: kind
+      value: Deployment
+    set:
+      probes.startup.enabled: true
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].startupProbe.httpGet.path
+          value: /healthz
+      - equal:
+          path: spec.template.spec.containers[0].startupProbe.httpGet.port
+          value: probes
+      - contains:
+          path: spec.template.spec.containers[0].ports
+          content:
+            name: probes
+            containerPort: 8080
+            protocol: TCP
+
+  - it: should add readiness probe when enabled
+    documentSelector:
+      path: kind
+      value: Deployment
+    set:
+      probes.readiness.enabled: true
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].readinessProbe.httpGet.path
+          value: /healthz
+      - equal:
+          path: spec.template.spec.containers[0].readinessProbe.httpGet.port
+          value: probes
+
+  - it: should add both probes when both enabled
+    documentSelector:
+      path: kind
+      value: Deployment
+    set:
+      probes.startup.enabled: true
+      probes.readiness.enabled: true
+    asserts:
+      - isNotNull:
+          path: spec.template.spec.containers[0].startupProbe
+      - isNotNull:
+          path: spec.template.spec.containers[0].readinessProbe

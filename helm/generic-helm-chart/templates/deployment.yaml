@@ -54,6 +54,30 @@ spec:
           {{- toYaml .Values.securityContext | nindent 12 }}
         image: "{{ required "A valid .Values.image.repository is required" .Values.image.repository }}:{{ include "generic-operator.imageTag" . }}"
         imagePullPolicy: {{ .Values.image.pullPolicy }}
+        {{- if or .Values.probes.startup.enabled .Values.probes.readiness.enabled }}
+        ports:
+        - name: probes
+          containerPort: {{ .Values.probes.port }}
+          protocol: TCP
+        {{- end }}
+        {{- if .Values.probes.startup.enabled }}
+        startupProbe:
+          httpGet:
+            path: {{ .Values.probes.startup.path }}
+            port: probes
+          initialDelaySeconds: {{ .Values.probes.startup.initialDelaySeconds }}
+          periodSeconds: {{ .Values.probes.startup.periodSeconds }}
+          failureThreshold: {{ .Values.probes.startup.failureThreshold }}
+        {{- end }}
+        {{- if .Values.probes.readiness.enabled }}
+        readinessProbe:
+          httpGet:
+            path: {{ .Values.probes.readiness.path }}
+            port: probes
+          initialDelaySeconds: {{ .Values.probes.readiness.initialDelaySeconds }}
+          periodSeconds: {{ .Values.probes.readiness.periodSeconds }}
+          failureThreshold: {{ .Values.probes.readiness.failureThreshold }}
+        {{- end }}
         env:
         - name: OPERATOR_NAMESPACE
           valueFrom:
