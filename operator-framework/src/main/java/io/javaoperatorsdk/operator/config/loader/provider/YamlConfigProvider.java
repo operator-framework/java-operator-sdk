@@ -111,6 +111,9 @@ public class YamlConfigProvider implements ConfigProvider {
       }
       Map<String, Object> result = MAPPER.readValue(parser, Map.class);
       return result != null ? result : Map.of();
+    } catch (com.fasterxml.jackson.databind.exc.MismatchedInputException e) {
+      log.warn("{} contains no configuration data", path);
+      return Map.of();
     } catch (IOException e) {
       throw new UncheckedIOException("Failed to load config YAML from " + path, e);
     }
