@@ -61,7 +61,9 @@ for a complete working example.
 
 ## Kubernetes Deployment Configuration
 
-Once your operator exposes the probe endpoint, configure a readiness probe in your Deployment manifest:
+Once your operator exposes the probe endpoint, configure probes in your Deployment manifest. Both the
+startup and readiness probes can point to the same `/healthz` endpoint — the startup probe simply uses a
+higher `failureThreshold` to give the operator time to initialize:
 
 ```yaml
 containers:
@@ -69,6 +71,13 @@ containers:
   ports:
   - name: probes
     containerPort: 8080
+  startupProbe:
+    httpGet:
+      path: /healthz
+      port: probes
+    initialDelaySeconds: 1
+    periodSeconds: 3
+    failureThreshold: 20
   readinessProbe:
     httpGet:
       path: /healthz
@@ -78,8 +87,9 @@ containers:
     failureThreshold: 3
 ```
 
-The readiness probe will mark the pod as not-ready until all informers have synced. After that, it
-continues to monitor event source health at runtime.
+The startup probe gives the operator time to start (up to ~60 s with the settings above). Once the startup
+probe succeeds, the readiness probe takes over and will mark the pod as not-ready if any event source
+becomes unhealthy.
 
 ## Helm Chart Support
 
@@ -89,6 +99,9 @@ Enable them in your `values.yaml`:
 ```yaml
 probes:
   port: 8080
+  startup:
+    enabled: true
+    path: /healthz
   readiness:
     enabled: true
     path: /healthz
