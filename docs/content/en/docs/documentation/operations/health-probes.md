@@ -1,6 +1,6 @@
 ---
 title: Health Probes
-weight: 75
+weight: 85
 ---
 
 Operators running in Kubernetes should expose health probe endpoints so that the kubelet can detect startup
