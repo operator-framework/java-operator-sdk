@@ -133,6 +133,27 @@ class YamlConfigProviderTest {
   }
 
   @Test
+  void returnsEmptyForEmptyFile(@TempDir Path dir) throws IOException {
+    Path file = dir.resolve("empty.yaml");
+    Files.writeString(file, "");
+
+    var provider = new YamlConfigProvider(file);
+    assertThat(provider.getValue("any.key", String.class)).isEmpty();
+  }
+
+  @Test
+  void fileWithCommentOnly(@TempDir Path dir) throws IOException {
+    Path file = dir.resolve("empty.yaml");
+    Files.writeString(
+        file,
+        """
+        # sample comment
+        """);
+    var provider = new YamlConfigProvider(file);
+    assertThat(provider.getValue("any.key", String.class)).isEmpty();
+  }
+
+  @Test
   void returnsEmptyForNonExistingFile(@TempDir Path dir) {
     Path missing = dir.resolve("does-not-exist.yaml");
     var provider = new YamlConfigProvider(missing);
