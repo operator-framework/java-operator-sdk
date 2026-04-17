@@ -96,7 +96,7 @@ class OperationsE2E {
   @AfterAll
   void cleanup() throws IOException {
     if (!isLocal()) {
-      //      helmUninstall();
+      helmUninstall();
     }
     closePortForward(prometheusPortForward);
     closePortForward(otelCollectorPortForward);
@@ -368,7 +368,7 @@ class OperationsE2E {
               .resolve("observability/install-observability.sh")
               .toFile();
       log.info("Running observability setup script: {}", scriptFile.getAbsolutePath());
-      runCommand("/bin/sh", scriptFile.getAbsolutePath());
+      runCommand("/bin/bash", scriptFile.getAbsolutePath());
       log.info("Observability stack is ready");
     } catch (Exception e) {
       log.error("Failed to setup observability stack", e);
