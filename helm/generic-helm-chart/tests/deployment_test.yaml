@@ -305,7 +305,7 @@ tests:
     asserts:
       - equal:
           path: spec.template.spec.containers[0].startupProbe.httpGet.path
-          value: /startup
+          value: /healthz
       - equal:
           path: spec.template.spec.containers[0].startupProbe.httpGet.port
           value: probes
@@ -325,7 +325,7 @@ tests:
     asserts:
       - equal:
           path: spec.template.spec.containers[0].readinessProbe.httpGet.path
-          value: /ready
+          value: /healthz
       - equal:
           path: spec.template.spec.containers[0].readinessProbe.httpGet.port
           value: probes
