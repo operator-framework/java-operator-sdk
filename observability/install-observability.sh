@@ -237,7 +237,7 @@ kubectl wait --for=condition=ready pod --all -n cert-manager --timeout=300s 2>/d
 
 # Wait for observability pods
 echo -e "${YELLOW}Checking observability pods...${NC}"
-kubectl wait --for=condition=ready pod --all -n observability --timeout=300s
+kubectl wait --for=condition=ready pod --all -n observability --timeout=480s
 
 echo -e "${GREEN}✓ All pods are ready${NC}"
 
