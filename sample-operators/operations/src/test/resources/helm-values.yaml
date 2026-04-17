@@ -34,6 +34,9 @@ primaryResources:
     - metricshandlingcustomresource2s
 
 probes:
+  startup:
+    enabled: true
+    path: /healthz
   readiness:
     enabled: true
     path: /healthz
