@@ -13,20 +13,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.javaoperatorsdk.operator.sample.metrics.customresource;
+package io.javaoperatorsdk.operator.sample.operations.customresource;
 
-import io.fabric8.kubernetes.api.model.Namespaced;
-import io.fabric8.kubernetes.client.CustomResource;
-import io.fabric8.kubernetes.model.annotation.Group;
-import io.fabric8.kubernetes.model.annotation.Version;
+public class OperationsStatus {
 
-@Group("sample.javaoperatorsdk")
-@Version("v1")
-public class MetricsHandlingCustomResource1
-    extends CustomResource<MetricsHandlingSpec, MetricsHandlingStatus> implements Namespaced {
+  private int observedNumber;
 
-  @Override
-  public String toString() {
-    return "MetricsHandlingCustomResource1{" + "spec=" + spec + ", status=" + status + '}';
+  public int getObservedNumber() {
+    return observedNumber;
+  }
+
+  public void setObservedNumber(int observedNumber) {
+    this.observedNumber = observedNumber;
   }
 }

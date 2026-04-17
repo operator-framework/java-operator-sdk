@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.javaoperatorsdk.operator.sample.metrics;
+package io.javaoperatorsdk.operator.sample.operations;
 
 import java.io.*;
 import java.net.HttpURLConnection;
@@ -42,11 +42,11 @@ import io.fabric8.kubernetes.client.LocalPortForward;
 import io.javaoperatorsdk.operator.junit.AbstractOperatorExtension;
 import io.javaoperatorsdk.operator.junit.ClusterDeployedOperatorExtension;
 import io.javaoperatorsdk.operator.junit.LocallyRunOperatorExtension;
-import io.javaoperatorsdk.operator.sample.metrics.customresource.MetricsHandlingCustomResource1;
-import io.javaoperatorsdk.operator.sample.metrics.customresource.MetricsHandlingCustomResource2;
-import io.javaoperatorsdk.operator.sample.metrics.customresource.MetricsHandlingSpec;
+import io.javaoperatorsdk.operator.sample.operations.customresource.OperationsCustomResource1;
+import io.javaoperatorsdk.operator.sample.operations.customresource.OperationsCustomResource2;
+import io.javaoperatorsdk.operator.sample.operations.customresource.OperationsSpec;
 
-import static io.javaoperatorsdk.operator.sample.metrics.MetricsHandlingSampleOperator.isLocal;
+import static io.javaoperatorsdk.operator.sample.operations.OperationsSampleOperator.isLocal;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
 
@@ -72,12 +72,12 @@ class OperationsE2E {
   AbstractOperatorExtension operator =
       isLocal()
           ? LocallyRunOperatorExtension.builder()
-              .withReconciler(new MetricsHandlingReconciler1())
-              .withReconciler(new MetricsHandlingReconciler2())
+              .withReconciler(new OperationsReconciler1())
+              .withReconciler(new OperationsReconciler2())
               .withConfigurationService(
-                  c -> c.withMetrics(MetricsHandlingSampleOperator.initOTLPMetrics(true)))
+                  c -> c.withMetrics(OperationsSampleOperator.initOTLPMetrics(true)))
               .build()
-          : ClusterDeployedOperatorExtension.builder().build();
+          : ClusterDeployedOperatorExtension.builder().oneNamespacePerClass(true).build();
 
   @BeforeAll
   void setup() {
@@ -210,10 +210,10 @@ class OperationsE2E {
         "Starting longevity metrics test (running for {} seconds)", TEST_DURATION.getSeconds());
 
     // Create initial resources including ones that trigger failures
-    operator.create(createResource(MetricsHandlingCustomResource1.class, "test-success-1", 1));
-    operator.create(createResource(MetricsHandlingCustomResource2.class, "test-success-2", 1));
-    operator.create(createResource(MetricsHandlingCustomResource1.class, "test-fail-1", 1));
-    operator.create(createResource(MetricsHandlingCustomResource2.class, "test-fail-2", 1));
+    operator.create(createResource(OperationsCustomResource1.class, "test-success-1", 1));
+    operator.create(createResource(OperationsCustomResource2.class, "test-success-2", 1));
+    operator.create(createResource(OperationsCustomResource1.class, "test-fail-1", 1));
+    operator.create(createResource(OperationsCustomResource2.class, "test-fail-2", 1));
 
     // Continuously trigger reconciliations for ~50 seconds by alternating between
     // creating new resources, updating specs of existing ones, and deleting older dynamic ones
@@ -226,19 +226,19 @@ class OperationsE2E {
       switch (counter % 4) {
         case 0 -> {
           String name = "test-dynamic-1-" + counter;
-          operator.create(createResource(MetricsHandlingCustomResource1.class, name, counter * 3));
+          operator.create(createResource(OperationsCustomResource1.class, name, counter * 3));
           createdResource1Names.addLast(name);
           log.info("Iteration {}: created {}", counter, name);
         }
         case 1 -> {
-          var r1 = operator.get(MetricsHandlingCustomResource1.class, "test-success-1");
+          var r1 = operator.get(OperationsCustomResource1.class, "test-success-1");
           r1.getSpec().setNumber(counter * 7);
           operator.replace(r1);
           log.info("Iteration {}: updated test-success-1 number to {}", counter, counter * 7);
         }
         case 2 -> {
           String name = "test-dynamic-2-" + counter;
-          operator.create(createResource(MetricsHandlingCustomResource2.class, name, counter * 5));
+          operator.create(createResource(OperationsCustomResource2.class, name, counter * 5));
           createdResource2Names.addLast(name);
           log.info("Iteration {}: created {}", counter, name);
         }
@@ -248,14 +248,14 @@ class OperationsE2E {
               && (createdResource2Names.isEmpty()
                   || createdResource1Names.size() >= createdResource2Names.size())) {
             String name = createdResource1Names.pollFirst();
-            var r = operator.get(MetricsHandlingCustomResource1.class, name);
+            var r = operator.get(OperationsCustomResource1.class, name);
             if (r != null) {
               operator.delete(r);
               log.info("Iteration {}: deleted {} ", counter, name);
             }
           } else if (!createdResource2Names.isEmpty()) {
             String name = createdResource2Names.pollFirst();
-            var r = operator.get(MetricsHandlingCustomResource2.class, name);
+            var r = operator.get(OperationsCustomResource2.class, name);
             if (r != null) {
               operator.delete(r);
               log.info("Iteration {}: deleted {}", counter, name);
@@ -346,12 +346,12 @@ class OperationsE2E {
     }
   }
 
-  private <R extends CustomResource<MetricsHandlingSpec, ?>> R createResource(
+  private <R extends CustomResource<OperationsSpec, ?>> R createResource(
       Class<R> type, String name, int number) {
     try {
       R resource = type.getDeclaredConstructor().newInstance();
       resource.getMetadata().setName(name);
-      MetricsHandlingSpec spec = new MetricsHandlingSpec();
+      OperationsSpec spec = new OperationsSpec();
       spec.setNumber(number);
       resource.setSpec(spec);
       return resource;

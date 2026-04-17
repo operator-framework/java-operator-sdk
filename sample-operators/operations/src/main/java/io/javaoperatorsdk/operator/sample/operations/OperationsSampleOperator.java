@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.javaoperatorsdk.operator.sample.metrics;
+package io.javaoperatorsdk.operator.sample.operations;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -53,9 +53,9 @@ import io.micrometer.core.instrument.logging.LoggingRegistryConfig;
 import io.micrometer.registry.otlp.OtlpConfig;
 import io.micrometer.registry.otlp.OtlpMeterRegistry;
 
-public class MetricsHandlingSampleOperator {
+public class OperationsSampleOperator {
 
-  private static final Logger log = LoggerFactory.getLogger(MetricsHandlingSampleOperator.class);
+  private static final Logger log = LoggerFactory.getLogger(OperationsSampleOperator.class);
 
   /**
    * Based on env variables a different flavor of Reconciler is used, showcasing how the same logic
@@ -73,11 +73,11 @@ public class MetricsHandlingSampleOperator {
     Operator operator =
         new Operator(o -> configLoader.applyConfigs().andThen(k -> k.withMetrics(metrics)));
     operator.register(
-        new MetricsHandlingReconciler1(),
-        configLoader.applyControllerConfigs(MetricsHandlingReconciler1.NAME));
+        new OperationsReconciler1(),
+        configLoader.applyControllerConfigs(OperationsReconciler1.NAME));
     operator.register(
-        new MetricsHandlingReconciler2(),
-        configLoader.applyControllerConfigs(MetricsHandlingReconciler2.NAME));
+        new OperationsReconciler2(),
+        configLoader.applyControllerConfigs(OperationsReconciler2.NAME));
     var health = new ContextHandler(new HealthHandler(operator), "/healthz");
     Server server = new Server(8080);
     server.setHandler(health);
@@ -147,7 +147,7 @@ public class MetricsHandlingSampleOperator {
   private static Map<String, String> loadConfigFromYaml() {
     Map<String, String> configMap = new HashMap<>();
     try (InputStream inputStream =
-        MetricsHandlingSampleOperator.class.getResourceAsStream("/otlp-config.yaml")) {
+        OperationsSampleOperator.class.getResourceAsStream("/otlp-config.yaml")) {
       if (inputStream == null) {
         log.warn("otlp-config.yaml not found in resources, using default OTLP configuration");
         return configMap;

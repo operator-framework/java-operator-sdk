@@ -13,18 +13,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.javaoperatorsdk.operator.sample.metrics;
+package io.javaoperatorsdk.operator.sample.operations;
 
 import io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration;
-import io.javaoperatorsdk.operator.sample.metrics.customresource.MetricsHandlingCustomResource2;
+import io.javaoperatorsdk.operator.sample.operations.customresource.OperationsCustomResource2;
 
 @ControllerConfiguration
-public class MetricsHandlingReconciler2
-    extends AbstractMetricsHandlingReconciler<MetricsHandlingCustomResource2> {
+public class OperationsReconciler2 extends AbstractOperationsReconciler<OperationsCustomResource2> {
 
-  public static final String NAME = "MetricsHandlingReconciler2";
+  public static final String NAME = "OperationsReconciler2";
 
-  public MetricsHandlingReconciler2() {
+  public OperationsReconciler2() {
     super(150);
   }
 }

@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.javaoperatorsdk.operator.sample.metrics;
+package io.javaoperatorsdk.operator.sample.operations;
 
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
