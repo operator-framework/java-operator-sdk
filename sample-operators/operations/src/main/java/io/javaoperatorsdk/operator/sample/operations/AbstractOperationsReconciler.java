@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.javaoperatorsdk.operator.sample.metrics;
+package io.javaoperatorsdk.operator.sample.operations;
 
 import java.util.concurrent.ThreadLocalRandom;
 
@@ -24,19 +24,18 @@ import io.fabric8.kubernetes.client.CustomResource;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
-import io.javaoperatorsdk.operator.sample.metrics.customresource.MetricsHandlingSpec;
-import io.javaoperatorsdk.operator.sample.metrics.customresource.MetricsHandlingStatus;
+import io.javaoperatorsdk.operator.sample.operations.customresource.OperationsSpec;
+import io.javaoperatorsdk.operator.sample.operations.customresource.OperationsStatus;
 
-public abstract class AbstractMetricsHandlingReconciler<
-        R extends CustomResource<MetricsHandlingSpec, MetricsHandlingStatus>>
+public abstract class AbstractOperationsReconciler<
+        R extends CustomResource<OperationsSpec, OperationsStatus>>
     implements Reconciler<R> {
 
-  private static final Logger log =
-      LoggerFactory.getLogger(AbstractMetricsHandlingReconciler.class);
+  private static final Logger log = LoggerFactory.getLogger(AbstractOperationsReconciler.class);
 
   private final long sleepMillis;
 
-  protected AbstractMetricsHandlingReconciler(long sleepMillis) {
+  protected AbstractOperationsReconciler(long sleepMillis) {
     this.sleepMillis = sleepMillis;
   }
 
@@ -59,7 +58,7 @@ public abstract class AbstractMetricsHandlingReconciler<
 
     var status = resource.getStatus();
     if (status == null) {
-      status = new MetricsHandlingStatus();
+      status = new OperationsStatus();
       resource.setStatus(status);
     }
 
