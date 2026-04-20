@@ -13,7 +13,7 @@ See the [integration test](https://github.com/operator-framework/java-operator-s
 
 ```java 
 public class DeploymentReconciler
-    implements Reconciler<Deployment>, TestExecutionInfoProvider {
+    implements Reconciler<Deployment> {
 
     @Override
     public UpdateControl<Deployment> reconcile(

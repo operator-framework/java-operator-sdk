@@ -10,7 +10,7 @@ this [blog post](https://csviri.medium.com/java-operator-sdk-introduction-to-eve
 .
 
 Event sources are a relatively simple yet powerful and extensible concept to trigger controller
-executions, usually based on changes to dependent resources. You typically need an event source
+executions, usually based on changes to managed resources. You typically need an event source
 when you want your `Reconciler` to be triggered when something occurs to secondary resources
 that might affect the state of your primary resource. This is needed because a given
 `Reconciler` will only listen by default to events affecting the primary resource type it is
@@ -23,7 +23,24 @@ controller implementations because reconciliations are then only triggered when 
 on resources affecting our primary resources thus doing away with the need to periodically
 reschedule reconciliations.
 
-![Event Sources architecture diagram](/images/event-sources.png)
+```mermaid
+graph LR
+    MR1ES["Managed Resource 1
+    Event Source"]:::eventsource -- Event --> EH["Event Handler"]:::handler
+    CRES["Custom Resource
+    Event Source"]:::primary -- Event --> EH
+    MR2ES["Managed Resource 2
+    Event Source"]:::eventsource -- Event --> EH
+    EH --> C["Controller"]:::controller
+    C --> MR1["Managed Resource 1"]:::managed
+    C --> MR2["Managed Resource 2"]:::managed
+
+    classDef eventsource fill:#3AAFA9,stroke:#2B807B,color:#fff
+    classDef primary fill:#C0527A,stroke:#8C3057,color:#fff
+    classDef handler fill:#E8873A,stroke:#B05E1F,color:#fff
+    classDef controller fill:#326CE5,stroke:#1A4AAF,color:#fff
+    classDef managed fill:#3AAFA9,stroke:#2B807B,color:#fff
+```
 
 There are few interesting points here:
 
@@ -214,7 +231,7 @@ A best practice when an operator starts up is to reconcile all the associated re
 changes might have occurred to the resources while the operator was not running.
 
 When this first reconciliation is done successfully, the next reconciliation is triggered if either
-dependent resources are changed or the primary resource `.spec` field is changed. If other fields
+managed resources are changed or the primary resource `.spec` field is changed. If other fields
 like `.metadata` are changed on the primary resource, the reconciliation could be skipped. This
 behavior is supported out of the box and reconciliation is by default not triggered if
 changes to the primary resource do not increase the `.metadata.generation` field.
