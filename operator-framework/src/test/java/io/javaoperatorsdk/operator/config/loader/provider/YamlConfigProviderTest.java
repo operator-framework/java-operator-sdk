@@ -133,7 +133,7 @@ class YamlConfigProviderTest {
   }
 
   @Test
-  void returnsEmptyForEmptyFile(@TempDir Path dir) throws IOException {
+  void emptyFile(@TempDir Path dir) throws IOException {
     Path file = dir.resolve("empty.yaml");
     Files.writeString(file, "");
 
