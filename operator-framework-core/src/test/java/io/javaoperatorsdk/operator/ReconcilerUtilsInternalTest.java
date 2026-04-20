@@ -39,6 +39,7 @@ import io.javaoperatorsdk.operator.sample.simple.TestCustomResource;
 import static io.javaoperatorsdk.operator.ReconcilerUtilsInternal.getDefaultFinalizerName;
 import static io.javaoperatorsdk.operator.ReconcilerUtilsInternal.getDefaultNameFor;
 import static io.javaoperatorsdk.operator.ReconcilerUtilsInternal.getDefaultReconcilerName;
+import static io.javaoperatorsdk.operator.ReconcilerUtilsInternal.getGroup;
 import static io.javaoperatorsdk.operator.ReconcilerUtilsInternal.handleKubernetesClientException;
 import static io.javaoperatorsdk.operator.ReconcilerUtilsInternal.isFinalizerValid;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -306,6 +307,14 @@ class ReconcilerUtilsInternalTest {
     resource2 = createResourceWithVersion("12346");
     assertThat(ReconcilerUtilsInternal.compareResourceVersions(resource1, resource2)).isNegative();
     assertThat(ReconcilerUtilsInternal.compareResourceVersions(resource2, resource1)).isPositive();
+  }
+
+  @Test
+  void extractsGroupFromApiVersion() {
+    assertThat(getGroup("v1")).isEqualTo("");
+    assertThat(getGroup("/v1")).isEqualTo("");
+    assertThat(getGroup("apps/v1")).isEqualTo("apps");
+    assertThat(getGroup("/apps/v1")).isEqualTo("apps");
   }
 
   private HasMetadata createResourceWithVersion(String resourceVersion) {
