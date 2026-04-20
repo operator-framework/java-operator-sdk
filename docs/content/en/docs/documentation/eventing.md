@@ -25,21 +25,21 @@ reschedule reconciliations.
 
 ```mermaid
 graph LR
-    MR1ES["Managed Resource 1
+    SR1ES["Secondary Resource 1
     Event Source"]:::eventsource -- Event --> EH["Event Handler"]:::handler
     CRES["Custom Resource
     Event Source"]:::primary -- Event --> EH
-    MR2ES["Managed Resource 2
+    SR2ES["Secondary Resource 2
     Event Source"]:::eventsource -- Event --> EH
     EH --> C["Controller"]:::controller
-    C --> MR1["Managed Resource 1"]:::managed
-    C --> MR2["Managed Resource 2"]:::managed
+    C --> SR1["Secondary Resource 1"]:::secondary
+    C --> SR2["Secondary Resource 2"]:::secondary
 
     classDef eventsource fill:#3AAFA9,stroke:#2B807B,color:#fff
     classDef primary fill:#C0527A,stroke:#8C3057,color:#fff
     classDef handler fill:#E8873A,stroke:#B05E1F,color:#fff
     classDef controller fill:#326CE5,stroke:#1A4AAF,color:#fff
-    classDef managed fill:#3AAFA9,stroke:#2B807B,color:#fff
+    classDef secondary fill:#3AAFA9,stroke:#2B807B,color:#fff
 ```
 
 There are few interesting points here:
