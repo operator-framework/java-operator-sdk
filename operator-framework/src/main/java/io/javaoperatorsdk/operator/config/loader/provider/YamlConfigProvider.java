@@ -104,12 +104,18 @@ public class YamlConfigProvider implements ConfigProvider {
       Map<String, Object> result = MAPPER.readValue(in, Map.class);
       return result != null ? result : Map.of();
     } catch (com.fasterxml.jackson.databind.exc.MismatchedInputException e) {
-      log.warn(
-          "There was issue with parsing configuration data from file. "
-              + "Will skip loading properties from it. Path: {}",
-          path,
-          e);
-      return Map.of();
+      // A comment-only or empty YAML file produces no tokens, which Jackson reports
+      // as "No content to map due to end-of-input". Treat this as an empty config.
+      if (e.getMessage() != null
+          && e.getMessage().startsWith("No content to map due to end-of-input")) {
+        log.debug(
+            "YAML file contains no mappings (possibly empty or comments only). "
+                + "Returning empty config. Path: {}",
+            path);
+        return Map.of();
+      }
+      throw new UncheckedIOException(
+          "Failed to parse config YAML from " + path + ": " + e.getMessage(), e);
     } catch (IOException e) {
       throw new UncheckedIOException("Failed to load config YAML from " + path, e);
     }

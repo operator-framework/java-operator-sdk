@@ -16,6 +16,7 @@
 package io.javaoperatorsdk.operator.config.loader.provider;
 
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Duration;
@@ -26,6 +27,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 import static org.assertj.core.api.Assertions.assertThatIllegalArgumentException;
 
 class YamlConfigProviderTest {
@@ -158,5 +160,34 @@ class YamlConfigProviderTest {
     Path missing = dir.resolve("does-not-exist.yaml");
     var provider = new YamlConfigProvider(missing);
     assertThat(provider.getValue("any.key", String.class)).isEmpty();
+  }
+
+  @Test
+  void throwsForMalformedYaml(@TempDir Path dir) throws IOException {
+    Path file = dir.resolve("bad.yaml");
+    // YAML list where a map is expected
+    Files.writeString(
+        file,
+        """
+        - item1
+        - item2
+        """);
+    assertThatExceptionOfType(UncheckedIOException.class)
+        .isThrownBy(() -> new YamlConfigProvider(file));
+  }
+
+  @Test
+  void commentWithProperDocument(@TempDir Path dir) throws IOException {
+    Path file = dir.resolve("filewithcomment.yaml");
+    // YAML list where a map is expected
+    Files.writeString(
+        file,
+        """
+        # comment
+        key:
+          subkey: val
+        """);
+    var provider = new YamlConfigProvider(file);
+    assertThat(provider.getValue("key.subkey", String.class)).contains("val");
   }
 }
