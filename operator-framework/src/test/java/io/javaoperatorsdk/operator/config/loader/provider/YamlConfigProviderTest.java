@@ -179,7 +179,7 @@ class YamlConfigProviderTest {
   @Test
   void commentWithProperDocument(@TempDir Path dir) throws IOException {
     Path file = dir.resolve("filewithcomment.yaml");
-    // YAML list where a map is expected
+    // YAML comment followed by a proper mapping document
     Files.writeString(
         file,
         """
