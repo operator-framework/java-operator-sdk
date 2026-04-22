@@ -312,9 +312,7 @@ class ReconcilerUtilsInternalTest {
   @Test
   void extractsGroupFromApiVersion() {
     assertThat(getGroup("v1")).isEqualTo("");
-    assertThat(getGroup("/v1")).isEqualTo("");
     assertThat(getGroup("apps/v1")).isEqualTo("apps");
-    assertThat(getGroup("/apps/v1")).isEqualTo("apps");
   }
 
   private HasMetadata createResourceWithVersion(String resourceVersion) {

@@ -363,9 +363,6 @@ public class ReconcilerUtilsInternal {
   }
 
   public static String getGroup(String apiVersion) {
-    if (apiVersion.startsWith("/")) {
-      apiVersion = apiVersion.substring(1);
-    }
     var index = apiVersion.indexOf("/");
     if (index < 0) {
       return "";
