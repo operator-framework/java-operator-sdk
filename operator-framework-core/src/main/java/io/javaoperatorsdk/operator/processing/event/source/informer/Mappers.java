@@ -24,6 +24,8 @@ import io.javaoperatorsdk.operator.processing.GroupVersionKind;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
 import io.javaoperatorsdk.operator.processing.event.source.SecondaryToPrimaryMapper;
 
+import static io.javaoperatorsdk.operator.ReconcilerUtilsInternal.getGroup;
+
 public class Mappers {
 
   public static final String DEFAULT_ANNOTATION_FOR_NAME = "io.javaoperatorsdk/primary-name";
@@ -98,10 +100,12 @@ public class Mappers {
 
   public static <T extends HasMetadata> SecondaryToPrimaryMapper<T> fromOwnerReferences(
       String apiVersion, String kind, boolean clusterScope) {
-    String correctApiVersion = apiVersion.startsWith("/") ? apiVersion.substring(1) : apiVersion;
     return resource ->
         resource.getMetadata().getOwnerReferences().stream()
-            .filter(r -> r.getKind().equals(kind) && r.getApiVersion().equals(correctApiVersion))
+            .filter(
+                r ->
+                    r.getKind().equals(kind)
+                        && getGroup(r.getApiVersion()).equals(getGroup(apiVersion)))
             .map(or -> ResourceID.fromOwnerReference(resource, or, clusterScope))
             .collect(Collectors.toSet());
   }

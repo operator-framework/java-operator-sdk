@@ -21,6 +21,7 @@ import org.junit.jupiter.api.Test;
 
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.ConfigMapBuilder;
+import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
 import io.javaoperatorsdk.operator.TestUtils;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
@@ -81,6 +82,30 @@ class MappersTest {
             .toPrimaryResourceIDs(secondary);
 
     assertThat(res).isEmpty();
+  }
+
+  @Test
+  void fromOwnerReferenceIgnoresVersionFromApiVersion() {
+    var primary = TestUtils.testCustomResource();
+    primary.getMetadata().setUid(UUID.randomUUID().toString());
+    var secondary =
+        new ConfigMapBuilder()
+            .withMetadata(
+                new ObjectMetaBuilder()
+                    .withName("test1")
+                    .withNamespace(primary.getMetadata().getNamespace())
+                    .build())
+            .build();
+    secondary.addOwnerReference(primary);
+
+    var res =
+        Mappers.fromOwnerReferences(
+                HasMetadata.getGroup(TestCustomResource.class) + "/v2",
+                HasMetadata.getKind(TestCustomResource.class),
+                false)
+            .toPrimaryResourceIDs(secondary);
+
+    assertThat(res).contains(ResourceID.fromResource(primary));
   }
 
   private static ConfigMap getConfigMap(TestCustomResource primary) {
