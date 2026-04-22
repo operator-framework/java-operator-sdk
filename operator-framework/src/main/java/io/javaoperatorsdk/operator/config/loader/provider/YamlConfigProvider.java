@@ -100,8 +100,16 @@ public class YamlConfigProvider implements ConfigProvider {
       return Map.of();
     }
 
-    try (InputStream in = Files.newInputStream(path)) {
-      Map<String, Object> result = MAPPER.readValue(in, Map.class);
+    try (InputStream in = Files.newInputStream(path);
+        com.fasterxml.jackson.core.JsonParser parser = MAPPER.getFactory().createParser(in)) {
+      if (parser.nextToken() == null) {
+        log.debug(
+            "YAML file contains no mappings (possibly empty or comments only). "
+                + "Returning empty config. Path: {}",
+            path);
+        return Map.of();
+      }
+      Map<String, Object> result = MAPPER.readValue(parser, Map.class);
       return result != null ? result : Map.of();
     } catch (IOException e) {
       throw new UncheckedIOException("Failed to load config YAML from " + path, e);
