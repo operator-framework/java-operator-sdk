@@ -45,6 +45,13 @@ public class ReconcilerUtilsInternal {
   private static final String GET_STATUS = "getStatus";
   private static final Pattern API_URI_PATTERN =
       Pattern.compile(".*http(s?)://[^/]*/api(s?)/(\\S*).*"); // NOSONAR: input is controlled
+  private static final String DOT = ".";
+  private static final char DOT_CHAR = '.';
+  private static final String SLASH = "/";
+  private static final char SLASH_CHAR = '/';
+  private static final String EMPTY = "";
+  private static final char ZERO = '0';
+  private static final char NINE = '9';
 
   // prevent instantiation of util class
   private ReconcilerUtilsInternal() {}
@@ -55,7 +62,7 @@ public class ReconcilerUtilsInternal {
 
   public static String getResourceTypeNameWithVersion(Class<? extends HasMetadata> resourceClass) {
     final var version = HasMetadata.getVersion(resourceClass);
-    return getResourceTypeName(resourceClass) + "/" + version;
+    return getResourceTypeName(resourceClass) + SLASH + version;
   }
 
   public static String getResourceTypeName(Class<? extends HasMetadata> resourceClass) {
@@ -69,7 +76,7 @@ public class ReconcilerUtilsInternal {
   public static String getDefaultFinalizerName(String resourceName) {
     // resource names for historic resources such as Pods are missing periods and therefore do not
     // constitute valid domain names as mandated by Kubernetes so generate one that does
-    if (resourceName.indexOf('.') < 0) {
+    if (resourceName.indexOf(DOT_CHAR) < 0) {
       resourceName = resourceName + MISSING_GROUP_SUFFIX;
     }
     return resourceName + FINALIZER_NAME_SUFFIX;
@@ -102,7 +109,7 @@ public class ReconcilerUtilsInternal {
 
   public static String getDefaultReconcilerName(String reconcilerClassName) {
     // if the name is fully qualified, extract the simple class name
-    final var lastDot = reconcilerClassName.lastIndexOf('.');
+    final var lastDot = reconcilerClassName.lastIndexOf(DOT_CHAR);
     if (lastDot > 0) {
       reconcilerClassName = reconcilerClassName.substring(lastDot + 1);
     }
@@ -228,15 +235,15 @@ public class ReconcilerUtilsInternal {
       final var regex = API_URI_PATTERN.matcher(message);
       if (regex.matches()) {
         var group = regex.group(3);
-        if (group.endsWith(".")) {
+        if (group.endsWith(DOT)) {
           group = group.substring(0, group.length() - 1);
         }
         final var segments =
-            Arrays.stream(group.split("/")).filter(Predicate.not(String::isEmpty)).toList();
+            Arrays.stream(group.split(SLASH)).filter(Predicate.not(String::isEmpty)).toList();
         if (segments.size() != 3) {
           return false;
         }
-        final var targetResourceName = segments.get(2) + "." + segments.get(0);
+        final var targetResourceName = segments.get(2) + DOT_CHAR + segments.get(0);
         return resourceTypeName.equals(targetResourceName);
       }
     }
@@ -349,12 +356,12 @@ public class ReconcilerUtilsInternal {
     }
     for (int i = 0; i < v1Length; i++) {
       char char1 = v1.charAt(i);
-      if (char1 == '0') {
+      if (char1 == ZERO) {
         if (i == 0) {
           throw new NonComparableResourceVersionException(
               "Resource version cannot begin with 0: " + v1);
         }
-      } else if (char1 < '0' || char1 > '9') {
+      } else if (char1 < ZERO || char1 > NINE) {
         throw new NonComparableResourceVersionException(
             "Non numeric characters in resource version: " + v1);
       }
@@ -363,9 +370,9 @@ public class ReconcilerUtilsInternal {
   }
 
   public static String getGroup(String apiVersion) {
-    var index = apiVersion.indexOf("/");
+    var index = apiVersion.indexOf(SLASH_CHAR);
     if (index < 0) {
-      return "";
+      return EMPTY;
     } else {
       return apiVersion.substring(0, index);
     }
