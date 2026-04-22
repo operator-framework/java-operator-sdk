@@ -115,7 +115,7 @@ Both approaches require guaranteeing resources are cached for the next reconcili
 
 ### How can I skip the reconciliation of a dependent resource?
 
-Skipping workflow reconciliation altogether is possible with the explicit invocation feature since v5. You can read more about this in [v5 release notes](https://javaoperatorsdk.io/blog/2025/01/06/version-5-released/#explicit-workflow-invocation).
+Skipping workflow reconciliation altogether is possible with the explicit invocation feature since v5. You can read more about this in [v5 release notes](../../blog/2025/01/06/v5-release/#explicit-workflow-invocation).
 
 However, what if you want to avoid reconciling a single dependent resource based on some state? First, remember that the dependent resource won't be modified if the desired state and actual state match. Moreover, it's generally good practice to reconcile all your resources, with JOSDK taking care of only processing resources whose state doesn't match the desired one.
 
