@@ -63,6 +63,7 @@ class TomcatOperatorE2E {
               .waitForNamespaceDeletion(false)
               .withReconciler(new TomcatReconciler())
               .withReconciler(new WebappReconciler(client))
+              .withDeleteCRDs(false)
               .build()
           : ClusterDeployedOperatorExtension.builder()
               .waitForNamespaceDeletion(false)
