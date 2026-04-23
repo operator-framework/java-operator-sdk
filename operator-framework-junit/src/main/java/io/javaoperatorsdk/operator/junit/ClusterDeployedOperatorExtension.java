@@ -23,7 +23,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
-import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -103,10 +102,17 @@ public class ClusterDeployedOperatorExtension extends AbstractOperatorExtension 
     final var crdPath = "./target/classes/META-INF/fabric8/";
     final var crdSuffix = "-v1.yml";
 
+    final var crdDir = new File(crdPath);
+    final var crdFiles = crdDir.listFiles((ignored, name) -> name.endsWith(crdSuffix));
+    if (crdFiles == null || crdFiles.length == 0) {
+      LOGGER.warn(
+          "No CRD files found with suffix '{}' in directory: {}",
+          crdSuffix,
+          crdDir.getAbsolutePath());
+    }
+
     final var kubernetesClient = getInfrastructureKubernetesClient();
-    for (var crdFile :
-        Objects.requireNonNull(
-            new File(crdPath).listFiles((ignored, name) -> name.endsWith(crdSuffix)))) {
+    for (var crdFile : crdFiles != null ? crdFiles : new File[0]) {
       try (InputStream is = new FileInputStream(crdFile)) {
         final var crd = kubernetesClient.load(is);
         crd.createOrReplace();
