@@ -188,7 +188,7 @@ usually limited to status handling based on the state of the secondary resources
 resources are not dependent on each other. As an alternative, you can also invoke reconciliation explicitly, 
 event for managed workflows.
 
-See [Workflows](https://javaoperatorsdk.io/docs/documentation/dependent-resource-and-workflows/workflows/) for more details on how the dependent
+See [Workflows](workflows.md) for more details on how the dependent
 resources are reconciled.
 
 This behavior and automated handling is referred to as "managed" because the `DependentResource`
@@ -231,7 +231,7 @@ It is also possible to wire dependent resources programmatically. In practice th
 developer is responsible for initializing and managing the dependent resources as well as calling
 their `reconcile` method. However, this makes it possible for developers to fully customize the
 reconciliation process. Standalone dependent resources should be used in cases when the managed use
-case does not fit. You can, of course, also use [Workflows](https://javaoperatorsdk.io/docs/documentation/dependent-resource-and-workflows/workflows/) when managing
+case does not fit. You can, of course, also use [Workflows](workflows.md) when managing
 resources programmatically.
 
 You can see a commented example of how to do
