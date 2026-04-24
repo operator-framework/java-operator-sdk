@@ -120,7 +120,12 @@ public class ClusterDeployedOperatorExtension extends AbstractOperatorExtension 
         throw new IllegalStateException("Cannot apply CRD yaml: " + crdFile.getAbsolutePath(), ex);
       }
     }
+  }
 
+  @Override
+  protected void before(ExtensionContext context) {
+    super.before(context);
+    final var kubernetesClient = getInfrastructureKubernetesClient();
     LOGGER.debug("Deploying the operator into Kubernetes. Target namespace: {}", namespace);
     operatorDeployment.forEach(
         hm -> {
