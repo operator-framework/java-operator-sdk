@@ -13,17 +13,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.javaoperatorsdk.operator.sample.metrics.customresource;
+package io.javaoperatorsdk.operator.sample.operations.customresource;
 
-public class MetricsHandlingStatus {
+public class OperationsSpec {
 
-  private int observedNumber;
+  private int number;
 
-  public int getObservedNumber() {
-    return observedNumber;
+  public int getNumber() {
+    return number;
   }
 
-  public void setObservedNumber(int observedNumber) {
-    this.observedNumber = observedNumber;
+  public void setNumber(int number) {
+    this.number = number;
   }
 }
