@@ -82,9 +82,20 @@ public class ClusterDeployedOperatorExtension extends AbstractOperatorExtension 
     return new Builder();
   }
 
-  protected void before(ExtensionContext context) {
-    super.before(context);
+  // note that if extension is not static beforeAll is not called
+  @Override
+  protected void beforeEachImpl(ExtensionContext context) {
+    applyCrds(context);
+    super.beforeEachImpl(context);
+  }
 
+  @Override
+  protected void beforeAllImpl(ExtensionContext context) {
+    applyCrds(context);
+    super.beforeAllImpl(context);
+  }
+
+  protected void applyCrds(ExtensionContext context) {
     final var crdPath = "./target/classes/META-INF/fabric8/";
     final var crdSuffix = "-v1.yml";
 
@@ -109,7 +120,12 @@ public class ClusterDeployedOperatorExtension extends AbstractOperatorExtension 
         throw new IllegalStateException("Cannot apply CRD yaml: " + crdFile.getAbsolutePath(), ex);
       }
     }
+  }
 
+  @Override
+  protected void before(ExtensionContext context) {
+    super.before(context);
+    final var kubernetesClient = getInfrastructureKubernetesClient();
     LOGGER.debug("Deploying the operator into Kubernetes. Target namespace: {}", namespace);
     operatorDeployment.forEach(
         hm -> {
