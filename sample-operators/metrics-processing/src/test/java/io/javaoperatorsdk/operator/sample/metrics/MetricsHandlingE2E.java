@@ -74,7 +74,6 @@ class MetricsHandlingE2E {
           ? LocallyRunOperatorExtension.builder()
               .withReconciler(new MetricsHandlingReconciler1())
               .withReconciler(new MetricsHandlingReconciler2())
-              .withDeleteCRDs(false)
               .withConfigurationService(
                   c -> c.withMetrics(MetricsHandlingSampleOperator.initOTLPMetrics(true)))
               .build()
