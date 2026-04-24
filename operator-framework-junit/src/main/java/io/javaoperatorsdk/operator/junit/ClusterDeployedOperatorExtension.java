@@ -23,7 +23,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
-import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -32,10 +31,14 @@ import org.junit.jupiter.api.extension.ExtensionContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import io.fabric8.kubernetes.api.model.ContainerStatus;
 import io.fabric8.kubernetes.api.model.HasMetadata;
+import io.fabric8.kubernetes.api.model.Pod;
+import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.api.model.rbac.ClusterRoleBinding;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClientBuilder;
+import io.fabric8.kubernetes.client.KubernetesClientTimeoutException;
 
 public class ClusterDeployedOperatorExtension extends AbstractOperatorExtension {
 
@@ -99,10 +102,17 @@ public class ClusterDeployedOperatorExtension extends AbstractOperatorExtension 
     final var crdPath = "./target/classes/META-INF/fabric8/";
     final var crdSuffix = "-v1.yml";
 
+    final var crdDir = new File(crdPath);
+    final var crdFiles = crdDir.listFiles((ignored, name) -> name.endsWith(crdSuffix));
+    if (crdFiles == null || crdFiles.length == 0) {
+      LOGGER.warn(
+          "No CRD files found with suffix '{}' in directory: {}",
+          crdSuffix,
+          crdDir.getAbsolutePath());
+    }
+
     final var kubernetesClient = getInfrastructureKubernetesClient();
-    for (var crdFile :
-        Objects.requireNonNull(
-            new File(crdPath).listFiles((ignored, name) -> name.endsWith(crdSuffix)))) {
+    for (var crdFile : crdFiles != null ? crdFiles : new File[0]) {
       try (InputStream is = new FileInputStream(crdFile)) {
         final var crd = kubernetesClient.load(is);
         crd.createOrReplace();
@@ -139,9 +149,14 @@ public class ClusterDeployedOperatorExtension extends AbstractOperatorExtension 
         });
 
     kubernetesClient.resourceList(operatorDeployment).inNamespace(namespace).createOrReplace();
-    kubernetesClient
-        .resourceList(operatorDeployment)
-        .waitUntilReady(operatorDeploymentTimeout.toMillis(), TimeUnit.MILLISECONDS);
+    try {
+      kubernetesClient
+          .resourceList(operatorDeployment)
+          .waitUntilReady(operatorDeploymentTimeout.toMillis(), TimeUnit.MILLISECONDS);
+    } catch (KubernetesClientTimeoutException e) {
+      logDiagnosticInfo(kubernetesClient);
+      throw e;
+    }
     LOGGER.debug("Operator resources deployed.");
   }
 
@@ -151,6 +166,127 @@ public class ClusterDeployedOperatorExtension extends AbstractOperatorExtension 
         .resourceList(operatorDeployment)
         .inNamespace(namespace)
         .delete();
+  }
+
+  private void logDiagnosticInfo(KubernetesClient kubernetesClient) {
+    LOGGER.error(
+        "Operator deployment timed out after {} seconds in namespace: {}",
+        operatorDeploymentTimeout.getSeconds(),
+        namespace);
+    try {
+      // Log deployment status
+      var deployments =
+          kubernetesClient.apps().deployments().inNamespace(namespace).list().getItems();
+      for (Deployment deployment : deployments) {
+        var status = deployment.getStatus();
+        LOGGER.error(
+            "Deployment '{}': replicas={}, readyReplicas={}, availableReplicas={},"
+                + " unavailableReplicas={}, conditions={}",
+            deployment.getMetadata().getName(),
+            status != null ? status.getReplicas() : "null",
+            status != null ? status.getReadyReplicas() : "null",
+            status != null ? status.getAvailableReplicas() : "null",
+            status != null ? status.getUnavailableReplicas() : "null",
+            status != null ? status.getConditions() : "null");
+      }
+
+      // Log pod status and container details
+      var pods = kubernetesClient.pods().inNamespace(namespace).list().getItems();
+      for (Pod pod : pods) {
+        var podStatus = pod.getStatus();
+        LOGGER.error(
+            "Pod '{}': phase={}, reason={}, message={}",
+            pod.getMetadata().getName(),
+            podStatus != null ? podStatus.getPhase() : "null",
+            podStatus != null ? podStatus.getReason() : "null",
+            podStatus != null ? podStatus.getMessage() : "null");
+
+        if (podStatus != null && podStatus.getContainerStatuses() != null) {
+          for (ContainerStatus cs : podStatus.getContainerStatuses()) {
+            LOGGER.error(
+                "  Container '{}': ready={}, restartCount={}, state={}",
+                cs.getName(),
+                cs.getReady(),
+                cs.getRestartCount(),
+                cs.getState());
+          }
+        }
+        if (podStatus != null && podStatus.getInitContainerStatuses() != null) {
+          for (ContainerStatus cs : podStatus.getInitContainerStatuses()) {
+            LOGGER.error(
+                "  InitContainer '{}': ready={}, restartCount={}, state={}",
+                cs.getName(),
+                cs.getReady(),
+                cs.getRestartCount(),
+                cs.getState());
+          }
+        }
+
+        // Log pod events
+        var events =
+            kubernetesClient
+                .v1()
+                .events()
+                .inNamespace(namespace)
+                .withField("involvedObject.name", pod.getMetadata().getName())
+                .list()
+                .getItems();
+        for (var event : events) {
+          LOGGER.error(
+              "  Event: type={}, reason={}, message={}",
+              event.getType(),
+              event.getReason(),
+              event.getMessage());
+        }
+
+        // Try to get container logs
+        try {
+          String logs =
+              kubernetesClient
+                  .pods()
+                  .inNamespace(namespace)
+                  .withName(pod.getMetadata().getName())
+                  .tailingLines(50)
+                  .getLog();
+          if (logs != null && !logs.isEmpty()) {
+            LOGGER.error("  Logs for pod '{}':\n{}", pod.getMetadata().getName(), logs);
+          }
+        } catch (Exception logEx) {
+          LOGGER.error(
+              "  Could not retrieve logs for pod '{}': {}",
+              pod.getMetadata().getName(),
+              logEx.getMessage());
+        }
+      }
+
+      if (pods.isEmpty()) {
+        LOGGER.error(
+            "No pods found in namespace '{}'. The deployment may have failed to"
+                + " create pods. Check if the image exists and is pullable.",
+            namespace);
+
+        // Log deployment events when no pods exist
+        for (Deployment deployment : deployments) {
+          var events =
+              kubernetesClient
+                  .v1()
+                  .events()
+                  .inNamespace(namespace)
+                  .withField("involvedObject.name", deployment.getMetadata().getName())
+                  .list()
+                  .getItems();
+          for (var event : events) {
+            LOGGER.error(
+                "  Deployment event: type={}, reason={}, message={}",
+                event.getType(),
+                event.getReason(),
+                event.getMessage());
+          }
+        }
+      }
+    } catch (Exception diagEx) {
+      LOGGER.error("Failed to collect diagnostic info: {}", diagEx.getMessage(), diagEx);
+    }
   }
 
   public static class Builder extends AbstractBuilder<Builder> {
