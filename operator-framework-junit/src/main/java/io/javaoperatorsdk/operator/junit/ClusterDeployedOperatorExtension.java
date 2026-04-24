@@ -82,6 +82,13 @@ public class ClusterDeployedOperatorExtension extends AbstractOperatorExtension 
     return new Builder();
   }
 
+  // note that if extension is not static beforeAll is not called
+  @Override
+  protected void beforeEachImpl(ExtensionContext context) {
+    applyCrds(context);
+    super.beforeEachImpl(context);
+  }
+
   @Override
   protected void beforeAllImpl(ExtensionContext context) {
     applyCrds(context);
