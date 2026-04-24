@@ -82,7 +82,12 @@ public class ClusterDeployedOperatorExtension extends AbstractOperatorExtension 
     return new Builder();
   }
 
-  protected void before(ExtensionContext context) {
+  protected void beforeAllImpl(ExtensionContext context) {
+    applyCrds(context);
+    super.beforeAllImpl(context);
+  }
+
+  protected void applyCrds(ExtensionContext context) {
     super.before(context);
 
     final var crdPath = "./target/classes/META-INF/fabric8/";
