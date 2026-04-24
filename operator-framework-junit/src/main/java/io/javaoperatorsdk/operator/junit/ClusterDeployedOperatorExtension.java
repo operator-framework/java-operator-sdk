@@ -82,6 +82,7 @@ public class ClusterDeployedOperatorExtension extends AbstractOperatorExtension 
     return new Builder();
   }
 
+  @Override
   protected void beforeAllImpl(ExtensionContext context) {
     applyCrds(context);
     super.beforeAllImpl(context);
