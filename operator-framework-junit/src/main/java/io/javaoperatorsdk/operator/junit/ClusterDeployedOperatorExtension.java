@@ -96,8 +96,6 @@ public class ClusterDeployedOperatorExtension extends AbstractOperatorExtension 
   }
 
   protected void applyCrds(ExtensionContext context) {
-    super.before(context);
-
     final var crdPath = "./target/classes/META-INF/fabric8/";
     final var crdSuffix = "-v1.yml";
 
