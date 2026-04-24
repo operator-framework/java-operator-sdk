@@ -77,7 +77,7 @@ class OperationsE2E {
               .withConfigurationService(
                   c -> c.withMetrics(OperationsSampleOperator.initOTLPMetrics(true)))
               .build()
-          : ClusterDeployedOperatorExtension.builder().oneNamespacePerClass(true).build();
+          : ClusterDeployedOperatorExtension.builder().build();
 
   @BeforeAll
   void setup() {
