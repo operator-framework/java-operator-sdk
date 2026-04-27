@@ -30,8 +30,8 @@ resources: {}
 primaryResources:
   - apiGroup: "sample.javaoperatorsdk"
     resources:
-    - metricshandlingcustomresource1s
-    - metricshandlingcustomresource2s
+    - operationscustomresource1s
+    - operationscustomresource2s
 
 probes:
   startup:
