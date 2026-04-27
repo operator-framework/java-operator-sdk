@@ -308,8 +308,10 @@ explicit request/response expectations.
 For tests that need a more realistic Kubernetes API (including watches, status subresources, and
 server-side apply), the Fabric8 client provides the
 [`@KubeAPITest`](https://github.com/fabric8io/kubernetes-client/blob/main/doc/kube-api-test.md)
-annotation. It starts a lightweight API server that behaves more closely to a real cluster than
-the mock server.
+annotation. It starts a lightweight Kubernetes API server that behaves more closely to a real cluster than
+the mock server. The API Server starts quickly, so it is suitable to run it from unit tests, even separately
+for each test case if needed. In addition to that comes handy if your CI does not support running tools like
+Kind and/or Minikube.
 
 ```xml
 <dependency>
