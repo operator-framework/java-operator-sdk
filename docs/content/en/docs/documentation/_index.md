@@ -16,6 +16,10 @@ This section contains detailed documentation for all Java Operator SDK features 
 - **[Error Handling & Retries](error-handling-retries/)** - Managing failures gracefully
 - **[Rate Limiting](rate-limiting/)** - Controlling reconciliation frequency per resource
 
+## Testing
+
+- **[Testing](testing/)** - Unit tests, integration tests, and E2E testing strategies
+
 ## Advanced Features
 
 - **[Eventing](eventing/)** - Understanding the event-driven model
