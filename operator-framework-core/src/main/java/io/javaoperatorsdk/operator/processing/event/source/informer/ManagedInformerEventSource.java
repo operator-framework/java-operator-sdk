@@ -222,11 +222,6 @@ public abstract class ManagedInformerEventSource<
     return get(resourceID);
   }
 
-  @Override
-  public Stream<R> list(String namespace, Predicate<R> predicate) {
-    return manager().list(namespace, predicate);
-  }
-
   void setTemporalResourceCache(TemporaryResourceCache<R> temporaryResourceCache) {
     this.temporaryResourceCache = temporaryResourceCache;
   }
@@ -240,18 +235,75 @@ public abstract class ManagedInformerEventSource<
   }
 
   @Override
-  public List<R> byIndex(String indexName, String indexKey) {
-    return manager().byIndex(indexName, indexKey);
-  }
-
-  @Override
-  public Stream<ResourceID> keys() {
-    return cache.keys();
+  public Stream<R> list(String namespace, Predicate<R> predicate) {
+    return manager().list(namespace, predicate);
   }
 
   @Override
   public Stream<R> list(Predicate<R> predicate) {
     return cache.list(predicate);
+  }
+
+  @Override
+  public List<R> byIndex(String indexName, String indexKey) {
+    return manager().byIndex(indexName, indexKey);
+  }
+
+  public Stream<R> byIndexStream(String indexName, String indexKey) {
+    return manager().byIndexStream(indexName, indexKey);
+  }
+
+  /**
+   * Like {@link #list(String, Predicate)} but replaces resources with their newer version from the
+   * {@link TemporaryResourceCache} when available, to provide stronger consistency. This is needed
+   * when resources are updated using {@link
+   * io.javaoperatorsdk.operator.api.reconciler.ResourceOperations}, which caches the updated
+   * resource in the {@link TemporaryResourceCache} until the informer catches up.
+   */
+  public Stream<R> listWithStrongConsistency(String namespace, Predicate<R> predicate) {
+    return replaceWithTempCacheVersions(manager().list(namespace, predicate));
+  }
+
+  /**
+   * Like {@link #list(Predicate)} but replaces resources with their newer version from the {@link
+   * TemporaryResourceCache} when available, to provide stronger consistency. This is needed when
+   * resources are updated using {@link
+   * io.javaoperatorsdk.operator.api.reconciler.ResourceOperations}, which caches the updated
+   * resource in the {@link TemporaryResourceCache} until the informer catches up.
+   */
+  public Stream<R> listWithStrongConsistency(Predicate<R> predicate) {
+    return replaceWithTempCacheVersions(cache.list(predicate));
+  }
+
+  /**
+   * Like {@link #byIndexStream(String, String)} but replaces resources with their newer version
+   * from the {@link TemporaryResourceCache} when available, to provide stronger consistency. This
+   * is needed when resources are updated using {@link
+   * io.javaoperatorsdk.operator.api.reconciler.ResourceOperations}, which caches the updated
+   * resource in the {@link TemporaryResourceCache} until the informer catches up.
+   */
+  public Stream<R> byIndexStreamWithStrongConsistency(String indexName, String indexKey) {
+    return replaceWithTempCacheVersions(manager().byIndexStream(indexName, indexKey));
+  }
+
+  private Stream<R> replaceWithTempCacheVersions(Stream<R> stream) {
+    if (!comparableResourceVersions) {
+      return stream;
+    }
+    var tempResources = temporaryResourceCache.getResources();
+    if (tempResources.isEmpty()) {
+      return stream;
+    }
+    return stream.map(
+        r -> {
+          var tempResource = tempResources.get(ResourceID.fromResource(r));
+          return tempResource != null ? tempResource : r;
+        });
+  }
+
+  @Override
+  public Stream<ResourceID> keys() {
+    return cache.keys();
   }
 
   @Override

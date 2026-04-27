@@ -275,4 +275,8 @@ public class TemporaryResourceCache<T extends HasMetadata> {
   public synchronized Optional<T> getResourceFromCache(ResourceID resourceID) {
     return Optional.ofNullable(cache.get(resourceID));
   }
+
+  synchronized Map<ResourceID, T> getResources() {
+    return Map.copyOf(cache);
+  }
 }
