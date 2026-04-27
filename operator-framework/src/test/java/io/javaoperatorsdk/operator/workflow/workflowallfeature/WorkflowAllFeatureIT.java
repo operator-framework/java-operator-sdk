@@ -101,7 +101,9 @@ public class WorkflowAllFeatureIT {
         .untilAsserted(
             () -> {
               assertThat(operator.get(ConfigMap.class, RESOURCE_NAME)).isNull();
-              assertThat(getPrimaryStatus().getReady()).isTrue();
+              var status = getPrimaryStatus();
+              assertThat(status).isNotNull();
+              assertThat(status.getReady()).isTrue();
             });
 
     resource.getSpec().setCreateConfigMap(true);
