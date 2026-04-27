@@ -1,0 +1,61 @@
+name: Performance Tests
+
+env:
+  MAVEN_ARGS: -V -ntp -e
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'operator-framework-core/src/main/**'
+      - 'performance-tests/**'
+  workflow_dispatch:
+
+jobs:
+  jmh-benchmarks:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v6
+      - name: Set up Java and Maven
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: 17
+          cache: 'maven'
+      - name: Build project
+        run: ./mvnw ${MAVEN_ARGS} install -DskipTests --file pom.xml
+      - name: Run JMH benchmarks
+        run: java -jar performance-tests/target/benchmarks.jar -rf json -rff performance-tests/target/jmh-result.json
+      - name: Upload benchmark results
+        uses: actions/upload-artifact@v4
+        with:
+          name: jmh-result
+          path: performance-tests/target/jmh-result.json
+      - name: Store benchmark result
+        uses: benchmark-action/github-action-benchmark@v1
+        if: github.ref == 'refs/heads/main'
+        with:
+          tool: 'jmh'
+          output-file-path: performance-tests/target/jmh-result.json
+          auto-push: true
+          alert-threshold: '130%'
+          comment-on-alert: true
+          fail-on-alert: false
+          gh-pages-branch: gh-pages
+          benchmark-data-dir-path: dev/bench
+
+  integration-perf-tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v6
+      - name: Set up Java and Maven
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: 17
+          cache: 'maven'
+      - name: Run integration performance tests
+        run: ./mvnw ${MAVEN_ARGS} verify -P performance-tests -pl performance-tests -am --file pom.xml
