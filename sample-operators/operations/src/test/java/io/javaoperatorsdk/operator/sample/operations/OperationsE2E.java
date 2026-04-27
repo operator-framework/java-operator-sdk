@@ -69,7 +69,7 @@ class OperationsE2E {
   OperationsE2E() {}
 
   @RegisterExtension
-  AbstractOperatorExtension operator =
+  AbstractOperatorExtension extension =
       isLocal()
           ? LocallyRunOperatorExtension.builder()
               .withReconciler(new OperationsReconciler1())
@@ -103,6 +103,7 @@ class OperationsE2E {
   }
 
   private void helmInstall() {
+    var namespace = getNamespace();
     try {
       var chartPath =
           findProjectRoot("helm").toPath().resolve("helm/generic-helm-chart").toString();
@@ -111,8 +112,6 @@ class OperationsE2E {
         throw new IllegalStateException("helm-values.yaml not found on classpath");
       }
       var valuesPath = new File(valuesUrl.toURI()).getAbsolutePath();
-      var namespace = getNamespace();
-
       log.info("Installing helm release '{}' into namespace '{}'", HELM_RELEASE_NAME, namespace);
       runCommand(
           "helm",
@@ -128,12 +127,13 @@ class OperationsE2E {
           "5m");
       log.info("Helm release '{}' installed successfully", HELM_RELEASE_NAME);
     } catch (Exception e) {
+      extension.logDiagnosticInfo(namespace);
       throw new RuntimeException("Failed to install helm chart", e);
     }
   }
 
   private String getNamespace() {
-    var ns = operator.getNamespace();
+    var ns = extension.getNamespace();
     return ns == null ? "default" : ns;
   }
 
@@ -210,10 +210,10 @@ class OperationsE2E {
         "Starting longevity metrics test (running for {} seconds)", TEST_DURATION.getSeconds());
 
     // Create initial resources including ones that trigger failures
-    operator.create(createResource(OperationsCustomResource1.class, "test-success-1", 1));
-    operator.create(createResource(OperationsCustomResource2.class, "test-success-2", 1));
-    operator.create(createResource(OperationsCustomResource1.class, "test-fail-1", 1));
-    operator.create(createResource(OperationsCustomResource2.class, "test-fail-2", 1));
+    extension.create(createResource(OperationsCustomResource1.class, "test-success-1", 1));
+    extension.create(createResource(OperationsCustomResource2.class, "test-success-2", 1));
+    extension.create(createResource(OperationsCustomResource1.class, "test-fail-1", 1));
+    extension.create(createResource(OperationsCustomResource2.class, "test-fail-2", 1));
 
     // Continuously trigger reconciliations for ~50 seconds by alternating between
     // creating new resources, updating specs of existing ones, and deleting older dynamic ones
@@ -226,19 +226,19 @@ class OperationsE2E {
       switch (counter % 4) {
         case 0 -> {
           String name = "test-dynamic-1-" + counter;
-          operator.create(createResource(OperationsCustomResource1.class, name, counter * 3));
+          extension.create(createResource(OperationsCustomResource1.class, name, counter * 3));
           createdResource1Names.addLast(name);
           log.info("Iteration {}: created {}", counter, name);
         }
         case 1 -> {
-          var r1 = operator.get(OperationsCustomResource1.class, "test-success-1");
+          var r1 = extension.get(OperationsCustomResource1.class, "test-success-1");
           r1.getSpec().setNumber(counter * 7);
-          operator.replace(r1);
+          extension.replace(r1);
           log.info("Iteration {}: updated test-success-1 number to {}", counter, counter * 7);
         }
         case 2 -> {
           String name = "test-dynamic-2-" + counter;
-          operator.create(createResource(OperationsCustomResource2.class, name, counter * 5));
+          extension.create(createResource(OperationsCustomResource2.class, name, counter * 5));
           createdResource2Names.addLast(name);
           log.info("Iteration {}: created {}", counter, name);
         }
@@ -248,16 +248,16 @@ class OperationsE2E {
               && (createdResource2Names.isEmpty()
                   || createdResource1Names.size() >= createdResource2Names.size())) {
             String name = createdResource1Names.pollFirst();
-            var r = operator.get(OperationsCustomResource1.class, name);
+            var r = extension.get(OperationsCustomResource1.class, name);
             if (r != null) {
-              operator.delete(r);
+              extension.delete(r);
               log.info("Iteration {}: deleted {} ", counter, name);
             }
           } else if (!createdResource2Names.isEmpty()) {
             String name = createdResource2Names.pollFirst();
-            var r = operator.get(OperationsCustomResource2.class, name);
+            var r = extension.get(OperationsCustomResource2.class, name);
             if (r != null) {
-              operator.delete(r);
+              extension.delete(r);
               log.info("Iteration {}: deleted {}", counter, name);
             }
           }
