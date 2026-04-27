@@ -137,33 +137,6 @@ LocallyRunOperatorExtension.builder()
     .build();
 ```
 
-### Convenience Methods
-
-The extension provides helper methods for working with resources in the test namespace:
-
-```java
-// Create a resource in the test namespace
-extension.create(resource);
-
-// Get a resource by type and name
-MyCustomResource cr = extension.get(MyCustomResource.class, "my-resource");
-
-// Update a resource
-extension.update(modifiedResource);
-
-// Delete a resource
-extension.delete(resource);
-
-// Server-side apply
-extension.serverSideApply(resource);
-
-// Access the underlying Kubernetes client for advanced operations
-KubernetesClient client = extension.getKubernetesClient();
-
-// Access the operator instance
-Operator operator = extension.getOperator();
-```
-
 ### Accessing the Reconciler
 
 If your test needs to inspect the reconciler's internal state (e.g. counters, caches), you can
