@@ -137,10 +137,12 @@ probes:
     path: /healthz
     initialDelaySeconds: 1
     periodSeconds: 10
+    timeoutSeconds: 5
     failureThreshold: 20
   readiness:
     enabled: false
     path: /healthz
     initialDelaySeconds: 5
     periodSeconds: 5
+    timeoutSeconds: 5
     failureThreshold: 3

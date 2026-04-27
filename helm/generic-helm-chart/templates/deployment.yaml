@@ -67,6 +67,7 @@ spec:
             port: probes
           initialDelaySeconds: {{ .Values.probes.startup.initialDelaySeconds }}
           periodSeconds: {{ .Values.probes.startup.periodSeconds }}
+          timeoutSeconds: {{ .Values.probes.startup.timeoutSeconds }}
           failureThreshold: {{ .Values.probes.startup.failureThreshold }}
         {{- end }}
         {{- if .Values.probes.readiness.enabled }}
@@ -76,6 +77,7 @@ spec:
             port: probes
           initialDelaySeconds: {{ .Values.probes.readiness.initialDelaySeconds }}
           periodSeconds: {{ .Values.probes.readiness.periodSeconds }}
+          timeoutSeconds: {{ .Values.probes.readiness.timeoutSeconds }}
           failureThreshold: {{ .Values.probes.readiness.failureThreshold }}
         {{- end }}
         env:
