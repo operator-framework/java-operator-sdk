@@ -71,6 +71,8 @@ public class MultipleReconcilerSameTypeIT {
                   extension.get(MultipleReconcilerSameTypeCustomResource.class, TEST_RESOURCE_2);
               assertThat(res1).isNotNull();
               assertThat(res2).isNotNull();
+              assertThat(res1.getStatus()).isNotNull();
+              assertThat(res2.getStatus()).isNotNull();
               assertThat(res1.getStatus().getReconciledBy())
                   .isEqualTo(MultipleReconcilerSameTypeReconciler1.class.getSimpleName());
               assertThat(res2.getStatus().getReconciledBy())
