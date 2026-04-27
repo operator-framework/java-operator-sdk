@@ -247,9 +247,7 @@ public class ClusterDeployedOperatorExtension extends AbstractOperatorExtension 
           }
         } catch (Exception logEx) {
           LOGGER.error(
-              "  Could not retrieve logs for pod '{}'",
-              pod.getMetadata().getName(),
-              logEx);
+              "  Could not retrieve logs for pod '{}'", pod.getMetadata().getName(), logEx);
         }
       }
 
