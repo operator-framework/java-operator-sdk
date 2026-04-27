@@ -65,8 +65,8 @@ public class LocallyRunOperatorExtension extends AbstractOperatorExtension {
   private static final Set<AppliedCRD> appliedCRDs = new HashSet<>();
   private static final boolean DELETE_CRDS_DEFAULT =
       Boolean.parseBoolean(System.getProperty("testsuite.deleteCRDs", "true"));
-  private static volatile boolean deleteCRDs = DELETE_CRDS_DEFAULT;
 
+  private volatile boolean deleteCRDs = DELETE_CRDS_DEFAULT;
   private final Operator operator;
   private final List<ReconcilerSpec> reconcilers;
   private final List<PortForwardSpec> portForwards;
@@ -363,7 +363,7 @@ public class LocallyRunOperatorExtension extends AbstractOperatorExtension {
     var classContext = oneNamespacePerClass ? context : context.getParent().orElse(context);
     classContext
         .getStore(ExtensionContext.Namespace.create(LocallyRunOperatorExtension.class))
-        .computeIfAbsent(CrdCleanup.class, ignored -> new CrdCleanup());
+        .computeIfAbsent(CrdCleanup.class, ignored -> new CrdCleanup(deleteCRDs));
 
     LOGGER.debug("Starting the operator locally");
     this.operator.start();
@@ -398,6 +398,13 @@ public class LocallyRunOperatorExtension extends AbstractOperatorExtension {
   }
 
   private static class CrdCleanup implements ExtensionContext.Store.CloseableResource {
+
+    private final boolean deleteCRDs;
+
+    private CrdCleanup(boolean deleteCRDs) {
+      this.deleteCRDs = deleteCRDs;
+    }
+
     @Override
     public void close() {
       // Create a fresh client for cleanup since operator clients may already be closed.
