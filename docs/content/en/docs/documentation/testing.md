@@ -199,13 +199,18 @@ Docker image, RBAC, or resource limits), use `ClusterDeployedOperatorExtension`:
 class MyOperatorE2E {
 
     @RegisterExtension
-    ClusterDeployedOperatorExtension extension =
-        ClusterDeployedOperatorExtension.builder()
-            .withOperatorDeployment(
-                client.load(new FileInputStream("k8s/operator.yaml")).items())
-            .withDeploymentTimeout(Duration.ofMinutes(2))
-            .build();
+    ClusterDeployedOperatorExtension extension = createExtension();
 
+    private ClusterDeployedOperatorExtension createExtension() {
+        try (var operatorManifest = Files.newInputStream(Path.of("k8s/operator.yaml"))) {
+            return ClusterDeployedOperatorExtension.builder()
+                .withOperatorDeployment(client.load(operatorManifest).items())
+                .withDeploymentTimeout(Duration.ofMinutes(2))
+                .build();
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
+    }
     @Test
     void operatorShouldReconcile() {
         var resource = new MyCustomResource();
