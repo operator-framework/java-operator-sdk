@@ -162,9 +162,6 @@ KubernetesClient client = extension.getKubernetesClient();
 
 // Access the operator instance
 Operator operator = extension.getOperator();
-
-// Get a registered reconciler (useful to inspect state)
-MyReconciler reconciler = extension.getReconcilerOfType(MyReconciler.class);
 ```
 
 ### Accessing the Reconciler
