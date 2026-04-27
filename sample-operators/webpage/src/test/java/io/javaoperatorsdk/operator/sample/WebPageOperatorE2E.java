@@ -43,7 +43,6 @@ class WebPageOperatorE2E extends WebPageOperatorAbstractTest {
           ? LocallyRunOperatorExtension.builder()
               .waitForNamespaceDeletion(false)
               .withReconciler(new WebPageReconciler())
-              .withDeleteCRDs(false)
               .build()
           : ClusterDeployedOperatorExtension.builder()
               .waitForNamespaceDeletion(false)
