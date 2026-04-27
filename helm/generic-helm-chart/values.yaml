@@ -86,6 +86,9 @@ operatorConfig:
             </Console>
         </Appenders>
         <Loggers>
+            <Logger name="io.micrometer.registry.otlp.OtlpMeterRegistry" level="ERROR" additivity="false">
+                <AppenderRef ref="Console"/>
+            </Logger>
             <Root level="INFO">
                 <AppenderRef ref="Console"/>
             </Root>
