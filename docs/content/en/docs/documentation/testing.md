@@ -189,7 +189,7 @@ class MyReconcilerKubeAPITest {
     LocallyRunOperatorExtension extension =
           LocallyRunOperatorExtension.builder()
                   .withConfigurationService(o -> o.withCloseClientOnStop(false))
-                  // KubeAPITest does not support deleting namespaces, we should opt it out
+                  // KubeAPITest does not support deleting namespaces
                   .waitForNamespaceDeletion(false) 
                   .withKubernetesClient(client) // using the injected client
                   .withReconciler(new WhisperSecretsReconciler())
