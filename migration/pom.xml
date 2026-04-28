@@ -29,7 +29,7 @@
   <description>OpenRewrite migration recipes for Java Operator SDK</description>
 
   <properties>
-    <openrewrite.version>8.80.1</openrewrite.version>
+    <openrewrite.version>8.81.0</openrewrite.version>
   </properties>
 
   <dependencies>
