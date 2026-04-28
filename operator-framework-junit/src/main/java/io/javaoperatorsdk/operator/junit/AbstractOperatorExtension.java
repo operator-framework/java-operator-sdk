@@ -326,6 +326,10 @@ public abstract class AbstractOperatorExtension
   }
 
   public void logDiagnosticInfo(String namespace) {
+    logDiagnosticInfo(getInfrastructureKubernetesClient(), namespace);
+  }
+
+  public void logDiagnosticInfo(KubernetesClient client, String namespace) {
     try {
       // Log deployment status
       var deployments =
@@ -344,7 +348,7 @@ public abstract class AbstractOperatorExtension
       }
 
       // Log pod status and container details
-      var pods = kubernetesClient.pods().inNamespace(namespace).list().getItems();
+      var pods = client.pods().inNamespace(namespace).list().getItems();
       for (Pod pod : pods) {
         var podStatus = pod.getStatus();
         LOGGER.error(
@@ -377,7 +381,7 @@ public abstract class AbstractOperatorExtension
 
         // Log pod events
         var events =
-            kubernetesClient
+            client
                 .v1()
                 .events()
                 .inNamespace(namespace)
@@ -395,7 +399,7 @@ public abstract class AbstractOperatorExtension
         // Try to get container logs
         try {
           String logs =
-              kubernetesClient
+              client
                   .pods()
                   .inNamespace(namespace)
                   .withName(pod.getMetadata().getName())

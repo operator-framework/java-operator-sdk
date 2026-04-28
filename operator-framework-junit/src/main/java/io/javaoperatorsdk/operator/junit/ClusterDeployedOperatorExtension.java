@@ -152,7 +152,11 @@ public class ClusterDeployedOperatorExtension extends AbstractOperatorExtension 
           .resourceList(operatorDeployment)
           .waitUntilReady(operatorDeploymentTimeout.toMillis(), TimeUnit.MILLISECONDS);
     } catch (KubernetesClientTimeoutException e) {
-      logDiagnosticInfo(kubernetesClient);
+      LOGGER.error(
+          "Operator deployment timed out after {} seconds in namespace: {}",
+          operatorDeploymentTimeout.getSeconds(),
+          namespace);
+      logDiagnosticInfo(getInfrastructureKubernetesClient(), namespace);
       throw e;
     }
     LOGGER.debug("Operator resources deployed.");
@@ -166,34 +170,8 @@ public class ClusterDeployedOperatorExtension extends AbstractOperatorExtension 
         .delete();
   }
 
-  private void logDiagnosticInfo(KubernetesClient kubernetesClient) {
-    LOGGER.error(
-        "Operator deployment timed out after {} seconds in namespace: {}",
-        operatorDeploymentTimeout.getSeconds(),
-        namespace);
-    logDiagnosticInfo(kubernetesClient, namespace);
-  }
-
-  private void logDiagnosticInfo(KubernetesClient kubernetesClient, String namespace) {
-    if (Objects.equals(kubernetesClient, getKubernetesClient())) {
-      logDiagnosticInfo(namespace);
-      return;
-    }
-
-    kubernetesClient
-        .pods()
-        .inNamespace(namespace)
-        .list()
-        .getItems()
-        .forEach(
-            pod ->
-                LOGGER.error(
-                    "Pod {} phase={} reason={} message={}",
-                    pod.getMetadata().getName(),
-                    pod.getStatus() != null ? pod.getStatus().getPhase() : null,
-                    pod.getStatus() != null ? pod.getStatus().getReason() : null,
-                    pod.getStatus() != null ? pod.getStatus().getMessage() : null));
-
+  @Override
+  public void logDiagnosticInfo(KubernetesClient kubernetesClient, String namespace) {
     kubernetesClient
         .resourceList(operatorDeployment)
         .inNamespace(namespace)
