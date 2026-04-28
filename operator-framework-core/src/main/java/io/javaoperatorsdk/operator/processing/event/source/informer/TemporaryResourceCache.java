@@ -277,6 +277,6 @@ public class TemporaryResourceCache<T extends HasMetadata> {
   }
 
   synchronized Map<ResourceID, T> getResources() {
-    return Map.copyOf(cache);
+    return new HashMap<>(cache);
   }
 }

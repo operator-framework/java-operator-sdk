@@ -307,6 +307,11 @@ public abstract class ManagedInformerEventSource<
       return stream;
     }
 
+    var streamList = stream.toList();
+    log.debug("Stream content before temp cache replacement: {}", streamList);
+    log.debug("Temporary resource cache content: {}", temporaryResourceCache.getResources());
+    stream = streamList.stream();
+
     var tempResources =
         temporaryResourceCache.getResources().entrySet().stream()
             .filter(
@@ -327,18 +332,19 @@ public abstract class ManagedInformerEventSource<
       return stream;
     }
 
-    var upToDateSteam =
-        stream.map(
-            r -> {
-              var resourceID = ResourceID.fromResource(r);
-              var tempResource = tempResources.get(resourceID);
-              tempResources.remove(resourceID);
-              if (tempResource != null
-                  && ReconcilerUtilsInternal.compareResourceVersions(tempResource, r) > 0) {
-                return tempResource;
-              }
-              return r;
-            });
+    var upToDateList =
+        stream
+            .map(
+                r -> {
+                  var resourceID = ResourceID.fromResource(r);
+                  var tempResource = tempResources.remove(resourceID);
+                  if (tempResource != null
+                      && ReconcilerUtilsInternal.compareResourceVersions(tempResource, r) > 0) {
+                    return tempResource;
+                  }
+                  return r;
+                })
+            .toList();
     Stream<R> tempResourceStream;
     if (indexName != null && indexKey != null) {
       var indexer = indexers.get(indexName);
@@ -350,7 +356,8 @@ public abstract class ManagedInformerEventSource<
     } else {
       tempResourceStream = tempResources.values().stream();
     }
-    return Stream.concat(tempResourceStream, upToDateSteam);
+
+    return Stream.concat(tempResourceStream, upToDateList.stream());
   }
 
   @Override

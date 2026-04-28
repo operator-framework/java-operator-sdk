@@ -16,6 +16,7 @@
 package io.javaoperatorsdk.operator.processing.event.source.informer;
 
 import java.time.Duration;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -601,9 +602,10 @@ class InformerEventSourceTest {
     when(temporaryResourceCache.getResources())
         .thenReturn(Map.of(ResourceID.fromResource(original), newer));
 
-    var mim = mock(InformerManager.class);
-    when(mim.byIndexStream(any(), any())).thenReturn(Stream.of(original));
-    doReturn(mim).when(informerEventSource).manager();
+    var informerManager = mock(InformerManager.class);
+    when(informerManager.byIndexStream(any(), any())).thenReturn(Stream.of(original));
+    doReturn(informerManager).when(informerEventSource).manager();
+    informerEventSource.addIndexers(Map.of("idx", d -> List.of("key")));
 
     var result = informerEventSource.byIndexStreamWithStrongConsistency("idx", "key").toList();
 
@@ -621,7 +623,7 @@ class InformerEventSourceTest {
         .thenReturn(Map.of(ResourceID.fromResource(original), olderTemp));
 
     var mim = mock(InformerManager.class);
-    when(mim.list(any(String.class), any())).thenReturn(Stream.of(original));
+    when(mim.list(nullable(String.class), any())).thenReturn(Stream.of(original));
     doReturn(mim).when(informerEventSource).manager();
 
     var result = informerEventSource.listWithStrongConsistency(null, r -> true).toList();
@@ -642,6 +644,7 @@ class InformerEventSourceTest {
     var mim = mock(InformerManager.class);
     when(mim.byIndexStream(any(), any())).thenReturn(Stream.of(original));
     doReturn(mim).when(informerEventSource).manager();
+    informerEventSource.addIndexers(Map.of("idx", d -> List.of("key")));
 
     var result = informerEventSource.byIndexStreamWithStrongConsistency("idx", "key").toList();
 
