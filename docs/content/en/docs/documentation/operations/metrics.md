@@ -105,7 +105,7 @@ observability sample (see below).
 The
 [`operations` sample operator](https://github.com/java-operator-sdk/java-operator-sdk/tree/main/sample-operators/operations)
 includes a full end-to-end test,
-[`MetricsHandlingE2E`](https://github.com/java-operator-sdk/java-operator-sdk/blob/main/sample-operators/operations/src/test/java/io/javaoperatorsdk/operator/sample/metrics/MetricsHandlingE2E.java),
+[`OperationsE2E`](https://github.com/java-operator-sdk/java-operator-sdk/blob/main/sample-operators/operations/src/test/java/io/javaoperatorsdk/operator/sample/metrics/OperationsE2E.java),
 that:
 
 1. Installs a local observability stack (Prometheus, Grafana, OpenTelemetry Collector) via
