@@ -11,7 +11,7 @@ patterns so you don't have to write a chart from scratch. The chart is maintaine
 Contributions are more than welcome.
 
 The chart is used in the
-[`operations` sample operator E2E test](https://github.com/java-operator-sdk/java-operator-sdk/blob/main/sample-operators/operations/src/test/java/io/javaoperatorsdk/operator/sample/metrics/MetricsHandlingE2E.java)
+[`operations` sample operator E2E test](https://github.com/java-operator-sdk/java-operator-sdk/blob/main/sample-operators/operations/src/test/java/io/javaoperatorsdk/operator/sample/operations/OperationsE2E.java)
 to deploy the operator to a cluster via Helm.
 
 ## What the Chart Provides
