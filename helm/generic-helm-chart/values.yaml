@@ -153,10 +153,10 @@ probes:
 #  However, the framework itself does not define any runtime
 #  information what such probe should check. The only purpose here
 #  is to cover your domain specific use case.
-#  liveness:
-#    enabled: false
-#    path: /healthz
-#    initialDelaySeconds: 15
-#    periodSeconds: 10
-#    timeoutSeconds: 5
-#    failureThreshold: 3
+  liveness:
+    enabled: false
+    path: /healthz
+    initialDelaySeconds: 15
+    periodSeconds: 10
+    timeoutSeconds: 5
+    failureThreshold: 3
