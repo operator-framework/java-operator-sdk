@@ -149,7 +149,7 @@ probes:
     periodSeconds: 5
     timeoutSeconds: 5
     failureThreshold: 3
-#  We provide an option to sepcify liveness probes.
+#  We provide an option to specify liveness probes.
 #  However, the framework itself does not define any runtime
 #  information what such probe should check. The only purpose here
 #  is to cover your domain specific use case.
