@@ -332,8 +332,7 @@ public abstract class AbstractOperatorExtension
   public void logDiagnosticInfo(KubernetesClient client, String namespace) {
     try {
       // Log deployment status
-      var deployments =
-          getKubernetesClient().apps().deployments().inNamespace(namespace).list().getItems();
+      var deployments = client.apps().deployments().inNamespace(namespace).list().getItems();
       for (Deployment deployment : deployments) {
         var status = deployment.getStatus();
         LOGGER.error(
@@ -423,7 +422,7 @@ public abstract class AbstractOperatorExtension
         // Log deployment events when no pods exist
         for (Deployment deployment : deployments) {
           var events =
-              kubernetesClient
+              client
                   .v1()
                   .events()
                   .inNamespace(namespace)
