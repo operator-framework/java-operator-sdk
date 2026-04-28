@@ -180,19 +180,32 @@ public class ClusterDeployedOperatorExtension extends AbstractOperatorExtension 
       return;
     }
 
-    kubernetesClient.pods().inNamespace(namespace).list().getItems().forEach(pod -> LOGGER.error(
-        "Pod {} phase={} reason={} message={}",
-        pod.getMetadata().getName(),
-        pod.getStatus() != null ? pod.getStatus().getPhase() : null,
-        pod.getStatus() != null ? pod.getStatus().getReason() : null,
-        pod.getStatus() != null ? pod.getStatus().getMessage() : null));
+    kubernetesClient
+        .pods()
+        .inNamespace(namespace)
+        .list()
+        .getItems()
+        .forEach(
+            pod ->
+                LOGGER.error(
+                    "Pod {} phase={} reason={} message={}",
+                    pod.getMetadata().getName(),
+                    pod.getStatus() != null ? pod.getStatus().getPhase() : null,
+                    pod.getStatus() != null ? pod.getStatus().getReason() : null,
+                    pod.getStatus() != null ? pod.getStatus().getMessage() : null));
 
-    kubernetesClient.resourceList(operatorDeployment).inNamespace(namespace).forEach(resource -> LOGGER
-        .error(
-            "Resource {} {}",
-            resource.getKind(),
-            resource.getMetadata() != null ? resource.getMetadata().getName() : null));
+    kubernetesClient
+        .resourceList(operatorDeployment)
+        .inNamespace(namespace)
+        .get()
+        .forEach(
+            resource ->
+                LOGGER.error(
+                    "Resource {} {}",
+                    resource.getKind(),
+                    resource.getMetadata() != null ? resource.getMetadata().getName() : null));
   }
+
   public static class Builder extends AbstractBuilder<Builder> {
     private final List<HasMetadata> operatorDeployment;
     private Duration deploymentTimeout;
