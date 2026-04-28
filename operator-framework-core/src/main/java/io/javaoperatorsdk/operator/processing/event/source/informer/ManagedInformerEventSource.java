@@ -23,6 +23,7 @@ import java.util.Set;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.function.UnaryOperator;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import org.slf4j.Logger;
@@ -111,7 +112,6 @@ public abstract class ManagedInformerEventSource<
       res.ifPresentOrElse(
           r -> {
             R latestResource = (R) r.getResource().orElseThrow();
-
             // as previous resource version we use the one from successful update, since
             // we process new event here only if that is more recent then the event from our update.
             // Note that this is equivalent with the scenario when an informer watch connection
@@ -261,7 +261,7 @@ public abstract class ManagedInformerEventSource<
    * resource in the {@link TemporaryResourceCache} until the informer catches up.
    */
   public Stream<R> listWithStrongConsistency(String namespace, Predicate<R> predicate) {
-    return replaceWithTempCacheVersions(manager().list(namespace, predicate));
+    return replaceWithTempCacheVersions(manager().list(namespace, predicate), namespace, predicate);
   }
 
   /**
@@ -272,7 +272,7 @@ public abstract class ManagedInformerEventSource<
    * resource in the {@link TemporaryResourceCache} until the informer catches up.
    */
   public Stream<R> listWithStrongConsistency(Predicate<R> predicate) {
-    return replaceWithTempCacheVersions(cache.list(predicate));
+    return replaceWithTempCacheVersions(cache.list(predicate), null, (Predicate<R>) null);
   }
 
   /**
@@ -283,22 +283,74 @@ public abstract class ManagedInformerEventSource<
    * resource in the {@link TemporaryResourceCache} until the informer catches up.
    */
   public Stream<R> byIndexStreamWithStrongConsistency(String indexName, String indexKey) {
-    return replaceWithTempCacheVersions(manager().byIndexStream(indexName, indexKey));
+    return replaceWithTempCacheVersions(
+        manager().byIndexStream(indexName, indexKey), indexName, indexKey);
   }
 
-  private Stream<R> replaceWithTempCacheVersions(Stream<R> stream) {
+  private Stream<R> replaceWithTempCacheVersions(
+      Stream<R> stream, String indexName, String indexKey) {
+    return replaceWithTempCacheVersions(stream, null, null, indexName, indexKey);
+  }
+
+  private Stream<R> replaceWithTempCacheVersions(
+      Stream<R> stream, String namespace, Predicate<R> predicate) {
+    return replaceWithTempCacheVersions(stream, namespace, predicate, null, null);
+  }
+
+  private Stream<R> replaceWithTempCacheVersions(
+      Stream<R> stream,
+      String namespace,
+      Predicate<R> predicate,
+      String indexName,
+      String indexKey) {
     if (!comparableResourceVersions) {
       return stream;
     }
-    var tempResources = temporaryResourceCache.getResources();
+
+    var tempResources =
+        temporaryResourceCache.getResources().entrySet().stream()
+            .filter(
+                e -> {
+                  if (namespace != null) {
+                    var res =
+                        e.getKey().getNamespace().map(ns -> ns.equals(namespace)).orElse(false);
+                    if (!res) return false;
+                  }
+                  if (predicate != null) {
+                    return predicate.test(e.getValue());
+                  }
+                  return true;
+                })
+            .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+
     if (tempResources.isEmpty()) {
       return stream;
     }
-    return stream.map(
-        r -> {
-          var tempResource = tempResources.get(ResourceID.fromResource(r));
-          return tempResource != null ? tempResource : r;
-        });
+
+    var upToDateSteam =
+        stream.map(
+            r -> {
+              var resourceID = ResourceID.fromResource(r);
+              var tempResource = tempResources.get(resourceID);
+              tempResources.remove(resourceID);
+              if (tempResource != null
+                  && ReconcilerUtilsInternal.compareResourceVersions(tempResource, r) > 0) {
+                return tempResource;
+              }
+              return r;
+            });
+    Stream<R> tempResourceStream;
+    if (indexName != null && indexKey != null) {
+      var indexer = indexers.get(indexName);
+      if (indexer == null) {
+        throw new IllegalArgumentException("Indexer not found for: " + indexName);
+      }
+      tempResourceStream =
+          tempResources.values().stream().filter(r -> indexer.apply(r).contains(indexKey));
+    } else {
+      tempResourceStream = tempResources.values().stream();
+    }
+    return Stream.concat(tempResourceStream, upToDateSteam);
   }
 
   @Override
