@@ -55,7 +55,7 @@ when(context.getSecondaryResource(Deployment.class)).thenReturn(Optional.of(depl
 
 ## Integration Testing with `LocallyRunOperatorExtension`
 
-For integration tests, JOSDK provides a JUnit 5 extension that starts your operator locally and
+For integration tests, JOSDK provides a JUnit extension that starts your operator locally and
 connects it to a real Kubernetes cluster (e.g. a local Kind or Minikube cluster). It automatically:
 
 - Creates an isolated test namespace
@@ -153,10 +153,57 @@ LocallyRunOperatorExtension extension =
 void shouldReconcileExactlyOnce() {
     extension.create(testResource());
 
-    await().untilAsserted(() -> {
+    await().pollDelay(Duration.ofSeconds(1)).untilAsserted(() -> {
         var reconciler = extension.getReconcilerOfType(MyReconciler.class);
         assertThat(reconciler.getReconcileCount()).isEqualTo(1);
     });
+}
+```
+
+## Using Fabric8 `@KubeAPITest` for Realistic API Testing
+
+For tests that need a more realistic Kubernetes API (including watches, status subresources, and
+server-side apply), the Fabric8 client provides the
+[`@KubeAPITest`](https://github.com/fabric8io/kubernetes-client/blob/main/doc/kube-api-test.md)
+annotation. It starts a lightweight Kubernetes API server that behaves more closely to a real cluster than
+the mock server (see below). The API Server starts quickly, so it is suitable to run it from unit tests, even separately
+for each test case if needed. In addition to that comes handy if your CI does not support running tools like
+Kind and/or Minikube.
+
+```xml
+<dependency>
+    <groupId>io.fabric8</groupId>
+    <artifactId>kubernetes-junit-jupiter</artifactId>
+    <version>${fabric8-client.version}</version>
+    <scope>test</scope>
+</dependency>
+```
+
+```java
+@KubeAPITest // runs a Kubernetes API Server binary 
+class MyReconcilerKubeAPITest {
+
+    static KubernetesClient client; // injects a client
+
+    @RegisterExtension
+    LocallyRunOperatorExtension extension =
+          LocallyRunOperatorExtension.builder()
+                  .withConfigurationService(o -> o.withCloseClientOnStop(false))
+                  // KubeAPITest does not support deleting namespaces, we should opt it out
+                  .waitForNamespaceDeletion(false) 
+                  .withKubernetesClient(client) // using the injected client
+                  .withReconciler(new WhisperSecretsReconciler())
+                  .build();
+
+    @Test
+    void shouldReconcileExactlyOnce() {
+      extension.create(testResource());
+
+      await().pollDelay(Duration.ofSeconds(1)).untilAsserted(() -> {
+        var reconciler = extension.getReconcilerOfType(MyReconciler.class);
+        assertThat(reconciler.getReconcileCount()).isEqualTo(1);
+      });
+    }
 }
 ```
 
@@ -272,52 +319,6 @@ class MyReconcilerMockTest {
 The `crud = true` flag enables automatic CRUD behavior: resources you create are stored and can be
 retrieved, updated, and deleted, simulating a real API server. Without it, you would need to set up
 explicit request/response expectations.
-
-## Using Fabric8 `@KubeAPITest` for Realistic API Testing
-
-For tests that need a more realistic Kubernetes API (including watches, status subresources, and
-server-side apply), the Fabric8 client provides the
-[`@KubeAPITest`](https://github.com/fabric8io/kubernetes-client/blob/main/doc/kube-api-test.md)
-annotation. It starts a lightweight Kubernetes API server that behaves more closely to a real cluster than
-the mock server. The API Server starts quickly, so it is suitable to run it from unit tests, even separately
-for each test case if needed. In addition to that comes handy if your CI does not support running tools like
-Kind and/or Minikube.
-
-```xml
-<dependency>
-    <groupId>io.fabric8</groupId>
-    <artifactId>kubernetes-junit-jupiter</artifactId>
-    <version>${fabric8-client.version}</version>
-    <scope>test</scope>
-</dependency>
-```
-
-```java
-@KubeAPITest
-class MyReconcilerKubeAPITest {
-
-    KubernetesClient client;
-
-    @Test
-    void shouldHandleStatusUpdates() {
-        // The API server supports watches, SSA, and status subresources
-        client.resource(testCRD()).create();
-        client.resource(testCustomResource()).create();
-
-        var reconciler = new MyReconciler();
-        var context = mock(Context.class);
-        when(context.getClient()).thenReturn(client);
-
-        var resource = client.resources(MyCustomResource.class)
-            .withName("test").get();
-        reconciler.reconcile(resource, context);
-
-        var updated = client.resources(MyCustomResource.class)
-            .withName("test").get();
-        assertThat(updated.getStatus().getState()).isEqualTo("Ready");
-    }
-}
-```
 
 ## Multi-Reconciliation Testing Pattern
 
