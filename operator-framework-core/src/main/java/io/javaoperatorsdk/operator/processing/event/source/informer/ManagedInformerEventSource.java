@@ -307,11 +307,6 @@ public abstract class ManagedInformerEventSource<
       return stream;
     }
 
-    var streamList = stream.toList();
-    log.debug("Stream content before temp cache replacement: {}", streamList);
-    log.debug("Temporary resource cache content: {}", temporaryResourceCache.getResources());
-    stream = streamList.stream();
-
     var tempResources =
         temporaryResourceCache.getResources().entrySet().stream()
             .filter(
