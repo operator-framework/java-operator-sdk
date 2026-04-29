@@ -61,6 +61,7 @@ class TomcatOperatorE2E {
       isLocal()
           ? LocallyRunOperatorExtension.builder()
               .waitForNamespaceDeletion(false)
+              .withDeleteCRDs(false)
               .withReconciler(new TomcatReconciler())
               .withReconciler(new WebappReconciler(client))
               .build()
