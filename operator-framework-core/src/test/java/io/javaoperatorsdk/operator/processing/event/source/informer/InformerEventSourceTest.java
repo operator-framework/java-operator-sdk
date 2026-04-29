@@ -651,6 +651,24 @@ class InformerEventSourceTest {
     assertThat(result).containsExactly(original);
   }
 
+  @Test
+  void listWithStrongConsistencyKeepsAddsGhostResources() {
+    var resource = testDeployment();
+    var ghostResource = testDeployment();
+    ghostResource.getMetadata().setName("ghost");
+
+    when(temporaryResourceCache.getResources())
+        .thenReturn(Map.of(ResourceID.fromResource(ghostResource), ghostResource));
+
+    var mim = mock(InformerManager.class);
+    when(mim.list(nullable(String.class), any())).thenReturn(Stream.of(resource));
+    doReturn(mim).when(informerEventSource).manager();
+
+    var result = informerEventSource.listWithStrongConsistency(null, r -> true).toList();
+
+    assertThat(result).containsExactlyInAnyOrder(resource, ghostResource);
+  }
+
   Deployment testDeployment() {
     Deployment deployment = new Deployment();
     deployment.setMetadata(new ObjectMeta());
