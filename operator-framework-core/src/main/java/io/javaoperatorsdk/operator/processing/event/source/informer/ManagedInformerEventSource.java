@@ -272,7 +272,7 @@ public abstract class ManagedInformerEventSource<
    * resource in the {@link TemporaryResourceCache} until the informer catches up.
    */
   public Stream<R> listWithStrongConsistency(Predicate<R> predicate) {
-    return replaceWithTempCacheVersions(cache.list(predicate), null, (Predicate<R>) null);
+    return replaceWithTempCacheVersions(cache.list(predicate), null, predicate);
   }
 
   /**
