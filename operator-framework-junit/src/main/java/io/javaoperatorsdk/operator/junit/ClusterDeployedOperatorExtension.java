@@ -170,20 +170,6 @@ public class ClusterDeployedOperatorExtension extends AbstractOperatorExtension 
         .delete();
   }
 
-  @Override
-  public void logDiagnosticInfo(KubernetesClient kubernetesClient, String namespace) {
-    kubernetesClient
-        .resourceList(operatorDeployment)
-        .inNamespace(namespace)
-        .get()
-        .forEach(
-            resource ->
-                LOGGER.error(
-                    "Resource {} {}",
-                    resource.getKind(),
-                    resource.getMetadata() != null ? resource.getMetadata().getName() : null));
-  }
-
   public static class Builder extends AbstractBuilder<Builder> {
     private final List<HasMetadata> operatorDeployment;
     private Duration deploymentTimeout;
