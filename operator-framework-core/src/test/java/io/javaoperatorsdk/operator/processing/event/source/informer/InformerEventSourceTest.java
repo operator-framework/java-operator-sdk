@@ -652,7 +652,7 @@ class InformerEventSourceTest {
   }
 
   @Test
-  void listWithStrongConsistencyKeepsAddsGhostResources() {
+  void listWithStrongConsistencyAddsGhostResources() {
     var resource = testDeployment();
     var ghostResource = testDeployment();
     ghostResource.getMetadata().setName("ghost");
