@@ -36,8 +36,8 @@ primaryResources:
 probes:
   startup:
     enabled: true
-    path: /healthz
+    path: /health
   readiness:
     enabled: true
-    path: /healthz
+    path: /health
 

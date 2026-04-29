@@ -78,7 +78,7 @@ public class OperationsSampleOperator {
     operator.register(
         new OperationsReconciler2(),
         configLoader.applyControllerConfigs(OperationsReconciler2.NAME));
-    var health = new ContextHandler(new HealthHandler(operator), "/healthz");
+    var health = new ContextHandler(new HealthHandler(operator), "/health");
     Server server = new Server(8080);
     server.setHandler(health);
     server.start();

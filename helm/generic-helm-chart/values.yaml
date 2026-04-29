@@ -137,14 +137,14 @@ probes:
   port: 8080
   startup:
     enabled: false
-    path: /healthz
+    path: /health/startup
     initialDelaySeconds: 1
     periodSeconds: 10
     timeoutSeconds: 5
     failureThreshold: 20
   readiness:
     enabled: false
-    path: /healthz
+    path: /health/ready
     initialDelaySeconds: 5
     periodSeconds: 5
     timeoutSeconds: 5
@@ -155,7 +155,7 @@ probes:
 #  is to cover your domain specific use case.
   liveness:
     enabled: false
-    path: /healthz
+    path: /health/live
     initialDelaySeconds: 15
     periodSeconds: 10
     timeoutSeconds: 5
