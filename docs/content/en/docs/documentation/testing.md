@@ -192,7 +192,7 @@ class MyReconcilerKubeAPITest {
                   // KubeAPITest does not support deleting namespaces
                   .waitForNamespaceDeletion(false) 
                   .withKubernetesClient(client) // using the injected client
-                  .withReconciler(new WhisperSecretsReconciler())
+                  .withReconciler(new MyReconciler())
                   .build();
 
     @Test
@@ -317,7 +317,7 @@ class MyReconcilerMockTest {
 ```
 
 The `crud = true` flag enables automatic CRUD behavior: resources you create are stored and can be
-retrieved, updated, and deleted, simulating a real API server. Without it, you would need to set up
+retrieved, updated, and deleted, simulating a real API Server. Without it, you would need to set up
 explicit request/response expectations.
 
 ## Multi-Reconciliation Testing Pattern
