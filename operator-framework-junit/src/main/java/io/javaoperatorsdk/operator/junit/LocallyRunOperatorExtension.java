@@ -63,9 +63,10 @@ public class LocallyRunOperatorExtension extends AbstractOperatorExtension {
   private static final int CRD_DELETE_TIMEOUT = 5000;
   private static final int CRD_DELETE_WAIT_TIMEOUT = 60000;
   private static final Set<AppliedCRD> appliedCRDs = new HashSet<>();
-  private static final boolean deleteCRDs =
+  private static final boolean DELETE_CRDS_DEFAULT =
       Boolean.parseBoolean(System.getProperty("testsuite.deleteCRDs", "true"));
 
+  private volatile boolean deleteCRDs = DELETE_CRDS_DEFAULT;
   private final Operator operator;
   private final List<ReconcilerSpec> reconcilers;
   private final List<PortForwardSpec> portForwards;
@@ -93,7 +94,8 @@ public class LocallyRunOperatorExtension extends AbstractOperatorExtension {
       Function<ExtensionContext, String> namespaceNameSupplier,
       Function<ExtensionContext, String> perClassNamespaceNameSupplier,
       List<String> additionalCrds,
-      Consumer<LocallyRunOperatorExtension> beforeStartHook) {
+      Consumer<LocallyRunOperatorExtension> beforeStartHook,
+      Boolean deleteCRDsOverride) {
     super(
         infrastructure,
         infrastructureTimeout,
@@ -119,6 +121,9 @@ public class LocallyRunOperatorExtension extends AbstractOperatorExtension {
     this.operator = new Operator(configurationServiceOverrider);
     this.registeredControllers = new HashMap<>();
     crdMappings = getAdditionalCRDsFromFiles(additionalCrds, getKubernetesClient());
+    if (deleteCRDsOverride != null) {
+      deleteCRDs = deleteCRDsOverride;
+    }
   }
 
   static Map<String, String> getAdditionalCRDsFromFiles(
@@ -358,7 +363,7 @@ public class LocallyRunOperatorExtension extends AbstractOperatorExtension {
     var classContext = oneNamespacePerClass ? context : context.getParent().orElse(context);
     classContext
         .getStore(ExtensionContext.Namespace.create(LocallyRunOperatorExtension.class))
-        .computeIfAbsent(CrdCleanup.class, ignored -> new CrdCleanup());
+        .computeIfAbsent(CrdCleanup.class, ignored -> new CrdCleanup(deleteCRDs));
 
     LOGGER.debug("Starting the operator locally");
     this.operator.start();
@@ -393,6 +398,13 @@ public class LocallyRunOperatorExtension extends AbstractOperatorExtension {
   }
 
   private static class CrdCleanup implements ExtensionContext.Store.CloseableResource {
+
+    private final boolean deleteCRDs;
+
+    private CrdCleanup(boolean deleteCRDs) {
+      this.deleteCRDs = deleteCRDs;
+    }
+
     @Override
     public void close() {
       // Create a fresh client for cleanup since operator clients may already be closed.
@@ -496,6 +508,7 @@ public class LocallyRunOperatorExtension extends AbstractOperatorExtension {
     private final List<CustomResourceDefinition> additionalCustomResourceDefinitionInstances;
     private final List<String> additionalCRDs = new ArrayList<>();
     private Consumer<LocallyRunOperatorExtension> beforeStartHook;
+    private Boolean deleteCRDs;
     private KubernetesClient kubernetesClient;
     private KubernetesClient infrastructureKubernetesClient;
 
@@ -586,6 +599,11 @@ public class LocallyRunOperatorExtension extends AbstractOperatorExtension {
       return this;
     }
 
+    public Builder withDeleteCRDs(boolean deleteCRDs) {
+      this.deleteCRDs = deleteCRDs;
+      return this;
+    }
+
     public LocallyRunOperatorExtension build() {
       return new LocallyRunOperatorExtension(
           reconcilers,
@@ -604,7 +622,8 @@ public class LocallyRunOperatorExtension extends AbstractOperatorExtension {
           namespaceNameSupplier,
           perClassNamespaceNameSupplier,
           additionalCRDs,
-          beforeStartHook);
+          beforeStartHook,
+          deleteCRDs);
     }
   }
 
