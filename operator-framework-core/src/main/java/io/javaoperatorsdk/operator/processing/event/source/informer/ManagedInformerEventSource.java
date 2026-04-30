@@ -297,25 +297,31 @@ public abstract class ManagedInformerEventSource<
       Predicate<R> predicate,
       String indexName,
       String indexKey) {
-    if (!comparableResourceVersions) {
+    if (!comparableResourceVersions || temporaryResourceCache.isEmpty()) {
       return stream;
     }
 
-    var tempResources =
-        temporaryResourceCache.getResources().entrySet().stream()
-            .filter(
-                e -> {
-                  if (namespace != null) {
-                    var res =
-                        e.getKey().getNamespace().map(ns -> ns.equals(namespace)).orElse(false);
-                    if (!res) return false;
-                  }
-                  if (predicate != null) {
-                    return predicate.test(e.getValue());
-                  }
-                  return true;
-                })
-            .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+    var allTempResources = temporaryResourceCache.getResources();
+    Map<ResourceID, R> tempResources;
+    if (namespace == null && predicate == null) {
+      tempResources = new HashMap<>(allTempResources);
+    } else {
+      tempResources =
+          allTempResources.entrySet().stream()
+              .filter(
+                  e -> {
+                    if (namespace != null) {
+                      var res =
+                          e.getKey().getNamespace().map(ns -> ns.equals(namespace)).orElse(false);
+                      if (!res) return false;
+                    }
+                    if (predicate != null) {
+                      return predicate.test(e.getValue());
+                    }
+                    return true;
+                  })
+              .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+    }
 
     if (tempResources.isEmpty()) {
       return stream;

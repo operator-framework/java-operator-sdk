@@ -276,6 +276,10 @@ public class TemporaryResourceCache<T extends HasMetadata> {
     return Optional.ofNullable(cache.get(resourceID));
   }
 
+  synchronized boolean isEmpty() {
+    return cache.isEmpty();
+  }
+
   synchronized Map<ResourceID, T> getResources() {
     return new HashMap<>(cache);
   }
