@@ -254,33 +254,27 @@ public abstract class ManagedInformerEventSource<
   }
 
   /**
-   * Like {@link #list(String, Predicate)} but replaces resources with their newer version from the
-   * {@link TemporaryResourceCache} when available, to provide stronger consistency. This is needed
-   * when resources are updated using {@link
-   * io.javaoperatorsdk.operator.api.reconciler.ResourceOperations}, which caches the updated
-   * resource in the {@link TemporaryResourceCache} until the informer catches up.
+   * Like {@link #list(String, Predicate)} but to provides stronger consistency. This is needed when
+   * resources are updated using {@link
+   * io.javaoperatorsdk.operator.api.reconciler.ResourceOperations}.
    */
   public Stream<R> listWithStrongConsistency(String namespace, Predicate<R> predicate) {
     return replaceWithTempCacheVersions(manager().list(namespace, predicate), namespace, predicate);
   }
 
   /**
-   * Like {@link #list(Predicate)} but replaces resources with their newer version from the {@link
-   * TemporaryResourceCache} when available, to provide stronger consistency. This is needed when
+   * Like {@link #list(Predicate)} but to provides stronger consistency. This is needed when
    * resources are updated using {@link
-   * io.javaoperatorsdk.operator.api.reconciler.ResourceOperations}, which caches the updated
-   * resource in the {@link TemporaryResourceCache} until the informer catches up.
+   * io.javaoperatorsdk.operator.api.reconciler.ResourceOperations}.
    */
   public Stream<R> listWithStrongConsistency(Predicate<R> predicate) {
     return replaceWithTempCacheVersions(cache.list(predicate), null, predicate);
   }
 
   /**
-   * Like {@link #byIndexStream(String, String)} but replaces resources with their newer version
-   * from the {@link TemporaryResourceCache} when available, to provide stronger consistency. This
-   * is needed when resources are updated using {@link
-   * io.javaoperatorsdk.operator.api.reconciler.ResourceOperations}, which caches the updated
-   * resource in the {@link TemporaryResourceCache} until the informer catches up.
+   * Like {@link #byIndexStream(String, String)} but to provides stronger consistency. This is
+   * needed when resources are updated using {@link
+   * io.javaoperatorsdk.operator.api.reconciler.ResourceOperations}.
    */
   public Stream<R> byIndexStreamWithStrongConsistency(String indexName, String indexKey) {
     return replaceWithTempCacheVersions(
