@@ -300,12 +300,12 @@ public abstract class ManagedInformerEventSource<
     if (!comparableResourceVersions || temporaryResourceCache.isEmpty()) {
       return stream;
     }
-
     var allTempResources = temporaryResourceCache.getResources();
     Map<ResourceID, R> tempResources;
     if (namespace == null && predicate == null) {
       tempResources = new HashMap<>(allTempResources);
     } else {
+      // filtering the temp cache according the user input (predicate, namespace)
       tempResources =
           allTempResources.entrySet().stream()
               .filter(
@@ -322,17 +322,19 @@ public abstract class ManagedInformerEventSource<
                   })
               .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
     }
-
     if (tempResources.isEmpty()) {
       return stream;
     }
-
     var upToDateList =
         stream
             .map(
                 r -> {
                   var resourceID = ResourceID.fromResource(r);
+                  // removing the id from the related temp resources
+                  // this is important so we can detect ghost resources:
+                  // all that remains is ghost resource
                   var tempResource = tempResources.remove(resourceID);
+                  // using the latest version
                   if (tempResource != null
                       && ReconcilerUtilsInternal.compareResourceVersions(tempResource, r) > 0) {
                     return tempResource;
@@ -341,17 +343,18 @@ public abstract class ManagedInformerEventSource<
                 })
             .toList();
     Stream<R> tempResourceStream;
+    // ghost resource handling
     if (indexName != null && indexKey != null) {
       var indexer = indexers.get(indexName);
       if (indexer == null) {
         throw new IllegalArgumentException("Indexer not found for: " + indexName);
       }
+      // we check if the ghost resource is part of the index
       tempResourceStream =
           tempResources.values().stream().filter(r -> indexer.apply(r).contains(indexKey));
     } else {
       tempResourceStream = tempResources.values().stream();
     }
-
     return Stream.concat(tempResourceStream, upToDateList.stream());
   }
 
