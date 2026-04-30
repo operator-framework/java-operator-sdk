@@ -20,8 +20,8 @@ public interface InformerHealthIndicator extends EventSourceHealthIndicator {
   boolean hasSynced();
 
   /**
-   * @deprecated this method is not suitable for health check, it is expected
-   * that the watches sometimes fail.
+   * @deprecated this method is not suitable for health check, it is expected that the watches
+   *     sometimes fail.
    * @return if the watch is established at the moment.
    */
   @Deprecated(forRemoval = true)
