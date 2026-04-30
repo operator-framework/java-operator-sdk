@@ -196,6 +196,11 @@ class InformerWrapper<T extends HasMetadata>
   }
 
   @Override
+  public Stream<T> byIndexStream(String indexName, String indexKey) {
+    return byIndex(indexName, indexKey).stream();
+  }
+
+  @Override
   public String toString() {
     return informerInfo() + " (" + informer + ')';
   }
