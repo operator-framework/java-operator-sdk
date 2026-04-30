@@ -210,6 +210,7 @@ class InformerWrapper<T extends HasMetadata>
   }
 
   @Override
+  @Deprecated(forRemoval = true)
   public boolean isWatching() {
     return informer.isWatching();
   }
