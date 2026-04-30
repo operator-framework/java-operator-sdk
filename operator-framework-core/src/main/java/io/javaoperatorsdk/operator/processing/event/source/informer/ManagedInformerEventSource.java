@@ -273,7 +273,7 @@ public abstract class ManagedInformerEventSource<
   }
 
   /**
-   * Like {@link #byIndexStream(String, String)} but to provides stronger consistency. This is
+   * Like {@link #byIndexStream(String, String)} but providing stronger consistency. This is
    * needed when resources are updated using {@link
    * io.javaoperatorsdk.operator.api.reconciler.ResourceOperations}.
    */
