@@ -254,7 +254,7 @@ public abstract class ManagedInformerEventSource<
   }
 
   /**
-   * Like {@link #list(String, Predicate)} but to provides stronger consistency. This is needed when
+   * Like {@link #list(String, Predicate)} but providing stronger consistency. This is needed when
    * resources are updated using {@link
    * io.javaoperatorsdk.operator.api.reconciler.ResourceOperations}.
    */
