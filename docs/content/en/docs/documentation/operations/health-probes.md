@@ -17,7 +17,7 @@ API.
 | `isStarted()` | `true` once the operator and all its controllers have fully started |
 | `allEventSourcesAreHealthy()` | `true` when every registered event source (informers, polling sources, etc.) reports a healthy status |
 | `unhealthyEventSources()` | returns a map of controller name → unhealthy event sources, useful for diagnostics |
-| `unhealthyInformerWrappingEventSourceHealthIndicator()` | returns a map of controller name → unhealthy informer-wrapping event sources, each exposing per-informer details via `InformerHealthIndicator` (`hasSynced()`, `isWatching()`, `isRunning()`, `getTargetNamespace()`) |
+| `unhealthyInformerWrappingEventSourceHealthIndicator()` | returns a map of controller name → unhealthy informer-wrapping event sources, each exposing per-informer details via `InformerHealthIndicator` (`hasSynced()`, `isRunning()`, `getTargetNamespace()`) |
 
 In most cases a single readiness probe backed by `allEventSourcesAreHealthy()` is sufficient: before the
 operator has fully started the informers will not have synced yet, so the check naturally covers the startup
@@ -27,7 +27,7 @@ case as well. Once running, it detects runtime degradation such as a lost watch 
 
 For advanced use cases — such as exposing per-informer health in a diagnostic endpoint or logging which
 specific namespace lost its watch — `unhealthyInformerWrappingEventSourceHealthIndicator()` gives access to
-individual `InformerHealthIndicator` instances. Each indicator exposes `hasSynced()`, `isWatching()`,
+individual `InformerHealthIndicator` instances. Each indicator exposes `hasSynced()`,
 `isRunning()`, and `getTargetNamespace()`. This is typically not needed for a standard health probe but can
 be valuable for operational dashboards or troubleshooting.
 
