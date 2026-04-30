@@ -54,6 +54,42 @@ spec:
           {{- toYaml .Values.securityContext | nindent 12 }}
         image: "{{ required "A valid .Values.image.repository is required" .Values.image.repository }}:{{ include "generic-operator.imageTag" . }}"
         imagePullPolicy: {{ .Values.image.pullPolicy }}
+        {{- if or .Values.probes.startup.enabled .Values.probes.readiness.enabled .Values.probes.liveness.enabled }}
+        ports:
+        - name: probes
+          containerPort: {{ .Values.probes.port }}
+          protocol: TCP
+        {{- end }}
+        {{- if .Values.probes.startup.enabled }}
+        startupProbe:
+          httpGet:
+            path: {{ .Values.probes.startup.path }}
+            port: probes
+          initialDelaySeconds: {{ .Values.probes.startup.initialDelaySeconds }}
+          periodSeconds: {{ .Values.probes.startup.periodSeconds }}
+          timeoutSeconds: {{ .Values.probes.startup.timeoutSeconds }}
+          failureThreshold: {{ .Values.probes.startup.failureThreshold }}
+        {{- end }}
+        {{- if .Values.probes.readiness.enabled }}
+        readinessProbe:
+          httpGet:
+            path: {{ .Values.probes.readiness.path }}
+            port: probes
+          initialDelaySeconds: {{ .Values.probes.readiness.initialDelaySeconds }}
+          periodSeconds: {{ .Values.probes.readiness.periodSeconds }}
+          timeoutSeconds: {{ .Values.probes.readiness.timeoutSeconds }}
+          failureThreshold: {{ .Values.probes.readiness.failureThreshold }}
+        {{- end }}
+        {{- if .Values.probes.liveness.enabled }}
+        livenessProbe:
+          httpGet:
+            path: {{ .Values.probes.liveness.path }}
+            port: probes
+          initialDelaySeconds: {{ .Values.probes.liveness.initialDelaySeconds }}
+          periodSeconds: {{ .Values.probes.liveness.periodSeconds }}
+          timeoutSeconds: {{ .Values.probes.liveness.timeoutSeconds }}
+          failureThreshold: {{ .Values.probes.liveness.failureThreshold }}
+        {{- end }}
         env:
         - name: OPERATOR_NAMESPACE
           valueFrom:

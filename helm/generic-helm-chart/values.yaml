@@ -86,6 +86,9 @@ operatorConfig:
             </Console>
         </Appenders>
         <Loggers>
+            <Logger name="io.micrometer.registry.otlp.OtlpMeterRegistry" level="ERROR" additivity="false">
+                <AppenderRef ref="Console"/>
+            </Logger>
             <Root level="INFO">
                 <AppenderRef ref="Console"/>
             </Root>
@@ -128,3 +131,32 @@ extraVolumeMounts: []
 # RBAC configuration
 rbac:
   create: true
+
+# Health probes configuration
+probes:
+  port: 8080
+  startup:
+    enabled: false
+    path: /health/startup
+    initialDelaySeconds: 1
+    periodSeconds: 10
+    timeoutSeconds: 5
+    failureThreshold: 20
+  readiness:
+    enabled: false
+    path: /health/ready
+    initialDelaySeconds: 5
+    periodSeconds: 5
+    timeoutSeconds: 5
+    failureThreshold: 3
+#  We provide an option to specify liveness probes.
+#  However, the framework itself does not define any runtime
+#  information what such probe should check. The only purpose here
+#  is to cover your domain specific use case.
+  liveness:
+    enabled: false
+    path: /health/live
+    initialDelaySeconds: 15
+    periodSeconds: 10
+    timeoutSeconds: 5
+    failureThreshold: 3

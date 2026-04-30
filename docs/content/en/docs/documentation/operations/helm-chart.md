@@ -11,7 +11,7 @@ patterns so you don't have to write a chart from scratch. The chart is maintaine
 Contributions are more than welcome.
 
 The chart is used in the
-[`metrics-processing` sample operator E2E test](https://github.com/java-operator-sdk/java-operator-sdk/blob/main/sample-operators/metrics-processing/src/test/java/io/javaoperatorsdk/operator/sample/metrics/MetricsHandlingE2E.java)
+[`operations` sample operator E2E test](https://github.com/java-operator-sdk/java-operator-sdk/blob/main/sample-operators/operations/src/test/java/io/javaoperatorsdk/operator/sample/operations/OperationsE2E.java)
 to deploy the operator to a cluster via Helm.
 
 ## What the Chart Provides
@@ -80,16 +80,16 @@ for all available options.
 
 ## Usage Example
 
-A working example of how to use the chart can be found in the metrics-processing sample operator's
-[`helm-values.yaml`](https://github.com/java-operator-sdk/java-operator-sdk/blob/main/sample-operators/metrics-processing/src/test/resources/helm-values.yaml):
+A working example of how to use the chart can be found in the operations sample operator's
+[`helm-values.yaml`](https://github.com/java-operator-sdk/java-operator-sdk/blob/main/sample-operators/operations/src/test/resources/helm-values.yaml):
 
 ```yaml
 image:
-  repository: metrics-processing-operator
+  repository: operations-operator
   pullPolicy: Never
   tag: "latest"
 
-nameOverride: "metrics-processing-operator"
+nameOverride: "operations-operator"
 
 resources: {}
 
