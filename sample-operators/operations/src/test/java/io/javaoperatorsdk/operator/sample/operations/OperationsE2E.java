@@ -74,6 +74,7 @@ class OperationsE2E {
           ? LocallyRunOperatorExtension.builder()
               .withReconciler(new OperationsReconciler1())
               .withReconciler(new OperationsReconciler2())
+              .withDeleteCRDs(false)
               .withConfigurationService(
                   c -> c.withMetrics(OperationsSampleOperator.initOTLPMetrics(true)))
               .build()
