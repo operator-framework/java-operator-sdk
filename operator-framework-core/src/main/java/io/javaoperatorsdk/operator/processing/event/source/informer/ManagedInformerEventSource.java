@@ -259,7 +259,8 @@ public abstract class ManagedInformerEventSource<
    * io.javaoperatorsdk.operator.api.reconciler.ResourceOperations}.
    */
   public Stream<R> listWithStrongConsistency(String namespace, Predicate<R> predicate) {
-    return replaceWithTempCacheVersions(manager().list(namespace, predicate), namespace, predicate);
+    return mergeWithWithTempCacheResources(
+        manager().list(namespace, predicate), namespace, predicate);
   }
 
   /**
@@ -268,7 +269,7 @@ public abstract class ManagedInformerEventSource<
    * io.javaoperatorsdk.operator.api.reconciler.ResourceOperations}.
    */
   public Stream<R> listWithStrongConsistency(Predicate<R> predicate) {
-    return replaceWithTempCacheVersions(cache.list(predicate), null, predicate);
+    return mergeWithWithTempCacheResources(cache.list(predicate), null, predicate);
   }
 
   /**
@@ -277,21 +278,21 @@ public abstract class ManagedInformerEventSource<
    * io.javaoperatorsdk.operator.api.reconciler.ResourceOperations}.
    */
   public Stream<R> byIndexStreamWithStrongConsistency(String indexName, String indexKey) {
-    return replaceWithTempCacheVersions(
+    return mergeWithWithTempCacheResources(
         manager().byIndexStream(indexName, indexKey), indexName, indexKey);
   }
 
-  private Stream<R> replaceWithTempCacheVersions(
+  private Stream<R> mergeWithWithTempCacheResources(
       Stream<R> stream, String indexName, String indexKey) {
-    return replaceWithTempCacheVersions(stream, null, null, indexName, indexKey);
+    return mergeWithWithTempCacheResources(stream, null, null, indexName, indexKey);
   }
 
-  private Stream<R> replaceWithTempCacheVersions(
+  private Stream<R> mergeWithWithTempCacheResources(
       Stream<R> stream, String namespace, Predicate<R> predicate) {
-    return replaceWithTempCacheVersions(stream, namespace, predicate, null, null);
+    return mergeWithWithTempCacheResources(stream, namespace, predicate, null, null);
   }
 
-  private Stream<R> replaceWithTempCacheVersions(
+  private Stream<R> mergeWithWithTempCacheResources(
       Stream<R> stream,
       String namespace,
       Predicate<R> predicate,
