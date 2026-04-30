@@ -254,8 +254,8 @@ public abstract class ManagedInformerEventSource<
   }
 
   /**
-   * Like {@link #list(String, Predicate)} but providing stronger consistency. This is needed when
-   * resources are updated using {@link
+   * Like {@link #list(String, Predicate)} but for read-cache-after-write consistency. This is
+   * useful when resources are updated using {@link
    * io.javaoperatorsdk.operator.api.reconciler.ResourceOperations}.
    */
   public Stream<R> listWithStrongConsistency(String namespace, Predicate<R> predicate) {
@@ -264,16 +264,17 @@ public abstract class ManagedInformerEventSource<
   }
 
   /**
-   * Like {@link #list(Predicate)} but providing stronger consistency. This is needed when resources
-   * are updated using {@link io.javaoperatorsdk.operator.api.reconciler.ResourceOperations}.
+   * Like {@link #list(Predicate)} but for read-cache-after-write consistency. This is useful when
+   * resources are updated using {@link
+   * io.javaoperatorsdk.operator.api.reconciler.ResourceOperations}.
    */
   public Stream<R> listWithStrongConsistency(Predicate<R> predicate) {
     return mergeWithWithTempCacheResources(cache.list(predicate), null, predicate);
   }
 
   /**
-   * Like {@link #byIndexStream(String, String)} but providing stronger consistency. This is needed
-   * when resources are updated using {@link
+   * Like {@link #byIndexStream(String, String)} but for read-cache-after-write consistency. This is
+   * useful when resources are updated using {@link
    * io.javaoperatorsdk.operator.api.reconciler.ResourceOperations}.
    */
   public Stream<R> byIndexStreamWithStrongConsistency(String indexName, String indexKey) {
