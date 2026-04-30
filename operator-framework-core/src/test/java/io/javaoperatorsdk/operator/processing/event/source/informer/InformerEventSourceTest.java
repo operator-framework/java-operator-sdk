@@ -550,7 +550,7 @@ class InformerEventSourceTest {
         .thenReturn(Map.of(ResourceID.fromResource(original), newer));
 
     var mim = mock(InformerManager.class);
-    when(mim.list(any(String.class), any())).thenReturn(Stream.of(original));
+    when(mim.list(nullable(String.class), any())).thenReturn(Stream.of(original));
     doReturn(mim).when(informerEventSource).manager();
 
     var result = informerEventSource.listWithStrongConsistency(null, r -> true).toList();
@@ -565,7 +565,7 @@ class InformerEventSourceTest {
     when(temporaryResourceCache.getResources()).thenReturn(Map.of());
 
     var mim = mock(InformerManager.class);
-    when(mim.list(any(String.class), any())).thenReturn(Stream.of(original));
+    when(mim.list(nullable(String.class), any())).thenReturn(Stream.of(original));
     doReturn(mim).when(informerEventSource).manager();
 
     var result = informerEventSource.listWithStrongConsistency("default", r -> true).toList();
