@@ -256,12 +256,13 @@ class InformerManager<R extends HasMetadata, C extends Informable<R>>
     this.indexers.putAll(indexers);
   }
 
+  public Stream<R> byIndexStream(String indexName, String indexKey) {
+    return sources.values().stream().map(s -> s.byIndex(indexName, indexKey)).flatMap(List::stream);
+  }
+
   @Override
   public List<R> byIndex(String indexName, String indexKey) {
-    return sources.values().stream()
-        .map(s -> s.byIndex(indexName, indexKey))
-        .flatMap(List::stream)
-        .collect(Collectors.toList());
+    return byIndexStream(indexName, indexKey).collect(Collectors.toList());
   }
 
   @Override
