@@ -277,6 +277,7 @@
           <version>${maven-surefire-plugin.version}</version>
           <!-- Summary output for tests at the end -->
           <configuration>
+            <argLine>-javaagent:${settings.localRepository}/org/mockito/mockito-core/${mokito.version}/mockito-core-${mokito.version}.jar -Xshare:off</argLine>
             <reportFormat>plain</reportFormat>
             <consoleOutputReporter>
               <disable>true</disable>
