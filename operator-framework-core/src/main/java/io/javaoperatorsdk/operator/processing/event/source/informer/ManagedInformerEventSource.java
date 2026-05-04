@@ -99,8 +99,12 @@ public abstract class ManagedInformerEventSource<
     try {
       temporaryResourceCache.startEventFilteringModify(id);
       updatedResource = updateMethod.apply(resourceToUpdate);
-      log.debug("Resource update successful");
-      handleRecentResourceUpdate(id, updatedResource, resourceToUpdate);
+      if (updatedResource != null) {
+        log.debug("Resource update successful");
+        handleRecentResourceUpdate(id, updatedResource, resourceToUpdate);
+      } else {
+        log.debug("Update operation returned null");
+      }
       return updatedResource;
     } finally {
       var res =
