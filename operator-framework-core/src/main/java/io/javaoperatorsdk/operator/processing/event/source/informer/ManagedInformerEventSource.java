@@ -75,7 +75,7 @@ public abstract class ManagedInformerEventSource<
     this.configuration = configuration;
   }
 
-  protected InformerManager<R, C> manager() {
+  InformerManager<R, C> manager() {
     return cache;
   }
 
