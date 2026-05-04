@@ -25,9 +25,15 @@ import org.junit.jupiter.api.Test;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClientException;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
+import io.fabric8.kubernetes.client.dsl.NamespaceableResource;
 import io.fabric8.kubernetes.client.dsl.Resource;
+import io.javaoperatorsdk.operator.MockKubernetesClient;
 import io.javaoperatorsdk.operator.TestUtils;
+import io.javaoperatorsdk.operator.api.config.BaseConfigurationService;
 import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
+import io.javaoperatorsdk.operator.api.config.ResolvedControllerConfiguration;
+import io.javaoperatorsdk.operator.api.config.informer.InformerConfiguration;
+import io.javaoperatorsdk.operator.processing.Controller;
 import io.javaoperatorsdk.operator.processing.event.EventSourceRetriever;
 import io.javaoperatorsdk.operator.processing.event.source.EventSource;
 import io.javaoperatorsdk.operator.processing.event.source.controller.ControllerEventSource;
@@ -248,6 +254,38 @@ class ResourceOperationsTest {
   }
 
   @Test
+  void removeFinalizerHandlesAlreadyDeletedTargetGracefully() {
+    // When the underlying patch returns null, removeFinalizer must return cleanly rather
+    // than throw
+    var resource = TestUtils.testCustomResource1();
+    resource.getMetadata().setResourceVersion("1");
+    resource.addFinalizer(FINALIZER_NAME);
+    when(context.getPrimaryResource()).thenReturn(resource);
+
+    // Real ControllerEventSource so eventFilteringUpdateAndCacheResource and the
+    // TemporaryResourceCache it talks to are wired up the way they would be in production
+    NamespaceableResource<TestCustomResource> single = mock();
+    when(single.edit(any(UnaryOperator.class))).thenReturn(null);
+    var client = MockKubernetesClient.client(TestCustomResource.class);
+    when(client.resource(any(TestCustomResource.class))).thenReturn(single);
+
+    var eventSource = new ControllerEventSource<>(testController(client));
+    eventSource.start();
+    try {
+      when(context.getClient()).thenReturn(client);
+      var eventSourceRetriever = mock(EventSourceRetriever.class);
+      when(eventSourceRetriever.getControllerEventSource()).thenReturn(eventSource);
+      when(context.eventSourceRetriever()).thenReturn(eventSourceRetriever);
+
+      var result = resourceOperations.removeFinalizer(FINALIZER_NAME);
+
+      assertThat(result).isNull();
+    } finally {
+      eventSource.stop();
+    }
+  }
+
+  @Test
   void resourcePatchWithSingleEventSource() {
     var resource = TestUtils.testCustomResource1();
     resource.getMetadata().setResourceVersion("1");
@@ -323,5 +361,29 @@ class ResourceOperationsTest {
 
     assertThat(exception.getMessage()).contains("Target event source must be a subclass off");
     assertThat(exception.getMessage()).contains("ManagedInformerEventSource");
+  }
+
+  private Controller<TestCustomResource> testController(KubernetesClient client) {
+    var informerConfig =
+        InformerConfiguration.builder(TestCustomResource.class)
+            .withComparableResourceVersions(true)
+            .withGhostResourceCacheCheckInterval(Constants.DEFAULT_GHOST_RESOURCE_CHECK_INTERVAL)
+            .buildForController();
+    var configuration =
+        new ResolvedControllerConfiguration<>(
+            "test",
+            true,
+            null,
+            null,
+            null,
+            null,
+            FINALIZER_NAME,
+            null,
+            null,
+            new BaseConfigurationService(),
+            informerConfig,
+            false,
+            null);
+    return new Controller<>((r, ctx) -> UpdateControl.noUpdate(), configuration, client);
   }
 }
