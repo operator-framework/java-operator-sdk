@@ -23,6 +23,9 @@ In most cases a single readiness probe backed by `allEventSourcesAreHealthy()` i
 operator has fully started the informers will not have synced yet, so the check naturally covers the startup
 case as well. Once running, it detects runtime degradation such as a lost watch connection.
 
+See also:
+[ConfigurationService.stopOnInformerErrorDuringStartup](https://github.com/operator-framework/java-operator-sdk/blob/main/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/api/config/ConfigurationService.java#L287)
+
 ### Fine-Grained Informer Diagnostics
 
 For advanced use cases — such as exposing per-informer health in a diagnostic endpoint or logging which
