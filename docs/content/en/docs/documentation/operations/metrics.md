@@ -3,18 +3,6 @@ title: Metrics
 weight: 83
 ---
 
-## Runtime Info
-
-[RuntimeInfo](https://github.com/java-operator-sdk/java-operator-sdk/blob/main/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/RuntimeInfo.java#L16-L16)
-is used mainly to check the actual health of event sources. Based on this information it is easy to implement custom
-liveness probes.
-
-[stopOnInformerErrorDuringStartup](https://github.com/java-operator-sdk/java-operator-sdk/blob/main/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/api/config/ConfigurationService.java#L168-L168)
-setting, where this flag usually needs to be set to false, in order to control the exact liveness properties.
-
-See also an example implementation in the
-[WebPage sample](https://github.com/java-operator-sdk/java-operator-sdk/blob/3e2e7c4c834ef1c409d636156b988125744ca911/sample-operators/webpage/src/main/java/io/javaoperatorsdk/operator/sample/WebPageOperator.java#L38-L43)
-
 ## Metrics
 
 JOSDK provides built-in support for metrics reporting on what is happening with your reconcilers in the form of
@@ -90,7 +78,7 @@ compatibility with `histogram_quantile()` queries in Prometheus. This is importa
 > `OtlpMeterRegistry` (metrics exported via OpenTelemetry Collector), it is exposed as
 > `reconciliations_execution_duration_milliseconds_*`.
 
-#### Grafana Dashboard
+### Grafana Dashboard
 
 A ready-to-use Grafana dashboard is available at
 [`observability/josdk-operator-metrics-dashboard.json`](https://github.com/java-operator-sdk/java-operator-sdk/blob/main/observability/josdk-operator-metrics-dashboard.json).
@@ -100,7 +88,7 @@ executions, resource counts, and execution duration histograms and heatmaps.
 The dashboard is designed to work with metrics exported via OpenTelemetry Collector to Prometheus, as set up by the
 observability sample (see below).
 
-#### Exploring metrics end-to-end
+### Exploring metrics end-to-end
 
 The
 [`operations` sample operator](https://github.com/java-operator-sdk/java-operator-sdk/tree/main/sample-operators/operations)
@@ -115,6 +103,34 @@ that:
 
 This is a good starting point for experimenting with the metrics and the Grafana dashboard in a real cluster without
 having to deploy your own operator.
+
+### Aggregated Metrics
+
+The `AggregatedMetrics` class provides a way to combine multiple metrics providers into a single metrics instance using
+the composite pattern. This is particularly useful when you want to simultaneously collect metrics data from different
+monitoring systems or providers.
+
+You can create an `AggregatedMetrics` instance by providing a list of existing metrics implementations:
+
+```java
+// create individual metrics instances
+Metrics micrometerMetrics = MicrometerMetrics.withoutPerResourceMetrics(registry);
+Metrics customMetrics = new MyCustomMetrics();
+Metrics loggingMetrics = new LoggingMetrics();
+
+// combine them into a single aggregated instance
+Metrics aggregatedMetrics = new AggregatedMetrics(List.of(
+    micrometerMetrics,
+    customMetrics,
+    loggingMetrics
+));
+
+// use the aggregated metrics with your operator
+Operator operator = new Operator(client, o -> o.withMetrics(aggregatedMetrics));
+```
+
+This approach allows you to easily combine different metrics collection strategies, such as sending metrics to both
+Prometheus (via Micrometer) and a custom logging system simultaneously.
 
 ### MicrometerMetrics (Deprecated)
 
@@ -167,30 +183,3 @@ scope` where tags in square brackets (`[]`) won't be present when per-resource c
 by a question mark are omitted if the value is empty. In the context of controllers' execution metrics, these tag names
 are prefixed with `resource.`.
 
-### Aggregated Metrics
-
-The `AggregatedMetrics` class provides a way to combine multiple metrics providers into a single metrics instance using
-the composite pattern. This is particularly useful when you want to simultaneously collect metrics data from different
-monitoring systems or providers.
-
-You can create an `AggregatedMetrics` instance by providing a list of existing metrics implementations:
-
-```java
-// create individual metrics instances
-Metrics micrometerMetrics = MicrometerMetrics.withoutPerResourceMetrics(registry);
-Metrics customMetrics = new MyCustomMetrics();
-Metrics loggingMetrics = new LoggingMetrics();
-
-// combine them into a single aggregated instance
-Metrics aggregatedMetrics = new AggregatedMetrics(List.of(
-    micrometerMetrics,
-    customMetrics,
-    loggingMetrics
-));
-
-// use the aggregated metrics with your operator
-Operator operator = new Operator(client, o -> o.withMetrics(aggregatedMetrics));
-```
-
-This approach allows you to easily combine different metrics collection strategies, such as sending metrics to both
-Prometheus (via Micrometer) and a custom logging system simultaneously.
