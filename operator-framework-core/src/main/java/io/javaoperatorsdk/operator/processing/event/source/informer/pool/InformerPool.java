@@ -13,13 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.javaoperatorsdk.operator.processing.event.source.pool;
+package io.javaoperatorsdk.operator.processing.event.source.informer.pool;
 
-import io.fabric8.kubernetes.api.model.HasMetadata;
-import io.javaoperatorsdk.operator.api.config.informer.FieldSelector;
+import io.fabric8.kubernetes.client.informers.SharedIndexInformer;
 
-public record InformerClassifier(
-    String labelSelector,
-    String namespaceIdentifier,
-    Class<? extends HasMetadata> resourceClass,
-    FieldSelector fieldSelector) {}
+public interface InformerPool {
+
+  SharedIndexInformer<?> getResource(InformerClassifier classifier);
+
+  void releaseResource(SharedIndexInformer<?> informerEventSource);
+}

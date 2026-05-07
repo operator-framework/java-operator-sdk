@@ -13,6 +13,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.javaoperatorsdk.operator.processing.event.source.pool;
+package io.javaoperatorsdk.operator.processing.event.source.informer.pool;
 
-public abstract class AbstractEventSourcePool<C, T> implements EventSourcePool<C, T> {}
+import io.fabric8.kubernetes.client.informers.SharedIndexInformer;
+
+public class NoOpInformerPool implements InformerPool {
+
+  @Override
+  public SharedIndexInformer<?> getResource(InformerClassifier classifier) {
+    return null;
+  }
+
+  @Override
+  public void releaseResource(SharedIndexInformer<?> informerEventSource) {}
+}

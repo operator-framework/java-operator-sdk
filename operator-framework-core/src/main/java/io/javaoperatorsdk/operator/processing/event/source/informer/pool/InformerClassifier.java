@@ -13,11 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.javaoperatorsdk.operator.processing.event.source.pool;
+package io.javaoperatorsdk.operator.processing.event.source.informer.pool;
 
-public interface EventSourcePool<C, T> {
+import io.fabric8.kubernetes.api.model.HasMetadata;
+import io.javaoperatorsdk.operator.api.config.informer.FieldSelector;
 
-  T getEventSource(C classifier);
-
-  void removeEventSource(T informerEventSource);
-}
+public record InformerClassifier(
+    String labelSelector,
+    String namespaceIdentifier,
+    Class<? extends HasMetadata> resourceClass,
+    FieldSelector fieldSelector) {}
