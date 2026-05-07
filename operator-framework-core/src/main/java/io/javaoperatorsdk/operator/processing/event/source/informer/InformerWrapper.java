@@ -18,9 +18,6 @@ package io.javaoperatorsdk.operator.processing.event.source.informer;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
@@ -28,15 +25,11 @@ import java.util.stream.Stream;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import io.fabric8.kubernetes.api.model.GenericKubernetesResource;
 import io.fabric8.kubernetes.api.model.HasMetadata;
-import io.fabric8.kubernetes.client.informers.ExceptionHandler;
 import io.fabric8.kubernetes.client.informers.ResourceEventHandler;
 import io.fabric8.kubernetes.client.informers.SharedIndexInformer;
 import io.fabric8.kubernetes.client.informers.cache.Cache;
 import io.javaoperatorsdk.operator.OperatorException;
-import io.javaoperatorsdk.operator.ReconcilerUtilsInternal;
-import io.javaoperatorsdk.operator.api.config.ConfigurationService;
 import io.javaoperatorsdk.operator.health.InformerHealthIndicator;
 import io.javaoperatorsdk.operator.health.Status;
 import io.javaoperatorsdk.operator.processing.LifecycleAware;
@@ -51,99 +44,16 @@ class InformerWrapper<T extends HasMetadata>
   private final SharedIndexInformer<T> informer;
   private final Cache<T> cache;
   private final String namespaceIdentifier;
-  private final ConfigurationService configurationService;
 
-  public InformerWrapper(
-      SharedIndexInformer<T> informer,
-      ConfigurationService configurationService,
-      String namespaceIdentifier) {
+  public InformerWrapper(SharedIndexInformer<T> informer, String namespaceIdentifier) {
     this.informer = informer;
     this.namespaceIdentifier = namespaceIdentifier;
     this.cache = (Cache<T>) informer.getStore();
-    this.configurationService = configurationService;
   }
 
   @Override
-  public void start() throws OperatorException {
-    try {
-
-      // register stopped handler if we have one defined
-      configurationService
-          .getInformerStoppedHandler()
-          .ifPresent(
-              ish -> {
-                final var stopped = informer.stopped();
-                if (stopped != null) {
-                  stopped.handle(
-                      (res, ex) -> {
-                        ish.onStop(informer, ex);
-                        return null;
-                      });
-                } else {
-                  final var apiTypeClass = informer.getApiTypeClass();
-                  final var fullResourceName = HasMetadata.getFullResourceName(apiTypeClass);
-                  final var version = HasMetadata.getVersion(apiTypeClass);
-                  throw new IllegalStateException(
-                      "Cannot retrieve 'stopped' callback to listen to informer stopping for"
-                          + " informer for "
-                          + fullResourceName
-                          + "/"
-                          + version);
-                }
-              });
-      if (!configurationService.stopOnInformerErrorDuringStartup()) {
-        informer.exceptionHandler((b, t) -> !ExceptionHandler.isDeserializationException(t));
-      }
-      // change thread name for easier debugging
-      final var thread = Thread.currentThread();
-      final var name = thread.getName();
-      try {
-        thread.setName(informerInfo() + " " + thread.getId());
-        final var resourceName = informer.getApiTypeClass().getSimpleName();
-        log.debug(
-            "Starting informer for namespace: {} resource: {}", namespaceIdentifier, resourceName);
-        var start = informer.start();
-        // note that in case we don't put here timeout and stopOnInformerErrorDuringStartup is
-        // false, and there is a rbac issue the get never returns; therefore operator never really
-        // starts
-        log.trace(
-            "Waiting informer to start namespace: {} resource: {}",
-            namespaceIdentifier,
-            resourceName);
-        start
-            .toCompletableFuture()
-            .get(configurationService.cacheSyncTimeout().toMillis(), TimeUnit.MILLISECONDS);
-        log.debug(
-            "Started informer for namespace: {} resource: {}", namespaceIdentifier, resourceName);
-      } catch (TimeoutException | ExecutionException e) {
-        if (configurationService.stopOnInformerErrorDuringStartup()) {
-          log.error("Informer startup error. Operator will be stopped. Informer: {}", informer, e);
-          throw new OperatorException(e);
-        } else {
-          log.warn("Informer startup error. Will periodically retry. Informer: {}", informer, e);
-        }
-      } catch (InterruptedException e) {
-        thread.interrupt();
-        throw new IllegalStateException(e);
-      } finally {
-        // restore original name
-        thread.setName(name);
-      }
-
-    } catch (Exception e) {
-      ReconcilerUtilsInternal.handleKubernetesClientException(
-          e, HasMetadata.getFullResourceName(informer.getApiTypeClass()));
-      throw new OperatorException(
-          "Couldn't start informer for " + versionedFullResourceName() + " resources", e);
-    }
-  }
-
-  private String versionedFullResourceName() {
-    final var apiTypeClass = informer.getApiTypeClass();
-    if (apiTypeClass.isAssignableFrom(GenericKubernetesResource.class)) {
-      return GenericKubernetesResource.class.getSimpleName();
-    }
-    return ReconcilerUtilsInternal.getResourceTypeNameWithVersion(apiTypeClass);
+  public void start() {
+    // no-op: informer initialization is handled by InformerPool
   }
 
   @Override
@@ -201,7 +111,7 @@ class InformerWrapper<T extends HasMetadata>
   }
 
   private String informerInfo() {
-    return "InformerWrapper [" + versionedFullResourceName() + "]";
+    return "InformerWrapper [" + informer.getApiTypeClass().getSimpleName() + "]";
   }
 
   @Override

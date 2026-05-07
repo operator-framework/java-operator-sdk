@@ -22,6 +22,7 @@ import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import io.javaoperatorsdk.operator.processing.event.source.informer.pool.InformerPool;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -55,6 +56,7 @@ class InformerManager<R extends HasMetadata, C extends Informable<R>>
   private final ResourceEventHandler<R> eventHandler;
   private final Map<String, Function<R, List<String>>> indexers = new HashMap<>();
   private ControllerConfiguration<R> controllerConfiguration;
+  private InformerPool informerPool;
 
   InformerManager(
       MixedOperation<R, KubernetesResourceList<R>, Resource<R>> client,
@@ -67,6 +69,7 @@ class InformerManager<R extends HasMetadata, C extends Informable<R>>
 
   void setControllerConfiguration(ControllerConfiguration<R> controllerConfiguration) {
     this.controllerConfiguration = controllerConfiguration;
+    this.controllerConfiguration.getConfigurationService().informerPool();
   }
 
   @Override
@@ -166,9 +169,7 @@ class InformerManager<R extends HasMetadata, C extends Informable<R>>
             .orElse(filteredBySelectorClient)
             .runnableInformer(0);
     Optional.ofNullable(informerConfig.getItemStore()).ifPresent(informer::itemStore);
-    var source =
-        new InformerWrapper<>(
-            informer, controllerConfiguration.getConfigurationService(), namespaceIdentifier);
+    var source = new InformerWrapper<>(informer, namespaceIdentifier);
     source.addEventHandler(eventHandler);
     sources.put(namespaceIdentifier, source);
     return source;
