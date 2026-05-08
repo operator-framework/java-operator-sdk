@@ -188,6 +188,36 @@ public class ConfigMapDependent extends CRUDKubernetesDependentResource<ConfigMa
 - Reference issues in commit messages when applicable
 - Ensure CI checks pass (format, license, tests)
 
+### Documentation Update
+
+When implementing features or making code changes, always evaluate whether the change affects user-facing behavior that should be documented. If so, update the documentation as part of the same change.
+
+#### Documentation Location
+
+Documentation is a Hugo/Docsy site at `docs/content/en/docs/`:
+
+- `documentation/` — core feature docs (reconciler, eventing, error handling, caches, rate limiting, testing, features)
+- `documentation/dependent-resource-and-workflows/` — dependent resources and workflows
+- `documentation/operations/` — operational concerns (config, metrics, logging, health probes, leader election, helm)
+- `getting-started/` — introductory guides and best practices
+- `migration/` — version migration guides
+- `faq/` — frequently asked questions
+
+#### Behavior
+
+1. After implementing a code change, check if it introduces, modifies, or removes user-facing behavior.
+2. Search the docs for pages covering the affected functionality.
+3. Update existing pages or add new sections to reflect the change.
+4. Skip if not relevant — internal refactors, test-only changes, and build tooling changes typically do not need doc updates.
+
+#### Guidelines
+
+- Match the tone and style of the existing documentation
+- Prefer adding code snippets
+- Keep explanations concise with code examples where helpful
+- If a change introduces a new feature, consider whether it belongs in an existing page or warrants a new one
+- For breaking changes, also update the relevant migration guide under `migration/`
+
 ## Common Issues and Solutions
 
 ### Build Issues
@@ -208,7 +238,6 @@ public class ConfigMapDependent extends CRUDKubernetesDependentResource<ConfigMa
 - **Slack:** [#java-operator-sdk](https://kubernetes.slack.com/archives/CAW0GV7A5) on Kubernetes Slack
 - **Discord:** https://discord.gg/DacEhAy
 - **Fabric8 Client:** https://github.com/fabric8io/kubernetes-client
-
 
 ## Additional Notes for AI Agents
 
