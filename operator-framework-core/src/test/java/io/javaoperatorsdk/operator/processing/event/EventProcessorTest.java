@@ -746,6 +746,55 @@ class EventProcessorTest {
     assertThat(captor.getAllValues().get(1).getResource()).isNotNull();
   }
 
+  @Test
+  void reconciliationTimesOutAndTriggersRetry() {
+    var reconciliationDispatcher = mock(ReconciliationDispatcher.class);
+    when(reconciliationDispatcher.handleExecution(any()))
+        .thenAnswer(new AnswersWithDelay(500, new Returns(PostExecutionControl.defaultDispatch())));
+
+    var config =
+        controllerConfiguration(
+            GenericRetry.defaultLimitedExponentialRetry(),
+            rateLimiterMock,
+            new BaseConfigurationService(),
+            false,
+            Duration.ofMillis(100));
+    var timeoutProcessor =
+        spy(new EventProcessor(config, reconciliationDispatcher, eventSourceManagerMock, null));
+    timeoutProcessor.start();
+    when(timeoutProcessor.retryEventSource()).thenReturn(retryTimerEventSourceMock);
+
+    timeoutProcessor.handleEvent(prepareCREvent());
+
+    verify(retryTimerEventSourceMock, timeout(1000).times(1))
+        .scheduleOnce((ResourceID) any(), anyLong());
+  }
+
+  @Test
+  void reconciliationCompletesBeforeTimeout() {
+    var reconciliationDispatcher = mock(ReconciliationDispatcher.class);
+    when(reconciliationDispatcher.handleExecution(any()))
+        .thenReturn(PostExecutionControl.defaultDispatch());
+
+    var config =
+        controllerConfiguration(
+            GenericRetry.defaultLimitedExponentialRetry(),
+            rateLimiterMock,
+            new BaseConfigurationService(),
+            false,
+            Duration.ofMillis(5000));
+    var timeoutProcessor =
+        spy(new EventProcessor(config, reconciliationDispatcher, eventSourceManagerMock, null));
+    timeoutProcessor.start();
+    when(timeoutProcessor.retryEventSource()).thenReturn(retryTimerEventSourceMock);
+
+    timeoutProcessor.handleEvent(prepareCREvent());
+
+    // Should schedule for max reconciliation interval (not retry) since no error occurred
+    verify(retryTimerEventSourceMock, timeout(500).times(1))
+        .scheduleOnce((ResourceID) any(), eq(1000L));
+  }
+
   private ResourceID eventAlreadyUnderProcessing() {
     when(reconciliationDispatcherMock.handleExecution(any()))
         .then(
@@ -801,11 +850,11 @@ class EventProcessorTest {
   }
 
   ControllerConfiguration controllerConfiguration(Retry retry, RateLimiter rateLimiter) {
-    return controllerConfiguration(retry, rateLimiter, new BaseConfigurationService(), false);
+    return controllerConfiguration(retry, rateLimiter, new BaseConfigurationService(), false, null);
   }
 
   ControllerConfiguration controllerConfigTriggerAllEvent(Retry retry, RateLimiter rateLimiter) {
-    return controllerConfiguration(retry, rateLimiter, new BaseConfigurationService(), true);
+    return controllerConfiguration(retry, rateLimiter, new BaseConfigurationService(), true, null);
   }
 
   ControllerConfiguration controllerConfiguration(
@@ -813,11 +862,22 @@ class EventProcessorTest {
       RateLimiter rateLimiter,
       ConfigurationService configurationService,
       boolean triggerOnAllEvents) {
+    return controllerConfiguration(
+        retry, rateLimiter, configurationService, triggerOnAllEvents, null);
+  }
+
+  ControllerConfiguration controllerConfiguration(
+      Retry retry,
+      RateLimiter rateLimiter,
+      ConfigurationService configurationService,
+      boolean triggerOnAllEvents,
+      Duration reconciliationTimeout) {
     ControllerConfiguration res = mock(ControllerConfiguration.class);
     when(res.getName()).thenReturn("Test");
     when(res.getRetry()).thenReturn(retry);
     when(res.getRateLimiter()).thenReturn(rateLimiter);
     when(res.maxReconciliationInterval()).thenReturn(Optional.of(Duration.ofMillis(1000)));
+    when(res.reconciliationTimeout()).thenReturn(Optional.ofNullable(reconciliationTimeout));
     when(res.getConfigurationService()).thenReturn(configurationService);
     when(res.triggerReconcilerOnAllEvents()).thenReturn(triggerOnAllEvents);
     return res;

@@ -105,4 +105,14 @@ public @interface ControllerConfiguration {
    * documentation for further details.
    */
   boolean triggerReconcilerOnAllEvents() default false;
+
+  /**
+   * Optional configuration of the maximum duration a single reconciliation is allowed to run. If
+   * the reconciliation takes longer than this timeout, the reconciliation thread will be
+   * interrupted and the result will be treated as an error, triggering retry logic.
+   *
+   * @return the reconciliation timeout configuration
+   */
+  ReconciliationTimeout reconciliationTimeout() default
+      @ReconciliationTimeout(interval = Constants.NO_RECONCILIATION_TIMEOUT);
 }

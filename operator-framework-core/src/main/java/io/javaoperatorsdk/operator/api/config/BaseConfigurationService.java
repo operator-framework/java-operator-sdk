@@ -311,6 +311,19 @@ public class BaseConfigurationService extends AbstractConfigurationService {
       timeUnit = reconciliationInterval.timeUnit();
     }
 
+    final var reconciliationTimeoutAnnotation =
+        valueOrDefaultFromAnnotation(
+            annotation,
+            io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration
+                ::reconciliationTimeout,
+            "reconciliationTimeout");
+    long timeoutInterval = -1;
+    TimeUnit timeoutTimeUnit = null;
+    if (reconciliationTimeoutAnnotation != null && reconciliationTimeoutAnnotation.interval() > 0) {
+      timeoutInterval = reconciliationTimeoutAnnotation.interval();
+      timeoutTimeUnit = reconciliationTimeoutAnnotation.timeUnit();
+    }
+
     var fieldManager =
         valueOrDefaultFromAnnotation(
             annotation,
@@ -334,6 +347,7 @@ public class BaseConfigurationService extends AbstractConfigurationService {
         retry,
         rateLimiter,
         ResolvedControllerConfiguration.getMaxReconciliationInterval(interval, timeUnit),
+        ResolvedControllerConfiguration.getReconciliationTimeout(timeoutInterval, timeoutTimeUnit),
         valueOrDefaultFromAnnotation(
             annotation,
             io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration::finalizerName,

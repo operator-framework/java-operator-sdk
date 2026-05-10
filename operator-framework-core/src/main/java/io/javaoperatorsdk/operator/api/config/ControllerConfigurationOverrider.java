@@ -43,6 +43,7 @@ public class ControllerConfigurationOverrider<R extends HasMetadata> {
   private RateLimiter rateLimiter;
   private String fieldManager;
   private Duration reconciliationMaxInterval;
+  private Duration reconciliationTimeout;
   private Map<DependentResourceSpec, Object> configurations;
   private final InformerConfiguration<R>.Builder config;
   private boolean triggerReconcilerOnAllEvents;
@@ -54,6 +55,7 @@ public class ControllerConfigurationOverrider<R extends HasMetadata> {
     this.config = InformerConfiguration.builder(informerConfig);
     this.retry = original.getRetry();
     this.reconciliationMaxInterval = original.maxReconciliationInterval().orElse(null);
+    this.reconciliationTimeout = original.reconciliationTimeout().orElse(null);
     this.original = original;
     this.rateLimiter = original.getRateLimiter();
     this.name = original.getName();
@@ -137,6 +139,12 @@ public class ControllerConfigurationOverrider<R extends HasMetadata> {
   public ControllerConfigurationOverrider<R> withReconciliationMaxInterval(
       Duration reconciliationMaxInterval) {
     this.reconciliationMaxInterval = reconciliationMaxInterval;
+    return this;
+  }
+
+  public ControllerConfigurationOverrider<R> withReconciliationTimeout(
+      Duration reconciliationTimeout) {
+    this.reconciliationTimeout = reconciliationTimeout;
     return this;
   }
 
@@ -225,6 +233,7 @@ public class ControllerConfigurationOverrider<R extends HasMetadata> {
         retry,
         rateLimiter,
         reconciliationMaxInterval,
+        reconciliationTimeout,
         finalizer,
         configurations,
         fieldManager,

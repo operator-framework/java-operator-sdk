@@ -320,6 +320,7 @@ class ControllerEventSourceTest
           null,
           null,
           null,
+          null,
           FINALIZER,
           null,
           null,

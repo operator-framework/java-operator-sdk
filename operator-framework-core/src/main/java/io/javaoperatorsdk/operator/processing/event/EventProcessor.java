@@ -20,7 +20,13 @@ import java.time.Duration;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Future;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.TimeUnit;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -28,6 +34,7 @@ import org.slf4j.LoggerFactory;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.client.KubernetesClientException;
 import io.javaoperatorsdk.operator.OperatorException;
+import io.javaoperatorsdk.operator.ReconciliationTimeoutException;
 import io.javaoperatorsdk.operator.api.config.ConfigurationService;
 import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.monitoring.Metrics;
@@ -59,7 +66,12 @@ public class EventProcessor<P extends HasMetadata> implements EventHandler, Life
   private final RateLimiter<? extends RateLimitState> rateLimiter;
   private final ResourceStateManager resourceStateManager = new ResourceStateManager();
   private final Map<String, Object> metricsMetadata;
+  private final Duration reconciliationTimeout;
+  private final Map<ResourceID, Future<?>> runningFutures = new ConcurrentHashMap<>();
+  private final Map<ResourceID, ScheduledFuture<?>> timeoutFutures = new ConcurrentHashMap<>();
+  private final Set<ResourceID> timedOutResources = ConcurrentHashMap.newKeySet();
   private ExecutorService executor;
+  private ScheduledExecutorService timeoutScheduler;
 
   public EventProcessor(
       EventSourceManager<P> eventSourceManager, ConfigurationService configurationService) {
@@ -100,6 +112,8 @@ public class EventProcessor<P extends HasMetadata> implements EventHandler, Life
     this.metrics = metrics != null ? metrics : Metrics.NOOP;
     this.eventSourceManager = eventSourceManager;
     this.rateLimiter = controllerConfiguration.getRateLimiter();
+    this.reconciliationTimeout =
+        (Duration) controllerConfiguration.reconciliationTimeout().orElse(null);
 
     metricsMetadata =
         Optional.ofNullable(eventSourceManager.getController())
@@ -182,7 +196,16 @@ public class EventProcessor<P extends HasMetadata> implements EventHandler, Life
         state.unMarkEventReceived(triggerOnAllEvents());
         metrics.reconciliationSubmitted(latest, state.getRetry(), metricsMetadata);
         log.debug("Executing events for custom resource. Scope: {}", executionScope);
-        executor.execute(new ReconcilerExecutor(resourceID, executionScope));
+        Future<?> future = executor.submit(new ReconcilerExecutor(resourceID, executionScope));
+        if (reconciliationTimeout != null) {
+          runningFutures.put(resourceID, future);
+          var timeoutFuture =
+              timeoutScheduler.schedule(
+                  () -> handleReconciliationTimeout(resourceID, future),
+                  reconciliationTimeout.toMillis(),
+                  TimeUnit.MILLISECONDS);
+          timeoutFutures.put(resourceID, timeoutFuture);
+        }
       } else {
         log.debug(
             "Skipping executing controller. Controller in execution: {}. Latest"
@@ -450,17 +473,22 @@ public class EventProcessor<P extends HasMetadata> implements EventHandler, Life
   @Override
   public synchronized void stop() {
     this.running = false;
+    timeoutFutures.values().forEach(f -> f.cancel(false));
+    timeoutFutures.clear();
+    timedOutResources.clear();
+    runningFutures.clear();
   }
 
   @Override
   public synchronized void start() throws OperatorException {
     log.debug("Starting event processor: {}", this);
     // on restart new executor service is created and needs to be set here
-    executor =
-        controllerConfiguration
-            .getConfigurationService()
-            .getExecutorServiceManager()
-            .reconcileExecutorService();
+    var executorServiceManager =
+        controllerConfiguration.getConfigurationService().getExecutorServiceManager();
+    executor = executorServiceManager.reconcileExecutorService();
+    if (reconciliationTimeout != null) {
+      timeoutScheduler = executorServiceManager.scheduledExecutorService();
+    }
     this.running = true;
     handleAlreadyMarkedEvents();
   }
@@ -474,6 +502,29 @@ public class EventProcessor<P extends HasMetadata> implements EventHandler, Life
       log.debug("Handling already marked event on start. State: {}", state);
       handleMarkedEventForResource(state);
     }
+  }
+
+  private void handleReconciliationTimeout(ResourceID resourceID, Future<?> future) {
+    log.warn("Reconciliation timed out for resource: {}", resourceID);
+    timedOutResources.add(resourceID);
+    future.cancel(true);
+  }
+
+  private void cancelTimeoutIfActive(ResourceID resourceID) {
+    if (reconciliationTimeout != null) {
+      runningFutures.remove(resourceID);
+      var scheduledTimeout = timeoutFutures.remove(resourceID);
+      if (scheduledTimeout != null) {
+        scheduledTimeout.cancel(false);
+      }
+    }
+  }
+
+  private static boolean isInterruptedException(Throwable e) {
+    if (e instanceof InterruptedException) {
+      return true;
+    }
+    return e.getCause() != null && e.getCause() instanceof InterruptedException;
   }
 
   private class ReconcilerExecutor implements Runnable {
@@ -531,10 +582,33 @@ public class EventProcessor<P extends HasMetadata> implements EventHandler, Life
         MDCUtils.addResourceInfo(executionScope.getResource());
         metrics.reconciliationStarted(executionScope.getResource(), metricsMetadata);
         thread.setName("ReconcilerExecutor-" + controllerName() + "-" + thread.getId());
-        PostExecutionControl<P> postExecutionControl =
-            reconciliationDispatcher.handleExecution(executionScope);
+
+        PostExecutionControl<P> postExecutionControl;
+        try {
+          postExecutionControl = reconciliationDispatcher.handleExecution(executionScope);
+        } catch (Exception e) {
+          if (timedOutResources.remove(resourceID) || isInterruptedException(e)) {
+            log.warn("Reconciliation timed out for: {}", executionScope);
+            postExecutionControl =
+                PostExecutionControl.exceptionDuringExecution(
+                    new ReconciliationTimeoutException(reconciliationTimeout));
+          } else {
+            throw e;
+          }
+        }
+
+        // Check if this reconciliation was timed out (e.g. timeout fired just as execution
+        // finished)
+        if (timedOutResources.remove(resourceID)) {
+          log.warn("Reconciliation timed out for: {}", executionScope);
+          postExecutionControl =
+              PostExecutionControl.exceptionDuringExecution(
+                  new ReconciliationTimeoutException(reconciliationTimeout));
+        }
+
         eventProcessingFinished(executionScope, postExecutionControl);
       } finally {
+        cancelTimeoutIfActive(resourceID);
         metrics.reconciliationFinished(
             executionScope.getResource(), executionScope.getRetryInfo(), metricsMetadata);
         // restore original name

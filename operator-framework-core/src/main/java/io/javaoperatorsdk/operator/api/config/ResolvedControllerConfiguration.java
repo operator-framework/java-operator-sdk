@@ -40,6 +40,7 @@ public class ResolvedControllerConfiguration<P extends HasMetadata>
   private final Retry retry;
   private final RateLimiter rateLimiter;
   private final Duration maxReconciliationInterval;
+  private final Duration reconciliationTimeout;
   private final String finalizer;
   private final Map<DependentResourceSpec, Object> configurations;
   private final ConfigurationService configurationService;
@@ -55,6 +56,7 @@ public class ResolvedControllerConfiguration<P extends HasMetadata>
         other.getRetry(),
         other.getRateLimiter(),
         other.maxReconciliationInterval().orElse(null),
+        other.reconciliationTimeout().orElse(null),
         other.getFinalizerName(),
         Collections.emptyMap(),
         other.fieldManager(),
@@ -71,6 +73,7 @@ public class ResolvedControllerConfiguration<P extends HasMetadata>
       Retry retry,
       RateLimiter rateLimiter,
       Duration maxReconciliationInterval,
+      Duration reconciliationTimeout,
       String finalizer,
       Map<DependentResourceSpec, Object> configurations,
       String fieldManager,
@@ -85,6 +88,7 @@ public class ResolvedControllerConfiguration<P extends HasMetadata>
         retry,
         rateLimiter,
         maxReconciliationInterval,
+        reconciliationTimeout,
         finalizer,
         configurations,
         fieldManager,
@@ -101,6 +105,7 @@ public class ResolvedControllerConfiguration<P extends HasMetadata>
       Retry retry,
       RateLimiter rateLimiter,
       Duration maxReconciliationInterval,
+      Duration reconciliationTimeout,
       String finalizer,
       Map<DependentResourceSpec, Object> configurations,
       String fieldManager,
@@ -115,6 +120,7 @@ public class ResolvedControllerConfiguration<P extends HasMetadata>
     this.retry = ensureRetry(retry);
     this.rateLimiter = ensureRateLimiter(rateLimiter);
     this.maxReconciliationInterval = maxReconciliationInterval;
+    this.reconciliationTimeout = reconciliationTimeout;
     this.configurations = configurations != null ? configurations : Collections.emptyMap();
     this.finalizer =
         ControllerConfiguration.ensureValidFinalizerName(finalizer, getResourceTypeName());
@@ -137,6 +143,7 @@ public class ResolvedControllerConfiguration<P extends HasMetadata>
         null,
         null,
         null,
+        null,
         configurationService,
         InformerConfiguration.builder(resourceClass).buildForController(),
         false);
@@ -148,6 +155,10 @@ public class ResolvedControllerConfiguration<P extends HasMetadata>
   }
 
   public static Duration getMaxReconciliationInterval(long interval, TimeUnit timeUnit) {
+    return interval > 0 ? Duration.of(interval, timeUnit.toChronoUnit()) : null;
+  }
+
+  public static Duration getReconciliationTimeout(long interval, TimeUnit timeUnit) {
     return interval > 0 ? Duration.of(interval, timeUnit.toChronoUnit()) : null;
   }
 
@@ -206,6 +217,11 @@ public class ResolvedControllerConfiguration<P extends HasMetadata>
   @Override
   public Optional<Duration> maxReconciliationInterval() {
     return Optional.ofNullable(maxReconciliationInterval);
+  }
+
+  @Override
+  public Optional<Duration> reconciliationTimeout() {
+    return Optional.ofNullable(reconciliationTimeout);
   }
 
   @Override
