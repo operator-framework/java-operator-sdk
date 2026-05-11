@@ -17,3 +17,4 @@ target/
 .aider*
 
 docs/content/en/docs/testindex/
+.claude/
