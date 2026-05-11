@@ -205,10 +205,11 @@ Documentation is a Hugo/Docsy site at `docs/content/en/docs/`:
 
 #### Behavior
 
-1. After implementing a code change, check if it introduces, modifies, or removes user-facing behavior.
-2. Search the docs for pages covering the affected functionality.
-3. Update existing pages or add new sections to reflect the change.
-4. Skip if not relevant — internal refactors, test-only changes, and build tooling changes typically do not need doc updates.
+1. Skip if not relevant — internal refactors, test-only changes, and build tooling changes typically do not need doc updates.
+2. After implementing a code change, check if it introduces, modifies, or removes user-facing behavior.
+3. Search the docs for pages covering the affected functionality.
+4. Update existing pages or add new sections to reflect the change.
+
 
 #### Guidelines
 
