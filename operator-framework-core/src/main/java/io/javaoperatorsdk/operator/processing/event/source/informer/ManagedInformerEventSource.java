@@ -18,6 +18,7 @@ package io.javaoperatorsdk.operator.processing.event.source.informer;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
@@ -231,134 +232,150 @@ public abstract class ManagedInformerEventSource<
     this.indexers.putAll(indexers);
   }
 
+  /**
+   * {@inheritDoc}
+   *
+   * <p>This implementation is read-cache-after-write consistent. Results are merged with the
+   * temporary resource cache to ensure recently written resources are reflected in the output.
+   */
   @Override
   public Stream<R> list(String namespace, Predicate<R> predicate) {
-    return manager().list(namespace, predicate);
+    return mergeWithTempCacheForList(manager().list(namespace, predicate), namespace, predicate);
   }
 
+  /**
+   * {@inheritDoc}
+   *
+   * <p>This implementation is read-cache-after-write consistent. Results are merged with the
+   * temporary resource cache to ensure recently written resources are reflected in the output.
+   */
   @Override
   public Stream<R> list(Predicate<R> predicate) {
-    return cache.list(predicate);
+    return mergeWithTempCacheForList(cache.list(predicate), null, predicate);
   }
 
+  /**
+   * {@inheritDoc}
+   *
+   * <p>This implementation is read-cache-after-write consistent. Results are merged with the
+   * temporary resource cache to ensure recently written resources are reflected in the output.
+   */
   @Override
-  public List<R> byIndex(String indexName, String indexKey) {
-    return manager().byIndex(indexName, indexKey);
-  }
-
   public Stream<R> byIndexStream(String indexName, String indexKey) {
-    return manager().byIndexStream(indexName, indexKey);
-  }
-
-  /**
-   * Like {@link #list(String, Predicate)} but for read-cache-after-write consistency. This is
-   * useful when resources are updated using {@link
-   * io.javaoperatorsdk.operator.api.reconciler.ResourceOperations}.
-   */
-  public Stream<R> listWithStrongConsistency(String namespace, Predicate<R> predicate) {
-    return mergeWithWithTempCacheResources(
-        manager().list(namespace, predicate), namespace, predicate);
-  }
-
-  /**
-   * Like {@link #list(Predicate)} but for read-cache-after-write consistency. This is useful when
-   * resources are updated using {@link
-   * io.javaoperatorsdk.operator.api.reconciler.ResourceOperations}.
-   */
-  public Stream<R> listWithStrongConsistency(Predicate<R> predicate) {
-    return mergeWithWithTempCacheResources(cache.list(predicate), null, predicate);
-  }
-
-  /**
-   * Like {@link #byIndexStream(String, String)} but for read-cache-after-write consistency. This is
-   * useful when resources are updated using {@link
-   * io.javaoperatorsdk.operator.api.reconciler.ResourceOperations}.
-   */
-  public Stream<R> byIndexStreamWithStrongConsistency(String indexName, String indexKey) {
-    return mergeWithWithTempCacheResources(
+    return mergeWithTempCacheForIndex(
         manager().byIndexStream(indexName, indexKey), indexName, indexKey);
   }
 
-  private Stream<R> mergeWithWithTempCacheResources(
-      Stream<R> stream, String indexName, String indexKey) {
-    return mergeWithWithTempCacheResources(stream, null, null, indexName, indexKey);
+  /**
+   * {@inheritDoc}
+   *
+   * <p>This implementation is read-cache-after-write consistent. Results are merged with the
+   * temporary resource cache to ensure recently written resources are reflected in the output.
+   */
+  @Override
+  public List<R> byIndex(String indexName, String indexKey) {
+    return mergeWithTempCacheForIndex(
+            manager().byIndexStream(indexName, indexKey), indexName, indexKey)
+        .collect(Collectors.toList());
   }
 
-  private Stream<R> mergeWithWithTempCacheResources(
+  private Stream<R> mergeWithTempCacheForList(
       Stream<R> stream, String namespace, Predicate<R> predicate) {
-    return mergeWithWithTempCacheResources(stream, namespace, predicate, null, null);
-  }
-
-  private Stream<R> mergeWithWithTempCacheResources(
-      Stream<R> stream,
-      String namespace,
-      Predicate<R> predicate,
-      String indexName,
-      String indexKey) {
     if (!comparableResourceVersions || temporaryResourceCache.isEmpty()) {
-      return stream;
+      return stream.filter(filterResourceByNamespaceAndPredicate(namespace, predicate));
     }
-    var allTempResources = temporaryResourceCache.getResources();
-    Map<ResourceID, R> tempResources;
-    if (namespace == null && predicate == null) {
-      tempResources = new HashMap<>(allTempResources);
-    } else {
-      // filtering the temp cache according the user input (predicate, namespace)
-      tempResources =
-          allTempResources.entrySet().stream()
-              .filter(
-                  e -> {
-                    if (namespace != null) {
-                      var res =
-                          e.getKey().getNamespace().map(ns -> ns.equals(namespace)).orElse(false);
-                      if (!res) return false;
-                    }
-                    if (predicate != null) {
-                      return predicate.test(e.getValue());
-                    }
-                    return true;
-                  })
-              .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
-    }
+    var tempResources = new HashMap<>(temporaryResourceCache.getResources());
     if (tempResources.isEmpty()) {
-      return stream;
+      return stream.filter(filterResourceByNamespaceAndPredicate(namespace, predicate));
     }
+
     var upToDateList =
         stream
             .map(
                 r -> {
                   var resourceID = ResourceID.fromResource(r);
-                  // removing the id from the related temp resources
-                  // this is important so we can detect ghost resources:
-                  // all that remains is ghost resource
                   var tempResource = tempResources.remove(resourceID);
-                  // using the latest version
                   if (tempResource != null
                       && ReconcilerUtilsInternal.compareResourceVersions(tempResource, r) > 0) {
                     return tempResource;
                   }
                   return r;
                 })
+            .filter(filterResourceByNamespaceAndPredicate(namespace, predicate))
             .toList();
-    Stream<R> tempResourceStream;
-    // ghost resource handling
-    if (indexName != null && indexKey != null) {
-      var indexer = indexers.get(indexName);
-      if (indexer == null) {
-        throw new IllegalArgumentException("Indexer not found for: " + indexName);
-      }
-      // we check if the ghost resource is part of the index
-      tempResourceStream =
-          tempResources.values().stream().filter(r -> indexer.apply(r).contains(indexKey));
-    } else {
-      tempResourceStream = tempResources.values().stream();
-    }
-    return Stream.concat(tempResourceStream, upToDateList.stream());
+
+    return Stream.concat(
+        tempResources.values().stream()
+            .filter(filterResourceByNamespaceAndPredicate(namespace, predicate)),
+        upToDateList.stream());
   }
 
+  private Stream<R> mergeWithTempCacheForIndex(
+      Stream<R> stream, String indexName, String indexKey) {
+    if (!comparableResourceVersions || temporaryResourceCache.isEmpty()) {
+      return stream;
+    }
+    var tempResources = new HashMap<>(temporaryResourceCache.getResources());
+    if (tempResources.isEmpty()) {
+      return stream;
+    }
+
+    var indexer = indexers.get(indexName);
+    if (indexer == null) {
+      throw new IllegalArgumentException("Indexer not found for: " + indexName);
+    }
+
+    var upToDateList =
+        stream
+            .map(
+                r -> {
+                  var resourceID = ResourceID.fromResource(r);
+                  var tempResource = tempResources.remove(resourceID);
+                  if (tempResource != null
+                      && ReconcilerUtilsInternal.compareResourceVersions(tempResource, r) > 0) {
+                    if (!indexer.apply(tempResource).contains(indexKey)) {
+                      return null;
+                    }
+                    return tempResource;
+                  }
+                  return r;
+                })
+            .filter(Objects::nonNull)
+            .toList();
+
+    // remaining temp resources are ghost resources — include only those matching the index
+    return Stream.concat(
+        tempResources.values().stream().filter(r -> indexer.apply(r).contains(indexKey)),
+        upToDateList.stream());
+  }
+
+  private static <R extends HasMetadata> Predicate<R> filterResourceByNamespaceAndPredicate(
+      String namespace, Predicate<R> predicate) {
+    return r -> {
+      if (namespace != null) {
+        var res = Optional.of(r).map(ns -> ns.equals(namespace)).orElse(false);
+        if (!res) return false;
+      }
+      if (predicate != null) {
+        return predicate.test(r);
+      }
+      return true;
+    };
+  }
+
+  /**
+   * {@inheritDoc}
+   *
+   * <p>This implementation is read-cache-after-write consistent. Keys from the temporary resource
+   * cache (ghost resources) are included in the result.
+   */
   @Override
   public Stream<ResourceID> keys() {
-    return cache.keys();
+    if (!comparableResourceVersions || temporaryResourceCache.isEmpty()) {
+      return manager().keys();
+    }
+    var tempKeys = temporaryResourceCache.getResources().keySet();
+    return Stream.concat(manager().keys(), tempKeys.stream().filter(k -> !manager().contains(k)));
   }
 
   @Override

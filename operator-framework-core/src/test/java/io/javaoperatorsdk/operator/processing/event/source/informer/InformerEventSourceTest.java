@@ -16,6 +16,7 @@
 package io.javaoperatorsdk.operator.processing.event.source.informer;
 
 import java.time.Duration;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -521,40 +522,62 @@ class InformerEventSourceTest {
   }
 
   @Test
-  void listWithStrongConsistencyReplacesResourceFromTempCache() {
+  void listReplacesResourceFromTempCache() {
     var original = testDeployment();
     var newer = testDeployment();
     newer.getMetadata().setResourceVersion("5");
 
     when(temporaryResourceCache.getResources())
-        .thenReturn(Map.of(ResourceID.fromResource(original), newer));
+        .thenReturn(new HashMap<>(Map.of(ResourceID.fromResource(original), newer)));
 
     var mim = mock(InformerManager.class);
     when(mim.list(nullable(String.class), any())).thenReturn(Stream.of(original));
     doReturn(mim).when(informerEventSource).manager();
 
-    var result = informerEventSource.listWithStrongConsistency(null, r -> true).toList();
+    var result = informerEventSource.list(null, r -> true).toList();
 
     assertThat(result).containsExactly(newer);
   }
 
   @Test
-  void listWithStrongConsistencyKeepsResourceWhenNotInTempCache() {
+  void listExcludesResourceWhenTempCacheContainsNewerVersionThatNoLongerMatchesPredicate() {
     var original = testDeployment();
+    original.getMetadata().setResourceVersion("4");
+    var newer = testDeployment();
+    newer.getMetadata().setResourceVersion("5");
 
-    when(temporaryResourceCache.getResources()).thenReturn(Map.of());
+    when(temporaryResourceCache.getResources())
+        .thenReturn(new HashMap<>(Map.of(ResourceID.fromResource(original), newer)));
 
     var mim = mock(InformerManager.class);
     when(mim.list(nullable(String.class), any())).thenReturn(Stream.of(original));
     doReturn(mim).when(informerEventSource).manager();
 
-    var result = informerEventSource.listWithStrongConsistency("default", r -> true).toList();
+    var result =
+        informerEventSource
+            .list(null, r -> !"5".equals(r.getMetadata().getResourceVersion()))
+            .toList();
+
+    assertThat(result).isEmpty();
+  }
+
+  @Test
+  void listKeepsResourceWhenNotInTempCache() {
+    var original = testDeployment();
+
+    when(temporaryResourceCache.getResources()).thenReturn(new HashMap<>());
+
+    var mim = mock(InformerManager.class);
+    when(mim.list(nullable(String.class), any())).thenReturn(Stream.of(original));
+    doReturn(mim).when(informerEventSource).manager();
+
+    var result = informerEventSource.list(null, r -> true).toList();
 
     assertThat(result).containsExactly(original);
   }
 
   @Test
-  void listWithStrongConsistencyReplacesOnlyMatchingResources() {
+  void listReplacesOnlyMatchingResources() {
     var dep1 = testDeployment();
     var dep2 = testDeployment();
     dep2.getMetadata().setName("other");
@@ -562,91 +585,156 @@ class InformerEventSourceTest {
     newerDep1.getMetadata().setResourceVersion("5");
 
     when(temporaryResourceCache.getResources())
-        .thenReturn(Map.of(ResourceID.fromResource(dep1), newerDep1));
+        .thenReturn(new HashMap<>(Map.of(ResourceID.fromResource(dep1), newerDep1)));
 
     var informerManager = mock(InformerManager.class);
     when(informerManager.list(nullable(String.class), any())).thenReturn(Stream.of(dep1, dep2));
     doReturn(informerManager).when(informerEventSource).manager();
 
-    var result = informerEventSource.listWithStrongConsistency(null, r -> true).toList();
+    var result = informerEventSource.list(null, r -> true).toList();
 
     assertThat(result).containsExactlyInAnyOrder(newerDep1, dep2);
   }
 
   @Test
-  void byIndexStreamWithStrongConsistencyReplacesFromTempCache() {
+  void byIndexStreamReplacesFromTempCache() {
     var original = testDeployment();
     var newer = testDeployment();
     newer.getMetadata().setResourceVersion("5");
 
     when(temporaryResourceCache.getResources())
-        .thenReturn(Map.of(ResourceID.fromResource(original), newer));
+        .thenReturn(new HashMap<>(Map.of(ResourceID.fromResource(original), newer)));
 
     var informerManager = mock(InformerManager.class);
     when(informerManager.byIndexStream(any(), any())).thenReturn(Stream.of(original));
     doReturn(informerManager).when(informerEventSource).manager();
     informerEventSource.addIndexers(Map.of("idx", d -> List.of("key")));
 
-    var result = informerEventSource.byIndexStreamWithStrongConsistency("idx", "key").toList();
+    var result = informerEventSource.byIndexStream("idx", "key").toList();
 
     assertThat(result).containsExactly(newer);
   }
 
   @Test
-  void listWithStrongConsistencyKeepsResourceWhenTempCacheHasOlderVersion() {
+  void byIndexStreamSkipsNewerTempCacheResourceWhenIndexedValueChanged() {
+    var original = testDeployment();
+    original.getMetadata().setLabels(Map.of("app", "key"));
+    var newer = testDeployment();
+    newer.getMetadata().setResourceVersion("5");
+    newer.getMetadata().setLabels(Map.of("app", "other"));
+
+    when(temporaryResourceCache.getResources())
+        .thenReturn(new HashMap<>(Map.of(ResourceID.fromResource(original), newer)));
+
+    var informerManager = mock(InformerManager.class);
+    when(informerManager.byIndexStream(any(), any())).thenReturn(Stream.of(original));
+    doReturn(informerManager).when(informerEventSource).manager();
+    informerEventSource.addIndexers(
+        Map.of("idx", d -> List.of(d.getMetadata().getLabels().get("app"))));
+
+    var result = informerEventSource.byIndexStream("idx", "key").toList();
+
+    assertThat(result).isEmpty();
+  }
+
+  @Test
+  void listKeepsResourceWhenTempCacheHasOlderVersion() {
     var original = testDeployment();
     original.getMetadata().setResourceVersion("5");
     var olderTemp = testDeployment();
     olderTemp.getMetadata().setResourceVersion("3");
 
     when(temporaryResourceCache.getResources())
-        .thenReturn(Map.of(ResourceID.fromResource(original), olderTemp));
+        .thenReturn(new HashMap<>(Map.of(ResourceID.fromResource(original), olderTemp)));
 
     var mim = mock(InformerManager.class);
     when(mim.list(nullable(String.class), any())).thenReturn(Stream.of(original));
     doReturn(mim).when(informerEventSource).manager();
 
-    var result = informerEventSource.listWithStrongConsistency(null, r -> true).toList();
+    var result = informerEventSource.list(null, r -> true).toList();
 
     assertThat(result).containsExactly(original);
   }
 
   @Test
-  void byIndexStreamWithStrongConsistencyKeepsResourceWhenTempCacheHasOlderVersion() {
+  void byIndexStreamKeepsResourceWhenTempCacheHasOlderVersion() {
     var original = testDeployment();
     original.getMetadata().setResourceVersion("5");
     var olderTemp = testDeployment();
     olderTemp.getMetadata().setResourceVersion("3");
 
     when(temporaryResourceCache.getResources())
-        .thenReturn(Map.of(ResourceID.fromResource(original), olderTemp));
+        .thenReturn(new HashMap<>(Map.of(ResourceID.fromResource(original), olderTemp)));
 
     var mim = mock(InformerManager.class);
     when(mim.byIndexStream(any(), any())).thenReturn(Stream.of(original));
     doReturn(mim).when(informerEventSource).manager();
     informerEventSource.addIndexers(Map.of("idx", d -> List.of("key")));
 
-    var result = informerEventSource.byIndexStreamWithStrongConsistency("idx", "key").toList();
+    var result = informerEventSource.byIndexStream("idx", "key").toList();
 
     assertThat(result).containsExactly(original);
   }
 
   @Test
-  void listWithStrongConsistencyAddsGhostResources() {
+  void listAddsGhostResources() {
     var resource = testDeployment();
     var ghostResource = testDeployment();
     ghostResource.getMetadata().setName("ghost");
 
     when(temporaryResourceCache.getResources())
-        .thenReturn(Map.of(ResourceID.fromResource(ghostResource), ghostResource));
+        .thenReturn(new HashMap<>(Map.of(ResourceID.fromResource(ghostResource), ghostResource)));
 
     var mim = mock(InformerManager.class);
     when(mim.list(nullable(String.class), any())).thenReturn(Stream.of(resource));
     doReturn(mim).when(informerEventSource).manager();
 
-    var result = informerEventSource.listWithStrongConsistency(null, r -> true).toList();
+    var result = informerEventSource.list(null, r -> true).toList();
 
     assertThat(result).containsExactlyInAnyOrder(resource, ghostResource);
+  }
+
+  @Test
+  void keysIncludesGhostResourceKeys() {
+    var resource = testDeployment();
+    var ghostResource = testDeployment();
+    ghostResource.getMetadata().setName("ghost");
+
+    var resourceId = ResourceID.fromResource(resource);
+    var ghostResourceId = ResourceID.fromResource(ghostResource);
+
+    when(temporaryResourceCache.getResources()).thenReturn(Map.of(ghostResourceId, ghostResource));
+    when(temporaryResourceCache.isEmpty()).thenReturn(false);
+
+    var mim = mock(InformerManager.class);
+    when(mim.keys()).thenReturn(Stream.of(resourceId));
+    when(mim.contains(ghostResourceId)).thenReturn(false);
+    doReturn(mim).when(informerEventSource).manager();
+
+    var result = informerEventSource.keys().toList();
+
+    assertThat(result).containsExactlyInAnyOrder(resourceId, ghostResourceId);
+  }
+
+  @Test
+  void keysDoesNotDuplicateExistingKeys() {
+    var resource = testDeployment();
+    var newerResource = testDeployment();
+    newerResource.getMetadata().setResourceVersion("5");
+
+    var resourceId = ResourceID.fromResource(resource);
+
+    when(temporaryResourceCache.getResources()).thenReturn(Map.of(resourceId, newerResource));
+    when(temporaryResourceCache.isEmpty()).thenReturn(false);
+
+    var mim = mock(InformerManager.class);
+    when(mim.keys()).thenReturn(Stream.of(resourceId));
+    when(mim.contains(resourceId)).thenReturn(true);
+    doReturn(mim).when(informerEventSource).manager();
+
+    var result = informerEventSource.keys().toList();
+
+    assertThat(result).containsExactly(resourceId);
   }
 
   Deployment testDeployment() {
