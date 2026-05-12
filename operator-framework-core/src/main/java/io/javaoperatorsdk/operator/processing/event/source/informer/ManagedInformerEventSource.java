@@ -353,7 +353,10 @@ public abstract class ManagedInformerEventSource<
       String namespace, Predicate<R> predicate) {
     return r -> {
       if (namespace != null) {
-        var res = Optional.of(r).map(ns -> ns.equals(namespace)).orElse(false);
+        var res =
+            Optional.of(r)
+                .map(rr -> namespace.equals(rr.getMetadata().getNamespace()))
+                .orElse(false);
         if (!res) return false;
       }
       if (predicate != null) {

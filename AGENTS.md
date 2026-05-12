@@ -186,7 +186,7 @@ public class ConfigMapDependent extends CRUDKubernetesDependentResource<ConfigMa
 - Keep changes focused and atomic
 - We use conventional commits 
 - Reference issues in commit messages when applicable
-- Ensure CI checks pass (format, license, tests)
+  - Ensure CI checks pass (format, license, tests)
 
 ### Documentation Update
 
