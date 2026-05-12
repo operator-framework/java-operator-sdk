@@ -24,9 +24,22 @@ import io.javaoperatorsdk.operator.processing.event.source.Cache;
 @SuppressWarnings("unchecked")
 public interface ResourceCache<T extends HasMetadata> extends Cache<T> {
 
+  /**
+   * Lists all resources in the given namespace.
+   *
+   * @param namespace the namespace to list resources from
+   * @return a stream of all cached resources in the namespace
+   */
   default Stream<T> list(String namespace) {
     return list(namespace, TRUE);
   }
 
+  /**
+   * Lists resources in the given namespace that match the provided predicate.
+   *
+   * @param namespace the namespace to list resources from
+   * @param predicate filter to apply on the resources
+   * @return a stream of cached resources matching the predicate
+   */
   Stream<T> list(String namespace, Predicate<T> predicate);
 }
