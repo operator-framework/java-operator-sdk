@@ -385,8 +385,9 @@ public abstract class ManagedInformerEventSource<
     if (!comparableResourceVersions || temporaryResourceCache.isEmpty()) {
       return manager().keys();
     }
+    var managerKeys = manager().keys().collect(Collectors.toSet());
     var tempKeys = temporaryResourceCache.getResources().keySet();
-    return Stream.concat(manager().keys(), tempKeys.stream().filter(k -> !manager().contains(k)));
+    return Stream.concat(managerKeys.stream(), tempKeys.stream().filter(k -> !managerKeys.contains(k)));
   }
 
   @Override
