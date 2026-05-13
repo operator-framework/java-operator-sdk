@@ -15,10 +15,7 @@
  */
 package io.javaoperatorsdk.operator.processing.event.source.informer;
 
-import java.time.Duration;
 import java.util.Map;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -31,7 +28,6 @@ import io.javaoperatorsdk.operator.processing.event.source.ResourceAction;
 import io.javaoperatorsdk.operator.processing.event.source.informer.TemporaryResourceCache.EventHandling;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.awaitility.Awaitility.await;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
@@ -45,7 +41,6 @@ import static org.mockito.Mockito.when;
 class TemporaryResourceCacheTest {
 
   public static final String RESOURCE_VERSION = "2";
-  public static final int GHOST_RESOURCE_CHECK_INTERVAL = 100;
 
   private TemporaryResourceCache<ConfigMap> temporaryResourceCache;
   private volatile String latestSyncVersion;
@@ -60,9 +55,7 @@ class TemporaryResourceCacheTest {
     when(managedInformerEventSource.manager()).thenReturn(mim);
     when(mim.isWatchingNamespace(any())).thenReturn(true);
     when(mim.lastSyncResourceVersion(any())).then(a -> latestSyncVersion);
-    temporaryResourceCache =
-        new TemporaryResourceCache<>(
-            true, 0, mock(ScheduledExecutorService.class), managedInformerEventSource);
+    temporaryResourceCache = new TemporaryResourceCache<>(true, managedInformerEventSource);
   }
 
   @Test
@@ -139,8 +132,7 @@ class TemporaryResourceCacheTest {
   @Test
   void nonComparableResourceVersionsDisables() {
     this.temporaryResourceCache =
-        new TemporaryResourceCache<>(
-            false, 0, mock(ScheduledExecutorService.class), mock(ManagedInformerEventSource.class));
+        new TemporaryResourceCache<>(false, mock(ManagedInformerEventSource.class));
 
     this.temporaryResourceCache.putResource(testResource());
 
@@ -323,72 +315,34 @@ class TemporaryResourceCacheTest {
 
   @Test
   void removalOfGhostResources() {
-    withTemporaryResourceCacheForGhostHandling();
-
     var tr = testResource();
     this.temporaryResourceCache.putResource(tr);
 
-    await()
-        .pollDelay(Duration.ofMillis(2 * GHOST_RESOURCE_CHECK_INTERVAL))
-        .untilAsserted(
-            () ->
-                assertThat(temporaryResourceCache.getResourceFromCache(ResourceID.fromResource(tr)))
-                    .isPresent());
+    // ghost check should not remove when latestSyncVersion is not ahead
+    temporaryResourceCache.checkGhostResources();
+    assertThat(temporaryResourceCache.getResourceFromCache(ResourceID.fromResource(tr)))
+        .isPresent();
 
     latestSyncVersion = "3";
 
-    await()
-        .untilAsserted(
-            () ->
-                assertThat(temporaryResourceCache.getResourceFromCache(ResourceID.fromResource(tr)))
-                    .isEmpty());
+    temporaryResourceCache.checkGhostResources();
+    assertThat(temporaryResourceCache.getResourceFromCache(ResourceID.fromResource(tr))).isEmpty();
     verify(managedInformerEventSource, times(1))
         .handleEvent(eq(ResourceAction.DELETED), eq(tr), isNull(), eq(true));
   }
 
   @Test
-  void checksGhostOnlyWithCertainDelay() {
-    withTemporaryResourceCacheForGhostHandling();
-    this.temporaryResourceCache.putResource(testResource());
-    latestSyncVersion = "3";
-    await()
-        .pollDelay(Duration.ofMillis(GHOST_RESOURCE_CHECK_INTERVAL / 5))
-        .untilAsserted(
-            () ->
-                assertThat(
-                        temporaryResourceCache.getResourceFromCache(
-                            ResourceID.fromResource(testResource())))
-                    .isPresent());
-
-    await()
-        .untilAsserted(
-            () ->
-                assertThat(
-                        temporaryResourceCache.getResourceFromCache(
-                            ResourceID.fromResource(testResource())))
-                    .isEmpty());
-  }
-
-  @Test
   void ghostResourceIsNotRemovedIfLatestSyncVersionIsOlder() {
-    withTemporaryResourceCacheForGhostHandling();
     this.temporaryResourceCache.putResource(testResource());
     latestSyncVersion = "1";
 
-    await()
-        .pollDelay(Duration.ofMillis(GHOST_RESOURCE_CHECK_INTERVAL * 2))
-        .untilAsserted(
-            () ->
-                assertThat(
-                        temporaryResourceCache.getResourceFromCache(
-                            ResourceID.fromResource(testResource())))
-                    .isPresent());
+    temporaryResourceCache.checkGhostResources();
+    assertThat(temporaryResourceCache.getResourceFromCache(ResourceID.fromResource(testResource())))
+        .isPresent();
   }
 
   @Test
   void ghostRemovalRemovesResourcesOnNotFollowedNamespaces() {
-    withTemporaryResourceCacheForGhostHandling();
-
     var tr = testResource();
     temporaryResourceCache.putResource(tr);
 
@@ -399,11 +353,8 @@ class TemporaryResourceCacheTest {
     var mim = managedInformerEventSource.manager();
     when(mim.isWatchingNamespace(tr.getMetadata().getNamespace())).thenReturn(false);
 
-    await()
-        .untilAsserted(
-            () ->
-                assertThat(temporaryResourceCache.getResourceFromCache(ResourceID.fromResource(tr)))
-                    .isEmpty());
+    temporaryResourceCache.checkGhostResources();
+    assertThat(temporaryResourceCache.getResourceFromCache(ResourceID.fromResource(tr))).isEmpty();
 
     // no delete event should be fired for resources removed due to namespace change
     verify(managedInformerEventSource, times(0))
@@ -419,15 +370,6 @@ class TemporaryResourceCacheTest {
     temporaryResourceCache.putResource(tr);
 
     assertThat(temporaryResourceCache.getResourceFromCache(ResourceID.fromResource(tr))).isEmpty();
-  }
-
-  private void withTemporaryResourceCacheForGhostHandling() {
-    this.temporaryResourceCache =
-        new TemporaryResourceCache<>(
-            true,
-            GHOST_RESOURCE_CHECK_INTERVAL,
-            Executors.newScheduledThreadPool(1),
-            managedInformerEventSource);
   }
 
   private ConfigMap propagateTestResourceToCache() {

@@ -19,8 +19,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -71,18 +69,9 @@ public class TemporaryResourceCache<T extends HasMetadata> {
 
   public TemporaryResourceCache(
       boolean comparableResourceVersions,
-      long ghostResourceCheckInterval,
-      ScheduledExecutorService ghostCheckExecutor,
       ManagedInformerEventSource<T, ?, ?> managedInformerEventSource) {
     this.comparableResourceVersions = comparableResourceVersions;
     this.managedInformerEventSource = managedInformerEventSource;
-    if (comparableResourceVersions) {
-      ghostCheckExecutor.scheduleWithFixedDelay(
-          this::checkGhostResources,
-          ghostResourceCheckInterval,
-          ghostResourceCheckInterval,
-          TimeUnit.MILLISECONDS);
-    }
   }
 
   public synchronized void startEventFilteringModify(ResourceID resourceID) {
@@ -238,9 +227,10 @@ public class TemporaryResourceCache<T extends HasMetadata> {
    * resources: when we create a resource that is deleted right after by third party and the related
    * informer have a disconnected watch and this watch needs to do a re-list when connected again.
    * In this case neither the ADD nor DELETE event will be propagated to the informer, but we
-   * explicitly add resources to this cache. Those are cleaned up by this check.
+   * explicitly add resources to this cache. Those are cleaned up by this check, which is triggered
+   * by the informer's onList callback.
    */
-  private void checkGhostResources() {
+  public void checkGhostResources() {
     log.debug("Checking for ghost resources.");
     var iterator = cache.entrySet().iterator();
     while (iterator.hasNext()) {

@@ -153,15 +153,7 @@ public abstract class ManagedInformerEventSource<
     if (isRunning()) {
       return;
     }
-    temporaryResourceCache =
-        new TemporaryResourceCache<>(
-            comparableResourceVersions,
-            configuration.getInformerConfig().getGhostResourceCacheCheckInterval().toMillis(),
-            controllerConfiguration
-                .getConfigurationService()
-                .getExecutorServiceManager()
-                .scheduledExecutorService(),
-            this);
+    temporaryResourceCache = new TemporaryResourceCache<>(comparableResourceVersions, this);
     this.cache = new InformerManager<>(client, configuration, this);
     cache.setControllerConfiguration(controllerConfiguration);
     cache.addIndexers(indexers);
@@ -176,6 +168,11 @@ public abstract class ManagedInformerEventSource<
     }
     super.stop();
     manager().stop();
+  }
+
+  @Override
+  public void onList(String resourceVersion, boolean remainedEmpty) {
+    temporaryResourceCache.checkGhostResources();
   }
 
   @Override

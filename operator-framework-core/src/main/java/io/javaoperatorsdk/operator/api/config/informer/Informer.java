@@ -27,7 +27,6 @@ import io.javaoperatorsdk.operator.processing.event.source.filter.GenericFilter;
 import io.javaoperatorsdk.operator.processing.event.source.filter.OnAddFilter;
 import io.javaoperatorsdk.operator.processing.event.source.filter.OnDeleteFilter;
 import io.javaoperatorsdk.operator.processing.event.source.filter.OnUpdateFilter;
-import io.javaoperatorsdk.operator.processing.event.source.informer.TemporaryResourceCache;
 
 import static io.javaoperatorsdk.operator.api.reconciler.Constants.DEFAULT_COMPARABLE_RESOURCE_VERSION;
 import static io.javaoperatorsdk.operator.api.reconciler.Constants.DEFAULT_FOLLOW_CONTROLLER_NAMESPACE_CHANGES;
@@ -143,11 +142,9 @@ public @interface Informer {
   boolean comparableResourceVersions() default DEFAULT_COMPARABLE_RESOURCE_VERSION;
 
   /**
-   * For read-cache-after-write consistency there are some corner cases where we need to check the
-   * caches see {@link TemporaryResourceCache} periodically. This is the period in milliseconds.
-   * Applicable only if {@link #comparableResourceVersions()} is true.
-   *
-   * @since 5.3.0
+   * @deprecated Ghost resource checking is now triggered by the informer's onList callback. This
+   *     setting is no longer used.
    */
+  @Deprecated(forRemoval = true)
   long ghostResourceCacheCheckInterval() default DEFAULT_GHOST_RESOURCE_CHECK_INTERVAL_MILLIS;
 }
