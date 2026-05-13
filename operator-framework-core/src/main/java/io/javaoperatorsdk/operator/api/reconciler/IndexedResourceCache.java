@@ -24,5 +24,7 @@ public interface IndexedResourceCache<T extends HasMetadata> extends ResourceCac
 
   List<T> byIndex(String indexName, String indexKey);
 
-  Stream<T> byIndexStream(String indexName, String indexKey);
+  default Stream<T> byIndexStream(String indexName, String indexKey) {
+    return byIndex(indexName, indexKey).stream();
+  }
 }

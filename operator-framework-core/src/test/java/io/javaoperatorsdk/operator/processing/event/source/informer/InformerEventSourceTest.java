@@ -42,6 +42,7 @@ import io.javaoperatorsdk.operator.api.config.informer.InformerConfiguration;
 import io.javaoperatorsdk.operator.api.config.informer.InformerEventSourceConfiguration;
 import io.javaoperatorsdk.operator.processing.event.EventHandler;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
+import io.javaoperatorsdk.operator.processing.event.source.Cache;
 import io.javaoperatorsdk.operator.processing.event.source.EventFilterTestUtils;
 import io.javaoperatorsdk.operator.processing.event.source.ResourceAction;
 import io.javaoperatorsdk.operator.processing.event.source.SecondaryToPrimaryMapper;
@@ -534,7 +535,7 @@ class InformerEventSourceTest {
     when(mim.list(nullable(String.class), any())).thenReturn(Stream.of(original));
     doReturn(mim).when(informerEventSource).manager();
 
-    var result = informerEventSource.list(null, r -> true).toList();
+    var result = informerEventSource.list(null, Cache.TRUE).toList();
 
     assertThat(result).containsExactly(newer);
   }

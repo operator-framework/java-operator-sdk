@@ -263,7 +263,7 @@ class InformerManager<R extends HasMetadata, C extends Informable<R>>
 
   @Override
   public List<R> byIndex(String indexName, String indexKey) {
-    return byIndexStream(indexName, indexKey).collect(Collectors.toList());
+    return byIndexStream(indexName, indexKey).toList();
   }
 
   @Override

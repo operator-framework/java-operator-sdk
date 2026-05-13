@@ -251,7 +251,7 @@ public abstract class ManagedInformerEventSource<
    */
   @Override
   public Stream<R> list(Predicate<R> predicate) {
-    return mergeWithTempCacheForList(cache.list(), null, predicate);
+    return mergeWithTempCacheForList(manager().list(), null, predicate);
   }
 
   /**
