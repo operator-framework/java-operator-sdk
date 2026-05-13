@@ -303,7 +303,7 @@ public abstract class ManagedInformerEventSource<
                   }
                   return r;
                 })
-            // we filter on predicate only since namespace changes would not be detected any ways.
+            // we filter on predicate only since namespace changes would not be detected anyway.
             .filter(filterResourceByPredicate(predicate))
             .toList();
 
