@@ -107,10 +107,6 @@ class InformerManager<R extends HasMetadata, C extends Informable<R>>
     }
   }
 
-  C configuration() {
-    return configuration;
-  }
-
   public void changeNamespaces(Set<String> namespaces) {
     var sourcesToRemove =
         sources.keySet().stream().filter(k -> !namespaces.contains(k)).collect(Collectors.toSet());
