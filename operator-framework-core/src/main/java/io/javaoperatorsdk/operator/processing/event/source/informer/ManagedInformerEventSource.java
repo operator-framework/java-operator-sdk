@@ -286,7 +286,7 @@ public abstract class ManagedInformerEventSource<
 
       return stream.filter(filterResourceByPredicate(predicate));
     }
-    var tempResources = new HashMap<>(temporaryResourceCache.getResources());
+    var tempResources = temporaryResourceCache.getResources();
     if (tempResources.isEmpty()) {
       return stream.filter(filterResourceByPredicate(predicate));
     }
