@@ -258,7 +258,7 @@ class InformerManager<R extends HasMetadata, C extends Informable<R>>
 
   @Override
   public Stream<R> byIndexStream(String indexName, String indexKey) {
-    return sources.values().stream().map(s -> s.byIndex(indexName, indexKey)).flatMap(List::stream);
+    return sources.values().stream().flatMap(s -> s.byIndexStream(indexName, indexKey));
   }
 
   @Override
