@@ -240,7 +240,7 @@ public abstract class ManagedInformerEventSource<
    */
   @Override
   public Stream<R> list(String namespace, Predicate<R> predicate) {
-    return mergeWithTempCacheForList(manager().list(namespace, predicate), namespace, predicate);
+    return mergeWithTempCacheForList(manager().list(namespace), namespace, predicate);
   }
 
   /**
@@ -251,7 +251,7 @@ public abstract class ManagedInformerEventSource<
    */
   @Override
   public Stream<R> list(Predicate<R> predicate) {
-    return mergeWithTempCacheForList(cache.list(predicate), null, predicate);
+    return mergeWithTempCacheForList(cache.list(), null, predicate);
   }
 
   /**
@@ -279,14 +279,16 @@ public abstract class ManagedInformerEventSource<
         .collect(Collectors.toList());
   }
 
+  // namespace is filtered on informer manager level
   private Stream<R> mergeWithTempCacheForList(
       Stream<R> stream, String namespace, Predicate<R> predicate) {
     if (!comparableResourceVersions || temporaryResourceCache.isEmpty()) {
-      return stream.filter(filterResourceByNamespaceAndPredicate(namespace, predicate));
+
+      return stream.filter(filterResourceByPredicate(predicate));
     }
     var tempResources = new HashMap<>(temporaryResourceCache.getResources());
     if (tempResources.isEmpty()) {
-      return stream.filter(filterResourceByNamespaceAndPredicate(namespace, predicate));
+      return stream.filter(filterResourceByPredicate(predicate));
     }
 
     var upToDateList =
@@ -301,7 +303,8 @@ public abstract class ManagedInformerEventSource<
                   }
                   return r;
                 })
-            .filter(filterResourceByNamespaceAndPredicate(namespace, predicate))
+            // we filter on predicate only since namespace changes would not be detected any ways.
+            .filter(filterResourceByPredicate(predicate))
             .toList();
 
     return Stream.concat(
@@ -347,6 +350,11 @@ public abstract class ManagedInformerEventSource<
     return Stream.concat(
         tempResources.values().stream().filter(r -> indexer.apply(r).contains(indexKey)),
         upToDateList.stream());
+  }
+
+  private static <R extends HasMetadata> Predicate<R> filterResourceByPredicate(
+      Predicate<R> predicate) {
+    return filterResourceByNamespaceAndPredicate(null, predicate);
   }
 
   private static <R extends HasMetadata> Predicate<R> filterResourceByNamespaceAndPredicate(

@@ -568,7 +568,7 @@ class InformerEventSourceTest {
     when(temporaryResourceCache.getResources()).thenReturn(new HashMap<>());
 
     var mim = mock(InformerManager.class);
-    when(mim.list(nullable(String.class), any())).thenReturn(Stream.of(original));
+    when(mim.list(nullable(String.class))).thenReturn(Stream.of(original));
     doReturn(mim).when(informerEventSource).manager();
 
     var result = informerEventSource.list(null, r -> true).toList();
@@ -588,7 +588,7 @@ class InformerEventSourceTest {
         .thenReturn(new HashMap<>(Map.of(ResourceID.fromResource(dep1), newerDep1)));
 
     var informerManager = mock(InformerManager.class);
-    when(informerManager.list(nullable(String.class), any())).thenReturn(Stream.of(dep1, dep2));
+    when(informerManager.list(nullable(String.class))).thenReturn(Stream.of(dep1, dep2));
     doReturn(informerManager).when(informerEventSource).manager();
 
     var result = informerEventSource.list(null, r -> true).toList();
@@ -648,7 +648,7 @@ class InformerEventSourceTest {
         .thenReturn(new HashMap<>(Map.of(ResourceID.fromResource(original), olderTemp)));
 
     var mim = mock(InformerManager.class);
-    when(mim.list(nullable(String.class), any())).thenReturn(Stream.of(original));
+    when(mim.list(nullable(String.class))).thenReturn(Stream.of(original));
     doReturn(mim).when(informerEventSource).manager();
 
     var result = informerEventSource.list(null, r -> true).toList();
@@ -686,7 +686,7 @@ class InformerEventSourceTest {
         .thenReturn(new HashMap<>(Map.of(ResourceID.fromResource(ghostResource), ghostResource)));
 
     var mim = mock(InformerManager.class);
-    when(mim.list(nullable(String.class), any())).thenReturn(Stream.of(resource));
+    when(mim.list(nullable(String.class))).thenReturn(Stream.of(resource));
     doReturn(mim).when(informerEventSource).manager();
 
     var result = informerEventSource.list(null, r -> true).toList();
