@@ -318,7 +318,7 @@ public abstract class ManagedInformerEventSource<
     if (!comparableResourceVersions || temporaryResourceCache.isEmpty()) {
       return stream;
     }
-    var tempResources = new HashMap<>(temporaryResourceCache.getResources());
+    var tempResources = temporaryResourceCache.getResources();
     if (tempResources.isEmpty()) {
       return stream;
     }
