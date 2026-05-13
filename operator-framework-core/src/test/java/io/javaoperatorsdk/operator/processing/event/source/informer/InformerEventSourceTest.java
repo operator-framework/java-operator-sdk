@@ -60,7 +60,6 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.ArgumentMatchers.nullable;
 import static org.mockito.Mockito.atLeastOnce;
-import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.spy;
@@ -533,7 +532,7 @@ class InformerEventSourceTest {
 
     var mim = mock(InformerManager.class);
     when(mim.list(nullable(String.class))).thenReturn(Stream.of(original));
-    doReturn(mim).when(informerEventSource).manager();
+    when(informerEventSource.manager()).thenReturn(mim);
 
     var result = informerEventSource.list(null, Cache.TRUE).toList();
 
@@ -552,7 +551,7 @@ class InformerEventSourceTest {
 
     var mim = mock(InformerManager.class);
     when(mim.list(nullable(String.class), any())).thenReturn(Stream.of(original));
-    doReturn(mim).when(informerEventSource).manager();
+    when(informerEventSource.manager()).thenReturn(mim);
 
     var result =
         informerEventSource
@@ -570,7 +569,7 @@ class InformerEventSourceTest {
 
     var mim = mock(InformerManager.class);
     when(mim.list(nullable(String.class))).thenReturn(Stream.of(original));
-    doReturn(mim).when(informerEventSource).manager();
+    when(informerEventSource.manager()).thenReturn(mim);
 
     var result = informerEventSource.list(null, r -> true).toList();
 
@@ -590,7 +589,7 @@ class InformerEventSourceTest {
 
     var informerManager = mock(InformerManager.class);
     when(informerManager.list(nullable(String.class))).thenReturn(Stream.of(dep1, dep2));
-    doReturn(informerManager).when(informerEventSource).manager();
+    when(informerEventSource.manager()).thenReturn(informerManager);
 
     var result = informerEventSource.list(null, r -> true).toList();
 
@@ -608,7 +607,7 @@ class InformerEventSourceTest {
 
     var informerManager = mock(InformerManager.class);
     when(informerManager.byIndexStream(any(), any())).thenReturn(Stream.of(original));
-    doReturn(informerManager).when(informerEventSource).manager();
+    when(informerEventSource.manager()).thenReturn(informerManager);
     informerEventSource.addIndexers(Map.of("idx", d -> List.of("key")));
 
     var result = informerEventSource.byIndexStream("idx", "key").toList();
@@ -629,7 +628,7 @@ class InformerEventSourceTest {
 
     var informerManager = mock(InformerManager.class);
     when(informerManager.byIndexStream(any(), any())).thenReturn(Stream.of(original));
-    doReturn(informerManager).when(informerEventSource).manager();
+    when(informerEventSource.manager()).thenReturn(informerManager);
     informerEventSource.addIndexers(
         Map.of("idx", d -> List.of(d.getMetadata().getLabels().get("app"))));
 
@@ -650,7 +649,7 @@ class InformerEventSourceTest {
 
     var mim = mock(InformerManager.class);
     when(mim.list(nullable(String.class))).thenReturn(Stream.of(original));
-    doReturn(mim).when(informerEventSource).manager();
+    when(informerEventSource.manager()).thenReturn(mim);
 
     var result = informerEventSource.list(null, r -> true).toList();
 
@@ -669,7 +668,7 @@ class InformerEventSourceTest {
 
     var mim = mock(InformerManager.class);
     when(mim.byIndexStream(any(), any())).thenReturn(Stream.of(original));
-    doReturn(mim).when(informerEventSource).manager();
+    when(informerEventSource.manager()).thenReturn(mim);
     informerEventSource.addIndexers(Map.of("idx", d -> List.of("key")));
 
     var result = informerEventSource.byIndexStream("idx", "key").toList();
@@ -688,7 +687,7 @@ class InformerEventSourceTest {
 
     var mim = mock(InformerManager.class);
     when(mim.list(nullable(String.class))).thenReturn(Stream.of(resource));
-    doReturn(mim).when(informerEventSource).manager();
+    when(informerEventSource.manager()).thenReturn(mim);
 
     var result = informerEventSource.list(null, r -> true).toList();
 
@@ -710,7 +709,7 @@ class InformerEventSourceTest {
     var mim = mock(InformerManager.class);
     when(mim.keys()).thenReturn(Stream.of(resourceId));
     when(mim.contains(ghostResourceId)).thenReturn(false);
-    doReturn(mim).when(informerEventSource).manager();
+    when(informerEventSource.manager()).thenReturn(mim);
 
     var result = informerEventSource.keys().toList();
 
@@ -731,7 +730,7 @@ class InformerEventSourceTest {
     var mim = mock(InformerManager.class);
     when(mim.keys()).thenReturn(Stream.of(resourceId));
     when(mim.contains(resourceId)).thenReturn(true);
-    doReturn(mim).when(informerEventSource).manager();
+    when(informerEventSource.manager()).thenReturn(mim);
 
     var result = informerEventSource.keys().toList();
 
