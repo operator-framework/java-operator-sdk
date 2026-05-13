@@ -15,6 +15,7 @@
  */
 package io.javaoperatorsdk.operator.processing.event.source.informer;
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
@@ -271,6 +272,6 @@ public class TemporaryResourceCache<T extends HasMetadata> {
   }
 
   synchronized Map<ResourceID, T> getResources() {
-    return new HashMap<>(cache);
+    return Collections.unmodifiableMap(cache);
   }
 }

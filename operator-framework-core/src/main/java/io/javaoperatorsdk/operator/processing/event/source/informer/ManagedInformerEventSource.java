@@ -286,7 +286,7 @@ public abstract class ManagedInformerEventSource<
 
       return stream.filter(filterResourceByPredicate(predicate));
     }
-    var tempResources = temporaryResourceCache.getResources();
+    var tempResources = new HashMap<>(temporaryResourceCache.getResources());
     if (tempResources.isEmpty()) {
       return stream.filter(filterResourceByPredicate(predicate));
     }
@@ -318,7 +318,7 @@ public abstract class ManagedInformerEventSource<
     if (!comparableResourceVersions || temporaryResourceCache.isEmpty()) {
       return stream;
     }
-    var tempResources = temporaryResourceCache.getResources();
+    var tempResources = new HashMap<>(temporaryResourceCache.getResources());
     if (tempResources.isEmpty()) {
       return stream;
     }
