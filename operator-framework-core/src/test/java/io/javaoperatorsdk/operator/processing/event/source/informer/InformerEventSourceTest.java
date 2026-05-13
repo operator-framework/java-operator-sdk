@@ -532,7 +532,7 @@ class InformerEventSourceTest {
         .thenReturn(new HashMap<>(Map.of(ResourceID.fromResource(original), newer)));
 
     var mim = mock(InformerManager.class);
-    when(mim.list(nullable(String.class), any())).thenReturn(Stream.of(original));
+    when(mim.list(nullable(String.class))).thenReturn(Stream.of(original));
     doReturn(mim).when(informerEventSource).manager();
 
     var result = informerEventSource.list(null, Cache.TRUE).toList();
