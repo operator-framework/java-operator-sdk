@@ -39,38 +39,40 @@ public class CachingFilteringUpdateReconciler
   public static final String RESOURCE_VERSION_INDEX = "resourceVersionIndex";
   private final AtomicBoolean issueFound = new AtomicBoolean(false);
 
-  InformerEventSource<ConfigMap, CachingFilteringUpdateCustomResource> configMapEventSource;
+  private InformerEventSource<ConfigMap, CachingFilteringUpdateCustomResource> configMapEventSource;
 
   @Override
   public UpdateControl<CachingFilteringUpdateCustomResource> reconcile(
       CachingFilteringUpdateCustomResource resource,
       Context<CachingFilteringUpdateCustomResource> context) {
+    try {
+      var updated = context.resourceOperations().serverSideApply(prepareCM(resource, 1));
+      var cachedCM = context.getSecondaryResource(ConfigMap.class);
+      if (cachedCM.isEmpty()) {
+        throw new IllegalStateException("Error for resource: " + ResourceID.fromResource(resource));
+      }
+      checkListContainsCM(updated);
+      checkIfResourceVersionIndexContainsUpdated(updated);
+      updated = context.resourceOperations().serverSideApply(prepareCM(resource, 2));
+      cachedCM = context.getSecondaryResource(ConfigMap.class);
+      if (!cachedCM
+          .orElseThrow()
+          .getMetadata()
+          .getResourceVersion()
+          .equals(updated.getMetadata().getResourceVersion())) {
+        throw new IllegalStateException(
+            "Update error for resource: " + ResourceID.fromResource(resource));
+      }
+      checkListContainsCM(updated);
+      checkIfResourceVersionIndexContainsUpdated(updated);
 
-    var updated = context.resourceOperations().serverSideApply(prepareCM(resource, 1));
-    var cachedCM = context.getSecondaryResource(ConfigMap.class);
-    if (cachedCM.isEmpty()) {
+      ensureStatusExists(resource);
+      resource.getStatus().setUpdated(true);
+      return UpdateControl.patchStatus(resource);
+    } catch (IllegalStateException e) {
       issueFound.set(true);
-      throw new IllegalStateException("Error for resource: " + ResourceID.fromResource(resource));
+      throw e;
     }
-    checkListContainsCM(updated);
-    checkIfResourceVersionIndexContainsUpdated(updated);
-    updated = context.resourceOperations().serverSideApply(prepareCM(resource, 2));
-    cachedCM = context.getSecondaryResource(ConfigMap.class);
-    if (!cachedCM
-        .orElseThrow()
-        .getMetadata()
-        .getResourceVersion()
-        .equals(updated.getMetadata().getResourceVersion())) {
-      issueFound.set(true);
-      throw new IllegalStateException(
-          "Update error for resource: " + ResourceID.fromResource(resource));
-    }
-    checkListContainsCM(updated);
-    checkIfResourceVersionIndexContainsUpdated(updated);
-
-    ensureStatusExists(resource);
-    resource.getStatus().setUpdated(true);
-    return UpdateControl.patchStatus(resource);
   }
 
   private void checkIfResourceVersionIndexContainsUpdated(ConfigMap updated) {
