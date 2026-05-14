@@ -19,8 +19,6 @@ import java.time.Duration;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -38,7 +36,6 @@ import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.config.InformerStoppedHandler;
 import io.javaoperatorsdk.operator.api.config.informer.InformerConfiguration;
 import io.javaoperatorsdk.operator.api.config.informer.InformerEventSourceConfiguration;
-import io.javaoperatorsdk.operator.api.reconciler.Constants;
 import io.javaoperatorsdk.operator.processing.event.EventHandler;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
 import io.javaoperatorsdk.operator.processing.event.source.EventFilterTestUtils;
@@ -89,8 +86,6 @@ class InformerEventSourceTest {
     when(informerEventSourceConfiguration.getInformerConfig()).thenReturn(informerConfig);
     when(informerConfig.getEffectiveNamespaces(any())).thenReturn(DEFAULT_NAMESPACES_SET);
     when(informerEventSourceConfiguration.getResourceClass()).thenReturn(Deployment.class);
-    when(informerConfig.getGhostResourceCacheCheckInterval())
-        .thenReturn(Constants.DEFAULT_GHOST_RESOURCE_CHECK_INTERVAL);
     informerEventSource =
         spy(
             new InformerEventSource<>(informerEventSourceConfiguration, clientMock) {
@@ -349,8 +344,7 @@ class InformerEventSourceTest {
     when(mim.lastSyncResourceVersion(any())).thenReturn("1");
     when(mim.get(any())).thenReturn(Optional.empty());
 
-    var ghostCheckExecutor = Executors.newScheduledThreadPool(1);
-    temporaryResourceCache = spy(new TemporaryResourceCache<>(true, 50, ghostCheckExecutor, mes));
+    temporaryResourceCache = spy(new TemporaryResourceCache<>(true, mes));
     informerEventSource.setTemporalResourceCache(temporaryResourceCache);
 
     // put resource in cache and start a filtering update
@@ -363,15 +357,12 @@ class InformerEventSourceTest {
     when(mim.lastSyncResourceVersion(any())).thenReturn("3");
 
     // ghost check should remove the cached resource
-    await()
-        .untilAsserted(
-            () -> assertThat(temporaryResourceCache.getResourceFromCache(resourceId)).isEmpty());
+    temporaryResourceCache.checkGhostResources();
+    assertThat(temporaryResourceCache.getResourceFromCache(resourceId)).isEmpty();
 
     // complete the filtering update - the resource should not reappear
     temporaryResourceCache.doneEventFilterModify(resourceId, "2");
     assertThat(temporaryResourceCache.getResourceFromCache(resourceId)).isEmpty();
-
-    ghostCheckExecutor.shutdownNow();
   }
 
   @Test
@@ -383,8 +374,7 @@ class InformerEventSourceTest {
     when(mim.lastSyncResourceVersion(any())).thenReturn("1");
     when(mim.get(any())).thenReturn(Optional.empty());
 
-    var ghostCheckExecutor = Executors.newScheduledThreadPool(1);
-    temporaryResourceCache = spy(new TemporaryResourceCache<>(true, 50, ghostCheckExecutor, mes));
+    temporaryResourceCache = spy(new TemporaryResourceCache<>(true, mes));
     informerEventSource.setTemporalResourceCache(temporaryResourceCache);
 
     // put a resource that will become a ghost
@@ -394,13 +384,9 @@ class InformerEventSourceTest {
     // advance sync version so ghost check removes it
     when(mim.lastSyncResourceVersion(any())).thenReturn("3");
 
-    await()
-        .untilAsserted(
-            () ->
-                assertThat(
-                        temporaryResourceCache.getResourceFromCache(
-                            ResourceID.fromResource(deployment)))
-                    .isEmpty());
+    temporaryResourceCache.checkGhostResources();
+    assertThat(temporaryResourceCache.getResourceFromCache(ResourceID.fromResource(deployment)))
+        .isEmpty();
 
     // now put a newer resource - should succeed even after ghost removal
     var newerDeployment = deploymentWithResourceVersion(4);
@@ -408,8 +394,6 @@ class InformerEventSourceTest {
     assertThat(
             temporaryResourceCache.getResourceFromCache(ResourceID.fromResource(newerDeployment)))
         .isPresent();
-
-    ghostCheckExecutor.shutdownNow();
   }
 
   @Test
@@ -421,8 +405,7 @@ class InformerEventSourceTest {
     when(mim.lastSyncResourceVersion(any())).thenReturn("1");
     when(mim.get(any())).thenReturn(Optional.empty());
 
-    var ghostCheckExecutor = Executors.newScheduledThreadPool(1);
-    temporaryResourceCache = spy(new TemporaryResourceCache<>(true, 50, ghostCheckExecutor, mes));
+    temporaryResourceCache = spy(new TemporaryResourceCache<>(true, mes));
     informerEventSource.setTemporalResourceCache(temporaryResourceCache);
 
     // start filtering update and put resource
@@ -434,9 +417,8 @@ class InformerEventSourceTest {
     // namespace becomes unwatched - ghost check should clean up
     when(mim.isWatchingNamespace(any())).thenReturn(false);
 
-    await()
-        .untilAsserted(
-            () -> assertThat(temporaryResourceCache.getResourceFromCache(resourceId)).isEmpty());
+    temporaryResourceCache.checkGhostResources();
+    assertThat(temporaryResourceCache.getResourceFromCache(resourceId)).isEmpty();
 
     // complete the filtering update
     var doneResult = temporaryResourceCache.doneEventFilterModify(resourceId, "2");
@@ -446,8 +428,6 @@ class InformerEventSourceTest {
     // put should be rejected since namespace is no longer watched
     temporaryResourceCache.putResource(deploymentWithResourceVersion(3));
     assertThat(temporaryResourceCache.getResourceFromCache(resourceId)).isEmpty();
-
-    ghostCheckExecutor.shutdownNow();
   }
 
   private void assertNoEventProduced() {
@@ -496,8 +476,7 @@ class InformerEventSourceTest {
     when(mes.manager()).thenReturn(mim);
     when(mim.lastSyncResourceVersion(any())).thenReturn("1");
 
-    temporaryResourceCache =
-        spy(new TemporaryResourceCache<>(true, 100, mock(ScheduledExecutorService.class), mes));
+    temporaryResourceCache = spy(new TemporaryResourceCache<>(true, mes));
     informerEventSource.setTemporalResourceCache(temporaryResourceCache);
   }
 

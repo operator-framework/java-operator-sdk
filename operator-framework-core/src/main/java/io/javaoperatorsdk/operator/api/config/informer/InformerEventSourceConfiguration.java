@@ -291,9 +291,9 @@ public interface InformerEventSourceConfiguration<R extends HasMetadata> extends
       return this;
     }
 
+    @Deprecated(forRemoval = true)
     public Builder<R> withGhostResourceCacheCheckInterval(
         Duration ghostResourceCacheCheckInterval) {
-      config.withGhostResourceCacheCheckInterval(ghostResourceCacheCheckInterval);
       return this;
     }
 
