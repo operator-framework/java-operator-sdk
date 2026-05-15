@@ -37,7 +37,8 @@ import static io.javaoperatorsdk.operator.processing.KubernetesResourceUtils.get
 /**
  * Provides useful operations to manipulate resources (server-side apply, patch, etc.) in an
  * idiomatic way, in particular to make sure that the latest version of the resource is present in
- * the caches for the next reconciliation.
+ * the caches for the next reconciliation. In other words, it provides read-cache-after-write
+ * consistency.
  *
  * @param <P> the resource type on which this object operates
  */

@@ -36,35 +36,72 @@ import io.javaoperatorsdk.operator.processing.event.source.informer.InformerEven
 public class CachingFilteringUpdateReconciler
     implements Reconciler<CachingFilteringUpdateCustomResource> {
 
+  public static final String RESOURCE_VERSION_INDEX = "resourceVersionIndex";
   private final AtomicBoolean issueFound = new AtomicBoolean(false);
+
+  private InformerEventSource<ConfigMap, CachingFilteringUpdateCustomResource> configMapEventSource;
 
   @Override
   public UpdateControl<CachingFilteringUpdateCustomResource> reconcile(
       CachingFilteringUpdateCustomResource resource,
       Context<CachingFilteringUpdateCustomResource> context) {
+    try {
+      var updated = context.resourceOperations().serverSideApply(prepareCM(resource, 1));
+      var cachedCM = context.getSecondaryResource(ConfigMap.class);
+      if (cachedCM.isEmpty()) {
+        throw new IllegalStateException("Error for resource: " + ResourceID.fromResource(resource));
+      }
+      checkListContainsCM(updated);
+      checkIfResourceVersionIndexContainsUpdated(updated);
+      updated = context.resourceOperations().serverSideApply(prepareCM(resource, 2));
+      cachedCM = context.getSecondaryResource(ConfigMap.class);
+      if (!cachedCM
+          .orElseThrow()
+          .getMetadata()
+          .getResourceVersion()
+          .equals(updated.getMetadata().getResourceVersion())) {
+        throw new IllegalStateException(
+            "Update error for resource: " + ResourceID.fromResource(resource));
+      }
+      checkListContainsCM(updated);
+      checkIfResourceVersionIndexContainsUpdated(updated);
 
-    context.resourceOperations().serverSideApply(prepareCM(resource, 1));
-    var cachedCM = context.getSecondaryResource(ConfigMap.class);
-    if (cachedCM.isEmpty()) {
+      ensureStatusExists(resource);
+      resource.getStatus().setUpdated(true);
+      return UpdateControl.patchStatus(resource);
+    } catch (IllegalStateException e) {
       issueFound.set(true);
-      throw new IllegalStateException("Error for resource: " + ResourceID.fromResource(resource));
+      throw e;
     }
+  }
 
-    var updated = context.resourceOperations().serverSideApply(prepareCM(resource, 2));
-    cachedCM = context.getSecondaryResource(ConfigMap.class);
-    if (!cachedCM
-        .orElseThrow()
-        .getMetadata()
-        .getResourceVersion()
-        .equals(updated.getMetadata().getResourceVersion())) {
-      issueFound.set(true);
+  private void checkIfResourceVersionIndexContainsUpdated(ConfigMap updated) {
+    if (configMapEventSource
+        .byIndex(RESOURCE_VERSION_INDEX, updated.getMetadata().getResourceVersion())
+        .stream()
+        .noneMatch(
+            r ->
+                ResourceID.fromResource(r).equals(ResourceID.fromResource(updated))
+                    && r.getMetadata()
+                        .getResourceVersion()
+                        .equals(updated.getMetadata().getResourceVersion()))) {
       throw new IllegalStateException(
-          "Update error for resource: " + ResourceID.fromResource(resource));
+          "Index does not contain resource: " + ResourceID.fromResource(updated));
     }
+  }
 
-    ensureStatusExists(resource);
-    resource.getStatus().setUpdated(true);
-    return UpdateControl.patchStatus(resource);
+  private void checkListContainsCM(ConfigMap updated) {
+    if (configMapEventSource
+        .list()
+        .noneMatch(
+            r ->
+                ResourceID.fromResource(r).equals(ResourceID.fromResource(updated))
+                    && r.getMetadata()
+                        .getResourceVersion()
+                        .equals(updated.getMetadata().getResourceVersion()))) {
+      throw new IllegalStateException(
+          "List does not contain resource: " + ResourceID.fromResource(updated));
+    }
   }
 
   private static ConfigMap prepareCM(CachingFilteringUpdateCustomResource p, int num) {
@@ -84,13 +121,15 @@ public class CachingFilteringUpdateReconciler
   @Override
   public List<EventSource<?, CachingFilteringUpdateCustomResource>> prepareEventSources(
       EventSourceContext<CachingFilteringUpdateCustomResource> context) {
-    InformerEventSource<ConfigMap, CachingFilteringUpdateCustomResource> cmES =
+    configMapEventSource =
         new InformerEventSource<>(
             InformerEventSourceConfiguration.from(
                     ConfigMap.class, CachingFilteringUpdateCustomResource.class)
                 .build(),
             context);
-    return List.of(cmES);
+    configMapEventSource.addIndexers(
+        Map.of(RESOURCE_VERSION_INDEX, cm -> List.of(cm.getMetadata().getResourceVersion())));
+    return List.of(configMapEventSource);
   }
 
   private void ensureStatusExists(CachingFilteringUpdateCustomResource resource) {

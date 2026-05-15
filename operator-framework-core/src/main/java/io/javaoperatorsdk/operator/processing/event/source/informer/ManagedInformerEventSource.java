@@ -18,11 +18,13 @@ package io.javaoperatorsdk.operator.processing.event.source.informer;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.function.UnaryOperator;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import org.slf4j.Logger;
@@ -111,7 +113,6 @@ public abstract class ManagedInformerEventSource<
       res.ifPresentOrElse(
           r -> {
             R latestResource = (R) r.getResource().orElseThrow();
-
             // as previous resource version we use the one from successful update, since
             // we process new event here only if that is more recent then the event from our update.
             // Note that this is equivalent with the scenario when an informer watch connection
@@ -219,11 +220,6 @@ public abstract class ManagedInformerEventSource<
     return get(resourceID);
   }
 
-  @Override
-  public Stream<R> list(String namespace, Predicate<R> predicate) {
-    return manager().list(namespace, predicate);
-  }
-
   void setTemporalResourceCache(TemporaryResourceCache<R> temporaryResourceCache) {
     this.temporaryResourceCache = temporaryResourceCache;
   }
@@ -236,19 +232,163 @@ public abstract class ManagedInformerEventSource<
     this.indexers.putAll(indexers);
   }
 
+  /**
+   * {@inheritDoc}
+   *
+   * <p>This implementation is read-cache-after-write consistent. Results are merged with the
+   * temporary resource cache to ensure recently written resources are reflected in the output.
+   */
   @Override
-  public List<R> byIndex(String indexName, String indexKey) {
-    return manager().byIndex(indexName, indexKey);
+  public Stream<R> list(String namespace, Predicate<R> predicate) {
+    return mergeWithTempCacheForList(manager().list(namespace), namespace, predicate);
   }
 
-  @Override
-  public Stream<ResourceID> keys() {
-    return cache.keys();
-  }
-
+  /**
+   * {@inheritDoc}
+   *
+   * <p>This implementation is read-cache-after-write consistent. Results are merged with the
+   * temporary resource cache to ensure recently written resources are reflected in the output.
+   */
   @Override
   public Stream<R> list(Predicate<R> predicate) {
-    return cache.list(predicate);
+    return mergeWithTempCacheForList(manager().list(), null, predicate);
+  }
+
+  /**
+   * {@inheritDoc}
+   *
+   * <p>This implementation is read-cache-after-write consistent. Results are merged with the
+   * temporary resource cache to ensure recently written resources are reflected in the output.
+   */
+  @Override
+  public Stream<R> byIndexStream(String indexName, String indexKey) {
+    return mergeWithTempCacheForIndex(
+        manager().byIndexStream(indexName, indexKey), indexName, indexKey);
+  }
+
+  /**
+   * {@inheritDoc}
+   *
+   * <p>This implementation is read-cache-after-write consistent. Results are merged with the
+   * temporary resource cache to ensure recently written resources are reflected in the output.
+   */
+  @Override
+  public List<R> byIndex(String indexName, String indexKey) {
+    return mergeWithTempCacheForIndex(
+            manager().byIndexStream(indexName, indexKey), indexName, indexKey)
+        .collect(Collectors.toList());
+  }
+
+  // namespace is filtered on informer manager level
+  private Stream<R> mergeWithTempCacheForList(
+      Stream<R> stream, String namespace, Predicate<R> predicate) {
+    if (!comparableResourceVersions || temporaryResourceCache.isEmpty()) {
+
+      return stream.filter(filterResourceByPredicate(predicate));
+    }
+    var tempResources = new HashMap<>(temporaryResourceCache.getResources());
+    if (tempResources.isEmpty()) {
+      return stream.filter(filterResourceByPredicate(predicate));
+    }
+
+    var upToDateList =
+        stream
+            .map(
+                r -> {
+                  var resourceID = ResourceID.fromResource(r);
+                  var tempResource = tempResources.remove(resourceID);
+                  if (tempResource != null
+                      && ReconcilerUtilsInternal.compareResourceVersions(tempResource, r) > 0) {
+                    return tempResource;
+                  }
+                  return r;
+                })
+            // we filter on predicate only since namespace changes would not be detected anyway.
+            .filter(filterResourceByPredicate(predicate))
+            .toList();
+
+    return Stream.concat(
+        tempResources.values().stream()
+            .filter(filterResourceByNamespaceAndPredicate(namespace, predicate)),
+        upToDateList.stream());
+  }
+
+  private Stream<R> mergeWithTempCacheForIndex(
+      Stream<R> stream, String indexName, String indexKey) {
+    if (!comparableResourceVersions || temporaryResourceCache.isEmpty()) {
+      return stream;
+    }
+    var tempResources = new HashMap<>(temporaryResourceCache.getResources());
+    if (tempResources.isEmpty()) {
+      return stream;
+    }
+
+    var indexer = indexers.get(indexName);
+    if (indexer == null) {
+      throw new IllegalArgumentException("Indexer not found for: " + indexName);
+    }
+
+    var upToDateList =
+        stream
+            .map(
+                r -> {
+                  var resourceID = ResourceID.fromResource(r);
+                  var tempResource = tempResources.remove(resourceID);
+                  if (tempResource != null
+                      && ReconcilerUtilsInternal.compareResourceVersions(tempResource, r) > 0) {
+                    if (!indexer.apply(tempResource).contains(indexKey)) {
+                      return null;
+                    }
+                    return tempResource;
+                  }
+                  return r;
+                })
+            .filter(Objects::nonNull)
+            .toList();
+
+    // remaining temp resources are ghost resources — include only those matching the index
+    return Stream.concat(
+        tempResources.values().stream().filter(r -> indexer.apply(r).contains(indexKey)),
+        upToDateList.stream());
+  }
+
+  private static <R extends HasMetadata> Predicate<R> filterResourceByPredicate(
+      Predicate<R> predicate) {
+    return filterResourceByNamespaceAndPredicate(null, predicate);
+  }
+
+  private static <R extends HasMetadata> Predicate<R> filterResourceByNamespaceAndPredicate(
+      String namespace, Predicate<R> predicate) {
+    return r -> {
+      if (namespace != null) {
+        if (!Optional.of(r)
+            .map(rr -> Objects.equals(namespace, rr.getMetadata().getNamespace()))
+            .orElse(false)) {
+          return false;
+        }
+      }
+      if (predicate != null) {
+        return predicate.test(r);
+      }
+      return true;
+    };
+  }
+
+  /**
+   * {@inheritDoc}
+   *
+   * <p>This implementation is read-cache-after-write consistent. Keys from the temporary resource
+   * cache (ghost resources) are included in the result.
+   */
+  @Override
+  public Stream<ResourceID> keys() {
+    if (!comparableResourceVersions || temporaryResourceCache.isEmpty()) {
+      return manager().keys();
+    }
+    var managerKeys = manager().keys().collect(Collectors.toSet());
+    var tempKeys = temporaryResourceCache.getResources().keySet();
+    return Stream.concat(
+        managerKeys.stream(), tempKeys.stream().filter(k -> !managerKeys.contains(k)));
   }
 
   @Override
