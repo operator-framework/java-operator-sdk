@@ -53,8 +53,7 @@ import static io.javaoperatorsdk.operator.api.config.ControllerConfiguration.CON
  */
 public class BaseConfigurationService extends AbstractConfigurationService {
 
-  private static final String LOGGER_NAME = "Default ConfigurationService implementation";
-  private static final Logger logger = LoggerFactory.getLogger(LOGGER_NAME);
+  private static final Logger logger = LoggerFactory.getLogger(BaseConfigurationService.class);
   private static final ResourceClassResolver DEFAULT_RESOLVER = new DefaultResourceClassResolver();
 
   public BaseConfigurationService(Version version) {
@@ -180,7 +179,7 @@ public class BaseConfigurationService extends AbstractConfigurationService {
 
   @SuppressWarnings("unused")
   public String getLoggerName() {
-    return LOGGER_NAME;
+    return logger.getName();
   }
 
   protected Logger getLogger() {
