@@ -361,9 +361,14 @@ public class LocallyRunOperatorExtension extends AbstractOperatorExtension {
     // ExtensionContext.Store.CloseableResource registered in the class-level (parent) context
     // is invoked by JUnit when the class scope closes
     var classContext = oneNamespacePerClass ? context : context.getParent().orElse(context);
-    classContext
-        .getStore(ExtensionContext.Namespace.create(LocallyRunOperatorExtension.class))
-        .computeIfAbsent(CrdCleanup.class, ignored -> new CrdCleanup(deleteCRDs));
+    var store =
+        classContext.getStore(ExtensionContext.Namespace.create(LocallyRunOperatorExtension.class));
+    try {
+      store.computeIfAbsent(CrdCleanup.class, ignored -> new CrdCleanup(deleteCRDs));
+    } catch (NoSuchMethodError nsme) {
+      // Exists to retain compatibility with Junit5.
+      store.getOrComputeIfAbsent(CrdCleanup.class, ignored -> new CrdCleanup(deleteCRDs));
+    }
 
     LOGGER.debug("Starting the operator locally");
     this.operator.start();
