@@ -122,21 +122,10 @@ public class Operator implements LifecycleAware {
    */
   protected ConfigurationService initConfigurationService(
       KubernetesClient client, Consumer<ConfigurationServiceOverrider> overrider) {
-    // initialize the client if the user didn't provide one
-    if (client == null) {
-      var configurationService = ConfigurationService.newOverriddenConfigurationService(overrider);
-      client = configurationService.getKubernetesClient();
+    if (client != null) {
+      Consumer<ConfigurationServiceOverrider> bindClient = o -> o.withKubernetesClient(client);
+      overrider = overrider == null ? bindClient : overrider.andThen(bindClient);
     }
-
-    final var kubernetesClient = client;
-
-    // override the configuration service to use the same client
-    if (overrider != null) {
-      overrider = overrider.andThen(o -> o.withKubernetesClient(kubernetesClient));
-    } else {
-      overrider = o -> o.withKubernetesClient(kubernetesClient);
-    }
-
     return ConfigurationService.newOverriddenConfigurationService(overrider);
   }
 
