@@ -69,7 +69,9 @@ public class InformerConfiguration<R extends HasMetadata> {
       ItemStore<R> itemStore,
       Long informerListLimit,
       FieldSelector fieldSelector,
-      Boolean comparableResourceVersions) {
+      Boolean comparableResourceVersions,
+      // TODO for removal in major release
+      Duration ghostResourceCacheCheckInterval) {
     this(resourceClass);
     this.name = name;
     this.namespaces = namespaces;
@@ -118,7 +120,8 @@ public class InformerConfiguration<R extends HasMetadata> {
             original.itemStore,
             original.informerListLimit,
             original.fieldSelector,
-            original.comparableResourceVersions)
+            original.comparableResourceVersions,
+            null)
         .builder;
   }
 
