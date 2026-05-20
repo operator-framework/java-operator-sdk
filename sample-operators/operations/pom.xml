@@ -186,7 +186,7 @@
             <version>${jib-maven-plugin.version}</version>
             <configuration>
               <from>
-                <image>gcr.io/distroless/base-debian12</image>
+                <image>gcr.io/distroless/cc-debian12</image>
               </from>
               <to>
                 <image>operations-operator</image>
