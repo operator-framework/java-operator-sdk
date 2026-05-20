@@ -41,12 +41,13 @@ jobs:
           github token: ${{ secrets.GITHUB_TOKEN }}
           driver: docker
 
-      - name: Set up Java and Maven
-        uses: actions/setup-java@v5
+      - name: Set up GraalVM
+        uses: graalvm/setup-graalvm@v1
         with:
-          java-version: 25
-          distribution: graalvm-community
+          java-version: '25'
+          distribution: 'graalvm-community'
           cache: 'maven'
+          github-token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Build SDK
         run: ./mvnw install -DskipTests
