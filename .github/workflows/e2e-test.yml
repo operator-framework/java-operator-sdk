@@ -41,7 +41,16 @@ jobs:
           github token: ${{ secrets.GITHUB_TOKEN }}
           driver: docker
 
+      - name: Set up Java and Maven
+        if: matrix.sample != 'sample-operators/operations'
+        uses: actions/setup-java@v5
+        with:
+          java-version: 25
+          distribution: temurin
+          cache: 'maven'
+
       - name: Set up GraalVM
+        if: matrix.sample == 'sample-operators/operations'
         uses: graalvm/setup-graalvm@v1
         with:
           java-version: '25'
