@@ -45,7 +45,7 @@ jobs:
         uses: actions/setup-java@v5
         with:
           java-version: 25
-          distribution: temurin
+          distribution: graalvm-community
           cache: 'maven'
 
       - name: Build SDK
@@ -58,4 +58,8 @@ jobs:
       - name: Run E2E tests as a deployment
         run: |
           eval $(minikube -p minikube docker-env)
-          ./mvnw jib:dockerBuild test -P end-to-end-tests -Dtest.deployment=remote -pl ${{ matrix.sample }}
+          EXTRA_PROFILES=""
+          if [ "${{ matrix.sample }}" = "sample-operators/operations" ]; then
+            EXTRA_PROFILES=",native"
+          fi
+          ./mvnw package jib:dockerBuild test -P end-to-end-tests${EXTRA_PROFILES} -Dtest.deployment=remote -pl ${{ matrix.sample }}
