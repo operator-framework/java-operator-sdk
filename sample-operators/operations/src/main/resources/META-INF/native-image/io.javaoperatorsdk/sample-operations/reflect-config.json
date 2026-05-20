@@ -151,6 +151,14 @@
     "allPublicConstructors": true
   },
   {
+    "name": "io.fabric8.kubernetes.api.model.ListMeta",
+    "allDeclaredFields": true,
+    "allDeclaredMethods": true,
+    "allDeclaredConstructors": true,
+    "allPublicMethods": true,
+    "allPublicConstructors": true
+  },
+  {
     "name": "io.javaoperatorsdk.operator.processing.retry.GenericRetry",
     "allDeclaredMethods": true,
     "allDeclaredConstructors": true,
