@@ -87,12 +87,18 @@ public class Mappers {
         clusterScoped);
   }
 
+  /**
+   * @deprecated use {@link #fromOwnerReferences(Class)}
+   */
   @Deprecated(forRemoval = true)
   public static <T extends HasMetadata> SecondaryToPrimaryMapper<T> fromOwnerReferences(
       HasMetadata primaryResource) {
     return fromOwnerReferences(primaryResource, false);
   }
 
+  /**
+   * @deprecated use {@link #fromOwnerReferences(Class,boolean)}
+   */
   @Deprecated(forRemoval = true)
   public static <T extends HasMetadata> SecondaryToPrimaryMapper<T> fromOwnerReferences(
       HasMetadata primaryResource, boolean clusterScoped) {
