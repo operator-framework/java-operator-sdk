@@ -68,8 +68,9 @@ jobs:
       - name: Run E2E tests as a deployment
         run: |
           eval $(minikube -p minikube docker-env)
-          EXTRA_PROFILES=""
           if [ "${{ matrix.sample }}" = "sample-operators/operations" ]; then
-            EXTRA_PROFILES=",native"
+            ./mvnw -Pnative package -DskipTests -pl ${{ matrix.sample }}
+            ./mvnw jib:dockerBuild test -P end-to-end-tests,native -Dtest.deployment=remote -pl ${{ matrix.sample }}
+          else
+            ./mvnw jib:dockerBuild test -P end-to-end-tests -Dtest.deployment=remote -pl ${{ matrix.sample }}
           fi
-          ./mvnw package jib:dockerBuild test -P end-to-end-tests${EXTRA_PROFILES} -Dtest.deployment=remote -pl ${{ matrix.sample }}
