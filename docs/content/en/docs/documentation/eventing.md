@@ -213,7 +213,7 @@ for usage.
 #### `PollingEventSource`
 
 [PollingEventSource](https://github.com/operator-framework/java-operator-sdk/blob/main/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/processing/event/source/polling/PollingEventSource.java)
-is similar to `PerResourceCachingEventSource` except that, contrary to that event source, it
+is similar to `PerResourcePollingEventSource` except that, contrary to that event source, it
 doesn't poll a specific API separately per resource, but periodically and independently of
 actually observed primary resources.
 
