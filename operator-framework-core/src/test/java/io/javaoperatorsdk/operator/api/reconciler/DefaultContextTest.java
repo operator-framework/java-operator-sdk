@@ -16,26 +16,34 @@
 package io.javaoperatorsdk.operator.api.reconciler;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Stream;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import io.fabric8.kubernetes.api.model.ConfigMap;
+import io.fabric8.kubernetes.api.model.ConfigMapBuilder;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
 import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.PodBuilder;
 import io.fabric8.kubernetes.api.model.Secret;
+import io.fabric8.kubernetes.api.model.SecretBuilder;
 import io.javaoperatorsdk.operator.processing.Controller;
 import io.javaoperatorsdk.operator.processing.event.EventSourceManager;
 import io.javaoperatorsdk.operator.processing.event.NoEventSourceForClassException;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
 import io.javaoperatorsdk.operator.processing.event.source.EventSource;
+import io.javaoperatorsdk.operator.processing.event.source.informer.ManagedInformerEventSource;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 class DefaultContextTest {
@@ -60,6 +68,234 @@ class DefaultContextTest {
         .thenThrow(new NoEventSourceForClassException(ConfigMap.class));
 
     var res = context.getSecondaryResource(ConfigMap.class);
+    assertThat(res).isEmpty();
+  }
+
+  @Test
+  void getSecondaryResourceByNameAndNamespaceReturnsFromCacheFastPath() {
+    final var cm =
+        new ConfigMapBuilder()
+            .withNewMetadata()
+            .withName("cm-foo")
+            .withNamespace("ns")
+            .endMetadata()
+            .build();
+
+    final ManagedInformerEventSource<ConfigMap, HasMetadata, ?> cachingEventSource = mock();
+    when(cachingEventSource.get(new ResourceID("cm-foo", "ns"))).thenReturn(Optional.of(cm));
+    when(mockManager.getEventSourceFor(ConfigMap.class, "es-name")).thenReturn(cachingEventSource);
+
+    final var res = context.getSecondaryResource(ConfigMap.class, "es-name", "cm-foo", "ns");
+
+    assertThat(res).contains(cm);
+    verify(cachingEventSource).get(new ResourceID("cm-foo", "ns"));
+  }
+
+  @Test
+  void getSecondaryResourceByNameAndNamespaceReturnsEmptyOnCacheMiss() {
+    final ManagedInformerEventSource<ConfigMap, HasMetadata, ?> cachingEventSource = mock();
+    when(cachingEventSource.get(new ResourceID("missing", "ns"))).thenReturn(Optional.empty());
+    when(mockManager.getEventSourceFor(ConfigMap.class, "es-name")).thenReturn(cachingEventSource);
+
+    assertThat(context.getSecondaryResource(ConfigMap.class, "es-name", "missing", "ns")).isEmpty();
+  }
+
+  @Test
+  void getSecondaryResourceByNameAndNamespaceFallsBackToGetSecondaryResources() {
+    final var match =
+        new ConfigMapBuilder()
+            .withNewMetadata()
+            .withName("cm-foo")
+            .withNamespace("ns")
+            .endMetadata()
+            .build();
+    final var other =
+        new ConfigMapBuilder()
+            .withNewMetadata()
+            .withName("cm-bar")
+            .withNamespace("ns")
+            .endMetadata()
+            .build();
+
+    final EventSource<ConfigMap, HasMetadata> nonCachingEventSource = mock();
+    when(nonCachingEventSource.getSecondaryResources(any())).thenReturn(Set.of(match, other));
+    when(mockManager.getEventSourceFor(ConfigMap.class, "es-name"))
+        .thenReturn(nonCachingEventSource);
+
+    final var res = context.getSecondaryResource(ConfigMap.class, "es-name", "cm-foo", "ns");
+
+    assertThat(res).contains(match);
+  }
+
+  @Test
+  void getSecondaryResourceByNameAndNamespaceFallbackReturnsEmptyWhenNoMatch() {
+    final var other =
+        new ConfigMapBuilder()
+            .withNewMetadata()
+            .withName("cm-other")
+            .withNamespace("ns")
+            .endMetadata()
+            .build();
+
+    final EventSource<ConfigMap, HasMetadata> nonCachingEventSource = mock();
+    when(nonCachingEventSource.getSecondaryResources(any())).thenReturn(Set.of(other));
+    when(mockManager.getEventSourceFor(ConfigMap.class, "es-name"))
+        .thenReturn(nonCachingEventSource);
+
+    assertThat(context.getSecondaryResource(ConfigMap.class, "es-name", "missing", "ns")).isEmpty();
+  }
+
+  @Test
+  void getSecondaryResourceByNameAndNamespaceRethrowsWhenNoEventSourceAndNotWorkflowManaged() {
+    when(mockManager.getEventSourceFor(ConfigMap.class, "es-name"))
+        .thenThrow(new NoEventSourceForClassException(ConfigMap.class));
+
+    assertThatThrownBy(
+            () -> context.getSecondaryResource(ConfigMap.class, "es-name", "cm-foo", "ns"))
+        .isInstanceOf(NoEventSourceForClassException.class);
+  }
+
+  @Test
+  void getSecondaryResourceByNameAndNamespaceReturnsEmptyWhenNoEventSourceButWorkflowManaged() {
+    when(mockManager.getEventSourceFor(ConfigMap.class, null))
+        .thenThrow(new NoEventSourceForClassException(ConfigMap.class));
+    when(mockController.workflowContainsDependentForType(ConfigMap.class)).thenReturn(true);
+
+    final var res = context.getSecondaryResource(ConfigMap.class, null, "cm-foo", "ns");
+
+    assertThat(res).isEmpty();
+  }
+
+  @Test
+  void getSecondaryResourceByNameUsesPrimaryNamespace() {
+    final var primaryNamespace = "primary-ns";
+    final var namespacedPrimary =
+        new SecretBuilder()
+            .withNewMetadata()
+            .withName("primary")
+            .withNamespace(primaryNamespace)
+            .endMetadata()
+            .build();
+    final DefaultContext<HasMetadata> namespacedContext =
+        new DefaultContext<>(null, mockController, namespacedPrimary, false, false);
+
+    final var cm =
+        new ConfigMapBuilder()
+            .withNewMetadata()
+            .withName("cm-foo")
+            .withNamespace(primaryNamespace)
+            .endMetadata()
+            .build();
+
+    final ManagedInformerEventSource<ConfigMap, HasMetadata, ?> cachingEventSource = mock();
+    when(cachingEventSource.get(new ResourceID("cm-foo", primaryNamespace)))
+        .thenReturn(Optional.of(cm));
+    when(mockManager.getEventSourceFor(ConfigMap.class, "es-name")).thenReturn(cachingEventSource);
+
+    final var res = namespacedContext.getSecondaryResource(ConfigMap.class, "es-name", "cm-foo");
+
+    assertThat(res).contains(cm);
+  }
+
+  @Test
+  void getSecondaryResourcesAsStreamByEventSourceUsesResourceCacheFastPath() {
+    final var primaryNamespace = "primary-ns";
+    final var namespacedPrimary =
+        new SecretBuilder()
+            .withNewMetadata()
+            .withName("primary")
+            .withNamespace(primaryNamespace)
+            .endMetadata()
+            .build();
+    final DefaultContext<HasMetadata> namespacedContext =
+        new DefaultContext<>(null, mockController, namespacedPrimary, false, false);
+
+    final var cm1 =
+        new ConfigMapBuilder()
+            .withNewMetadata()
+            .withName("cm-1")
+            .withNamespace(primaryNamespace)
+            .endMetadata()
+            .build();
+    final var cm2 =
+        new ConfigMapBuilder()
+            .withNewMetadata()
+            .withName("cm-2")
+            .withNamespace(primaryNamespace)
+            .endMetadata()
+            .build();
+
+    final ManagedInformerEventSource<ConfigMap, HasMetadata, ?> resourceCacheEventSource = mock();
+    when(resourceCacheEventSource.list(primaryNamespace)).thenReturn(Stream.of(cm1, cm2));
+    when(mockManager.getEventSourceFor(ConfigMap.class, "es-name"))
+        .thenReturn(resourceCacheEventSource);
+
+    final var res =
+        namespacedContext.getSecondaryResourcesAsStream(ConfigMap.class, "es-name").toList();
+
+    assertThat(res).containsExactlyInAnyOrder(cm1, cm2);
+    verify(resourceCacheEventSource).list(primaryNamespace);
+  }
+
+  @Test
+  void getSecondaryResourcesAsStreamByEventSourceFastPathOnClusterScopedPrimary() {
+    // cluster-scoped primary: has metadata but no namespace set.
+    final var clusterScopedPrimary =
+        new SecretBuilder().withNewMetadata().withName("primary").endMetadata().build();
+    final DefaultContext<HasMetadata> clusterScopedContext =
+        new DefaultContext<>(null, mockController, clusterScopedPrimary, false, false);
+
+    final var cm1 = new ConfigMapBuilder().withNewMetadata().withName("cm-1").endMetadata().build();
+
+    final ManagedInformerEventSource<ConfigMap, HasMetadata, ?> resourceCacheEventSource = mock();
+    when(resourceCacheEventSource.list()).thenReturn(Stream.of(cm1));
+    when(mockManager.getEventSourceFor(ConfigMap.class, "es-name"))
+        .thenReturn(resourceCacheEventSource);
+
+    final var res =
+        clusterScopedContext.getSecondaryResourcesAsStream(ConfigMap.class, "es-name").toList();
+
+    assertThat(res).containsExactly(cm1);
+    verify(resourceCacheEventSource).list();
+    verify(resourceCacheEventSource, never()).list(any(String.class));
+  }
+
+  @Test
+  void getSecondaryResourcesAsStreamByEventSourceFallsBackToGetSecondaryResources() {
+    final var cm1 =
+        new ConfigMapBuilder()
+            .withNewMetadata()
+            .withName("cm-1")
+            .withNamespace("ns")
+            .endMetadata()
+            .build();
+
+    final EventSource<ConfigMap, HasMetadata> nonCacheEventSource = mock();
+    when(nonCacheEventSource.getSecondaryResources(any())).thenReturn(Set.of(cm1));
+    when(mockManager.getEventSourceFor(ConfigMap.class, "es-name")).thenReturn(nonCacheEventSource);
+
+    final var res = context.getSecondaryResourcesAsStream(ConfigMap.class, "es-name").toList();
+
+    assertThat(res).containsExactly(cm1);
+  }
+
+  @Test
+  void getSecondaryResourcesAsStreamByEventSourceRethrowsWhenNotWorkflowManaged() {
+    when(mockManager.getEventSourceFor(ConfigMap.class, "es-name"))
+        .thenThrow(new NoEventSourceForClassException(ConfigMap.class));
+
+    assertThatThrownBy(() -> context.getSecondaryResourcesAsStream(ConfigMap.class, "es-name"))
+        .isInstanceOf(NoEventSourceForClassException.class);
+  }
+
+  @Test
+  void getSecondaryResourcesAsStreamByEventSourceReturnsEmptyWhenWorkflowManaged() {
+    when(mockManager.getEventSourceFor(ConfigMap.class, null))
+        .thenThrow(new NoEventSourceForClassException(ConfigMap.class));
+    when(mockController.workflowContainsDependentForType(ConfigMap.class)).thenReturn(true);
+
+    final var res = context.getSecondaryResourcesAsStream(ConfigMap.class, null).toList();
+
     assertThat(res).isEmpty();
   }
 
