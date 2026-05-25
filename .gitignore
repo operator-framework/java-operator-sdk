@@ -18,3 +18,5 @@ target/
 
 docs/content/en/docs/testindex/
 .claude/
+.DS_Store
+
