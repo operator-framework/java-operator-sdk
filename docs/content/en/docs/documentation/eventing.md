@@ -236,13 +236,15 @@ triggering your `Reconciler` unnecessarily.
 #### `TimerEventSource`
 
 [TimerEventSource](https://github.com/operator-framework/java-operator-sdk/blob/main/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/processing/event/source/timer/TimerEventSource.java)
-is another built-in `EventSource` that the SDK automatically registers for every controller (under
+is an internal `EventSource` that the SDK automatically registers for every controller (under
 the name `RetryAndRescheduleTimerEventSource`). It is used internally to schedule delayed events
 back to the `EventProcessor`, namely retry attempts after a failed reconciliation, explicit
 rescheduling requests via `UpdateControl.rescheduleAfter(...)`, and the periodic failsafe trigger
 governed by `maxReconciliationInterval`. As with `ControllerEventSource`, this is not something
-you instantiate or configure directly. `TimerEventSource` is also available as a public type if
-you need a similar scheduling primitive in a custom event source.
+you instantiate, configure, or interact with directly. If you need periodic or delayed
+reconciliation in your `Reconciler`, use `UpdateControl.rescheduleAfter(...)` from inside
+`reconcile(...)` or configure `maxReconciliationInterval` on your controller; do not depend on
+`TimerEventSource` directly.
 
 More on the philosophy of the non Kubernetes API related event source see in
 issue [#729](https://github.com/operator-framework/java-operator-sdk/issues/729).
