@@ -164,7 +164,7 @@ public class DefaultContext<P extends HasMetadata> implements Context<P> {
   }
 
   @Override
-  public <R extends HasMetadata> Stream<R> getSecondaryResourcesAsStream(
+  public <R> Stream<R> getSecondaryResourcesAsStream(
       Class<R> expectedType, String eventSourceName) {
     try {
       final var eventSource =
