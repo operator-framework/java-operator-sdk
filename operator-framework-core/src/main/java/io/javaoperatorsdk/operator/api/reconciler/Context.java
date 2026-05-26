@@ -194,8 +194,7 @@ public interface Context<P extends HasMetadata> {
    *     accounts for it)
    * @since 5.4.0
    */
-  <R extends HasMetadata> Stream<R> getSecondaryResourcesAsStream(
-      Class<R> expectedType, String eventSourceName);
+  <R> Stream<R> getSecondaryResourcesAsStream(Class<R> expectedType, String eventSourceName);
 
   ControllerConfiguration<P> getControllerConfiguration();
 
