@@ -42,21 +42,17 @@ graph LR
     classDef controller fill:#326CE5,stroke:#1A4AAF,color:#fff
     classDef secondary fill:#3AAFA9,stroke:#2B807B,color:#fff
 ```
-
 A few things worth highlighting about the diagram above.
-- The `ControllerEventSource` is a special, internal event source responsible for handling events
-pertaining to changes affecting the primary resource. The SDK registers it automatically for every
-controller and you never instantiate it yourself.
-- Every controller also gets a dedicated `TimerEventSource` (named
-`RetryAndRescheduleTimerEventSource`) that the SDK uses to drive retry attempts after a failed
-reconciliation, `UpdateControl.rescheduleAfter(...)` requests, and the periodic max-interval
-failsafe trigger. The `EventProcessor` is the sole caller into this timer, scheduling delayed
-events back to itself via `scheduleOnce(...)`. Like the controller event source, this one is
-wired internally and is not something you register or interact with directly.
-- Once an event reaches the `EventProcessor`, dispatch is delegated to the
-`ReconciliationDispatcher`, which prepares the execution context, handles finalizers and other
-framework concerns, and ultimately invokes `reconcile(...)` on the internal `Controller` wrapper,
-which in turn calls the user-implemented `Reconciler`.
+
+- The framework includes an internal event source (`ControllerEventSource`) for changes affecting the primary resource. The
+  SDK registers it automatically for every controller, and you never instantiate it yourself.
+- Every controller also gets an internal timer-based event source that the SDK uses for delayed
+  retries, `UpdateControl.rescheduleAfter(...)` requests, and periodic failsafe triggering. Like
+  the controller event source, it is wired internally and is not something you register or interact
+  with directly.
+- Once an event enters the framework's processing pipeline, the SDK prepares the reconciliation
+  context, handles finalizers and other framework concerns, and then invokes the user-implemented
+  `Reconciler`.
 
 Events always relate to a given primary resource, and the SDK guarantees that there is no
 concurrent execution of the reconciler for any given primary resource, even in the presence of
