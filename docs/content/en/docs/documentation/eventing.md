@@ -9,29 +9,30 @@ See also
 this [blog post](https://csviri.medium.com/java-operator-sdk-introduction-to-event-sources-a1aab5af4b7b)
 .
 
-Event sources are a relatively simple yet powerful and extensible concept to trigger controller
-executions, usually based on changes to managed resources. You typically need an event source
-when you want your `Reconciler` to be triggered when something occurs to secondary resources
-that might affect the state of your primary resource. This is needed because a given
-`Reconciler` will only listen by default to events affecting the primary resource type it is
-configured for. Event sources act as listen to events affecting these secondary resources so
-that a reconciliation of the associated primary resource can be triggered when needed. Note that
-these secondary resources need not be Kubernetes resources. Typically, when dealing with
-non-Kubernetes objects or services, we can extend our operator to handle webhooks or websockets
-or to react to any event coming from a service we interact with. This allows for very efficient
-controller implementations because reconciliations are then only triggered when something occurs
-on resources affecting our primary resources thus doing away with the need to periodically
-reschedule reconciliations.
+Event sources are a simple yet powerful and extensible mechanism for triggering controller
+executions, usually in response to changes to managed resources. You need an event source
+whenever your `Reconciler` must react to something happening on a *secondary* resource that
+affects your primary resource's state. By default, a `Reconciler` only listens to events on the
+primary resource type it is configured for.
+
+An event source listens for events on these secondary resources and, when one fires, triggers a
+reconciliation of the associated primary resource. Secondary resources do not have to be
+Kubernetes resources: when dealing with non-Kubernetes objects or external services, an event
+source can wrap webhooks, websockets, or any other notification mechanism the service provides.
+
+This event-driven model makes for efficient controllers, since reconciliations only run when
+something actually changes on a resource that matters, removing the need to periodically poll or
+reschedule.
 
 ```mermaid
 graph LR
+    CES["Controller Event Source"]:::primary -- Event --> EP["Event Processor"]:::handler
+    TES["Timer Event Source"]:::primary -- Event --> EP
     SR1ES["Secondary Resource 1
-    Event Source"]:::eventsource -- Event --> EH["Event Handler"]:::handler
-    CRES["Custom Resource
-    Event Source"]:::primary -- Event --> EH
+    Event Source"]:::eventsource -- Event --> EP
     SR2ES["Secondary Resource 2
-    Event Source"]:::eventsource -- Event --> EH
-    EH --> C["Controller"]:::controller
+    Event Source"]:::eventsource -- Event --> EP
+    EP --> C["Controller"]:::controller
     C --> SR1["Secondary Resource 1"]:::secondary
     C --> SR2["Secondary Resource 2"]:::secondary
 
@@ -42,15 +43,25 @@ graph LR
     classDef secondary fill:#3AAFA9,stroke:#2B807B,color:#fff
 ```
 
-There are few interesting points here:
+A few things worth highlighting about the diagram above.
+- The `ControllerEventSource` is a special, internal event source responsible for handling events
+pertaining to changes affecting the primary resource. The SDK registers it automatically for every
+controller and you never instantiate it yourself.
+- Every controller also gets a dedicated `TimerEventSource` (named
+`RetryAndRescheduleTimerEventSource`) that the SDK uses to drive retry attempts after a failed
+reconciliation, `UpdateControl.rescheduleAfter(...)` requests, and the periodic max-interval
+failsafe trigger. The `EventProcessor` is the sole caller into this timer, scheduling delayed
+events back to itself via `scheduleOnce(...)`. Like the controller event source, this one is
+wired internally and is not something you register or interact with directly.
+- Once an event reaches the `EventProcessor`, dispatch is delegated to the
+`ReconciliationDispatcher`, which prepares the execution context, handles finalizers and other
+framework concerns, and ultimately invokes `reconcile(...)` on the internal `Controller` wrapper,
+which in turn calls the user-implemented `Reconciler`.
 
-The `CustomResourceEventSource` event source is a special one, responsible for handling events
-pertaining to changes affecting our primary resources. This `EventSource` is always registered
-for every controller automatically by the SDK. It is important to note that events always relate
-to a given primary resource. Concurrency is still handled for you, even in the presence of
-`EventSource` implementations, and the SDK still guarantees that there is no concurrent execution of
-the controller for any given primary resource (though, of course, concurrent/parallel executions
-of events pertaining to other primary resources still occur as expected).
+Events always relate to a given primary resource, and the SDK guarantees that there is no
+concurrent execution of the reconciler for any given primary resource, even in the presence of
+additional `EventSource` implementations. Events pertaining to other primary resources are still
+processed in parallel as expected.
 
 ### Caching and Event Sources
 
@@ -69,34 +80,30 @@ is processed for the `InformerEventSource` implementation. However, this does no
 hold true for all event source implementations (`PerResourceEventSource` for example). The SDK
 provides methods to handle this situation elegantly, allowing you to check if an object is
 cached, retrieving it from a provided supplier if not. See
-related [method](https://github.com/java-operator-sdk/java-operator-sdk/blob/main/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/processing/event/source/polling/PerResourcePollingEventSource.java#L146)
+related [method](https://github.com/operator-framework/java-operator-sdk/blob/main/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/processing/event/source/polling/PerResourcePollingEventSource.java#L160-L180)
 .
 
 ### Registering Event Sources
 
-To register event sources, your `Reconciler` has to override the `prepareEventSources` and return
-list of event sources to register. One way to see this in action is
-to look at the
+To register event sources, your `Reconciler` overrides the `prepareEventSources` default method
+and returns the list of event sources to register. One way to see this in action is to look at the
 [WebPage example](https://github.com/operator-framework/java-operator-sdk/blob/main/sample-operators/webpage/src/main/java/io/javaoperatorsdk/operator/sample/WebPageReconciler.java)
 (irrelevant details omitted):
 
 ```java
-
-import java.util.List;
-
 @ControllerConfiguration
-public class WebappReconciler
-        implements Reconciler<Webapp>, Cleaner<Webapp>, EventSourceInitializer<Webapp> {
-    // ommitted code
+public class WebPageReconciler implements Reconciler<WebPage> {
 
     @Override
-    public List<EventSource<?, Webapp>> prepareEventSources(EventSourceContext<Webapp> context) {
-        InformerEventSourceConfiguration<Webapp> configuration =
-                InformerEventSourceConfiguration.from(Deployment.class, Webapp.class)
+    public List<EventSource<?, WebPage>> prepareEventSources(EventSourceContext<WebPage> context) {
+        var configuration =
+                InformerEventSourceConfiguration.from(Deployment.class, WebPage.class)
                         .withLabelSelector(SELECTOR)
                         .build();
         return List.of(new InformerEventSource<>(configuration, context));
     }
+
+    // omitted code
 }
 ```
 
@@ -126,7 +133,7 @@ resources live outside of a cluster.
 This is why JOSDK provides the `SecondaryToPrimaryMapper` interface so that you can provide
 alternative ways for the SDK to identify which primary resource needs to be reconciled when
 something occurs to your secondary resources. We even provide some of these alternatives in the
-[Mappers](https://github.com/java-operator-sdk/java-operator-sdk/blob/main/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/processing/event/source/informer/Mappers.java)
+[Mappers](https://github.com/operator-framework/java-operator-sdk/blob/main/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/processing/event/source/informer/Mappers.java)
 class.
 
 Note that, while a set of `ResourceID` is returned, this set usually consists only of one
@@ -150,11 +157,36 @@ integration test for a sample.
 
 ### Built-in EventSources
 
-There are multiple event-sources provided out of the box, the following are some more central ones:
+There are multiple event-sources provided out of the box, the following are some more central ones.
+
+All of them implement the `EventSource` interface. JOSDK provides an abstract base,
+`AbstractEventSource`, together with two abstract intermediate classes that capture the two most
+common patterns: caching of externally-fetched resources (`ExternalResourceCachingEventSource`)
+and informer-based watching of Kubernetes resources (`ManagedInformerEventSource`). Concrete
+event sources extend the most appropriate base for their use case.
+
+```mermaid
+graph TD
+    ES["EventSource<br/>«interface»"]:::iface --> AES["AbstractEventSource<br/>«abstract»"]:::abs
+    AES --> TES["TimerEventSource"]:::builtin
+    AES --> SIES["SimpleInboundEventSource"]:::concrete
+    AES --> ERCES["ExternalResourceCachingEventSource<br/>«abstract»"]:::abs
+    AES --> MIES["ManagedInformerEventSource<br/>«abstract»"]:::abs
+    ERCES --> PES["PollingEventSource"]:::concrete
+    ERCES --> PRPES["PerResourcePollingEventSource"]:::concrete
+    ERCES --> CIES["CachingInboundEventSource"]:::concrete
+    MIES --> IES["InformerEventSource"]:::concrete
+    MIES --> CES["ControllerEventSource"]:::builtin
+
+    classDef iface fill:#3FAA5F,stroke:#2A8045,color:#fff
+    classDef abs fill:#326CE5,stroke:#1A4AAF,color:#fff
+    classDef concrete fill:#3AAFA9,stroke:#2B807B,color:#fff
+    classDef builtin fill:#C0527A,stroke:#8C3057,color:#fff
+```
 
 #### `InformerEventSource`
 
-[InformerEventSource](https://github.com/java-operator-sdk/java-operator-sdk/blob/main/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/processing/event/source/informer/InformerEventSource.java)
+[InformerEventSource](https://github.com/operator-framework/java-operator-sdk/blob/main/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/processing/event/source/informer/InformerEventSource.java)
 is probably the most important `EventSource` implementation to know about. When you create an
 `InformerEventSource`, JOSDK will automatically create and register a `SharedIndexInformer`, a
 fabric8 Kubernetes client class, that will listen for events associated with the resource type
@@ -170,39 +202,52 @@ reconciliations from being triggered when not needed and allowing efficient oper
 
 #### `PerResourcePollingEventSource`
 
-[PerResourcePollingEventSource](https://github.com/java-operator-sdk/java-operator-sdk/blob/main/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/processing/event/source/polling/PerResourcePollingEventSource.java)
+[PerResourcePollingEventSource](https://github.com/operator-framework/java-operator-sdk/blob/main/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/processing/event/source/polling/PerResourcePollingEventSource.java)
 is used to poll external APIs, which don't support webhooks or other event notifications. It
 extends the abstract
-[ExternalResourceCachingEventSource](https://github.com/java-operator-sdk/java-operator-sdk/blob/main/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/processing/event/source/ExternalResourceCachingEventSource.java)
+[ExternalResourceCachingEventSource](https://github.com/operator-framework/java-operator-sdk/blob/main/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/processing/event/source/ExternalResourceCachingEventSource.java)
 to support caching.
-See [MySQL Schema sample](https://github.com/java-operator-sdk/java-operator-sdk/blob/main/sample-operators/mysql-schema/src/main/java/io/javaoperatorsdk/operator/sample/MySQLSchemaReconciler.java)
+See [MySQL Schema sample](https://github.com/operator-framework/java-operator-sdk/blob/main/sample-operators/mysql-schema/src/main/java/io/javaoperatorsdk/operator/sample/MySQLSchemaReconciler.java)
 for usage.
 
 #### `PollingEventSource`
 
-[PollingEventSource](https://github.com/java-operator-sdk/java-operator-sdk/blob/main/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/processing/event/source/polling/PollingEventSource.java)
-is similar to `PerResourceCachingEventSource` except that, contrary to that event source, it
+[PollingEventSource](https://github.com/operator-framework/java-operator-sdk/blob/main/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/processing/event/source/polling/PollingEventSource.java)
+is similar to `PerResourcePollingEventSource` except that, contrary to that event source, it
 doesn't poll a specific API separately per resource, but periodically and independently of
 actually observed primary resources.
 
 #### Inbound event sources
 
-[SimpleInboundEventSource](https://github.com/java-operator-sdk/java-operator-sdk/blob/main/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/processing/event/source/inbound/SimpleInboundEventSource.java)
+[SimpleInboundEventSource](https://github.com/operator-framework/java-operator-sdk/blob/main/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/processing/event/source/inbound/SimpleInboundEventSource.java)
 and
-[CachingInboundEventSource](https://github.com/java-operator-sdk/java-operator-sdk/blob/main/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/processing/event/source/inbound/CachingInboundEventSource.java)
+[CachingInboundEventSource](https://github.com/operator-framework/java-operator-sdk/blob/main/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/processing/event/source/inbound/CachingInboundEventSource.java)
 are used to handle incoming events from webhooks and messaging systems.
 
-#### `ControllerResourceEventSource`
+#### `ControllerEventSource`
 
-[ControllerResourceEventSource](https://github.com/java-operator-sdk/java-operator-sdk/blob/main/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/processing/event/source/controller/ControllerResourceEventSource.java)
+[ControllerEventSource](https://github.com/operator-framework/java-operator-sdk/blob/main/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/processing/event/source/controller/ControllerEventSource.java)
 is a special `EventSource` implementation that you will never have to deal with directly. It is,
-however, at the core of the SDK is automatically added for you: this is the main event source
+however, at the core of the SDK and is automatically added for you: this is the main event source
 that listens for changes to your primary resources and triggers your `Reconciler` when needed.
 It features smart caching and is really optimized to minimize Kubernetes API accesses and avoid
-triggering unduly your `Reconciler`.
+triggering your `Reconciler` unnecessarily.
+
+#### `TimerEventSource`
+
+[TimerEventSource](https://github.com/operator-framework/java-operator-sdk/blob/main/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/processing/event/source/timer/TimerEventSource.java)
+is an internal `EventSource` that the SDK automatically registers for every controller (under
+the name `RetryAndRescheduleTimerEventSource`). It is used internally to schedule delayed events
+back to the `EventProcessor`, namely retry attempts after a failed reconciliation, explicit
+rescheduling requests via `UpdateControl.rescheduleAfter(...)`, and the periodic failsafe trigger
+governed by `maxReconciliationInterval`. As with `ControllerEventSource`, this is not something
+you instantiate, configure, or interact with directly. If you need periodic or delayed
+reconciliation in your `Reconciler`, use `UpdateControl.rescheduleAfter(...)` from inside
+`reconcile(...)` or configure `maxReconciliationInterval` on your controller; do not depend on
+`TimerEventSource` directly.
 
 More on the philosophy of the non Kubernetes API related event source see in
-issue [#729](https://github.com/java-operator-sdk/java-operator-sdk/issues/729).
+issue [#729](https://github.com/operator-framework/java-operator-sdk/issues/729).
 
 
 ## InformerEventSource Multi-Cluster Support
@@ -244,7 +289,7 @@ To turn off this feature, set `generationAwareEventProcessing` to `false` for th
 
 When informers / event sources are properly set up, and the `Reconciler` implementation is
 correct, no additional reconciliation triggers should be needed. However, it's
-a [common practice](https://github.com/java-operator-sdk/java-operator-sdk/issues/848#issuecomment-1016419966)
+a [common practice](https://github.com/operator-framework/java-operator-sdk/issues/848#issuecomment-1016419966)
 to have a failsafe periodic trigger in place, just to make sure resources are nevertheless
 reconciled after a certain amount of time. This functionality is in place by default, with a
 rather high time interval (currently 10 hours) after which a reconciliation will be
@@ -262,7 +307,7 @@ The event is not propagated at a fixed rate, rather it's scheduled after each re
 next reconciliation will occur at most within the specified interval after the last reconciliation.
 
 This feature can be turned off by setting `maxReconciliationInterval`
-to [`Constants.NO_MAX_RECONCILIATION_INTERVAL`](https://github.com/java-operator-sdk/java-operator-sdk/blob/main/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/api/reconciler/Constants.java#L20-L20)
+to [`Constants.NO_MAX_RECONCILIATION_INTERVAL`](https://github.com/operator-framework/java-operator-sdk/blob/main/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/api/reconciler/Constants.java#L20-L20)
 or any non-positive number.
 
 The automatic retries are not affected by this feature so a reconciliation will be re-triggered
@@ -292,8 +337,8 @@ evict cold resources than try to limit cache sizes.
 
 See usage of the related implementation using [Caffeine](https://github.com/ben-manes/caffeine) cache in integration
 tests
-for [primary resources](https://github.com/java-operator-sdk/java-operator-sdk/blob/main/caffeine-bounded-cache-support/src/test/java/io/javaoperatorsdk/operator/processing/event/source/cache/sample/AbstractTestReconciler.java).
+for [primary resources](https://github.com/operator-framework/java-operator-sdk/blob/main/caffeine-bounded-cache-support/src/test/java/io/javaoperatorsdk/operator/processing/event/source/cache/sample/AbstractTestReconciler.java).
 
 See
-also [CaffeineBoundedItemStores](https://github.com/java-operator-sdk/java-operator-sdk/blob/main/caffeine-bounded-cache-support/src/main/java/io/javaoperatorsdk/operator/processing/event/source/cache/CaffeineBoundedItemStores.java)
+also [CaffeineBoundedItemStores](https://github.com/operator-framework/java-operator-sdk/blob/main/caffeine-bounded-cache-support/src/main/java/io/javaoperatorsdk/operator/processing/event/source/cache/CaffeineBoundedItemStores.java)
 for more details.
