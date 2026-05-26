@@ -44,8 +44,9 @@ graph LR
 ```
 A few things worth highlighting about the diagram above.
 
-- The framework includes an internal event source (`ControllerEventSource`) for changes affecting the primary resource. The
-  SDK registers it automatically for every controller, and you never instantiate it yourself.
+- The framework includes an internal event source (`ControllerEventSource`) for changes affecting
+  the primary resource. The SDK registers it automatically for every controller, and you never
+  instantiate it yourself.
 - Every controller also gets an internal timer-based event source that the SDK uses for delayed
   retries, `UpdateControl.rescheduleAfter(...)` requests, and periodic failsafe triggering. Like
   the controller event source, it is wired internally and is not something you register or interact
