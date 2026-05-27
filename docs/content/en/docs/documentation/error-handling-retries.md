@@ -135,6 +135,9 @@ these features:
 
 2. In case an exception is thrown, a retry is initiated. However, if an event is received
    meanwhile, it will be reconciled instantly, and this execution won't count as a retry attempt.
+   If that event-triggered reconciliation also fails inside the current retry window, the
+   existing retry deadline is preserved rather than reset — the failure does not advance the
+   retry counter unless the original deadline is imminent.
 3. If the retry limit is reached (so no more automatic retry would happen), but a new event
    received, the reconciliation will still happen, but won't reset the retry, and will still be
    marked as the last attempt in the retry info. The point (1) still holds - thus successful reconciliation will reset the retry - but no retry will happen in case of an error.
