@@ -111,6 +111,14 @@ public class EventProcessor<P extends HasMetadata> implements EventHandler, Life
             .orElseGet(HashMap::new);
   }
 
+  /**
+   * Receives an {@link Event} from a registered {@link
+   * io.javaoperatorsdk.operator.processing.event.source.EventSource} and either dispatches it for
+   * immediate processing or, if this processor has not been {@link #start() started} yet, marks it
+   * in the resource state so it can be replayed by {@link #handleAlreadyMarkedEvents()} once the
+   * processor starts. Events received during the start-up window between event source readiness and
+   * processor start are therefore deferred rather than dropped.
+   */
   @Override
   public synchronized void handleEvent(Event event) {
     try {
@@ -134,7 +142,7 @@ public class EventProcessor<P extends HasMetadata> implements EventHandler, Life
           cleanupForDeletedEvent(state.getId());
         }
         // events are received and marked, but will be processed when started, see start() method.
-        log.debug("Skipping event: {} because the event processor is not started", event);
+        log.debug("Deferring event: {} until the event processor starts", event);
         return;
       }
       handleMarkedEventForResource(state);
