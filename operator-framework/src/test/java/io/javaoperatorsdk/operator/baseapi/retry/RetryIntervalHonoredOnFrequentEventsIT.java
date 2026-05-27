@@ -32,10 +32,19 @@ import static io.javaoperatorsdk.operator.baseapi.retry.RetryIT.createTestCustom
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
 
-class RetryIntervalNotHonoredOnFrequentEventsIT {
+@Sample(
+    tldr = "Retry Interval Honored Despite Frequent Reconciliation Triggers",
+    description =
+        """
+        Verifies that with a low max attempts (3) and a high retry interval (1 minute), \
+        reconciliations triggered by external events (e.g. resource updates) during the retry \
+        window do not consume retry attempts. The retry counter should only advance when the \
+        scheduled retry deadline is approached, so the configured interval is honored.
+        """)
+class RetryIntervalHonoredOnFrequentEventsIT {
 
   private static final Logger log =
-      LoggerFactory.getLogger(RetryIntervalNotHonoredOnFrequentEventsIT.class);
+      LoggerFactory.getLogger(RetryIntervalHonoredOnFrequentEventsIT.class);
 
   public static final int MAX_RETRY_ATTEMPTS = 3;
   public static final int RETRY_INTERVAL_MILLIS = 60_000;
@@ -56,23 +65,21 @@ class RetryIntervalNotHonoredOnFrequentEventsIT {
           .build();
 
   @Test
-  void frequentEventsDuringRetryWindowExhaustRetryCounter() {
+  void frequentEventsDuringRetryWindowDoNotExhaustRetryCounter() {
     RetryTestCustomResource resource = createTestCustomResource("frequent-events");
     var created = operator.create(resource);
 
     // Wait until the initial reconciliation has been executed and failed; the retry timer is now
-    // armed for RETRY_INTERVAL_MILLIS in the future.
+    // armed for RETRY_INTERVAL_MILLIS in the future, retry counter is at 1.
     await()
         .pollInterval(Duration.ofMillis(50))
         .atMost(5, TimeUnit.SECONDS)
         .untilAsserted(
             () -> assertThat(reconciler.getNumberOfExecutions()).isGreaterThanOrEqualTo(1));
 
-    // Trigger several updates, waiting for each to result in its own reconciliation cycle. Without
-    // this spacing, multiple events would collapse into a single reconciliation and would not
-    // advance the retry counter on every update. With proper spacing, each failed reconciliation
-    // advances the retry counter — even though we are well inside the configured 1 minute
-    // interval and the retry timer hasn't fired yet.
+    // Trigger several updates spaced apart so each results in its own reconciliation cycle. Each
+    // failed reconciliation lands well inside the 1 minute retry window, so the retry counter
+    // must NOT advance — only the original retry deadline matters.
     IntStream.rangeClosed(1, NUMBER_OF_UPDATES)
         .forEach(
             i -> {
@@ -91,9 +98,10 @@ class RetryIntervalNotHonoredOnFrequentEventsIT {
                               .isGreaterThanOrEqualTo(expectedExecutions));
             });
 
-    // We reached at least MAX_RETRY_ATTEMPTS + 1 executions (initial + 3 retries) within seconds,
-    // even though the configured retry interval is 1 minute. With the interval being honored we
-    // would expect at most 1 reconciliation in this window.
-    assertThat(reconciler.getNumberOfExecutions()).isGreaterThanOrEqualTo(MAX_RETRY_ATTEMPTS + 1);
+    // Reconciliations did happen for every event (so events are not lost) but the retry counter
+    // observed inside the reconciler never went past 1: the configured 1 minute interval is
+    // honored even under a steady stream of external events.
+    assertThat(reconciler.getNumberOfExecutions()).isGreaterThanOrEqualTo(NUMBER_OF_UPDATES + 1);
+    assertThat(reconciler.getMaxObservedRetryAttempt()).isEqualTo(1);
   }
 }
