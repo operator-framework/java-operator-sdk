@@ -36,7 +36,5 @@ public interface RetryExecution extends RetryInfo {
    * <p>Used to decide whether an event-driven failed reconciliation that lands well inside the
    * retry window should consume a retry attempt or simply be re-scheduled on the original deadline.
    */
-  default Optional<Duration> remainingDurationUntilNextRetry() {
-    return Optional.empty();
-  }
+  Optional<Duration> remainingDurationUntilNextRetry();
 }

@@ -21,10 +21,10 @@ import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-public class GenericRetryExecutionTest {
+class GenericRetryExecutionTest {
 
   @Test
-  public void noNextDelayIfMaxAttemptLimitReached() {
+  void noNextDelayIfMaxAttemptLimitReached() {
     RetryExecution retryExecution =
         GenericRetry.defaultLimitedExponentialRetry().setMaxAttempts(3).initExecution();
     Optional<Long> res = callNextDelayNTimes(retryExecution, 2);
@@ -35,7 +35,7 @@ public class GenericRetryExecutionTest {
   }
 
   @Test
-  public void canLimitMaxIntervalLength() {
+  void canLimitMaxIntervalLength() {
     RetryExecution retryExecution =
         GenericRetry.defaultLimitedExponentialRetry()
             .setInitialInterval(2000)
@@ -49,13 +49,13 @@ public class GenericRetryExecutionTest {
   }
 
   @Test
-  public void supportsNoRetry() {
+  void supportsNoRetry() {
     RetryExecution retryExecution = GenericRetry.noRetry().initExecution();
     assertThat(retryExecution.nextDelay()).isEmpty();
   }
 
   @Test
-  public void supportsIsLastExecution() {
+  void supportsIsLastExecution() {
     GenericRetryExecution execution = new GenericRetry().setMaxAttempts(2).initExecution();
     assertThat(execution.isLastAttempt()).isFalse();
 
@@ -65,7 +65,7 @@ public class GenericRetryExecutionTest {
   }
 
   @Test
-  public void returnAttemptIndex() {
+  void returnAttemptIndex() {
     RetryExecution retryExecution = GenericRetry.defaultLimitedExponentialRetry().initExecution();
 
     assertThat(retryExecution.getAttemptCount()).isEqualTo(0);
@@ -73,11 +73,59 @@ public class GenericRetryExecutionTest {
     assertThat(retryExecution.getAttemptCount()).isEqualTo(1);
   }
 
-  private RetryExecution getDefaultRetryExecution() {
-    return GenericRetry.defaultLimitedExponentialRetry().initExecution();
+  @Test
+  void remainingDurationEmptyBeforeFirstNextDelay() {
+    RetryExecution retryExecution = GenericRetry.defaultLimitedExponentialRetry().initExecution();
+
+    assertThat(retryExecution.remainingDurationUntilNextRetry()).isEmpty();
   }
 
-  public Optional<Long> callNextDelayNTimes(RetryExecution retryExecution, int n) {
+  @Test
+  void remainingDurationPresentAfterNextDelay() {
+    long interval = 60_000L;
+    RetryExecution retryExecution = new GenericRetry().setInitialInterval(interval).initExecution();
+
+    retryExecution.nextDelay();
+
+    Optional<java.time.Duration> remaining = retryExecution.remainingDurationUntilNextRetry();
+    assertThat(remaining).isPresent();
+    assertThat(remaining.get().toMillis()).isPositive().isLessThanOrEqualTo(interval);
+  }
+
+  @Test
+  void remainingDurationEmptyAfterIntervalElapsed() throws InterruptedException {
+    RetryExecution retryExecution = new GenericRetry().setInitialInterval(20).initExecution();
+
+    retryExecution.nextDelay();
+    Thread.sleep(60);
+
+    assertThat(retryExecution.remainingDurationUntilNextRetry()).isEmpty();
+  }
+
+  @Test
+  void remainingDurationReflectsUpdatedIntervalAfterSubsequentNextDelay() {
+    long initialInterval = 1000L;
+    double multiplier = 2.0;
+    RetryExecution retryExecution =
+        new GenericRetry()
+            .setInitialInterval(initialInterval)
+            .setIntervalMultiplier(multiplier)
+            .initExecution();
+
+    // first two calls keep the initial interval (multiplier only kicks in after attempt 1)
+    retryExecution.nextDelay();
+    retryExecution.nextDelay();
+    // third call doubles the interval to 2000ms
+    retryExecution.nextDelay();
+
+    Optional<java.time.Duration> remaining = retryExecution.remainingDurationUntilNextRetry();
+    assertThat(remaining).isPresent();
+    assertThat(remaining.get().toMillis())
+        .isPositive()
+        .isLessThanOrEqualTo((long) (initialInterval * multiplier));
+  }
+
+  Optional<Long> callNextDelayNTimes(RetryExecution retryExecution, int n) {
     for (int i = 0; i < n; i++) {
       retryExecution.nextDelay();
     }
