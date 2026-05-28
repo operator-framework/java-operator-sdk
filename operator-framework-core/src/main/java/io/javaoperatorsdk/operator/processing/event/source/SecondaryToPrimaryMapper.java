@@ -30,12 +30,12 @@ public interface SecondaryToPrimaryMapper<R> {
   /**
    * Maps a secondary resource to the set of primary resources that should be reconciled in
    * response. Implementing this single-argument form is sufficient for the vast majority of use
-   * cases — prefer it unless you specifically need access to the previous version of the
-   * secondary resource (see {@link #toPrimaryResourceIDs(Object, Object)}).
+   * cases — prefer it unless you specifically need access to the previous version of the secondary
+   * resource (see {@link #toPrimaryResourceIDs(Object, Object)}).
    *
    * @param resource the secondary resource for which an event was received
-   * @return set of primary resource IDs to enqueue for reconciliation; an empty set means the
-   *     event is irrelevant and no reconciliation is triggered
+   * @return set of primary resource IDs to enqueue for reconciliation; an empty set means the event
+   *     is irrelevant and no reconciliation is triggered
    */
   Set<ResourceID> toPrimaryResourceIDs(R resource);
 
