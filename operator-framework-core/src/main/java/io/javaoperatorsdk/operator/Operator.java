@@ -19,6 +19,7 @@ import java.time.Duration;
 import java.util.HashSet;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
 
 import org.slf4j.Logger;
@@ -43,6 +44,7 @@ public class Operator implements LifecycleAware {
   private LeaderElectionManager leaderElectionManager;
   private ConfigurationService configurationService;
   private volatile boolean started = false;
+  private final AtomicBoolean shutdownHookInstalled = new AtomicBoolean(false);
 
   public Operator() {
     init(initConfigurationService(null, null), true);
@@ -150,13 +152,22 @@ public class Operator implements LifecycleAware {
    * lease is not released cleanly.
    */
   public void installShutdownHook() {
-    Runtime.getRuntime().addShutdownHook(new Thread(this::stop));
+    if (shutdownHookInstalled.compareAndSet(false, true)) {
+      Runtime.getRuntime().addShutdownHook(new Thread(this::stop));
+    }
   }
 
   /**
-   * @deprecated The {@code gracefulShutdownTimeout} argument is ignored. Use {@link
-   *     #installShutdownHook()} instead.
-   * @param gracefulShutdownTimeout ignored, kept only for source and binary compatibility
+   * Adds a shutdown hook that automatically calls {@link #stop()} when the app shuts down. Note
+   * that graceful shutdown is usually not needed, but some {@link Reconciler} implementations might
+   * require it.
+   *
+   * <p>Note that you might want to tune "terminationGracePeriodSeconds" for the Pod running the
+   * controller.
+   *
+   * @param gracefulShutdownTimeout ignored, configure {@link
+   *     ConfigurationService#reconciliationTerminationTimeout()} instead
+   * @deprecated Use {@link #installShutdownHook()} instead
    */
   @Deprecated(forRemoval = true)
   @SuppressWarnings("unused")

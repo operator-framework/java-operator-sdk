@@ -15,9 +15,8 @@
  */
 package io.javaoperatorsdk.operator;
 
-import java.util.Arrays;
 import java.util.Collection;
-import java.util.HashSet;
+import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -51,12 +50,6 @@ import io.javaoperatorsdk.operator.api.config.LeaderElectionConfiguration;
  * configuration controls the lease name, namespace, durations, and optional user-supplied {@link
  * LeaderCallbacks}.
  *
- * <p>Internally this class wraps a Fabric8 {@link LeaderElector} that coordinates via a Kubernetes
- * {@code Lease} resource (group {@value #COORDINATION_GROUP}, resource {@value #LEASES_RESOURCE}).
- * When this pod acquires the lease, {@link #startLeading()} starts event processing on the
- * controller manager. When the lease is lost or the leader-election future is cancelled, {@link
- * #stopLeading()} is invoked.
- *
  * <p>{@link #stopLeading()} behaves differently depending on how it was triggered:
  *
  * <ul>
@@ -76,6 +69,7 @@ import io.javaoperatorsdk.operator.api.config.LeaderElectionConfiguration;
 public class LeaderElectionManager {
 
   private static final Logger log = LoggerFactory.getLogger(LeaderElectionManager.class);
+  private static final List<String> REQUIRED_VERBS = List.of("create", "update", "get");
 
   public static final String NO_PERMISSION_TO_LEASE_RESOURCE_MESSAGE =
       "No permission to lease resource.";
@@ -159,7 +153,7 @@ public class LeaderElectionManager {
     controllerManager.startEventProcessing();
   }
 
-  protected void stopLeading() {
+  void stopLeading() {
     if (stoppingGracefully.get()) {
       log.info("Stopped leading for identity: {} during graceful shutdown.", identity);
       return;
@@ -199,7 +193,6 @@ public class LeaderElectionManager {
   }
 
   private void checkLeaseAccess() {
-    var verbsRequired = Arrays.asList("create", "update", "get");
     SelfSubjectRulesReview review = new SelfSubjectRulesReview();
     review.setSpec(new SelfSubjectRulesReviewSpecBuilder().withNamespace(leaseNamespace).build());
     var reviewResult = configurationService.getKubernetesClient().resource(review).create();
@@ -214,17 +207,15 @@ public class LeaderElectionManager {
                         || rule.getResourceNames().contains(leaseName))
             .map(ResourceRule::getVerbs)
             .flatMap(Collection::stream)
-            .distinct()
-            .collect(Collectors.toList());
-    if (verbsAllowed.contains(UNIVERSAL_VALUE)
-        || new HashSet<>(verbsAllowed).containsAll(verbsRequired)) {
+            .collect(Collectors.toUnmodifiableSet());
+    if (verbsAllowed.contains(UNIVERSAL_VALUE) || verbsAllowed.containsAll(REQUIRED_VERBS)) {
       return;
     }
 
     var missingVerbs =
-        verbsRequired.stream()
+        REQUIRED_VERBS.stream()
             .filter(Predicate.not(verbsAllowed::contains))
-            .collect(Collectors.toList());
+            .collect(Collectors.joining(","));
 
     throw new OperatorException(
         NO_PERMISSION_TO_LEASE_RESOURCE_MESSAGE
