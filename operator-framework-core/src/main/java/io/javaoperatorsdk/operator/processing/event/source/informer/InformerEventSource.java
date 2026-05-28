@@ -126,7 +126,7 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
           primaryToSecondaryIndex.onDelete(resource);
           temporaryResourceCache.onDeleteEvent(resource, deletedFinalStateUnknown);
           if (acceptedByDeleteFilters(resource, deletedFinalStateUnknown)) {
-            propagateEvent(resource);
+            propagateEvent(resource, null);
           }
         });
   }
@@ -134,7 +134,7 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
   @Override
   protected void handleEvent(
       ResourceAction action, R resource, R oldResource, Boolean deletedFinalStateUnknown) {
-    propagateEvent(resource);
+    propagateEvent(resource, oldResource);
   }
 
   @Override
@@ -161,15 +161,15 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
       log.debug(
           "Propagating event for {}, resource with same version not result of a reconciliation.",
           action);
-      propagateEvent(newObject);
+      propagateEvent(newObject, oldObject);
     } else {
       log.debug("Event filtered out for operation: {}, resourceID: {}", action, resourceID);
     }
   }
 
-  private void propagateEvent(R object) {
+  private void propagateEvent(R resource, R oldResource) {
     var primaryResourceIdSet =
-        configuration().getSecondaryToPrimaryMapper().toPrimaryResourceIDs(object);
+        configuration().getSecondaryToPrimaryMapper().toPrimaryResourceIDs(resource, oldResource);
     if (primaryResourceIdSet.isEmpty()) {
       return;
     }

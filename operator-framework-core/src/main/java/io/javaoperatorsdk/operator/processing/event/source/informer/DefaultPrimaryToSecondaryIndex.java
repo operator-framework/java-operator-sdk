@@ -33,7 +33,8 @@ class DefaultPrimaryToSecondaryIndex<R extends HasMetadata> implements PrimaryTo
 
   @Override
   public synchronized void onAddOrUpdate(R resource) {
-    Set<ResourceID> primaryResources = secondaryToPrimaryMapper.toPrimaryResourceIDs(resource);
+    Set<ResourceID> primaryResources =
+        secondaryToPrimaryMapper.toPrimaryResourceIDs(resource, null);
     primaryResources.forEach(
         primaryResource -> {
           var resourceSet =
@@ -44,7 +45,8 @@ class DefaultPrimaryToSecondaryIndex<R extends HasMetadata> implements PrimaryTo
 
   @Override
   public synchronized void onDelete(R resource) {
-    Set<ResourceID> primaryResources = secondaryToPrimaryMapper.toPrimaryResourceIDs(resource);
+    Set<ResourceID> primaryResources =
+        secondaryToPrimaryMapper.toPrimaryResourceIDs(resource, null);
     primaryResources.forEach(
         primaryResource -> {
           var secondaryResources = index.get(primaryResource);

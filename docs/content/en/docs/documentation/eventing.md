@@ -135,6 +135,25 @@ rare corner cases. Returning an empty set means that the mapper considered the s
 resource event as irrelevant and the SDK will thus not trigger a reconciliation of the primary
 resource in that situation.
 
+`SecondaryToPrimaryMapper` exposes two methods:
+
+- `toPrimaryResourceIDs(R resource)` — the original mapper. Implementing it is sufficient for
+  the vast majority of use cases.
+- `toPrimaryResourceIDs(R newResource, R oldResource)` — a variant that is the one actually
+  invoked by the SDK on every secondary event. Its default implementation delegates to the
+  single-argument method, so existing mappers keep working unchanged.
+
+Override the two-argument variant only in edge cases where the set of primary resources to
+reconcile depends on what changed between the previous and the new version of the secondary
+resource (e.g. a reference that moved from one primary to another, where both primaries need
+to be reconciled). **Use it with caution:** `oldResource` is sourced from the informer cache and
+is only populated for genuine update events observed while the controller is already running.
+On controller startup the cache is empty, so the initial events received for resources that
+already exist in the cluster are delivered as adds with `oldResource == null` — even if those
+resources had been updated before the operator came up. `oldResource` is also `null` for delete
+events and for events triggered through the primary-to-secondary index. Implementations must
+therefore handle a `null` `oldResource` gracefully.
+
 Adding a `SecondaryToPrimaryMapper` is typically sufficient when there is a one-to-many relationship
 between primary and secondary resources. The secondary resources can be mapped to its primary
 owner, and this is enough information to also get these secondary resources from the `Context`
