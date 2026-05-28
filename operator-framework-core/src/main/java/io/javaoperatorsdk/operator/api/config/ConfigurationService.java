@@ -22,6 +22,8 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.function.Consumer;
 
+import io.javaoperatorsdk.operator.processing.event.source.informer.pool.DefaultInformerPool;
+import io.javaoperatorsdk.operator.processing.event.source.informer.pool.InformerPool;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -475,5 +477,9 @@ public interface ConfigurationService {
    */
   default boolean cloneSecondaryResourcesWhenGettingFromCache() {
     return false;
+  }
+
+  default InformerPool informerPool() {
+    return new DefaultInformerPool(getKubernetesClient(),this);
   }
 }
