@@ -40,7 +40,8 @@ class MappersTest {
     var secondary = getConfigMap(primary);
     secondary.addOwnerReference(primary);
 
-    var res = Mappers.fromOwnerReferences(TestCustomResource.class).toPrimaryResourceIDs(secondary);
+    var res =
+        Mappers.fromOwnerReferences(TestCustomResource.class).toPrimaryResourceIDs(secondary, null);
 
     assertThat(res).contains(ResourceID.fromResource(primary));
   }
@@ -65,7 +66,7 @@ class MappersTest {
             .build();
     secondary.addOwnerReference(primary);
 
-    var res = Mappers.fromOwnerReferences(ConfigMap.class).toPrimaryResourceIDs(secondary);
+    var res = Mappers.fromOwnerReferences(ConfigMap.class).toPrimaryResourceIDs(secondary, null);
 
     assertThat(res).contains(ResourceID.fromResource(primary));
   }
@@ -79,7 +80,7 @@ class MappersTest {
 
     var res =
         Mappers.fromOwnerReferences(TestCustomResourceOtherV1.class)
-            .toPrimaryResourceIDs(secondary);
+            .toPrimaryResourceIDs(secondary, null);
 
     assertThat(res).isEmpty();
   }
@@ -103,7 +104,7 @@ class MappersTest {
                 HasMetadata.getGroup(TestCustomResource.class) + "/v2",
                 HasMetadata.getKind(TestCustomResource.class),
                 false)
-            .toPrimaryResourceIDs(secondary);
+            .toPrimaryResourceIDs(secondary, null);
 
     assertThat(res).contains(ResourceID.fromResource(primary));
   }
