@@ -200,9 +200,9 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
     }
   }
 
-  protected void propagateEvent(R object) {
+  private void propagateEvent(R resource, R oldResource) {
     var primaryResourceIdSet =
-        configuration().getSecondaryToPrimaryMapper().toPrimaryResourceIDs(object);
+        configuration().getSecondaryToPrimaryMapper().toPrimaryResourceIDs(resource, oldResource);
     if (primaryResourceIdSet.isEmpty()) {
       return;
     }
