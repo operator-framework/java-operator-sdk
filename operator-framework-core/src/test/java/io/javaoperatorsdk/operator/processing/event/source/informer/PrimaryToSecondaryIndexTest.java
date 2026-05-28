@@ -46,7 +46,7 @@ class PrimaryToSecondaryIndexTest {
 
   @BeforeEach
   void setup() {
-    when(secondaryToPrimaryMapperMock.toPrimaryResourceIDs(any()))
+    when(secondaryToPrimaryMapperMock.toPrimaryResourceIDs(any(), any()))
         .thenReturn(Set.of(primaryID1, primaryID2));
   }
 
