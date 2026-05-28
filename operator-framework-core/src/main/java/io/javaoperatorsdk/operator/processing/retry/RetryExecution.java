@@ -15,6 +15,7 @@
  */
 package io.javaoperatorsdk.operator.processing.retry;
 
+import java.time.Duration;
 import java.util.Optional;
 
 import io.javaoperatorsdk.operator.api.reconciler.RetryInfo;
@@ -25,4 +26,15 @@ public interface RetryExecution extends RetryInfo {
    * @return the time to wait until the next execution in milliseconds
    */
   Optional<Long> nextDelay();
+
+  /**
+   * Remaining time of the currently scheduled retry interval, i.e. the time until the previously
+   * computed retry delay would elapse. Returns an empty {@link Optional} if no retry has been
+   * scheduled yet (i.e. {@link #nextDelay()} has never been called) or if the deadline has already
+   * passed.
+   *
+   * <p>Used to decide whether an event-driven failed reconciliation that lands well inside the
+   * retry window should consume a retry attempt or simply be re-scheduled on the original deadline.
+   */
+  Optional<Duration> remainingDurationUntilNextRetry();
 }

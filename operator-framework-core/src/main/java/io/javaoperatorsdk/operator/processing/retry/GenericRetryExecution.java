@@ -15,6 +15,7 @@
  */
 package io.javaoperatorsdk.operator.processing.retry;
 
+import java.time.Duration;
 import java.util.Optional;
 
 public class GenericRetryExecution implements RetryExecution {
@@ -23,6 +24,7 @@ public class GenericRetryExecution implements RetryExecution {
 
   private int lastAttemptIndex = 0;
   private long currentInterval;
+  private Long lastNextDelayCallEpochMillis;
 
   public GenericRetryExecution(GenericRetry genericRetry) {
     this.genericRetry = genericRetry;
@@ -40,6 +42,7 @@ public class GenericRetryExecution implements RetryExecution {
       }
     }
     lastAttemptIndex++;
+    lastNextDelayCallEpochMillis = System.currentTimeMillis();
     return Optional.of(currentInterval);
   }
 
@@ -51,5 +54,17 @@ public class GenericRetryExecution implements RetryExecution {
   @Override
   public int getAttemptCount() {
     return lastAttemptIndex;
+  }
+
+  @Override
+  public Optional<Duration> remainingDurationUntilNextRetry() {
+    if (lastNextDelayCallEpochMillis == null) {
+      return Optional.empty();
+    }
+    long remaining = (lastNextDelayCallEpochMillis + currentInterval) - System.currentTimeMillis();
+    if (remaining <= 0) {
+      return Optional.empty();
+    }
+    return Optional.of(Duration.ofMillis(remaining));
   }
 }
