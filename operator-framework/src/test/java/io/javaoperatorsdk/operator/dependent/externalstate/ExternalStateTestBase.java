@@ -15,6 +15,7 @@
  */
 package io.javaoperatorsdk.operator.dependent.externalstate;
 
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import io.fabric8.kubernetes.api.model.ConfigMap;
@@ -34,6 +35,11 @@ public abstract class ExternalStateTestBase {
   public static final String UPDATED_DATA = "updatedData";
 
   private final ExternalIDGenServiceMock externalService = ExternalIDGenServiceMock.getInstance();
+
+  @BeforeEach
+  void resetExternalService() {
+    externalService.reset();
+  }
 
   @Test
   public void reconcilesResourceWithPersistentState() {

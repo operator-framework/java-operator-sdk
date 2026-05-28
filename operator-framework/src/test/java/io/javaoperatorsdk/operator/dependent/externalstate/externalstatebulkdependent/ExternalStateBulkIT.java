@@ -17,6 +17,7 @@ package io.javaoperatorsdk.operator.dependent.externalstate.externalstatebulkdep
 
 import java.time.Duration;
 
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
@@ -48,6 +49,11 @@ class ExternalStateBulkIT {
   public static final int DECREASED_BULK_SIZE = 2;
 
   private final ExternalIDGenServiceMock externalService = ExternalIDGenServiceMock.getInstance();
+
+  @BeforeEach
+  void resetExternalService() {
+    externalService.reset();
+  }
 
   @RegisterExtension
   LocallyRunOperatorExtension operator =
