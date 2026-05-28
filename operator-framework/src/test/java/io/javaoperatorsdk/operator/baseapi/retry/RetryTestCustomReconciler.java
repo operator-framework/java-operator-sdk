@@ -32,6 +32,7 @@ public class RetryTestCustomReconciler
 
   private static final Logger log = LoggerFactory.getLogger(RetryTestCustomReconciler.class);
   private final AtomicInteger numberOfExecutions = new AtomicInteger(0);
+  private final AtomicInteger maxObservedRetryAttempt = new AtomicInteger(0);
 
   private final AtomicInteger numberOfExecutionFails;
 
@@ -43,6 +44,12 @@ public class RetryTestCustomReconciler
   public UpdateControl<RetryTestCustomResource> reconcile(
       RetryTestCustomResource resource, Context<RetryTestCustomResource> context) {
     numberOfExecutions.addAndGet(1);
+    context
+        .getRetryInfo()
+        .ifPresent(
+            info ->
+                maxObservedRetryAttempt.updateAndGet(
+                    prev -> Math.max(prev, info.getAttemptCount())));
 
     log.info("Value: " + resource.getSpec().getValue());
 
@@ -69,5 +76,9 @@ public class RetryTestCustomReconciler
 
   public int getNumberOfExecutions() {
     return numberOfExecutions.get();
+  }
+
+  public int getMaxObservedRetryAttempt() {
+    return maxObservedRetryAttempt.get();
   }
 }
