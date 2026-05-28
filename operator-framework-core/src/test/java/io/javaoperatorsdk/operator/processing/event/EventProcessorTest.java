@@ -466,6 +466,98 @@ class EventProcessorTest {
   }
 
   @Test
+  void preservesRetryDeadlineWhenRemainingDurationAboveThreshold() {
+    RetryExecution mockRetryExecution = mock(RetryExecution.class);
+    when(mockRetryExecution.nextDelay()).thenReturn(Optional.of(60_000L));
+    when(mockRetryExecution.remainingDurationUntilNextRetry())
+        .thenReturn(Optional.of(Duration.ofMillis(50_000)));
+    Retry retry = mock(Retry.class);
+    when(retry.initExecution()).thenReturn(mockRetryExecution);
+    eventProcessorWithRetry =
+        spy(
+            new EventProcessor(
+                controllerConfiguration(retry, LinearRateLimiter.deactivatedRateLimiter()),
+                reconciliationDispatcherMock,
+                eventSourceManagerMock,
+                metricsMock));
+    eventProcessorWithRetry.start();
+    when(eventProcessorWithRetry.retryEventSource()).thenReturn(retryTimerEventSourceMock);
+
+    TestCustomResource customResource = testCustomResource();
+    ExecutionScope executionScope =
+        new ExecutionScope(null, null, false, false).setResource(customResource);
+    PostExecutionControl postExecutionControl =
+        PostExecutionControl.exceptionDuringExecution(new RuntimeException("test"));
+
+    eventProcessorWithRetry.eventProcessingFinished(executionScope, postExecutionControl);
+
+    verify(mockRetryExecution, never()).nextDelay();
+    verify(retryTimerEventSourceMock, times(1))
+        .scheduleOnce(eq(ResourceID.fromResource(customResource)), eq(50_000L));
+  }
+
+  @Test
+  void consumesRetryAttemptWhenRemainingDurationAtOrBelowThreshold() {
+    RetryExecution mockRetryExecution = mock(RetryExecution.class);
+    when(mockRetryExecution.nextDelay()).thenReturn(Optional.of(60_000L));
+    when(mockRetryExecution.remainingDurationUntilNextRetry())
+        .thenReturn(Optional.of(Duration.ofMillis(2_000)));
+    Retry retry = mock(Retry.class);
+    when(retry.initExecution()).thenReturn(mockRetryExecution);
+    eventProcessorWithRetry =
+        spy(
+            new EventProcessor(
+                controllerConfiguration(retry, LinearRateLimiter.deactivatedRateLimiter()),
+                reconciliationDispatcherMock,
+                eventSourceManagerMock,
+                metricsMock));
+    eventProcessorWithRetry.start();
+    when(eventProcessorWithRetry.retryEventSource()).thenReturn(retryTimerEventSourceMock);
+
+    TestCustomResource customResource = testCustomResource();
+    ExecutionScope executionScope =
+        new ExecutionScope(null, null, false, false).setResource(customResource);
+    PostExecutionControl postExecutionControl =
+        PostExecutionControl.exceptionDuringExecution(new RuntimeException("test"));
+
+    eventProcessorWithRetry.eventProcessingFinished(executionScope, postExecutionControl);
+
+    verify(mockRetryExecution, times(1)).nextDelay();
+    verify(retryTimerEventSourceMock, times(1))
+        .scheduleOnce(eq(ResourceID.fromResource(customResource)), eq(60_000L));
+  }
+
+  @Test
+  void firstFailureSchedulesUsingNextDelayWhenNoRemainingDuration() {
+    RetryExecution mockRetryExecution = mock(RetryExecution.class);
+    when(mockRetryExecution.nextDelay()).thenReturn(Optional.of(60_000L));
+    when(mockRetryExecution.remainingDurationUntilNextRetry()).thenReturn(Optional.empty());
+    Retry retry = mock(Retry.class);
+    when(retry.initExecution()).thenReturn(mockRetryExecution);
+    eventProcessorWithRetry =
+        spy(
+            new EventProcessor(
+                controllerConfiguration(retry, LinearRateLimiter.deactivatedRateLimiter()),
+                reconciliationDispatcherMock,
+                eventSourceManagerMock,
+                metricsMock));
+    eventProcessorWithRetry.start();
+    when(eventProcessorWithRetry.retryEventSource()).thenReturn(retryTimerEventSourceMock);
+
+    TestCustomResource customResource = testCustomResource();
+    ExecutionScope executionScope =
+        new ExecutionScope(null, null, false, false).setResource(customResource);
+    PostExecutionControl postExecutionControl =
+        PostExecutionControl.exceptionDuringExecution(new RuntimeException("test"));
+
+    eventProcessorWithRetry.eventProcessingFinished(executionScope, postExecutionControl);
+
+    verify(mockRetryExecution, times(1)).nextDelay();
+    verify(retryTimerEventSourceMock, times(1))
+        .scheduleOnce(eq(ResourceID.fromResource(customResource)), eq(60_000L));
+  }
+
+  @Test
   void executionOfReconciliationShouldNotStartIfProcessorStopped() throws InterruptedException {
     when(reconciliationDispatcherMock.handleExecution(any()))
         .then(
