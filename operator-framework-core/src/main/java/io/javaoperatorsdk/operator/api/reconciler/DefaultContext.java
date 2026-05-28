@@ -36,6 +36,7 @@ import io.javaoperatorsdk.operator.processing.Controller;
 import io.javaoperatorsdk.operator.processing.event.EventSourceRetriever;
 import io.javaoperatorsdk.operator.processing.event.NoEventSourceForClassException;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
+import io.javaoperatorsdk.operator.processing.event.source.Cache;
 
 public class DefaultContext<P extends HasMetadata> implements Context<P> {
   private RetryInfo retryInfo;
@@ -95,6 +96,20 @@ public class DefaultContext<P extends HasMetadata> implements Context<P> {
     }
   }
 
+  /**
+   * Whether a missing event source for the given type is the expected case, in which case callers
+   * should return an empty result instead of propagating the {@link
+   * NoEventSourceForClassException}.
+   *
+   * <p>If a workflow has an activation condition there can be event sources which are only
+   * registered if the activation condition holds, but to provide a consistent API we return an
+   * empty result instead of throwing an exception. Note that not only the resource which has an
+   * activation condition might not be registered but dependents which depend on it.
+   */
+  private boolean isMissingEventSourceExpected(String eventSourceName, Class<?> expectedType) {
+    return eventSourceName == null && controller.workflowContainsDependentForType(expectedType);
+  }
+
   private <R> Map<ResourceID, R> deduplicatedMap(Stream<R> stream) {
     return stream.collect(
         Collectors.toUnmodifiableMap(
@@ -120,19 +135,51 @@ public class DefaultContext<P extends HasMetadata> implements Context<P> {
           .getEventSourceFor(expectedType, eventSourceName)
           .getSecondaryResource(primaryResource);
     } catch (NoEventSourceForClassException e) {
-      /*
-       * If a workflow has an activation condition there can be event sources which are only
-       * registered if the activation condition holds, but to provide a consistent API we return an
-       * Optional instead of throwing an exception.
-       *
-       * Note that not only the resource which has an activation condition might not be registered
-       * but dependents which depend on it.
-       */
-      if (eventSourceName == null && controller.workflowContainsDependentForType(expectedType)) {
+      if (isMissingEventSourceExpected(eventSourceName, expectedType)) {
         return Optional.empty();
-      } else {
-        throw e;
       }
+      throw e;
+    }
+  }
+
+  @Override
+  public <R extends HasMetadata> Optional<R> getSecondaryResource(
+      Class<R> expectedType, String eventSourceName, String name, String namespace) {
+    try {
+      final var eventSource =
+          controller.getEventSourceManager().getEventSourceFor(expectedType, eventSourceName);
+      final var resourceID = new ResourceID(name, namespace);
+      if (eventSource instanceof Cache<?> cache) {
+        return cache.get(resourceID).map(expectedType::cast);
+      }
+      return eventSource.getSecondaryResources(primaryResource).stream()
+          .filter(r -> ResourceID.fromResource(r).equals(resourceID))
+          .findFirst();
+    } catch (NoEventSourceForClassException e) {
+      if (isMissingEventSourceExpected(eventSourceName, expectedType)) {
+        return Optional.empty();
+      }
+      throw e;
+    }
+  }
+
+  @Override
+  public <R> Stream<R> getSecondaryResourcesAsStream(
+      Class<R> expectedType, String eventSourceName) {
+    try {
+      final var eventSource =
+          controller.getEventSourceManager().getEventSourceFor(expectedType, eventSourceName);
+      if (eventSource instanceof ResourceCache<?> resourceCache) {
+        final var ns = primaryResource.getMetadata().getNamespace();
+        final Stream<?> stream = ns == null ? resourceCache.list() : resourceCache.list(ns);
+        return stream.map(expectedType::cast);
+      }
+      return eventSource.getSecondaryResources(primaryResource).stream();
+    } catch (NoEventSourceForClassException e) {
+      if (isMissingEventSourceExpected(eventSourceName, expectedType)) {
+        return Stream.empty();
+      }
+      throw e;
     }
   }
 
