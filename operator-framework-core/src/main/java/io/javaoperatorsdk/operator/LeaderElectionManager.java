@@ -15,10 +15,11 @@
  */
 package io.javaoperatorsdk.operator;
 
-import java.util.Arrays;
 import java.util.Collection;
+import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
@@ -36,9 +37,39 @@ import io.fabric8.kubernetes.client.extended.leaderelection.resourcelock.LeaseLo
 import io.javaoperatorsdk.operator.api.config.ConfigurationService;
 import io.javaoperatorsdk.operator.api.config.LeaderElectionConfiguration;
 
+/**
+ * Manages the leader-election lifecycle for an {@link Operator} instance. Leader election ensures
+ * that, in a high-availability setup with multiple replicas of the same operator, only one replica
+ * at a time actively reconciles resources. The replica currently holding the lease is referred to
+ * as the leader, and the others stand by until the lease becomes available.
+ *
+ * <p>Leader election is opt-in. It is enabled when a {@link LeaderElectionConfiguration} is
+ * supplied via {@link
+ * io.javaoperatorsdk.operator.api.config.ConfigurationServiceOverrider#withLeaderElectionConfiguration(LeaderElectionConfiguration)
+ * ConfigurationServiceOverrider#withLeaderElectionConfiguration(LeaderElectionConfiguration)}. The
+ * configuration controls the lease name, namespace, durations, and optional user-supplied {@link
+ * LeaderCallbacks}.
+ *
+ * <p>{@link #stopLeading()} behaves differently depending on how it was triggered:
+ *
+ * <ul>
+ *   <li>If {@link #stop()} has already been called (graceful shutdown), it logs and returns without
+ *       exiting. This avoids deadlocking against the JVM shutdown hook lock when {@link
+ *       Operator#stop()} is invoked from a JVM shutdown hook.
+ *   <li>Otherwise, if the configured {@link LeaderElectionConfiguration#isExitOnStopLeading()} is
+ *       {@code true} (the default), it calls {@code System.exit(1)} so the process restarts and
+ *       another replica can take over.
+ *   <li>If {@code isExitOnStopLeading()} is {@code false}, it only logs and returns.
+ * </ul>
+ *
+ * <p>The lifecycle methods {@link #start()} and {@link #stop()} are called by {@link Operator} as
+ * part of {@link Operator#start()} and {@link Operator#stop()} respectively. Users typically do not
+ * interact with this class directly.
+ */
 public class LeaderElectionManager {
 
   private static final Logger log = LoggerFactory.getLogger(LeaderElectionManager.class);
+  private static final List<String> REQUIRED_VERBS = List.of("create", "update", "get");
 
   public static final String NO_PERMISSION_TO_LEASE_RESOURCE_MESSAGE =
       "No permission to lease resource.";
@@ -53,6 +84,10 @@ public class LeaderElectionManager {
   private final ConfigurationService configurationService;
   private String leaseNamespace;
   private String leaseName;
+  // Set in stop() before cancelling the leader-election future. Checked in stopLeading() so that
+  // a graceful shutdown does not call System.exit, which would otherwise deadlock against the
+  // JVM shutdown hook lock when stop() is invoked from a JVM shutdown hook.
+  private final AtomicBoolean stoppingGracefully = new AtomicBoolean(false);
 
   LeaderElectionManager(
       ControllerManager controllerManager, ConfigurationService configurationService) {
@@ -118,7 +153,11 @@ public class LeaderElectionManager {
     controllerManager.startEventProcessing();
   }
 
-  private void stopLeading() {
+  void stopLeading() {
+    if (stoppingGracefully.get()) {
+      log.info("Stopped leading for identity: {} during graceful shutdown.", identity);
+      return;
+    }
     if (configurationService.getLeaderElectionConfiguration().orElseThrow().isExitOnStopLeading()) {
       log.info("Stopped leading for identity: {}. Exiting.", identity);
       // When leader stops leading the process ends immediately to prevent multiple reconciliations
@@ -147,13 +186,13 @@ public class LeaderElectionManager {
   }
 
   public void stop() {
+    stoppingGracefully.set(true);
     if (leaderElectionFuture != null) {
       leaderElectionFuture.cancel(false);
     }
   }
 
   private void checkLeaseAccess() {
-    var verbsRequired = Arrays.asList("create", "update", "get");
     SelfSubjectRulesReview review = new SelfSubjectRulesReview();
     review.setSpec(new SelfSubjectRulesReviewSpecBuilder().withNamespace(leaseNamespace).build());
     var reviewResult = configurationService.getKubernetesClient().resource(review).create();
@@ -168,16 +207,15 @@ public class LeaderElectionManager {
                         || rule.getResourceNames().contains(leaseName))
             .map(ResourceRule::getVerbs)
             .flatMap(Collection::stream)
-            .distinct()
-            .collect(Collectors.toList());
-    if (verbsAllowed.contains(UNIVERSAL_VALUE) || verbsAllowed.containsAll(verbsRequired)) {
+            .collect(Collectors.toUnmodifiableSet());
+    if (verbsAllowed.contains(UNIVERSAL_VALUE) || verbsAllowed.containsAll(REQUIRED_VERBS)) {
       return;
     }
 
     var missingVerbs =
-        verbsRequired.stream()
+        REQUIRED_VERBS.stream()
             .filter(Predicate.not(verbsAllowed::contains))
-            .collect(Collectors.toList());
+            .collect(Collectors.joining(","));
 
     throw new OperatorException(
         NO_PERMISSION_TO_LEASE_RESOURCE_MESSAGE

@@ -110,6 +110,18 @@ class LeaderElectionManagerTest {
   }
 
   @Test
+  void stopLeadingDoesNotInvokeSystemExitWhenStopWasCalledFirst() {
+    // When stop() is called before the onStopLeading callback fires (which is what happens when
+    // stop()'s future cancellation triggers the callback), stopLeading() must skip
+    // System.exit(1). Otherwise calling stop() from inside a JVM shutdown hook deadlocks against
+    // the java.lang.Shutdown class lock. If this regression is ever reintroduced, this test
+    // method would terminate the JUnit JVM via System.exit(1) instead of failing cleanly.
+    final var leaderElectionManager = leaderElectionManager(null);
+    leaderElectionManager.stop();
+    leaderElectionManager.stopLeading();
+  }
+
+  @Test
   void testFailedToInitMissingPermission(@TempDir Path tempDir) throws IOException {
     var namespace = "foo";
     var namespacePath = tempDir.resolve("namespace");

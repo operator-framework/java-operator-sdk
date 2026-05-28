@@ -19,6 +19,7 @@ import java.time.Duration;
 import java.util.HashSet;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
 
 import org.slf4j.Logger;
@@ -43,6 +44,7 @@ public class Operator implements LifecycleAware {
   private LeaderElectionManager leaderElectionManager;
   private ConfigurationService configurationService;
   private volatile boolean started = false;
+  private final AtomicBoolean shutdownHookInstalled = new AtomicBoolean(false);
 
   public Operator() {
     init(initConfigurationService(null, null), true);
@@ -130,6 +132,32 @@ public class Operator implements LifecycleAware {
   }
 
   /**
+   * Adds a JVM shutdown hook that automatically calls {@link #stop()} when the application shuts
+   * down. The shutdown timeout used while waiting for in-flight reconciliations to complete is
+   * taken from {@link
+   * io.javaoperatorsdk.operator.api.config.ConfigurationService#reconciliationTerminationTimeout()}.
+   * Configure it via {@link
+   * io.javaoperatorsdk.operator.api.config.ConfigurationServiceOverrider#withReconciliationTerminationTimeout(Duration)
+   * ConfigurationServiceOverrider#withReconciliationTerminationTimeout(Duration)}.
+   *
+   * <p>The hook is registered regardless of whether leader election is enabled. A leader pod
+   * receiving {@code SIGTERM} will therefore release its lease cleanly so that a standby replica
+   * can take over without waiting for lease expiry.
+   *
+   * <p><b>NOTE:</b> You may also want to tune the Pod's {@code terminationGracePeriodSeconds} to be
+   * at least as long as the configured {@code reconciliationTerminationTimeout}, plus a small
+   * buffer for the rest of the shutdown sequence (releasing the leader-election lease and closing
+   * the Kubernetes client). If the grace period elapses before {@link #stop()} returns, the kubelet
+   * sends {@code SIGKILL}, in-flight reconciliations are abandoned, and any held leader-election
+   * lease is not released cleanly.
+   */
+  public void installShutdownHook() {
+    if (shutdownHookInstalled.compareAndSet(false, true)) {
+      Runtime.getRuntime().addShutdownHook(new Thread(this::stop));
+    }
+  }
+
+  /**
    * Adds a shutdown hook that automatically calls {@link #stop()} when the app shuts down. Note
    * that graceful shutdown is usually not needed, but some {@link Reconciler} implementations might
    * require it.
@@ -137,16 +165,14 @@ public class Operator implements LifecycleAware {
    * <p>Note that you might want to tune "terminationGracePeriodSeconds" for the Pod running the
    * controller.
    *
-   * @param gracefulShutdownTimeout timeout to wait for executor threads to complete actual
-   *     reconciliations
+   * @param gracefulShutdownTimeout ignored, configure {@link
+   *     ConfigurationService#reconciliationTerminationTimeout()} instead
+   * @deprecated Use {@link #installShutdownHook()} instead
    */
+  @Deprecated(forRemoval = true)
   @SuppressWarnings("unused")
   public void installShutdownHook(Duration gracefulShutdownTimeout) {
-    if (!leaderElectionManager.isLeaderElectionEnabled()) {
-      Runtime.getRuntime().addShutdownHook(new Thread(this::stop));
-    } else {
-      log.warn("Leader election is on, shutdown hook will not be installed.");
-    }
+    installShutdownHook();
   }
 
   public KubernetesClient getKubernetesClient() {
@@ -188,6 +214,30 @@ public class Operator implements LifecycleAware {
     }
   }
 
+  /**
+   * Stops the operator and releases its resources. The shutdown sequence is:
+   *
+   * <ol>
+   *   <li>Stop the controller manager, halting reconciliation of all registered controllers.
+   *   <li>Stop the executor service manager, waiting up to {@link
+   *       io.javaoperatorsdk.operator.api.config.ConfigurationService#reconciliationTerminationTimeout()}
+   *       for in-flight reconciliations to complete.
+   *   <li>Stop the leader-election manager, cancelling the leader-election future and releasing any
+   *       held lease.
+   *   <li>Close the {@link KubernetesClient} if {@link
+   *       io.javaoperatorsdk.operator.api.config.ConfigurationService#closeClientOnStop()} is
+   *       {@code true} (the default).
+   * </ol>
+   *
+   * <p>It is safe to call this method from a JVM shutdown hook (see {@link #installShutdownHook()})
+   * as the graceful-shutdown path coordinates with the leader-election callbacks so that {@code
+   * System.exit} is not invoked while the JVM is already shutting down.
+   *
+   * <p>If the operator was never successfully started, this method only stops the executor service
+   * manager so that no thread pools are leaked.
+   *
+   * @throws OperatorException if an error occurs during shutdown
+   */
   @Override
   public void stop() throws OperatorException {
     Duration reconciliationTerminationTimeout =
