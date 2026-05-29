@@ -61,9 +61,9 @@ public abstract class ManagedInformerEventSource<
         Configurable<C> {
 
   private static final Logger log = LoggerFactory.getLogger(ManagedInformerEventSource.class);
-  private InformerManager<R, C> cache;
+  private volatile InformerManager<R, C> cache;
   private final boolean comparableResourceVersions;
-  private ControllerConfiguration<R> controllerConfiguration;
+  private volatile ControllerConfiguration<R> controllerConfiguration;
   private final C configuration;
   private final Map<String, Function<R, List<String>>> indexers = new HashMap<>();
   protected TemporaryResourceCache<R> temporaryResourceCache;

@@ -61,7 +61,7 @@ public abstract class AbstractOperatorExtension
   protected final boolean preserveNamespaceOnError;
   protected final boolean skipNamespaceDeletion;
   protected final boolean waitForNamespaceDeletion;
-  protected final int namespaceDeleteTimeout = DEFAULT_NAMESPACE_DELETE_TIMEOUT;
+  protected final int namespaceDeleteTimeout;
   protected final Function<ExtensionContext, String> namespaceNameSupplier;
   protected final Function<ExtensionContext, String> perClassNamespaceNameSupplier;
 
@@ -74,6 +74,7 @@ public abstract class AbstractOperatorExtension
       boolean preserveNamespaceOnError,
       boolean skipNamespaceDeletion,
       boolean waitForNamespaceDeletion,
+      int namespaceDeleteTimeout,
       KubernetesClient kubernetesClient,
       KubernetesClient infrastructureKubernetesClient,
       Function<ExtensionContext, String> namespaceNameSupplier,
@@ -90,6 +91,7 @@ public abstract class AbstractOperatorExtension
     this.preserveNamespaceOnError = preserveNamespaceOnError;
     this.skipNamespaceDeletion = skipNamespaceDeletion;
     this.waitForNamespaceDeletion = waitForNamespaceDeletion;
+    this.namespaceDeleteTimeout = namespaceDeleteTimeout;
     this.namespaceNameSupplier = namespaceNameSupplier;
     this.perClassNamespaceNameSupplier = perClassNamespaceNameSupplier;
   }

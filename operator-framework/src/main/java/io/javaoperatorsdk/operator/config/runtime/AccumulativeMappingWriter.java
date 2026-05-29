@@ -19,6 +19,7 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
+import java.nio.charset.StandardCharsets;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
@@ -51,7 +52,8 @@ class AccumulativeMappingWriter {
               .getResource(StandardLocation.CLASS_OUTPUT, "", resourcePath);
 
       try (BufferedReader bufferedReader =
-          new BufferedReader(new InputStreamReader(readonlyResource.openInputStream()))) {
+          new BufferedReader(
+              new InputStreamReader(readonlyResource.openInputStream(), StandardCharsets.UTF_8))) {
         final var existingLines =
             bufferedReader
                 .lines()
@@ -81,7 +83,7 @@ class AccumulativeMappingWriter {
           processingEnvironment
               .getFiler()
               .createResource(StandardLocation.CLASS_OUTPUT, "", resourcePath);
-      printWriter = new PrintWriter(resource.openOutputStream());
+      printWriter = new PrintWriter(resource.openOutputStream(), false, StandardCharsets.UTF_8);
 
       for (Map.Entry<String, String> entry : mappings.entrySet()) {
         printWriter.println(entry.getKey() + "," + entry.getValue());

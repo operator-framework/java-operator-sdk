@@ -16,6 +16,7 @@
 package io.javaoperatorsdk.operator.sample;
 
 import java.io.ByteArrayOutputStream;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
@@ -252,7 +253,7 @@ public class WebappReconciler implements Reconciler<Webapp>, Cleaner<Webapp> {
     @Override
     public void onClose(int code, String reason) {
       log.debug("Exit with: {} and with reason: {}", code, reason);
-      data.complete(baos.toString());
+      data.complete(baos.toString(StandardCharsets.UTF_8));
     }
   }
 }
