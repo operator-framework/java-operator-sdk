@@ -15,6 +15,7 @@
  */
 package io.javaoperatorsdk.operator.sample.dependent;
 
+import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 import java.util.Set;
 
@@ -43,7 +44,7 @@ public class SecretDependentResource extends KubernetesDependentResource<Secret,
   public static final String MYSQL_SECRET_PASSWORD = "mysql.secret.user.password";
 
   private static String encode(String value) {
-    return Base64.getEncoder().encodeToString(value.getBytes());
+    return Base64.getEncoder().encodeToString(value.getBytes(StandardCharsets.UTF_8));
   }
 
   @Override

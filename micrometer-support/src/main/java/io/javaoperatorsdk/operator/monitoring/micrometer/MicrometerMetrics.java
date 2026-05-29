@@ -277,7 +277,8 @@ public class MicrometerMetrics implements Metrics {
       addTagOmittingOnEmptyValue(NAMESPACE, resourceID.getNamespace().orElse(null), tags, prefixed);
     }
     addTag(SCOPE, getScope(resourceID), tags, prefixed);
-    final var gvk = (GroupVersionKind) metadata.get(Constants.RESOURCE_GVK_KEY);
+    final var gvk =
+        metadata == null ? null : (GroupVersionKind) metadata.get(Constants.RESOURCE_GVK_KEY);
     if (gvk != null) {
       addGVKTags(gvk, tags, prefixed);
     }

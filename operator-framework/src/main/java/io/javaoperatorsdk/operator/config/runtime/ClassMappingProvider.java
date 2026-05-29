@@ -19,6 +19,7 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.URL;
+import java.nio.charset.StandardCharsets;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -69,7 +70,8 @@ class ClassMappingProvider {
   }
 
   private static List<String> retrieveClassNamePairs(URL url) throws IOException {
-    try (BufferedReader br = new BufferedReader(new InputStreamReader(url.openStream()))) {
+    try (BufferedReader br =
+        new BufferedReader(new InputStreamReader(url.openStream(), StandardCharsets.UTF_8))) {
       return br.lines().collect(Collectors.toList());
     }
   }

@@ -66,7 +66,8 @@ public class OperationsSampleOperator {
 
     var configProviders = new ArrayList<ConfigProvider>();
     configProviders.add(new EnvVarConfigProvider());
-    configProviders.add(new YamlConfigProvider(Path.of("/config/config.yaml")));
+    var configPath = System.getenv().getOrDefault("CONFIG_PATH", "/config/config.yaml");
+    configProviders.add(new YamlConfigProvider(Path.of(configPath)));
     var configLoader = new ConfigLoader(new AggregatePriorityListConfigProvider(configProviders));
 
     Metrics metrics = initOTLPMetrics(isLocal());
