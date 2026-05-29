@@ -18,12 +18,14 @@ package io.javaoperatorsdk.operator.dependent.externalstate.externalstatebulkdep
 import java.time.Duration;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
 import io.javaoperatorsdk.annotation.Sample;
 import io.javaoperatorsdk.operator.junit.LocallyRunOperatorExtension;
 import io.javaoperatorsdk.operator.support.ExternalIDGenServiceMock;
+import io.javaoperatorsdk.operator.support.ExternalServiceResetExtension;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
@@ -37,6 +39,7 @@ import static org.awaitility.Awaitility.await;
         allowing operators to track and reconcile a variable number of external resources with \
         persistent state that survives operator restarts.
         """)
+@ExtendWith(ExternalServiceResetExtension.class)
 class ExternalStateBulkIT {
 
   private static final String TEST_RESOURCE_NAME = "test1";

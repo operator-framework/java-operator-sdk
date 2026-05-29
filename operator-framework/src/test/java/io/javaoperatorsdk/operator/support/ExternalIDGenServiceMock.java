@@ -50,6 +50,14 @@ public class ExternalIDGenServiceMock {
     return new ArrayList<>(resourceMap.values());
   }
 
+  /**
+   * Clears the internal state. Intended to be called between tests so that state from one test does
+   * not leak into the next via this JVM-lifetime singleton.
+   */
+  public void reset() {
+    resourceMap.clear();
+  }
+
   public static ExternalIDGenServiceMock getInstance() {
     return serviceMock;
   }
