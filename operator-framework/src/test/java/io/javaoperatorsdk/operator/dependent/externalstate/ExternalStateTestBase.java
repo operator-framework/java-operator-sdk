@@ -15,18 +15,20 @@
  */
 package io.javaoperatorsdk.operator.dependent.externalstate;
 
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
 import io.javaoperatorsdk.operator.junit.LocallyRunOperatorExtension;
 import io.javaoperatorsdk.operator.support.ExternalIDGenServiceMock;
+import io.javaoperatorsdk.operator.support.ExternalServiceResetExtension;
 
 import static io.javaoperatorsdk.operator.dependent.externalstate.ExternalStateReconciler.ID_KEY;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
 
+@ExtendWith(ExternalServiceResetExtension.class)
 public abstract class ExternalStateTestBase {
 
   private static final String TEST_RESOURCE_NAME = "test1";
@@ -35,11 +37,6 @@ public abstract class ExternalStateTestBase {
   public static final String UPDATED_DATA = "updatedData";
 
   private final ExternalIDGenServiceMock externalService = ExternalIDGenServiceMock.getInstance();
-
-  @BeforeEach
-  void resetExternalService() {
-    externalService.reset();
-  }
 
   @Test
   public void reconcilesResourceWithPersistentState() {
