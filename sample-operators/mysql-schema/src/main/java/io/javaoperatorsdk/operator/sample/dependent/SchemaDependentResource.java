@@ -122,8 +122,7 @@ public class SchemaDependentResource
   }
 
   public static String decode(String value) {
-    return new String(
-        Base64.getDecoder().decode(value.getBytes(StandardCharsets.UTF_8)), StandardCharsets.UTF_8);
+    return new String(Base64.getDecoder().decode(value), StandardCharsets.UTF_8);
   }
 
   @Override
