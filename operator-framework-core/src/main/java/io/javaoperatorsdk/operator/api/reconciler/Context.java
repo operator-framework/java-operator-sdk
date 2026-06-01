@@ -23,6 +23,7 @@ import java.util.stream.Stream;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
+import io.javaoperatorsdk.operator.api.events.ResourceEventRecorder;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.managed.ManagedWorkflowAndDependentResourceContext;
 import io.javaoperatorsdk.operator.processing.event.EventSourceRetriever;
 import io.javaoperatorsdk.operator.processing.event.source.IndexerResourceCache;
@@ -212,6 +213,15 @@ public interface Context<P extends HasMetadata> {
   KubernetesClient getClient();
 
   ResourceOperations<P> resourceOperations();
+
+  /**
+   * Returns a {@link ResourceEventRecorder} bound to the primary resource, to record Kubernetes
+   * events about it. To record events outside of a reconciliation, or about another object, use
+   * {@link io.javaoperatorsdk.operator.RegisteredController#eventRecorder()}.
+   *
+   * @return an event recorder bound to the primary resource
+   */
+  ResourceEventRecorder eventRecorder();
 
   /** ExecutorService initialized by framework for workflows. Used for workflow standalone mode. */
   ExecutorService getWorkflowExecutorService();
