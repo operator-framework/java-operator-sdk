@@ -97,6 +97,7 @@ public abstract class ManagedInformerEventSource<
   public R eventFilteringUpdateAndCacheResource(R resourceToUpdate, UnaryOperator<R> updateMethod) {
     ResourceID id = ResourceID.fromResource(resourceToUpdate);
     log.debug("Starting event filtering and caching update");
+    final boolean wasMarkedForDeletion = resourceToUpdate.isMarkedForDeletion();
     R updatedResource = null;
     try {
       temporaryResourceCache.startEventFilteringModify(id);
@@ -141,7 +142,23 @@ public abstract class ManagedInformerEventSource<
                     ? ((ResourceDeleteEvent) r).isDeletedFinalStateUnknown()
                     : null);
           },
-          () -> log.debug("No new event present after the filtering update"));
+          () -> {
+            log.debug("No new event present after the filtering update");
+            // If the resource was marked for deletion concurrently with this update, the deletion
+            // event arrived at a lower RV than the update result and was deferred then dropped by
+            // doneEventFilterModify (deferred RV < lastOwnUpdatedRV). The API server merges the
+            // deletionTimestamp into the update response, so updatedForLambda already carries it,
+            // but no event was propagated to the reconciler. Trigger one now so the finalizer can
+            // be removed.
+            if (updatedForLambda != null
+                && updatedForLambda.isMarkedForDeletion()
+                && !wasMarkedForDeletion) {
+              log.debug(
+                  "Resource {} was marked for deletion during update, triggering reconciliation",
+                  id);
+              handleEvent(ResourceAction.UPDATED, updatedForLambda, resourceToUpdate, null);
+            }
+          });
     }
   }
 
