@@ -132,6 +132,9 @@ public class TemporaryResourceCache<T extends HasMetadata> {
     }
     var cached = cache.get(resourceId);
     EventHandling result = EventHandling.NEW;
+    // todo do this just for the primary resource?
+    boolean becameMarkedForDeletion =
+        resourceBecameMarkedForDeletion(prevResourceVersion, resource);
     if (cached != null) {
       int comp = ReconcilerUtilsInternal.compareResourceVersions(resource, cached);
       if (comp >= 0 || unknownState) {
@@ -155,9 +158,12 @@ public class TemporaryResourceCache<T extends HasMetadata> {
           delete
               ? new ResourceDeleteEvent(ResourceAction.DELETED, resourceId, resource, unknownState)
               : new ExtendedResourceEvent(action, resourceId, resource, prevResourceVersion));
+      if (becameMarkedForDeletion) {
+        ed.setBecameMarkedForDeletion(true);
+      }
       return EventHandling.DEFER;
     } else {
-      return result;
+      return becameMarkedForDeletion ? EventHandling.NEW : result;
     }
   }
 
@@ -273,5 +279,11 @@ public class TemporaryResourceCache<T extends HasMetadata> {
 
   synchronized Map<ResourceID, T> getResources() {
     return Collections.unmodifiableMap(cache);
+  }
+
+  private boolean resourceBecameMarkedForDeletion(T prevResource, T newResource) {
+    return prevResource != null
+        && !prevResource.isMarkedForDeletion()
+        && newResource.isMarkedForDeletion();
   }
 }

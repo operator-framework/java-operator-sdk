@@ -27,6 +27,7 @@ class EventFilterDetails {
   private int activeUpdates = 0;
   private ResourceEvent lastEvent;
   private String lastOwnUpdatedResourceVersion;
+  private boolean becameMarkedForDeletion = false;
 
   public void increaseActiveUpdates() {
     activeUpdates = activeUpdates + 1;
@@ -56,7 +57,8 @@ class EventFilterDetails {
 
   public Optional<ResourceEvent> getLatestEventAfterLastUpdateEvent() {
     if (lastEvent != null
-        && (lastOwnUpdatedResourceVersion == null
+        && (becameMarkedForDeletion
+            || lastOwnUpdatedResourceVersion == null
             || ReconcilerUtilsInternal.compareResourceVersions(
                     lastEvent.getResource().orElseThrow().getMetadata().getResourceVersion(),
                     lastOwnUpdatedResourceVersion)
@@ -68,5 +70,9 @@ class EventFilterDetails {
 
   public int getActiveUpdates() {
     return activeUpdates;
+  }
+
+  public void setBecameMarkedForDeletion(boolean becameMarkedForDeletion) {
+    this.becameMarkedForDeletion = becameMarkedForDeletion;
   }
 }
