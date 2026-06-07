@@ -65,6 +65,7 @@ public class TemporaryResourceCache<T extends HasMetadata> {
   public enum EventHandling {
     DEFER,
     OBSOLETE,
+    IN_BETWEEN,
     NEW
   }
 
@@ -145,17 +146,30 @@ public class TemporaryResourceCache<T extends HasMetadata> {
         // additional event
         result = comp == 0 ? EventHandling.OBSOLETE : EventHandling.NEW;
       } else {
-        result = EventHandling.OBSOLETE;
+        // in this case we received and event that might be in some edge case that was
+        // already used in reconciler or after that, but before our updated resource version.
+        // That would be hard to distinguish, so for those we are propagating the event further.
+        log.debug("Received in between event.");
+        result = EventHandling.IN_BETWEEN;
       }
     }
-    var ed = activeUpdates.get(resourceId);
-    if (ed != null && result != EventHandling.OBSOLETE) {
-      log.debug("Setting last event for id: {} delete: {}", resourceId, delete);
-      ed.setLastEvent(
-          delete
-              ? new ResourceDeleteEvent(ResourceAction.DELETED, resourceId, resource, unknownState)
-              : new ExtendedResourceEvent(action, resourceId, resource, prevResourceVersion));
-      return EventHandling.DEFER;
+    var au = activeUpdates.get(resourceId);
+    if (au != null) {
+      if (result == EventHandling.IN_BETWEEN) {
+        return au.isOwnResourceVersions(resource.getMetadata().getResourceVersion())
+            ? EventHandling.DEFER
+            : EventHandling.IN_BETWEEN;
+      }
+      if (result == EventHandling.NEW) {
+        log.debug("Setting last event for id: {} delete: {}", resourceId, delete);
+        au.setLastEvent(
+            delete
+                ? new ResourceDeleteEvent(
+                    ResourceAction.DELETED, resourceId, resource, unknownState)
+                : new ExtendedResourceEvent(action, resourceId, resource, prevResourceVersion));
+        return EventHandling.DEFER;
+      }
+      return result;
     } else {
       return result;
     }
@@ -216,6 +230,10 @@ public class TemporaryResourceCache<T extends HasMetadata> {
           newResource.getMetadata().getResourceVersion(),
           resourceId);
       cache.put(resourceId, newResource);
+      var au = activeUpdates.get(resourceId);
+      if (au != null) {
+        au.addToOwnResourceVersions(newResource.getMetadata().getResourceVersion());
+      }
     }
   }
 
