@@ -15,7 +15,9 @@
  */
 package io.javaoperatorsdk.operator.processing.event.source.informer;
 
+import java.util.HashSet;
 import java.util.Optional;
+import java.util.Set;
 import java.util.function.UnaryOperator;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
@@ -27,6 +29,7 @@ class EventFilterDetails {
   private int activeUpdates = 0;
   private ResourceEvent lastEvent;
   private String lastOwnUpdatedResourceVersion;
+  private Set<String> allOwnResourceVersions = new HashSet<>();
 
   public void increaseActiveUpdates() {
     activeUpdates = activeUpdates + 1;
@@ -68,5 +71,13 @@ class EventFilterDetails {
 
   public int getActiveUpdates() {
     return activeUpdates;
+  }
+
+  void addToOwnResourceVersions(String updateVersion) {
+    allOwnResourceVersions.add(updateVersion);
+  }
+
+  public boolean isOwnResourceVersions(String resourceVersion) {
+    return allOwnResourceVersions.contains(resourceVersion);
   }
 }
