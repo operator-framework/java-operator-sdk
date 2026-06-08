@@ -15,22 +15,22 @@
  */
 package io.javaoperatorsdk.operator.processing.event.source.informer;
 
+import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.UnaryOperator;
+import java.util.stream.Collectors;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
-import io.javaoperatorsdk.operator.ReconcilerUtilsInternal;
-import io.javaoperatorsdk.operator.processing.event.source.controller.ResourceEvent;
+import io.javaoperatorsdk.operator.processing.event.source.ResourceAction;
 
 class EventFilterDetails {
 
   private int activeUpdates = 0;
-  private ResourceEvent lastRelevantEvent;
-  private String lastOwnUpdatedResourceVersion;
+  private List<GenericResourceEvent> relatedEvents = new ArrayList<>();
   private Set<String> allOwnResourceVersions = new HashSet<>();
-  private Set<String> uncertainEvents = new HashSet<>();
 
   public void increaseActiveUpdates() {
     activeUpdates = activeUpdates + 1;
@@ -41,38 +41,9 @@ class EventFilterDetails {
    * controller to prevent race condition and send event from {@link
    * ManagedInformerEventSource#eventFilteringUpdateAndCacheResource(HasMetadata, UnaryOperator)}
    */
-  public boolean decreaseActiveUpdates(String updatedResourceVersion) {
-    if (updatedResourceVersion != null
-        && (lastOwnUpdatedResourceVersion == null
-            || ReconcilerUtilsInternal.compareResourceVersions(
-                    updatedResourceVersion, lastOwnUpdatedResourceVersion)
-                > 0)) {
-      lastOwnUpdatedResourceVersion = updatedResourceVersion;
-    }
-
+  public boolean decreaseActiveUpdates() {
     activeUpdates = activeUpdates - 1;
     return activeUpdates == 0;
-  }
-
-  public void setLastRelevantEvent(ResourceEvent event) {
-    lastRelevantEvent = event;
-  }
-
-  public Optional<ResourceEvent> getRelevantEventToPropagate() {
-    if (lastRelevantEvent != null
-            && (lastOwnUpdatedResourceVersion == null
-                || ReconcilerUtilsInternal.compareResourceVersions(
-                        lastRelevantEvent
-                            .getResource()
-                            .orElseThrow()
-                            .getMetadata()
-                            .getResourceVersion(),
-                        lastOwnUpdatedResourceVersion)
-                    > 0)
-        || allOwnResourceVersions.containsAll(uncertainEvents)) {
-      return Optional.of(lastRelevantEvent);
-    }
-    return Optional.empty();
   }
 
   public int getActiveUpdates() {
@@ -83,11 +54,37 @@ class EventFilterDetails {
     allOwnResourceVersions.add(updateVersion);
   }
 
-  public boolean isOwnResourceVersions(String resourceVersion) {
-    return allOwnResourceVersions.contains(resourceVersion);
+  public void addRelatedEvent(GenericResourceEvent event) {
+    relatedEvents.add(event);
   }
 
-  public void addUncertainResourceVersion(String resourceVersion) {
-    uncertainEvents.add(resourceVersion);
+  public Optional<GenericResourceEvent> prepareSummaryEventIfNotOwnEventsPresent() {
+    if (relatedEvents.isEmpty()) {
+      return Optional.empty();
+    }
+    if (allOwnResourceVersions.containsAll(
+        relatedEvents.stream()
+            .map(e -> e.getResource().orElseThrow().getMetadata().getResourceVersion())
+            .collect(Collectors.toSet()))) {
+      return Optional.empty();
+    }
+    var deleteEvent =
+        relatedEvents.stream().filter(e -> e.getAction() == ResourceAction.DELETED).findFirst();
+    if (deleteEvent.isPresent()) {
+      return deleteEvent;
+    }
+    if (relatedEvents.size() == 1) {
+      return Optional.of(relatedEvents.get(0));
+    }
+    var firstEvent = relatedEvents.get(0);
+    var firstResource =
+        firstEvent.getPreviousResource().orElseGet(() -> firstEvent.getResource().orElseThrow());
+
+    return Optional.of(
+        new GenericResourceEvent(
+            ResourceAction.UPDATED,
+            relatedEvents.get(relatedEvents.size() - 1).getResource().orElseThrow(),
+            firstResource,
+            null));
   }
 }
