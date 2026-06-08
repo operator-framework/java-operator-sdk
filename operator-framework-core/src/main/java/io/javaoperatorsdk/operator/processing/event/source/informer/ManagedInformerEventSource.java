@@ -112,7 +112,6 @@ public abstract class ManagedInformerEventSource<
       var updatedForLambda = updatedResource;
       res.ifPresentOrElse(
           r -> {
-            R latestResource = (R) r.getResource().orElseThrow();
             // as previous resource version we use the one from successful update, since
             // we process new event here only if that is more recent then the event from our update.
             // Note that this is equivalent with the scenario when an informer watch connection
@@ -123,8 +122,25 @@ public abstract class ManagedInformerEventSource<
                 (r instanceof ExtendedResourceEvent)
                     ? (R) ((ExtendedResourceEvent) r).getPreviousResource().orElse(null)
                     : null;
-            R prevVersionOfResource =
-                updatedForLambda != null ? updatedForLambda : extendedResourcePrevVersion;
+            R prevVersionOfResource = null;
+            R latestResource = null;
+            if (updatedForLambda != null) {
+              var updatedNewerThanRelated =
+                  ReconcilerUtilsInternal.compareResourceVersions(
+                          updatedForLambda, r.getResource().orElseThrow())
+                      > 0;
+              prevVersionOfResource =
+                  updatedNewerThanRelated
+                      ? (extendedResourcePrevVersion != null
+                          ? extendedResourcePrevVersion
+                          : prevVersionOfResource)
+                      : updatedForLambda;
+              latestResource = updatedForLambda;
+            } else {
+              prevVersionOfResource = extendedResourcePrevVersion;
+              latestResource = (R) r.getResource().orElseThrow();
+            }
+
             if (log.isDebugEnabled()) {
               log.debug(
                   "Previous resource version: {} resource from update present: {}"

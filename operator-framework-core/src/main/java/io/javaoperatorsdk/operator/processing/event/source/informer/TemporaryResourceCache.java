@@ -98,7 +98,7 @@ public class TemporaryResourceCache<T extends HasMetadata> {
       return Optional.empty();
     }
     activeUpdates.remove(resourceID);
-    var res = ed.getLatestEventAfterLastUpdateEvent();
+    var res = ed.getRelevantEventToPropagate();
     log.debug(
         "Zero active updates for resource id: {}; event after update event: {}; updated resource"
             + " version: {}",
@@ -156,13 +156,21 @@ public class TemporaryResourceCache<T extends HasMetadata> {
     var au = activeUpdates.get(resourceId);
     if (au != null) {
       if (result == EventHandling.INTERMEDIATE) {
-        return au.isOwnResourceVersions(resource.getMetadata().getResourceVersion())
-            ? EventHandling.DEFER
-            : EventHandling.INTERMEDIATE;
+        var ownResourceVersion =
+            au.isOwnResourceVersions(resource.getMetadata().getResourceVersion());
+        log.debug("Handling intermediate event. Own resource version: {}", ownResourceVersion);
+        return ownResourceVersion ? EventHandling.DEFER : EventHandling.INTERMEDIATE;
       }
       if (result == EventHandling.NEW) {
+        if (cached == null) {
+          // this is for the case when temp cache is null, we receive an event
+          // there is ongoing filtering-caching update; at this point we cannot tell
+          // if that event is from our update
+          log.debug("Setting uncertain resource version.");
+          au.addUncertainResourceVersion(resource.getMetadata().getResourceVersion());
+        }
         log.debug("Setting last event for id: {} delete: {}", resourceId, delete);
-        au.setLastEvent(
+        au.setLastRelevantEvent(
             delete
                 ? new ResourceDeleteEvent(
                     ResourceAction.DELETED, resourceId, resource, unknownState)
