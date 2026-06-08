@@ -453,49 +453,64 @@ class InformerEventSourceTest {
     // Causal-dependency fix: another controller updated the resource between our read
     // and our write. The informer delivers that update during our active filter; since
     // its resource version is NOT one of our own writes, it must be propagated.
-    var realCache = realCacheWithWatchedNamespace();
+    withRealTemporaryResourceCache();
+
     var resourceId = ResourceID.fromResource(testDeployment());
 
-    realCache.startEventFilteringModify(resourceId);
-    realCache.putResource(deploymentWithResourceVersion(4));
+    // first filter writes rv 4 (our own); a second concurrent filter keeps the
+    // active-updates window open so the event below hits the active path
+    var latch1 = sendForEventFilteringUpdate(4);
+    var latch2 = sendForEventFilteringUpdate(deploymentWithResourceVersion(4), 5);
 
+    latch1.countDown();
+    awaitCachedResourceVersion(resourceId, "4");
+
+    // external update with rv 3 (older than our cached rv 4) — must propagate
     informerEventSource.onUpdate(
         deploymentWithResourceVersion(2), deploymentWithResourceVersion(3));
 
     verify(eventHandlerMock, times(1)).handleEvent(any());
 
-    realCache.doneEventFilterModify(resourceId, "4");
+    latch2.countDown();
   }
 
   @Test
   void doesNotPropagateIntermediateEventForOurOwnIntermediateUpdate() {
-    // Two consecutive own writes within a single filter window: the older one's event
-    // arrives after the newer one has been cached. Because the version is recorded as
-    // our own, the event must be deferred (not propagated).
-    var realCache = realCacheWithWatchedNamespace();
+    // Two consecutive own writes (rv 3 then rv 4) within an open filter window: an
+    // event for the older own version must be deferred since it's recognized as our own.
+    // A third concurrent filter keeps the active-updates window open while the event
+    // below is processed.
+    withRealTemporaryResourceCache();
+
     var resourceId = ResourceID.fromResource(testDeployment());
 
-    realCache.startEventFilteringModify(resourceId);
-    realCache.putResource(deploymentWithResourceVersion(3));
-    realCache.putResource(deploymentWithResourceVersion(4));
+    var latch1 = sendForEventFilteringUpdate(3);
+    var latch2 = sendForEventFilteringUpdate(deploymentWithResourceVersion(3), 4);
+    var latch3 = sendForEventFilteringUpdate(deploymentWithResourceVersion(4), 5);
 
+    latch1.countDown();
+    awaitCachedResourceVersion(resourceId, "3");
+    latch2.countDown();
+    awaitCachedResourceVersion(resourceId, "4");
+
+    // event for our own rv 3 (older than cached rv 4) — must be deferred
     informerEventSource.onUpdate(
         deploymentWithResourceVersion(2), deploymentWithResourceVersion(3));
 
     verify(eventHandlerMock, never()).handleEvent(any());
 
-    realCache.doneEventFilterModify(resourceId, "4");
+    latch3.countDown();
   }
 
-  private TemporaryResourceCache<Deployment> realCacheWithWatchedNamespace() {
-    var mes = mock(ManagedInformerEventSource.class);
-    var mim = mock(InformerManager.class);
-    when(mes.manager()).thenReturn(mim);
-    when(mim.isWatchingNamespace(any())).thenReturn(true);
-    when(mim.lastSyncResourceVersion(any())).thenReturn("1");
-    temporaryResourceCache = spy(new TemporaryResourceCache<>(true, mes));
-    informerEventSource.setTemporalResourceCache(temporaryResourceCache);
-    return temporaryResourceCache;
+  private void awaitCachedResourceVersion(ResourceID resourceId, String resourceVersion) {
+    await()
+        .untilAsserted(
+            () ->
+                assertThat(
+                        temporaryResourceCache
+                            .getResourceFromCache(resourceId)
+                            .map(d -> d.getMetadata().getResourceVersion()))
+                    .hasValue(resourceVersion));
   }
 
   private void assertNoEventProduced() {
@@ -542,6 +557,7 @@ class InformerEventSourceTest {
     var mes = mock(ManagedInformerEventSource.class);
     var mim = mock(InformerManager.class);
     when(mes.manager()).thenReturn(mim);
+    when(mim.isWatchingNamespace(any())).thenReturn(true);
     when(mim.lastSyncResourceVersion(any())).thenReturn("1");
 
     temporaryResourceCache = spy(new TemporaryResourceCache<>(true, mes));
