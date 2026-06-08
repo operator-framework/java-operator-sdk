@@ -46,7 +46,6 @@ import io.javaoperatorsdk.operator.processing.MDCUtils;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
 import io.javaoperatorsdk.operator.processing.event.source.*;
 import io.javaoperatorsdk.operator.processing.event.source.ResourceAction;
-import io.javaoperatorsdk.operator.processing.event.source.controller.ResourceDeleteEvent;
 
 @SuppressWarnings("rawtypes")
 public abstract class ManagedInformerEventSource<
@@ -105,58 +104,14 @@ public abstract class ManagedInformerEventSource<
       handleRecentResourceUpdate(id, updatedResource, resourceToUpdate);
       return updatedResource;
     } finally {
-      var res =
-          temporaryResourceCache.doneEventFilterModify(
-              id,
-              updatedResource == null ? null : updatedResource.getMetadata().getResourceVersion());
-      var updatedForLambda = updatedResource;
+      var res = temporaryResourceCache.doneEventFilterModify(id);
       res.ifPresentOrElse(
-          r -> {
-            // as previous resource version we use the one from successful update, since
-            // we process new event here only if that is more recent then the event from our update.
-            // Note that this is equivalent with the scenario when an informer watch connection
-            // would reconnect and loose some events in between.
-            // If that update was not successful we still record the previous version from the
-            // actual event in the ExtendedResourceEvent.
-            R extendedResourcePrevVersion =
-                (r instanceof ExtendedResourceEvent)
-                    ? (R) ((ExtendedResourceEvent) r).getPreviousResource().orElse(null)
-                    : null;
-            R prevVersionOfResource = null;
-            R latestResource = null;
-            if (updatedForLambda != null) {
-              var updatedNewerThanRelated =
-                  ReconcilerUtilsInternal.compareResourceVersions(
-                          updatedForLambda, r.getResource().orElseThrow())
-                      > 0;
-              prevVersionOfResource =
-                  updatedNewerThanRelated
-                      ? (extendedResourcePrevVersion != null
-                          ? extendedResourcePrevVersion
-                          : prevVersionOfResource)
-                      : updatedForLambda;
-              latestResource = updatedForLambda;
-            } else {
-              prevVersionOfResource = extendedResourcePrevVersion;
-              latestResource = (R) r.getResource().orElseThrow();
-            }
-
-            if (log.isDebugEnabled()) {
-              log.debug(
-                  "Previous resource version: {} resource from update present: {}"
-                      + " extendedPrevResource present: {}",
-                  prevVersionOfResource.getMetadata().getResourceVersion(),
-                  updatedForLambda != null,
-                  extendedResourcePrevVersion != null);
-            }
-            handleEvent(
-                r.getAction(),
-                latestResource,
-                prevVersionOfResource,
-                (r instanceof ResourceDeleteEvent)
-                    ? ((ResourceDeleteEvent) r).isDeletedFinalStateUnknown()
-                    : null);
-          },
+          r ->
+              handleEvent(
+                  r.getAction(),
+                  (R) r.getResource().orElseThrow(),
+                  (R) r.getPreviousResource().orElse(null),
+                  r.getLastStateUnknow()),
           () -> log.debug("No new event present after the filtering update"));
     }
   }
