@@ -339,14 +339,14 @@ class InformerEventSourceTest {
   void multipleCachingFilteringUpdates_variant4() {
     withRealTemporaryResourceCache();
 
-    CountDownLatch latch = sendForEventFilteringUpdate(2);
+    CountDownLatch latch = sendForEventFilteringUpdate(3);
     CountDownLatch latch2 =
-        sendForEventFilteringUpdate(withResourceVersion(testDeployment(), 2), 3);
+        sendForEventFilteringUpdate(withResourceVersion(testDeployment(), 3), 4);
 
     informerEventSource.onUpdate(
-        deploymentWithResourceVersion(1), deploymentWithResourceVersion(2));
-    informerEventSource.onUpdate(
         deploymentWithResourceVersion(2), deploymentWithResourceVersion(3));
+    informerEventSource.onUpdate(
+        deploymentWithResourceVersion(3), deploymentWithResourceVersion(4));
     latch.countDown();
     latch2.countDown();
 
