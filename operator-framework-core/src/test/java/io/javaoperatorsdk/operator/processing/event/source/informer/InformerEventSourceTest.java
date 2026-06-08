@@ -150,6 +150,15 @@ class InformerEventSourceTest {
   }
 
   @Test
+  void propagatesIntermediateEventHandling() {
+    when(temporaryResourceCache.onAddOrUpdateEvent(any(), any(), any()))
+        .thenReturn(EventHandling.INTERMEDIATE);
+    informerEventSource.onUpdate(testDeployment(), testDeployment());
+
+    verify(eventHandlerMock, times(1)).handleEvent(any());
+  }
+
+  @Test
   void propagateEventAndRemoveResourceFromTempCacheIfResourceVersionMismatch() {
     withRealTemporaryResourceCache();
 
@@ -437,6 +446,56 @@ class InformerEventSourceTest {
     // put should be rejected since namespace is no longer watched
     temporaryResourceCache.putResource(deploymentWithResourceVersion(3));
     assertThat(temporaryResourceCache.getResourceFromCache(resourceId)).isEmpty();
+  }
+
+  @Test
+  void propagatesIntermediateEventForExternalUpdateDuringFiltering() {
+    // Causal-dependency fix: another controller updated the resource between our read
+    // and our write. The informer delivers that update during our active filter; since
+    // its resource version is NOT one of our own writes, it must be propagated.
+    var realCache = realCacheWithWatchedNamespace();
+    var resourceId = ResourceID.fromResource(testDeployment());
+
+    realCache.startEventFilteringModify(resourceId);
+    realCache.putResource(deploymentWithResourceVersion(4));
+
+    informerEventSource.onUpdate(
+        deploymentWithResourceVersion(2), deploymentWithResourceVersion(3));
+
+    verify(eventHandlerMock, times(1)).handleEvent(any());
+
+    realCache.doneEventFilterModify(resourceId, "4");
+  }
+
+  @Test
+  void doesNotPropagateIntermediateEventForOurOwnIntermediateUpdate() {
+    // Two consecutive own writes within a single filter window: the older one's event
+    // arrives after the newer one has been cached. Because the version is recorded as
+    // our own, the event must be deferred (not propagated).
+    var realCache = realCacheWithWatchedNamespace();
+    var resourceId = ResourceID.fromResource(testDeployment());
+
+    realCache.startEventFilteringModify(resourceId);
+    realCache.putResource(deploymentWithResourceVersion(3));
+    realCache.putResource(deploymentWithResourceVersion(4));
+
+    informerEventSource.onUpdate(
+        deploymentWithResourceVersion(2), deploymentWithResourceVersion(3));
+
+    verify(eventHandlerMock, never()).handleEvent(any());
+
+    realCache.doneEventFilterModify(resourceId, "4");
+  }
+
+  private TemporaryResourceCache<Deployment> realCacheWithWatchedNamespace() {
+    var mes = mock(ManagedInformerEventSource.class);
+    var mim = mock(InformerManager.class);
+    when(mes.manager()).thenReturn(mim);
+    when(mim.isWatchingNamespace(any())).thenReturn(true);
+    when(mim.lastSyncResourceVersion(any())).thenReturn("1");
+    temporaryResourceCache = spy(new TemporaryResourceCache<>(true, mes));
+    informerEventSource.setTemporalResourceCache(temporaryResourceCache);
+    return temporaryResourceCache;
   }
 
   private void assertNoEventProduced() {

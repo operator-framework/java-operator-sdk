@@ -65,7 +65,7 @@ public class TemporaryResourceCache<T extends HasMetadata> {
   public enum EventHandling {
     DEFER,
     OBSOLETE,
-    IN_BETWEEN,
+    INTERMEDIATE,
     NEW
   }
 
@@ -149,16 +149,16 @@ public class TemporaryResourceCache<T extends HasMetadata> {
         // in this case we received and event that might be in some edge case that was
         // already used in reconciler or after that, but before our updated resource version.
         // That would be hard to distinguish, so for those we are propagating the event further.
-        log.debug("Received in between event.");
-        result = EventHandling.IN_BETWEEN;
+        log.debug("Received intermediate event.");
+        result = EventHandling.INTERMEDIATE;
       }
     }
     var au = activeUpdates.get(resourceId);
     if (au != null) {
-      if (result == EventHandling.IN_BETWEEN) {
+      if (result == EventHandling.INTERMEDIATE) {
         return au.isOwnResourceVersions(resource.getMetadata().getResourceVersion())
             ? EventHandling.DEFER
-            : EventHandling.IN_BETWEEN;
+            : EventHandling.INTERMEDIATE;
       }
       if (result == EventHandling.NEW) {
         log.debug("Setting last event for id: {} delete: {}", resourceId, delete);
