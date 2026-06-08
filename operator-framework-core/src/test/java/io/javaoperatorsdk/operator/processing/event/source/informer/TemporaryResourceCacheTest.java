@@ -295,6 +295,68 @@ class TemporaryResourceCacheTest {
   }
 
   @Test
+  void intermediateEventPropagatedWhenNoActiveUpdate() {
+    // Cache holds a newer version from a prior own write; no active filter is in progress.
+    // An older event arriving used to be OBSOLETE; now it must be propagated as INTERMEDIATE
+    // so callers can react to changes that happened between read and write.
+    var olderEvent = testResource();
+    var newer = testResource();
+    newer.getMetadata().setResourceVersion("3");
+
+    temporaryResourceCache.putResource(newer);
+    assertThat(temporaryResourceCache.getResourceFromCache(ResourceID.fromResource(olderEvent)))
+        .isPresent();
+
+    var result =
+        temporaryResourceCache.onAddOrUpdateEvent(ResourceAction.UPDATED, olderEvent, null);
+
+    assertThat(result).isEqualTo(EventHandling.INTERMEDIATE);
+  }
+
+  @Test
+  void intermediateEventPropagatedWhenNotOurOwnUpdate() {
+    // Causal-dependency scenario: a third party updated the resource between our read and
+    // our write. Its version arrives as an event but is NOT in our own resource versions,
+    // so it must be propagated (INTERMEDIATE), not deferred.
+    var external = testResource(); // rv=2 — written by another controller
+    var resourceId = ResourceID.fromResource(external);
+
+    temporaryResourceCache.startEventFilteringModify(resourceId);
+
+    var ourUpdate = testResource();
+    ourUpdate.getMetadata().setResourceVersion("3");
+    temporaryResourceCache.putResource(ourUpdate);
+
+    var result = temporaryResourceCache.onAddOrUpdateEvent(ResourceAction.UPDATED, external, null);
+
+    assertThat(result).isEqualTo(EventHandling.INTERMEDIATE);
+  }
+
+  @Test
+  void intermediateEventDeferredWhenItIsOurOwnIntermediateUpdate() {
+    // Two consecutive own writes within the same filter window: the older one's event
+    // arrives after the newer one is cached. Because the version is recorded as our own,
+    // the event must be DEFERred rather than propagated.
+    var testResource = testResource();
+    var resourceId = ResourceID.fromResource(testResource);
+
+    temporaryResourceCache.startEventFilteringModify(resourceId);
+
+    var ourFirst = testResource(); // rv=2
+    temporaryResourceCache.putResource(ourFirst);
+
+    var ourSecond = testResource();
+    ourSecond.getMetadata().setResourceVersion("3");
+
+    temporaryResourceCache.startEventFilteringModify(resourceId);
+    temporaryResourceCache.putResource(ourSecond);
+
+    var result = temporaryResourceCache.onAddOrUpdateEvent(ResourceAction.UPDATED, ourFirst, null);
+
+    assertThat(result).isEqualTo(EventHandling.DEFER);
+  }
+
+  @Test
   void rapidDeletion() {
     var testResource = testResource();
 
