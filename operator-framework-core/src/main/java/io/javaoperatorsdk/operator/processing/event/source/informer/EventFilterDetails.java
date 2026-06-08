@@ -27,9 +27,10 @@ import io.javaoperatorsdk.operator.processing.event.source.controller.ResourceEv
 class EventFilterDetails {
 
   private int activeUpdates = 0;
-  private ResourceEvent lastEvent;
+  private ResourceEvent lastRelevantEvent;
   private String lastOwnUpdatedResourceVersion;
   private Set<String> allOwnResourceVersions = new HashSet<>();
+  private Set<String> uncertainEvents = new HashSet<>();
 
   public void increaseActiveUpdates() {
     activeUpdates = activeUpdates + 1;
@@ -53,18 +54,23 @@ class EventFilterDetails {
     return activeUpdates == 0;
   }
 
-  public void setLastEvent(ResourceEvent event) {
-    lastEvent = event;
+  public void setLastRelevantEvent(ResourceEvent event) {
+    lastRelevantEvent = event;
   }
 
-  public Optional<ResourceEvent> getLatestEventAfterLastUpdateEvent() {
-    if (lastEvent != null
-        && (lastOwnUpdatedResourceVersion == null
-            || ReconcilerUtilsInternal.compareResourceVersions(
-                    lastEvent.getResource().orElseThrow().getMetadata().getResourceVersion(),
-                    lastOwnUpdatedResourceVersion)
-                > 0)) {
-      return Optional.of(lastEvent);
+  public Optional<ResourceEvent> getRelevantEventToPropagate() {
+    if (lastRelevantEvent != null
+            && (lastOwnUpdatedResourceVersion == null
+                || ReconcilerUtilsInternal.compareResourceVersions(
+                        lastRelevantEvent
+                            .getResource()
+                            .orElseThrow()
+                            .getMetadata()
+                            .getResourceVersion(),
+                        lastOwnUpdatedResourceVersion)
+                    > 0)
+        || allOwnResourceVersions.containsAll(uncertainEvents)) {
+      return Optional.of(lastRelevantEvent);
     }
     return Optional.empty();
   }
@@ -79,5 +85,9 @@ class EventFilterDetails {
 
   public boolean isOwnResourceVersions(String resourceVersion) {
     return allOwnResourceVersions.contains(resourceVersion);
+  }
+
+  public void addUncertainResourceVersion(String resourceVersion) {
+    uncertainEvents.add(resourceVersion);
   }
 }
