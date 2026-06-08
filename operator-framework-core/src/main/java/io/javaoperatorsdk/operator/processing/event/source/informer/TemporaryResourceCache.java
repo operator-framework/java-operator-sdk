@@ -29,8 +29,6 @@ import io.javaoperatorsdk.operator.ReconcilerUtilsInternal;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependentResource;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
 import io.javaoperatorsdk.operator.processing.event.source.ResourceAction;
-import io.javaoperatorsdk.operator.processing.event.source.controller.ResourceDeleteEvent;
-import io.javaoperatorsdk.operator.processing.event.source.controller.ResourceEvent;
 
 /**
  * Temporal cache is used to solve the problem for {@link KubernetesDependentResource} that is, when
@@ -84,13 +82,12 @@ public class TemporaryResourceCache<T extends HasMetadata> {
     ed.increaseActiveUpdates();
   }
 
-  public synchronized Optional<ResourceEvent> doneEventFilterModify(
-      ResourceID resourceID, String updatedResourceVersion) {
+  public synchronized Optional<GenericResourceEvent> doneEventFilterModify(ResourceID resourceID) {
     if (!comparableResourceVersions) {
       return Optional.empty();
     }
     var ed = activeUpdates.get(resourceID);
-    if (ed == null || !ed.decreaseActiveUpdates(updatedResourceVersion)) {
+    if (ed == null || !ed.decreaseActiveUpdates()) {
       log.debug(
           "Active updates {} for resource id: {}",
           ed != null ? ed.getActiveUpdates() : 0,
@@ -98,31 +95,20 @@ public class TemporaryResourceCache<T extends HasMetadata> {
       return Optional.empty();
     }
     activeUpdates.remove(resourceID);
-    var res = ed.getRelevantEventToPropagate();
-    log.debug(
-        "Zero active updates for resource id: {}; event after update event: {}; updated resource"
-            + " version: {}",
-        resourceID,
-        res.isPresent(),
-        updatedResourceVersion);
-    return res;
+    return ed.prepareSummaryEventIfNotOwnEventsPresent();
   }
 
   public void onDeleteEvent(T resource, boolean unknownState) {
-    onEvent(ResourceAction.DELETED, resource, null, unknownState, true);
+    onEvent(ResourceAction.DELETED, resource, null, unknownState);
   }
 
   public EventHandling onAddOrUpdateEvent(
       ResourceAction action, T resource, T prevResourceVersion) {
-    return onEvent(action, resource, prevResourceVersion, false, false);
+    return onEvent(action, resource, prevResourceVersion, false);
   }
 
   private synchronized EventHandling onEvent(
-      ResourceAction action,
-      T resource,
-      T prevResourceVersion,
-      boolean unknownState,
-      boolean delete) {
+      ResourceAction action, T resource, T prevResourceVersion, boolean unknownState) {
     if (!comparableResourceVersions) {
       return EventHandling.NEW;
     }
@@ -155,29 +141,10 @@ public class TemporaryResourceCache<T extends HasMetadata> {
     }
     var au = activeUpdates.get(resourceId);
     if (au != null) {
-      if (result == EventHandling.INTERMEDIATE) {
-        var ownResourceVersion =
-            au.isOwnResourceVersions(resource.getMetadata().getResourceVersion());
-        log.debug("Handling intermediate event. Own resource version: {}", ownResourceVersion);
-        return ownResourceVersion ? EventHandling.DEFER : EventHandling.INTERMEDIATE;
-      }
-      if (result == EventHandling.NEW) {
-        if (cached == null) {
-          // this is for the case when temp cache is null, we receive an event
-          // there is ongoing filtering-caching update; at this point we cannot tell
-          // if that event is from our update
-          log.debug("Setting uncertain resource version.");
-          au.addUncertainResourceVersion(resource.getMetadata().getResourceVersion());
-        }
-        log.debug("Setting last event for id: {} delete: {}", resourceId, delete);
-        au.setLastRelevantEvent(
-            delete
-                ? new ResourceDeleteEvent(
-                    ResourceAction.DELETED, resourceId, resource, unknownState)
-                : new ExtendedResourceEvent(action, resourceId, resource, prevResourceVersion));
-        return EventHandling.DEFER;
-      }
-      return result;
+      log.debug("Recording relevant event");
+      au.addRelatedEvent(
+          new GenericResourceEvent(action, resource, prevResourceVersion, unknownState));
+      return EventHandling.DEFER;
     } else {
       return result;
     }
