@@ -73,7 +73,6 @@ public class DeletionDuringStatusUpdateReconciler
   public DeleteControl cleanup(
       DeletionDuringStatusUpdateCustomResource resource,
       Context<DeletionDuringStatusUpdateCustomResource> context) {
-    System.out.println("DeletionDuringStatusUpdateReconciler.cleanup");
     cleanupCalledLatch.countDown();
     return DeleteControl.defaultDelete();
   }

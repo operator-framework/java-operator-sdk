@@ -71,7 +71,7 @@ import static org.mockito.Mockito.when;
 class InformerEventSourceTest {
 
   private static final String PREV_RESOURCE_VERSION = "0";
-  private static final String DEFAULT_RESOURCE_VERSION = "1";
+  private static final String DEFAULT_RESOURCE_VERSION = "2";
 
   private InformerEventSource<Deployment, TestCustomResource> informerEventSource;
   private final KubernetesClient clientMock = MockKubernetesClient.client(Deployment.class);
@@ -218,12 +218,12 @@ class InformerEventSourceTest {
   void handlesPrevResourceVersionForUpdate() {
     withRealTemporaryResourceCache();
 
-    CountDownLatch latch = sendForEventFilteringUpdate(2);
+    CountDownLatch latch = sendForEventFilteringUpdate(3);
     informerEventSource.onUpdate(
-        deploymentWithResourceVersion(2), deploymentWithResourceVersion(3));
+        deploymentWithResourceVersion(1), deploymentWithResourceVersion(2));
     latch.countDown();
 
-    expectHandleEvent(3, 2);
+    expectHandleAddEvent(2, 1);
   }
 
   @Test
@@ -241,7 +241,7 @@ class InformerEventSourceTest {
         deploymentWithResourceVersion(1), deploymentWithResourceVersion(2));
     latch.countDown();
 
-    expectHandleEvent(2, 1);
+    expectHandleAddEvent(2, 1);
   }
 
   @Test
@@ -256,7 +256,7 @@ class InformerEventSourceTest {
         withResourceVersion(testDeployment(), 3), withResourceVersion(testDeployment(), 4));
     latch.countDown();
 
-    expectHandleEvent(4, 2);
+    expectHandleAddEvent(4, 2);
   }
 
   @Test
@@ -275,11 +275,11 @@ class InformerEventSourceTest {
   void filterAddEventBeforeUpdate() {
     withRealTemporaryResourceCache();
 
-    CountDownLatch latch = sendForEventFilteringUpdate(2);
-    informerEventSource.onAdd(deploymentWithResourceVersion(1));
+    CountDownLatch latch = sendForEventFilteringUpdate(3);
+    informerEventSource.onAdd(deploymentWithResourceVersion(2));
     latch.countDown();
 
-    assertNoEventProduced();
+    expectHandleAddEvent(2);
   }
 
   @Test
@@ -379,7 +379,7 @@ class InformerEventSourceTest {
     assertThat(temporaryResourceCache.getResourceFromCache(resourceId)).isEmpty();
 
     // complete the filtering update - the resource should not reappear
-    temporaryResourceCache.doneEventFilterModify(resourceId, "2");
+    temporaryResourceCache.doneEventFilterModify(resourceId);
     assertThat(temporaryResourceCache.getResourceFromCache(resourceId)).isEmpty();
   }
 
@@ -439,7 +439,7 @@ class InformerEventSourceTest {
     assertThat(temporaryResourceCache.getResourceFromCache(resourceId)).isEmpty();
 
     // complete the filtering update
-    var doneResult = temporaryResourceCache.doneEventFilterModify(resourceId, "2");
+    var doneResult = temporaryResourceCache.doneEventFilterModify(resourceId);
     // resource was already cleaned by ghost check, so no deferred event
     assertThat(doneResult).isEmpty();
 
@@ -469,9 +469,9 @@ class InformerEventSourceTest {
     informerEventSource.onUpdate(
         deploymentWithResourceVersion(2), deploymentWithResourceVersion(3));
 
-    verify(eventHandlerMock, times(1)).handleEvent(any());
-
     latch2.countDown();
+
+    expectHandleAddEvent(3, 2);
   }
 
   @Test
@@ -521,8 +521,28 @@ class InformerEventSourceTest {
             () -> verify(informerEventSource, never()).handleEvent(any(), any(), any(), any()));
   }
 
-  private void expectHandleEvent(int newResourceVersion, int oldResourceVersion) {
+  private void expectHandleAddEvent(int newResourceVersion) {
     await()
+        .atMost(Duration.ofSeconds(1))
+        .untilAsserted(
+            () -> {
+              verify(informerEventSource, times(1))
+                  .handleEvent(
+                      eq(ResourceAction.ADDED),
+                      argThat(
+                          newResource -> {
+                            assertThat(newResource.getMetadata().getResourceVersion())
+                                .isEqualTo("" + newResourceVersion);
+                            return true;
+                          }),
+                      isNull(),
+                      any());
+            });
+  }
+
+  private void expectHandleAddEvent(int newResourceVersion, int oldResourceVersion) {
+    await()
+        .atMost(Duration.ofSeconds(1))
         .untilAsserted(
             () -> {
               verify(informerEventSource, times(1))
@@ -540,7 +560,7 @@ class InformerEventSourceTest {
                                 .isEqualTo("" + oldResourceVersion);
                             return true;
                           }),
-                      isNull());
+                      any());
             });
   }
 
