@@ -91,15 +91,12 @@ public class TemporaryResourceCache<T extends HasMetadata> {
     if (!comparableResourceVersions) {
       return Optional.empty();
     }
-    var ed = activeUpdates.get(resourceID);
-    if (ed == null || !ed.decreaseActiveUpdates()) {
-      log.debug(
-          "Active updates {} for resource id: {}",
-          ed == null ? null : ed.getActiveUpdates(),
-          resourceID);
-      return Optional.empty();
-    }
-    return finaleEventHandlingAndCleanup(resourceID, ed);
+      var ed = cachingFilteringUpdates.get(resourceID);
+      if (!ed.decreaseActiveUpdates()) {
+          log.debug("Active updates {} for resource id: {}", ed.getActiveUpdates(), resourceID);
+          return Optional.empty();
+      }
+      return finaleEventHandlingAndCleanup(resourceID, ed);
   }
 
   public Optional<GenericResourceEvent> onDeleteEvent(T resource, boolean unknownState) {
