@@ -25,6 +25,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.stream.Stream;
 
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.RepeatedTest;
 import org.junit.jupiter.api.Test;
 
 import io.fabric8.kubernetes.api.model.ObjectMeta;
@@ -72,6 +73,7 @@ class InformerEventSourceTest {
 
   private static final String PREV_RESOURCE_VERSION = "0";
   private static final String DEFAULT_RESOURCE_VERSION = "2";
+  public static final int REPEAT_COUNT = 10;
 
   private InformerEventSource<Deployment, TestCustomResource> informerEventSource;
   private final KubernetesClient clientMock = MockKubernetesClient.client(Deployment.class);
@@ -214,7 +216,7 @@ class InformerEventSourceTest {
     verify(eventHandlerMock, never()).handleEvent(any());
   }
 
-  @Test
+  @RepeatedTest(REPEAT_COUNT)
   void handlesPrevResourceVersionForUpdate() {
     withRealTemporaryResourceCache();
 
@@ -226,7 +228,7 @@ class InformerEventSourceTest {
     expectHandleAddEvent(2, 1);
   }
 
-  @Test
+  @RepeatedTest(REPEAT_COUNT)
   void handlesPrevResourceVersionForUpdateInCaseOfException() {
     withRealTemporaryResourceCache();
 
@@ -244,7 +246,7 @@ class InformerEventSourceTest {
     expectHandleAddEvent(2, 1);
   }
 
-  @Test
+  @RepeatedTest(REPEAT_COUNT)
   void handlesPrevResourceVersionForUpdateInCaseOfMultipleUpdates() {
     withRealTemporaryResourceCache();
 
@@ -259,7 +261,7 @@ class InformerEventSourceTest {
     expectHandleAddEvent(4, 2);
   }
 
-  @Test
+  @RepeatedTest(REPEAT_COUNT)
   void doesNotPropagateEventIfReceivedBeforeUpdate() {
     withRealTemporaryResourceCache();
 
@@ -271,7 +273,7 @@ class InformerEventSourceTest {
     assertNoEventProduced();
   }
 
-  @Test
+  @RepeatedTest(REPEAT_COUNT)
   void filterAddEventBeforeUpdate() {
     withRealTemporaryResourceCache();
 
@@ -282,7 +284,7 @@ class InformerEventSourceTest {
     expectHandleAddEvent(2);
   }
 
-  @Test
+  @RepeatedTest(REPEAT_COUNT)
   void multipleCachingFilteringUpdates() {
     withRealTemporaryResourceCache();
     CountDownLatch latch = sendForEventFilteringUpdate(3);
@@ -299,7 +301,7 @@ class InformerEventSourceTest {
     assertNoEventProduced();
   }
 
-  @Test
+  @RepeatedTest(REPEAT_COUNT)
   void multipleCachingFilteringUpdates_variant2() {
     withRealTemporaryResourceCache();
 
@@ -317,7 +319,7 @@ class InformerEventSourceTest {
     assertNoEventProduced();
   }
 
-  @Test
+  @RepeatedTest(REPEAT_COUNT)
   void multipleCachingFilteringUpdates_variant3() {
     withRealTemporaryResourceCache();
 
@@ -335,7 +337,7 @@ class InformerEventSourceTest {
     assertNoEventProduced();
   }
 
-  @Test
+  @RepeatedTest(REPEAT_COUNT)
   void multipleCachingFilteringUpdates_variant4() {
     withRealTemporaryResourceCache();
 
@@ -353,7 +355,7 @@ class InformerEventSourceTest {
     assertNoEventProduced();
   }
 
-  @Test
+  @RepeatedTest(REPEAT_COUNT)
   void ghostCheckRemovesCachedResourceDuringFilteringUpdate() {
     var mes = mock(ManagedInformerEventSource.class);
     var mim = mock(InformerManager.class);
@@ -383,7 +385,7 @@ class InformerEventSourceTest {
     assertThat(temporaryResourceCache.getResourceFromCache(resourceId)).isEmpty();
   }
 
-  @Test
+  @RepeatedTest(REPEAT_COUNT)
   void ghostCheckRunsConcurrentlyWithPutResource() {
     var mes = mock(ManagedInformerEventSource.class);
     var mim = mock(InformerManager.class);
@@ -414,7 +416,7 @@ class InformerEventSourceTest {
         .isPresent();
   }
 
-  @Test
+  @RepeatedTest(REPEAT_COUNT)
   void filteringUpdateAndGhostCheckWithNamespaceChange() {
     var mes = mock(ManagedInformerEventSource.class);
     var mim = mock(InformerManager.class);
@@ -448,7 +450,7 @@ class InformerEventSourceTest {
     assertThat(temporaryResourceCache.getResourceFromCache(resourceId)).isEmpty();
   }
 
-  @Test
+  @RepeatedTest(REPEAT_COUNT)
   void propagatesIntermediateEventForExternalUpdateDuringFiltering() {
     // Causal-dependency fix: another controller updated the resource between our read
     // and our write. The informer delivers that update during our active filter; since
@@ -474,7 +476,7 @@ class InformerEventSourceTest {
     expectHandleAddEvent(3, 2);
   }
 
-  @Test
+  @RepeatedTest(REPEAT_COUNT)
   void doesNotPropagateIntermediateEventForOurOwnIntermediateUpdate() {
     // Two consecutive own writes (rv 3 then rv 4) within an open filter window: an
     // event for the older own version must be deferred since it's recognized as our own.

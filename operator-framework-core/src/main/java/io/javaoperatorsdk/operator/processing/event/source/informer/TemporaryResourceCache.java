@@ -143,6 +143,7 @@ public class TemporaryResourceCache<T extends HasMetadata> {
           new GenericResourceEvent(action, resource, prevResourceVersion, unknownState));
       return EventHandling.IGNORE;
     } else {
+      log.debug("No active recornding, event handling: {}", result);
       return result;
     }
   }
@@ -194,6 +195,9 @@ public class TemporaryResourceCache<T extends HasMetadata> {
 
     // also make sure that we're later than the existing temporary entry
     var cachedResource = getResourceFromCache(resourceId).orElse(null);
+    Optional.ofNullable(activeUpdates.get(resourceId))
+        .ifPresent(
+            au -> au.addToOwnResourceVersions(newResource.getMetadata().getResourceVersion()));
 
     if (cachedResource == null
         || ReconcilerUtilsInternal.compareResourceVersions(newResource, cachedResource) > 0) {
@@ -202,10 +206,6 @@ public class TemporaryResourceCache<T extends HasMetadata> {
           newResource.getMetadata().getResourceVersion(),
           resourceId);
       cache.put(resourceId, newResource);
-      var au = activeUpdates.get(resourceId);
-      if (au != null) {
-        au.addToOwnResourceVersions(newResource.getMetadata().getResourceVersion());
-      }
     }
   }
 
