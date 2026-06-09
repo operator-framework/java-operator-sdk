@@ -82,9 +82,12 @@ public class TemporaryResourceCache<T extends HasMetadata> {
     if (!comparableResourceVersions) {
       return Optional.empty();
     }
-    var ed = cachingFilteringUpdates.get(resourceID);
-    if (!ed.decreaseActiveUpdates()) {
-      log.debug("Active updates {} for resource id: {}", ed.getActiveUpdates(), resourceID);
+    var ed = activeUpdates.get(resourceID);
+    if (ed == null || !ed.decreaseActiveUpdates()) {
+      log.debug(
+          "Active updates {} for resource id: {}",
+          ed == null ? null : ed.getActiveUpdates(),
+          resourceID);
       return Optional.empty();
     }
     return finaleEventHandlingAndCleanup(resourceID, ed);
@@ -228,7 +231,7 @@ public class TemporaryResourceCache<T extends HasMetadata> {
    * explicitly add resources to this cache. Those are cleaned up by this check, which is triggered
    * by the informer's onList callback.
    */
-  public void checkGhostResources() {
+  public synchronized void checkGhostResources() {
     log.debug("Checking for ghost resources.");
     var iterator = cache.entrySet().iterator();
     while (iterator.hasNext()) {
@@ -243,19 +246,18 @@ public class TemporaryResourceCache<T extends HasMetadata> {
             e.getKey(),
             ns);
         iterator.remove();
+        activeUpdates.remove(e.getKey());
         continue;
       }
       if ((ReconcilerUtilsInternal.compareResourceVersions(
                   e.getValue().getMetadata().getResourceVersion(), getLastSyncResourceVersion(ns))
               < 0)
           // making sure we have the situation where resource is missing from the cache
-          && managedInformerEventSource
-              .manager()
-              .get(ResourceID.fromResource(e.getValue()))
-              .isEmpty()) {
-        iterator.remove();
-        managedInformerEventSource.handleEvent(ResourceAction.DELETED, e.getValue(), null, true);
+          && managedInformerEventSource.manager().get(e.getKey()).isEmpty()) {
         log.debug("Removing ghost resource with ID: {}", e.getKey());
+        iterator.remove();
+        activeUpdates.remove(e.getKey());
+        managedInformerEventSource.handleEvent(ResourceAction.DELETED, e.getValue(), null, true);
       }
     }
   }
