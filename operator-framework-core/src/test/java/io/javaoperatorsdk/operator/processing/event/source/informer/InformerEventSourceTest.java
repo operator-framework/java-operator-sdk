@@ -118,7 +118,7 @@ class InformerEventSourceTest {
         .thenReturn(Optional.of(testDeployment()));
 
     when(temporaryResourceCache.onAddOrUpdateEvent(any(), any(), any()))
-        .thenReturn(EventHandling.OBSOLETE);
+        .thenReturn(EventHandling.IGNORE);
 
     informerEventSource.onAdd(testDeployment());
     informerEventSource.onUpdate(testDeployment(), testDeployment());
@@ -129,7 +129,7 @@ class InformerEventSourceTest {
   @Test
   void processEventPropagationWithoutAnnotation() {
     when(temporaryResourceCache.onAddOrUpdateEvent(any(), any(), any()))
-        .thenReturn(EventHandling.NEW);
+        .thenReturn(EventHandling.PROPAGATE);
     informerEventSource.onUpdate(testDeployment(), testDeployment());
 
     verify(eventHandlerMock, times(1)).handleEvent(any());
@@ -138,7 +138,7 @@ class InformerEventSourceTest {
   @Test
   void processEventPropagationWithIncorrectAnnotation() {
     when(temporaryResourceCache.onAddOrUpdateEvent(any(), any(), any()))
-        .thenReturn(EventHandling.NEW);
+        .thenReturn(EventHandling.PROPAGATE);
     informerEventSource.onAdd(
         new DeploymentBuilder(testDeployment())
             .editMetadata()
@@ -152,7 +152,7 @@ class InformerEventSourceTest {
   @Test
   void propagatesIntermediateEventHandling() {
     when(temporaryResourceCache.onAddOrUpdateEvent(any(), any(), any()))
-        .thenReturn(EventHandling.INTERMEDIATE);
+        .thenReturn(EventHandling.PROPAGATE);
     informerEventSource.onUpdate(testDeployment(), testDeployment());
 
     verify(eventHandlerMock, times(1)).handleEvent(any());

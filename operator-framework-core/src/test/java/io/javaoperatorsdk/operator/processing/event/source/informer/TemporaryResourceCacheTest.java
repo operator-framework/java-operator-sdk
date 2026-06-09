@@ -215,14 +215,14 @@ class TemporaryResourceCacheTest {
     // first ensure an event is not known
     var result =
         temporaryResourceCache.onAddOrUpdateEvent(ResourceAction.ADDED, testResource, null);
-    assertThat(result).isEqualTo(EventHandling.NEW);
+    assertThat(result).isEqualTo(EventHandling.PROPAGATE);
 
     var nextResource = testResource();
     nextResource.getMetadata().setResourceVersion("3");
     temporaryResourceCache.putResource(nextResource);
 
     result = temporaryResourceCache.onAddOrUpdateEvent(ResourceAction.UPDATED, nextResource, null);
-    assertThat(result).isEqualTo(EventHandling.OBSOLETE);
+    assertThat(result).isEqualTo(EventHandling.IGNORE);
   }
 
   @Test
@@ -232,7 +232,7 @@ class TemporaryResourceCacheTest {
     // first ensure an event is not known
     var result =
         temporaryResourceCache.onAddOrUpdateEvent(ResourceAction.ADDED, testResource, null);
-    assertThat(result).isEqualTo(EventHandling.NEW);
+    assertThat(result).isEqualTo(EventHandling.PROPAGATE);
     latestSyncVersion = RESOURCE_VERSION;
 
     var nextResource = testResource();
@@ -245,7 +245,7 @@ class TemporaryResourceCacheTest {
 
     latestSyncVersion = "3";
     result = temporaryResourceCache.onAddOrUpdateEvent(ResourceAction.UPDATED, nextResource, null);
-    assertThat(result).isEqualTo(EventHandling.OBSOLETE);
+    assertThat(result).isEqualTo(EventHandling.IGNORE);
   }
 
   @Test
@@ -255,7 +255,7 @@ class TemporaryResourceCacheTest {
     // first ensure an event is not known
     var result =
         temporaryResourceCache.onAddOrUpdateEvent(ResourceAction.ADDED, testResource, null);
-    assertThat(result).isEqualTo(EventHandling.NEW);
+    assertThat(result).isEqualTo(EventHandling.PROPAGATE);
 
     var nextResource = testResource();
     nextResource.getMetadata().setResourceVersion("3");
@@ -266,7 +266,7 @@ class TemporaryResourceCacheTest {
         temporaryResourceCache.onAddOrUpdateEvent(
             ResourceAction.UPDATED, nextResource, testResource);
     // the result is deferred
-    assertThat(result).isEqualTo(EventHandling.DEFER);
+    assertThat(result).isEqualTo(EventHandling.IGNORE);
     temporaryResourceCache.putResource(nextResource);
     var postEvent = temporaryResourceCache.doneEventFilterModify(resourceId);
 
@@ -287,7 +287,7 @@ class TemporaryResourceCacheTest {
     nextResource.getMetadata().setResourceVersion("4");
     var result =
         temporaryResourceCache.onAddOrUpdateEvent(ResourceAction.ADDED, nextResource, null);
-    assertThat(result).isEqualTo(EventHandling.DEFER);
+    assertThat(result).isEqualTo(EventHandling.IGNORE);
 
     var postEvent = temporaryResourceCache.doneEventFilterModify(resourceId);
 
@@ -310,7 +310,7 @@ class TemporaryResourceCacheTest {
     var result =
         temporaryResourceCache.onAddOrUpdateEvent(ResourceAction.UPDATED, olderEvent, null);
 
-    assertThat(result).isEqualTo(EventHandling.INTERMEDIATE);
+    assertThat(result).isEqualTo(EventHandling.PROPAGATE);
   }
 
   @Test
@@ -329,7 +329,7 @@ class TemporaryResourceCacheTest {
 
     var result = temporaryResourceCache.onAddOrUpdateEvent(ResourceAction.UPDATED, external, null);
 
-    assertThat(result).isEqualTo(EventHandling.DEFER);
+    assertThat(result).isEqualTo(EventHandling.IGNORE);
   }
 
   @Test
@@ -353,7 +353,7 @@ class TemporaryResourceCacheTest {
 
     var result = temporaryResourceCache.onAddOrUpdateEvent(ResourceAction.UPDATED, ourFirst, null);
 
-    assertThat(result).isEqualTo(EventHandling.DEFER);
+    assertThat(result).isEqualTo(EventHandling.IGNORE);
   }
 
   @Test
