@@ -146,7 +146,13 @@ public abstract class ManagedInformerEventSource<
 
   @Override
   public void onList(String resourceVersion, boolean remainedEmpty) {
+    temporaryResourceCache.setRelistFinished();
     temporaryResourceCache.checkGhostResources();
+  }
+
+  @Override
+  public void onBeforeList(String lastSyncResourceVersion) {
+    temporaryResourceCache.setOngoingRelist();
   }
 
   @Override
