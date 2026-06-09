@@ -102,9 +102,6 @@ class EventFilterDetails {
       if (lastEvent.getAction() == ResourceAction.DELETED) {
           return Optional.of(lastEvent);
       }
-      if (relatedEvents.size() == 1) {
-          return Optional.of(relatedEvents.get(0));
-      }
     if (relatedEvents.size() == 1) {
       return Optional.of(relatedEvents.get(0));
     }
