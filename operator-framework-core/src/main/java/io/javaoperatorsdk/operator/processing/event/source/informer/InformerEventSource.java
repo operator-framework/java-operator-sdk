@@ -33,7 +33,6 @@ import io.javaoperatorsdk.operator.processing.event.EventHandler;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
 import io.javaoperatorsdk.operator.processing.event.source.PrimaryToSecondaryMapper;
 import io.javaoperatorsdk.operator.processing.event.source.ResourceAction;
-import io.javaoperatorsdk.operator.processing.event.source.informer.TemporaryResourceCache.EventHandling;
 
 /**
  * Wraps informer(s) so they are connected to the eventing system of the framework. Note that since
@@ -154,20 +153,24 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
 
     var eventHandling = temporaryResourceCache.onAddOrUpdateEvent(action, newObject, oldObject);
 
-    if (eventHandling != EventHandling.PROPAGATE) {
-      log.debug(
-          "{} event propagation", eventHandling == EventHandling.IGNORE ? "Deferring" : "Skipping");
+    if (eventHandling.isEmpty()) {
+      log.debug("Deferring event propagation");
     } else if (eventAcceptedByFilter(action, newObject, oldObject)) {
       log.debug(
           "Propagating event for {}, resource with same version not result of a our update.",
           action);
-      propagateEvent(newObject);
+      var event = eventHandling.get();
+      handleEvent(
+          event.getAction(),
+          (R) event.getResource().orElseThrow(),
+          (R) event.getPreviousResource().orElse(null),
+          event.getLastStateUnknow());
     } else {
       log.debug("Event filtered out for operation: {}, resourceID: {}", action, resourceID);
     }
   }
 
-  private void propagateEvent(R object) {
+  protected void propagateEvent(R object) {
     var primaryResourceIdSet =
         configuration().getSecondaryToPrimaryMapper().toPrimaryResourceIDs(object);
     if (primaryResourceIdSet.isEmpty()) {
