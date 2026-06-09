@@ -100,18 +100,20 @@ public abstract class ManagedInformerEventSource<
     try {
       temporaryResourceCache.startEventFilteringModify(id);
       updatedResource = updateMethod.apply(resourceToUpdate);
-      log.debug("Resource update successful");
       handleRecentResourceUpdate(id, updatedResource, resourceToUpdate);
+      log.debug("Caching resource update successful");
       return updatedResource;
     } finally {
       var res = temporaryResourceCache.doneEventFilterModify(id);
       res.ifPresentOrElse(
-          r ->
-              handleEvent(
-                  r.getAction(),
-                  (R) r.getResource().orElseThrow(),
-                  (R) r.getPreviousResource().orElse(null),
-                  r.getLastStateUnknow()),
+          r -> {
+            log.debug("Propagating not own event");
+            handleEvent(
+                r.getAction(),
+                (R) r.getResource().orElseThrow(),
+                (R) r.getPreviousResource().orElse(null),
+                r.getLastStateUnknow());
+          },
           () -> log.debug("No new event present after the filtering update"));
     }
   }
