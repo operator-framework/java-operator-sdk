@@ -61,10 +61,8 @@ public class TemporaryResourceCache<T extends HasMetadata> {
   private final ManagedInformerEventSource<T, ?, ?> managedInformerEventSource;
 
   public enum EventHandling {
-    DEFER,
-    OBSOLETE,
-    INTERMEDIATE,
-    NEW
+    IGNORE,
+    PROPAGATE
   }
 
   public TemporaryResourceCache(
@@ -110,7 +108,7 @@ public class TemporaryResourceCache<T extends HasMetadata> {
   private synchronized EventHandling onEvent(
       ResourceAction action, T resource, T prevResourceVersion, boolean unknownState) {
     if (!comparableResourceVersions) {
-      return EventHandling.NEW;
+      return EventHandling.PROPAGATE;
     }
 
     var resourceId = ResourceID.fromResource(resource);
@@ -118,7 +116,7 @@ public class TemporaryResourceCache<T extends HasMetadata> {
       log.debug("Processing event");
     }
     var cached = cache.get(resourceId);
-    EventHandling result = EventHandling.NEW;
+    EventHandling result = EventHandling.PROPAGATE;
     if (cached != null) {
       int comp = ReconcilerUtilsInternal.compareResourceVersions(resource, cached);
       if (comp >= 0 || unknownState) {
@@ -130,13 +128,12 @@ public class TemporaryResourceCache<T extends HasMetadata> {
         // we propagate event only for our update or newer other can be discarded since we know we
         // will receive
         // additional event
-        result = comp == 0 ? EventHandling.OBSOLETE : EventHandling.NEW;
+        result = comp == 0 ? EventHandling.IGNORE : EventHandling.PROPAGATE;
       } else {
         // in this case we received and event that might be in some edge case that was
         // already used in reconciler or after that, but before our updated resource version.
         // That would be hard to distinguish, so for those we are propagating the event further.
         log.debug("Received intermediate event.");
-        result = EventHandling.INTERMEDIATE;
       }
     }
     var au = activeUpdates.get(resourceId);
@@ -144,7 +141,7 @@ public class TemporaryResourceCache<T extends HasMetadata> {
       log.debug("Recording relevant event");
       au.addRelatedEvent(
           new GenericResourceEvent(action, resource, prevResourceVersion, unknownState));
-      return EventHandling.DEFER;
+      return EventHandling.IGNORE;
     } else {
       return result;
     }

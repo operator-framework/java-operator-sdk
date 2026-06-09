@@ -154,9 +154,9 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
 
     var eventHandling = temporaryResourceCache.onAddOrUpdateEvent(action, newObject, oldObject);
 
-    if (eventHandling != EventHandling.NEW && eventHandling != EventHandling.INTERMEDIATE) {
+    if (eventHandling != EventHandling.PROPAGATE) {
       log.debug(
-          "{} event propagation", eventHandling == EventHandling.DEFER ? "Deferring" : "Skipping");
+          "{} event propagation", eventHandling == EventHandling.IGNORE ? "Deferring" : "Skipping");
     } else if (eventAcceptedByFilter(action, newObject, oldObject)) {
       log.debug(
           "Propagating event for {}, resource with same version not result of a our update.",
