@@ -55,8 +55,9 @@ public class TemporaryResourceCache<T extends HasMetadata> {
   private static final Logger log = LoggerFactory.getLogger(TemporaryResourceCache.class);
 
   private final Map<ResourceID, T> cache = new ConcurrentHashMap<>();
-  private final Map<ResourceID, EventFilterDetails> activeUpdates = new HashMap<>();
+  private final Map<ResourceID, EventFilterDetails> cachingFilteringUpdates = new HashMap<>();
   private final boolean comparableResourceVersions;
+  private boolean informerOngoingRelist = false;
 
   private final ManagedInformerEventSource<T, ?, ?> managedInformerEventSource;
 
@@ -71,7 +72,9 @@ public class TemporaryResourceCache<T extends HasMetadata> {
     if (!comparableResourceVersions) {
       return;
     }
-    var ed = activeUpdates.computeIfAbsent(resourceID, id -> new EventFilterDetails());
+    var ed =
+        cachingFilteringUpdates.computeIfAbsent(
+            resourceID, id -> new EventFilterDetails(informerOngoingRelist));
     ed.increaseActiveUpdates();
   }
 
@@ -79,18 +82,12 @@ public class TemporaryResourceCache<T extends HasMetadata> {
     if (!comparableResourceVersions) {
       return Optional.empty();
     }
-    var ed = activeUpdates.get(resourceID);
+    var ed = cachingFilteringUpdates.get(resourceID);
     if (!ed.decreaseActiveUpdates()) {
       log.debug("Active updates {} for resource id: {}", ed.getActiveUpdates(), resourceID);
       return Optional.empty();
     }
-
-    if (ed.newerOrEqualEventReceivedForOwnLastUpdate()) {
-      activeUpdates.remove(resourceID);
-      return ed.prepareSummaryEventIfNotOwnEventsPresent();
-    } else {
-      return Optional.empty();
-    }
+    return finaleEventHandlingAndCleanup(resourceID, ed);
   }
 
   public Optional<GenericResourceEvent> onDeleteEvent(T resource, boolean unknownState) {
@@ -136,7 +133,7 @@ public class TemporaryResourceCache<T extends HasMetadata> {
         log.debug("Received intermediate event.");
       }
     }
-    var au = activeUpdates.get(resourceId);
+    var au = cachingFilteringUpdates.get(resourceId);
     if (au != null) {
       log.debug("Recording relevant event");
       au.addRelatedEvent(
@@ -144,13 +141,12 @@ public class TemporaryResourceCache<T extends HasMetadata> {
       // this is to cover the situation when we finished the filtering and caching update but
       // did not receive events for our own updates yet.
       if (au.isNoActiveUpdate() && au.newerOrEqualEventReceivedForOwnLastUpdate()) {
-        activeUpdates.remove(resourceId);
-        return au.prepareSummaryEventIfNotOwnEventsPresent();
+        return finaleEventHandlingAndCleanup(resourceId, au);
       }
       return Optional.empty();
     } else {
       log.debug("No active recording, event handling: {}", result);
-      return result;
+      return informerOngoingRelist ? Optional.of(actualEvent) : result;
     }
   }
 
@@ -206,7 +202,7 @@ public class TemporaryResourceCache<T extends HasMetadata> {
 
     // also make sure that we're later than the existing temporary entry
     var cachedResource = getResourceFromCache(resourceId).orElse(null);
-    Optional.ofNullable(activeUpdates.get(resourceId))
+    Optional.ofNullable(cachingFilteringUpdates.get(resourceId))
         .ifPresent(
             au -> au.addToOwnResourceVersions(newResource.getMetadata().getResourceVersion()));
 
@@ -264,6 +260,20 @@ public class TemporaryResourceCache<T extends HasMetadata> {
     }
   }
 
+  private Optional<GenericResourceEvent> finaleEventHandlingAndCleanup(
+      ResourceID resourceID, EventFilterDetails ed) {
+    if (ed.newerOrEqualEventReceivedForOwnLastUpdate()) {
+      cachingFilteringUpdates.remove(resourceID);
+      if (ed.isAffectedByReList()) {
+        return ed.summaryEventForReList();
+      } else {
+        return ed.summaryEvent();
+      }
+    } else {
+      return Optional.empty();
+    }
+  }
+
   public synchronized Optional<T> getResourceFromCache(ResourceID resourceID) {
     return Optional.ofNullable(cache.get(resourceID));
   }
@@ -274,5 +284,14 @@ public class TemporaryResourceCache<T extends HasMetadata> {
 
   synchronized Map<ResourceID, T> getResources() {
     return Collections.unmodifiableMap(cache);
+  }
+
+  public synchronized void setOngoingRelist() {
+    this.informerOngoingRelist = true;
+    cachingFilteringUpdates.values().forEach(EventFilterDetails::affectedByReList);
+  }
+
+  public synchronized void setRelistFinished() {
+    this.informerOngoingRelist = false;
   }
 }

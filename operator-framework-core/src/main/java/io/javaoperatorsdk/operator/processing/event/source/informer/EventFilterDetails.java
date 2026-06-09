@@ -32,6 +32,12 @@ class EventFilterDetails {
   private int activeUpdates = 0;
   private final List<GenericResourceEvent> relatedEvents = new ArrayList<>(5);
   private final Set<String> allOwnResourceVersions = new HashSet<>(5);
+  private boolean affectedByReList;
+  private volatile boolean reListSummaryEventSent = false;
+
+  public EventFilterDetails(boolean affectedByReList) {
+    this.affectedByReList = affectedByReList;
+  }
 
   public void increaseActiveUpdates() {
     activeUpdates = activeUpdates + 1;
@@ -63,13 +69,33 @@ class EventFilterDetails {
     relatedEvents.add(event);
   }
 
-  public Optional<GenericResourceEvent> prepareSummaryEventIfNotOwnEventsPresent() {
+  public Optional<GenericResourceEvent> summaryEventForReList() {
+    if (!affectedByReList) {
+      throw new IllegalStateException(
+          "ReList summary event requested to detail not affected by relist");
+    }
+    if (reListSummaryEventSent) {
+      throw new IllegalStateException("ReList summary event already sent");
+    }
+    reListSummaryEventSent = true;
+    if (relatedEvents.isEmpty()) {
+      return Optional.empty();
+    }
+    return summaryEvent();
+  }
+
+  // todo unit tests for corner cases with empty collections
+  public Optional<GenericResourceEvent> summaryEvent() {
     if (relatedEvents.isEmpty()) {
       return Optional.empty();
     }
     if (allOwnResourceVersions.containsAll(relatedEventResourceVersions())) {
       return Optional.empty();
     }
+    return summaryEventInternal();
+  }
+
+  private Optional<GenericResourceEvent> summaryEventInternal() {
     var deleteEvent =
         relatedEvents.stream().filter(e -> e.getAction() == ResourceAction.DELETED).findFirst();
     if (deleteEvent.isPresent()) {
@@ -107,5 +133,17 @@ class EventFilterDetails {
     return relatedEvents.stream()
         .map(e -> e.getResource().orElseThrow().getMetadata().getResourceVersion())
         .anyMatch(rv -> ReconcilerUtilsInternal.compareResourceVersions(rv, lastOwn) >= 0);
+  }
+
+  public boolean isAffectedByReList() {
+    return affectedByReList;
+  }
+
+  public void affectedByReList() {
+    this.affectedByReList = true;
+  }
+
+  public boolean isReListSummaryEventSent() {
+    return reListSummaryEventSent;
   }
 }
