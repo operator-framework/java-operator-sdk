@@ -85,41 +85,44 @@ public class TemporaryResourceCache<T extends HasMetadata> {
       return Optional.empty();
     }
     var ed = activeUpdates.get(resourceID);
-    if (ed == null || !ed.decreaseActiveUpdates()) {
-      log.debug(
-          "Active updates {} for resource id: {}",
-          ed != null ? ed.getActiveUpdates() : 0,
-          resourceID);
+    if (!ed.decreaseActiveUpdates()) {
+      log.debug("Active updates {} for resource id: {}", ed.getActiveUpdates(), resourceID);
       return Optional.empty();
     }
-    activeUpdates.remove(resourceID);
-    return ed.prepareSummaryEventIfNotOwnEventsPresent();
-  }
 
-  public void onDeleteEvent(T resource, boolean unknownState) {
-    onEvent(ResourceAction.DELETED, resource, null, unknownState);
-  }
-
-  public EventHandling onAddOrUpdateEvent(
-      ResourceAction action, T resource, T prevResourceVersion) {
-    return onEvent(action, resource, prevResourceVersion, false);
-  }
-
-  private synchronized EventHandling onEvent(
-      ResourceAction action, T resource, T prevResourceVersion, boolean unknownState) {
-    if (!comparableResourceVersions) {
-      return EventHandling.PROPAGATE;
+    if (ed.newerOrEqualEventReceivedForOwnLastUpdate()) {
+      activeUpdates.remove(resourceID);
+      return ed.prepareSummaryEventIfNotOwnEventsPresent();
+    } else {
+      return Optional.empty();
     }
+  }
 
+  public Optional<GenericResourceEvent> onDeleteEvent(T resource, boolean unknownState) {
+    return onEvent(ResourceAction.DELETED, resource, null, unknownState);
+  }
+
+  public Optional<GenericResourceEvent> onAddOrUpdateEvent(
+      ResourceAction action, T resource, T prevResourceVersion) {
+    return onEvent(action, resource, prevResourceVersion, null);
+  }
+
+  private synchronized Optional<GenericResourceEvent> onEvent(
+      ResourceAction action, T resource, T prevResourceVersion, Boolean unknownState) {
+    GenericResourceEvent actualEvent =
+        toGenericResourceEvent(action, resource, prevResourceVersion, unknownState);
+    if (!comparableResourceVersions) {
+      return Optional.of(actualEvent);
+    }
     var resourceId = ResourceID.fromResource(resource);
     if (log.isDebugEnabled()) {
       log.debug("Processing event");
     }
     var cached = cache.get(resourceId);
-    EventHandling result = EventHandling.PROPAGATE;
+    Optional<GenericResourceEvent> result = Optional.of(actualEvent);
     if (cached != null) {
       int comp = ReconcilerUtilsInternal.compareResourceVersions(resource, cached);
-      if (comp >= 0 || unknownState) {
+      if (comp >= 0 || Boolean.TRUE.equals(unknownState)) {
         log.debug(
             "Removing resource from temp cache. comparison: {} unknown state: {}",
             comp,
@@ -128,7 +131,9 @@ public class TemporaryResourceCache<T extends HasMetadata> {
         // we propagate event only for our update or newer other can be discarded since we know we
         // will receive
         // additional event
-        result = comp == 0 ? EventHandling.IGNORE : EventHandling.PROPAGATE;
+        if (comp == 0) {
+          result = Optional.empty();
+        }
       } else {
         // in this case we received and event that might be in some edge case that was
         // already used in reconciler or after that, but before our updated resource version.
@@ -141,11 +146,22 @@ public class TemporaryResourceCache<T extends HasMetadata> {
       log.debug("Recording relevant event");
       au.addRelatedEvent(
           new GenericResourceEvent(action, resource, prevResourceVersion, unknownState));
-      return EventHandling.IGNORE;
+      // this is to cover the situation when we finished the filtering and caching update but
+      // did not receive events for our own updates yet.
+      if (au.isNoActiveUpdate() && au.newerOrEqualEventReceivedForOwnLastUpdate()) {
+        activeUpdates.remove(resourceId);
+        return au.prepareSummaryEventIfNotOwnEventsPresent();
+      }
+      return Optional.empty();
     } else {
-      log.debug("No active recornding, event handling: {}", result);
+      log.debug("No active recording, event handling: {}", result);
       return result;
     }
+  }
+
+  static <T extends HasMetadata> GenericResourceEvent toGenericResourceEvent(
+      ResourceAction action, T resource, T prevResourceVersion, Boolean unknownState) {
+    return new GenericResourceEvent(action, resource, prevResourceVersion, unknownState);
   }
 
   /** put the item into the cache if it's for a later state than what has already been observed. */
