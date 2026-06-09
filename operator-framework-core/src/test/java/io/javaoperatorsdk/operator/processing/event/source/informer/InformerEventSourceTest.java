@@ -30,7 +30,6 @@ import org.junit.jupiter.api.Test;
 
 import io.fabric8.kubernetes.api.model.ObjectMeta;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
-import io.fabric8.kubernetes.api.model.apps.DeploymentBuilder;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClientException;
 import io.javaoperatorsdk.operator.MockKubernetesClient;
@@ -47,7 +46,6 @@ import io.javaoperatorsdk.operator.processing.event.source.Cache;
 import io.javaoperatorsdk.operator.processing.event.source.EventFilterTestUtils;
 import io.javaoperatorsdk.operator.processing.event.source.ResourceAction;
 import io.javaoperatorsdk.operator.processing.event.source.SecondaryToPrimaryMapper;
-import io.javaoperatorsdk.operator.processing.event.source.informer.TemporaryResourceCache.EventHandling;
 import io.javaoperatorsdk.operator.sample.simple.TestCustomResource;
 
 import static io.javaoperatorsdk.operator.api.reconciler.Constants.DEFAULT_NAMESPACES_SET;
@@ -115,52 +113,6 @@ class InformerEventSourceTest {
   }
 
   @Test
-  void skipsEventPropagation() {
-    when(temporaryResourceCache.getResourceFromCache(any()))
-        .thenReturn(Optional.of(testDeployment()));
-
-    when(temporaryResourceCache.onAddOrUpdateEvent(any(), any(), any()))
-        .thenReturn(EventHandling.IGNORE);
-
-    informerEventSource.onAdd(testDeployment());
-    informerEventSource.onUpdate(testDeployment(), testDeployment());
-
-    verify(eventHandlerMock, never()).handleEvent(any());
-  }
-
-  @Test
-  void processEventPropagationWithoutAnnotation() {
-    when(temporaryResourceCache.onAddOrUpdateEvent(any(), any(), any()))
-        .thenReturn(EventHandling.PROPAGATE);
-    informerEventSource.onUpdate(testDeployment(), testDeployment());
-
-    verify(eventHandlerMock, times(1)).handleEvent(any());
-  }
-
-  @Test
-  void processEventPropagationWithIncorrectAnnotation() {
-    when(temporaryResourceCache.onAddOrUpdateEvent(any(), any(), any()))
-        .thenReturn(EventHandling.PROPAGATE);
-    informerEventSource.onAdd(
-        new DeploymentBuilder(testDeployment())
-            .editMetadata()
-            .addToAnnotations(InformerEventSource.PREVIOUS_ANNOTATION_KEY, "invalid")
-            .endMetadata()
-            .build());
-
-    verify(eventHandlerMock, times(1)).handleEvent(any());
-  }
-
-  @Test
-  void propagatesIntermediateEventHandling() {
-    when(temporaryResourceCache.onAddOrUpdateEvent(any(), any(), any()))
-        .thenReturn(EventHandling.PROPAGATE);
-    informerEventSource.onUpdate(testDeployment(), testDeployment());
-
-    verify(eventHandlerMock, times(1)).handleEvent(any());
-  }
-
-  @Test
   void propagateEventAndRemoveResourceFromTempCacheIfResourceVersionMismatch() {
     withRealTemporaryResourceCache();
 
@@ -224,8 +176,10 @@ class InformerEventSourceTest {
     informerEventSource.onUpdate(
         deploymentWithResourceVersion(1), deploymentWithResourceVersion(2));
     latch.countDown();
+    informerEventSource.onUpdate(
+        deploymentWithResourceVersion(2), deploymentWithResourceVersion(3));
 
-    expectHandleAddEvent(2, 1);
+    expectHandleAddEvent(3, 1);
   }
 
   @RepeatedTest(REPEAT_COUNT)
@@ -271,17 +225,6 @@ class InformerEventSourceTest {
     latch.countDown();
 
     assertNoEventProduced();
-  }
-
-  @RepeatedTest(REPEAT_COUNT)
-  void filterAddEventBeforeUpdate() {
-    withRealTemporaryResourceCache();
-
-    CountDownLatch latch = sendForEventFilteringUpdate(3);
-    informerEventSource.onAdd(deploymentWithResourceVersion(2));
-    latch.countDown();
-
-    expectHandleAddEvent(2);
   }
 
   @RepeatedTest(REPEAT_COUNT)
@@ -351,6 +294,24 @@ class InformerEventSourceTest {
         deploymentWithResourceVersion(3), deploymentWithResourceVersion(4));
     latch.countDown();
     latch2.countDown();
+
+    assertNoEventProduced();
+  }
+
+  @RepeatedTest(REPEAT_COUNT)
+  void multipleCachingFilteringUpdates_variant5() {
+    withRealTemporaryResourceCache();
+
+    CountDownLatch latch = sendForEventFilteringUpdate(3);
+    CountDownLatch latch2 =
+        sendForEventFilteringUpdate(withResourceVersion(testDeployment(), 3), 4);
+    latch.countDown();
+    latch2.countDown();
+
+    informerEventSource.onUpdate(
+        deploymentWithResourceVersion(2), deploymentWithResourceVersion(3));
+    informerEventSource.onUpdate(
+        deploymentWithResourceVersion(3), deploymentWithResourceVersion(4));
 
     assertNoEventProduced();
   }
@@ -470,10 +431,11 @@ class InformerEventSourceTest {
     // external update with rv 3 (older than our cached rv 4) — must propagate
     informerEventSource.onUpdate(
         deploymentWithResourceVersion(2), deploymentWithResourceVersion(3));
-
     latch2.countDown();
+    informerEventSource.onUpdate(
+        deploymentWithResourceVersion(4), deploymentWithResourceVersion(5));
 
-    expectHandleAddEvent(3, 2);
+    expectHandleAddEvent(5, 2);
   }
 
   @RepeatedTest(REPEAT_COUNT)
@@ -517,10 +479,9 @@ class InformerEventSourceTest {
 
   private void assertNoEventProduced() {
     await()
-        .pollDelay(Duration.ofMillis(50))
-        .timeout(Duration.ofMillis(51))
-        .untilAsserted(
-            () -> verify(informerEventSource, never()).handleEvent(any(), any(), any(), any()));
+        .pollDelay(Duration.ofMillis(70))
+        .timeout(Duration.ofMillis(71))
+        .untilAsserted(() -> verify(informerEventSource, never()).propagateEvent(any()));
   }
 
   private void expectHandleAddEvent(int newResourceVersion) {
