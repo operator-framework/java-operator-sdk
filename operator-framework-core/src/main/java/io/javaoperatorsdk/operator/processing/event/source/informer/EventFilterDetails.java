@@ -24,13 +24,14 @@ import java.util.function.UnaryOperator;
 import java.util.stream.Collectors;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
+import io.javaoperatorsdk.operator.ReconcilerUtilsInternal;
 import io.javaoperatorsdk.operator.processing.event.source.ResourceAction;
 
 class EventFilterDetails {
 
   private int activeUpdates = 0;
-  private List<GenericResourceEvent> relatedEvents = new ArrayList<>();
-  private Set<String> allOwnResourceVersions = new HashSet<>();
+  private final List<GenericResourceEvent> relatedEvents = new ArrayList<>(5);
+  private final Set<String> allOwnResourceVersions = new HashSet<>(5);
 
   public void increaseActiveUpdates() {
     activeUpdates = activeUpdates + 1;
@@ -50,6 +51,10 @@ class EventFilterDetails {
     return activeUpdates;
   }
 
+  public boolean isNoActiveUpdate() {
+    return activeUpdates == 0;
+  }
+
   void addToOwnResourceVersions(String updateVersion) {
     allOwnResourceVersions.add(updateVersion);
   }
@@ -62,10 +67,7 @@ class EventFilterDetails {
     if (relatedEvents.isEmpty()) {
       return Optional.empty();
     }
-    if (allOwnResourceVersions.containsAll(
-        relatedEvents.stream()
-            .map(e -> e.getResource().orElseThrow().getMetadata().getResourceVersion())
-            .collect(Collectors.toSet()))) {
+    if (allOwnResourceVersions.containsAll(relatedEventResourceVersions())) {
       return Optional.empty();
     }
     var deleteEvent =
@@ -86,5 +88,24 @@ class EventFilterDetails {
             relatedEvents.get(relatedEvents.size() - 1).getResource().orElseThrow(),
             firstResource,
             null));
+  }
+
+  private Set<String> relatedEventResourceVersions() {
+    return relatedEvents.stream()
+        .map(e -> e.getResource().orElseThrow().getMetadata().getResourceVersion())
+        .collect(Collectors.toSet());
+  }
+
+  public boolean newerOrEqualEventReceivedForOwnLastUpdate() {
+    if (allOwnResourceVersions.isEmpty()) {
+      return true;
+    }
+    String lastOwn =
+        allOwnResourceVersions.stream()
+            .reduce((a, b) -> ReconcilerUtilsInternal.compareResourceVersions(a, b) >= 0 ? a : b)
+            .orElseThrow();
+    return relatedEvents.stream()
+        .map(e -> e.getResource().orElseThrow().getMetadata().getResourceVersion())
+        .anyMatch(rv -> ReconcilerUtilsInternal.compareResourceVersions(rv, lastOwn) >= 0);
   }
 }

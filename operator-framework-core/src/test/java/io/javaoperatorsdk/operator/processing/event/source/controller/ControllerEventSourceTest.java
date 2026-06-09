@@ -250,6 +250,7 @@ class ControllerEventSourceTest
     // external update with rv 3 (older than our cached rv 4) — must propagate
     source.onUpdate(testResourceWithVersion(2), testResourceWithVersion(3));
     latch2.countDown();
+    source.onUpdate(testResourceWithVersion(3), testResourceWithVersion(5));
 
     await().untilAsserted(() -> verify(eventHandler, times(1)).handleEvent(any()));
   }
