@@ -530,6 +530,53 @@ class InformerEventSourceTest {
   }
 
   @RepeatedTest(REPEAT_COUNT)
+  void ghostCheckDuringOpenFilteringUpdate_cleansUpAndDoneIsNoOp() {
+    // Combines the real eventFilteringUpdateAndCacheResource flow with a ghost-resource
+    // cleanup happening while a second filter window is still open. The ghost check
+    // must clear cache + activeUpdates and fire a synthetic DELETE; the still-open
+    // filter's later doneEventFilterModify must complete cleanly (no NPE on the
+    // already-removed EventFilterDetails) and not propagate any further events.
+    var mes = mock(ManagedInformerEventSource.class);
+    var mim = mock(InformerManager.class);
+    when(mes.manager()).thenReturn(mim);
+    when(mim.isWatchingNamespace(any())).thenReturn(true);
+    when(mim.lastSyncResourceVersion(any())).thenReturn("1");
+    when(mim.get(any())).thenReturn(Optional.empty());
+
+    temporaryResourceCache = spy(new TemporaryResourceCache<>(true, mes));
+    informerEventSource.setTemporalResourceCache(temporaryResourceCache);
+
+    var resourceId = ResourceID.fromResource(testDeployment());
+
+    // first filter completes and caches rv 2; second filter keeps the window open
+    var latch1 = sendForEventFilteringUpdate(2);
+    var latch2 = sendForEventFilteringUpdate(deploymentWithResourceVersion(2), 3);
+
+    latch1.countDown();
+    awaitCachedResourceVersion(resourceId, "2");
+
+    // simulate watch disconnect + relist while the second filter is still open:
+    // lastSync moved well past our cached rv, informer no longer has the resource
+    when(mim.lastSyncResourceVersion(any())).thenReturn("10");
+
+    temporaryResourceCache.checkGhostResources();
+
+    // ghost cleanup wiped both cache and activeUpdates
+    assertThat(temporaryResourceCache.getResourceFromCache(resourceId)).isEmpty();
+    assertThat(temporaryResourceCache.getActiveUpdates()).isEmpty();
+
+    // synthetic DELETE fired through the cache's manager reference
+    verify(mes, times(1)).handleEvent(eq(ResourceAction.DELETED), any(), isNull(), eq(true));
+
+    // closing the still-open filter must not NPE on the missing EventFilterDetails
+    // and must not propagate anything
+    latch2.countDown();
+
+    assertNoEventProduced();
+    expectNoActiveUpdates();
+  }
+
+  @RepeatedTest(REPEAT_COUNT)
   void propagatesIntermediateEventForExternalUpdateDuringFiltering() {
     // Causal-dependency fix: another controller updated the resource between our read
     // and our write. The informer delivers that update during our active filter; since
