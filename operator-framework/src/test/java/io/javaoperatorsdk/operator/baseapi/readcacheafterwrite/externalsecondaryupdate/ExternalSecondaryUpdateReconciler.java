@@ -65,18 +65,21 @@ public class ExternalSecondaryUpdateReconciler
     if (execution == 1) {
       // first reconciliation: create the secondary CM via SSA, then ask the test to apply
       // an external metadata change BEFORE we issue our second SSA on it.
-      context.resourceOperations().serverSideApply(prepareCM(resource), configMapEventSource);
+      context.resourceOperations().serverSideApply(prepareCM(resource, 1), configMapEventSource);
 
       firstReconcileEntered.countDown();
       if (!externalUpdateApplied.await(30, TimeUnit.SECONDS)) {
         throw new RuntimeException("timed out waiting for external CM update");
       }
 
-      // second SSA on the secondary — the temp cache must filter out the event for OUR
-      // resulting rv but NOT the rv from the external label change. We capture the rv our
-      // SSA observed.
+      // Second SSA on the secondary, with DIFFERENT data so it actually mutates the resource
+      // and bumps rv beyond the external label change. Without distinct data the SSA would be
+      // idempotent and return the rv produced by the external update — which would then be
+      // recorded as our own and incorrectly filter out the external event.
       var updated =
-          context.resourceOperations().serverSideApply(prepareCM(resource), configMapEventSource);
+          context
+              .resourceOperations()
+              .serverSideApply(prepareCM(resource, 2), configMapEventSource);
       rvAfterCachingFilteringUpdate.set(updated.getMetadata().getResourceVersion());
     } else {
       // any subsequent reconciliation must be able to see the external label through the
@@ -104,7 +107,7 @@ public class ExternalSecondaryUpdateReconciler
     return List.of(configMapEventSource);
   }
 
-  private static ConfigMap prepareCM(ExternalSecondaryUpdateCustomResource p) {
+  private static ConfigMap prepareCM(ExternalSecondaryUpdateCustomResource p, int iteration) {
     var cm =
         new ConfigMapBuilder()
             .withMetadata(
@@ -112,7 +115,7 @@ public class ExternalSecondaryUpdateReconciler
                     .withName(p.getMetadata().getName())
                     .withNamespace(p.getMetadata().getNamespace())
                     .build())
-            .withData(Map.of(CM_DATA_KEY, CM_DATA_VALUE))
+            .withData(Map.of(CM_DATA_KEY, CM_DATA_VALUE, "iteration", "" + iteration))
             .build();
     cm.addOwnerReference(p);
     return cm;
