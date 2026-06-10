@@ -33,7 +33,6 @@ import io.javaoperatorsdk.operator.processing.event.EventHandler;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
 import io.javaoperatorsdk.operator.processing.event.source.PrimaryToSecondaryMapper;
 import io.javaoperatorsdk.operator.processing.event.source.ResourceAction;
-import io.javaoperatorsdk.operator.processing.event.source.informer.TemporaryResourceCache.EventHandling;
 
 /**
  * Wraps informer(s) so they are connected to the eventing system of the framework. Note that since
@@ -152,12 +151,9 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
     primaryToSecondaryIndex.onAddOrUpdate(newObject);
     var resourceID = ResourceID.fromResource(newObject);
 
-    var eventHandling = temporaryResourceCache.onAddOrUpdateEvent(action, newObject, oldObject);
+    temporaryResourceCache.onAddOrUpdateEvent(action, newObject, oldObject);
 
-    if (eventHandling != EventHandling.NEW) {
-      log.debug(
-          "{} event propagation", eventHandling == EventHandling.DEFER ? "Deferring" : "Skipping");
-    } else if (eventAcceptedByFilter(action, newObject, oldObject)) {
+    if (eventAcceptedByFilter(action, newObject, oldObject)) {
       log.debug(
           "Propagating event for {}, resource with same version not result of a reconciliation.",
           action);

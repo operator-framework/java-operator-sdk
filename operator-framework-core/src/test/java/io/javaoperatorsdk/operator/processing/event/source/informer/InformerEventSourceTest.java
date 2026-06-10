@@ -15,13 +15,11 @@
  */
 package io.javaoperatorsdk.operator.processing.event.source.informer;
 
-import java.time.Duration;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import java.util.concurrent.CountDownLatch;
 import java.util.stream.Stream;
 
 import org.junit.jupiter.api.BeforeEach;
@@ -29,9 +27,7 @@ import org.junit.jupiter.api.Test;
 
 import io.fabric8.kubernetes.api.model.ObjectMeta;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
-import io.fabric8.kubernetes.api.model.apps.DeploymentBuilder;
 import io.fabric8.kubernetes.client.KubernetesClient;
-import io.fabric8.kubernetes.client.KubernetesClientException;
 import io.javaoperatorsdk.operator.MockKubernetesClient;
 import io.javaoperatorsdk.operator.OperatorException;
 import io.javaoperatorsdk.operator.api.config.BaseConfigurationService;
@@ -43,21 +39,15 @@ import io.javaoperatorsdk.operator.api.config.informer.InformerEventSourceConfig
 import io.javaoperatorsdk.operator.processing.event.EventHandler;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
 import io.javaoperatorsdk.operator.processing.event.source.Cache;
-import io.javaoperatorsdk.operator.processing.event.source.EventFilterTestUtils;
-import io.javaoperatorsdk.operator.processing.event.source.ResourceAction;
 import io.javaoperatorsdk.operator.processing.event.source.SecondaryToPrimaryMapper;
-import io.javaoperatorsdk.operator.processing.event.source.informer.TemporaryResourceCache.EventHandling;
 import io.javaoperatorsdk.operator.sample.simple.TestCustomResource;
 
 import static io.javaoperatorsdk.operator.api.reconciler.Constants.DEFAULT_NAMESPACES_SET;
 import static io.javaoperatorsdk.operator.processing.event.source.EventFilterTestUtils.withResourceVersion;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.awaitility.Awaitility.await;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.ArgumentMatchers.nullable;
 import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.mock;
@@ -113,43 +103,6 @@ class InformerEventSourceTest {
   }
 
   @Test
-  void skipsEventPropagation() {
-    when(temporaryResourceCache.getResourceFromCache(any()))
-        .thenReturn(Optional.of(testDeployment()));
-
-    when(temporaryResourceCache.onAddOrUpdateEvent(any(), any(), any()))
-        .thenReturn(EventHandling.OBSOLETE);
-
-    informerEventSource.onAdd(testDeployment());
-    informerEventSource.onUpdate(testDeployment(), testDeployment());
-
-    verify(eventHandlerMock, never()).handleEvent(any());
-  }
-
-  @Test
-  void processEventPropagationWithoutAnnotation() {
-    when(temporaryResourceCache.onAddOrUpdateEvent(any(), any(), any()))
-        .thenReturn(EventHandling.NEW);
-    informerEventSource.onUpdate(testDeployment(), testDeployment());
-
-    verify(eventHandlerMock, times(1)).handleEvent(any());
-  }
-
-  @Test
-  void processEventPropagationWithIncorrectAnnotation() {
-    when(temporaryResourceCache.onAddOrUpdateEvent(any(), any(), any()))
-        .thenReturn(EventHandling.NEW);
-    informerEventSource.onAdd(
-        new DeploymentBuilder(testDeployment())
-            .editMetadata()
-            .addToAnnotations(InformerEventSource.PREVIOUS_ANNOTATION_KEY, "invalid")
-            .endMetadata()
-            .build());
-
-    verify(eventHandlerMock, times(1)).handleEvent(any());
-  }
-
-  @Test
   void propagateEventAndRemoveResourceFromTempCacheIfResourceVersionMismatch() {
     withRealTemporaryResourceCache();
 
@@ -161,6 +114,24 @@ class InformerEventSourceTest {
 
     verify(eventHandlerMock, times(1)).handleEvent(any());
     verify(temporaryResourceCache, times(1)).onAddOrUpdateEvent(any(), eq(testDeployment()), any());
+  }
+
+  @Test
+  void cachingUpdate() {
+    withRealTemporaryResourceCache();
+
+    Deployment deployment = testDeployment();
+    Deployment cachedDeployment = testDeployment();
+    cachedDeployment.getMetadata().setResourceVersion(PREV_RESOURCE_VERSION);
+
+    informerEventSource.eventFilteringUpdateAndCacheResource(cachedDeployment, o -> deployment);
+
+    assertThat(informerEventSource.get(ResourceID.fromResource(deployment))).contains(deployment);
+
+    informerEventSource.onUpdate(cachedDeployment, deployment);
+
+    assertThat(temporaryResourceCache.getResourceFromCache(ResourceID.fromResource(deployment)))
+        .isEmpty();
   }
 
   @Test
@@ -206,175 +177,6 @@ class InformerEventSourceTest {
   }
 
   @Test
-  void handlesPrevResourceVersionForUpdate() {
-    withRealTemporaryResourceCache();
-
-    CountDownLatch latch = sendForEventFilteringUpdate(2);
-    informerEventSource.onUpdate(
-        deploymentWithResourceVersion(2), deploymentWithResourceVersion(3));
-    latch.countDown();
-
-    expectHandleEvent(3, 2);
-  }
-
-  @Test
-  void handlesPrevResourceVersionForUpdateInCaseOfException() {
-    withRealTemporaryResourceCache();
-
-    CountDownLatch latch =
-        EventFilterTestUtils.sendForEventFilteringUpdate(
-            informerEventSource,
-            testDeployment(),
-            r -> {
-              throw new KubernetesClientException("fake");
-            });
-    informerEventSource.onUpdate(
-        deploymentWithResourceVersion(1), deploymentWithResourceVersion(2));
-    latch.countDown();
-
-    expectHandleEvent(2, 1);
-  }
-
-  @Test
-  void handlesPrevResourceVersionForUpdateInCaseOfMultipleUpdates() {
-    withRealTemporaryResourceCache();
-
-    var deployment = testDeployment();
-    CountDownLatch latch = sendForEventFilteringUpdate(deployment, 2);
-    informerEventSource.onUpdate(
-        withResourceVersion(testDeployment(), 2), withResourceVersion(testDeployment(), 3));
-    informerEventSource.onUpdate(
-        withResourceVersion(testDeployment(), 3), withResourceVersion(testDeployment(), 4));
-    latch.countDown();
-
-    expectHandleEvent(4, 2);
-  }
-
-  @Test
-  void doesNotPropagateEventIfReceivedBeforeUpdate() {
-    withRealTemporaryResourceCache();
-
-    CountDownLatch latch = sendForEventFilteringUpdate(2);
-    informerEventSource.onUpdate(
-        deploymentWithResourceVersion(1), deploymentWithResourceVersion(2));
-    latch.countDown();
-
-    assertNoEventProduced();
-  }
-
-  @Test
-  void filterAddEventBeforeUpdate() {
-    withRealTemporaryResourceCache();
-
-    CountDownLatch latch = sendForEventFilteringUpdate(2);
-    informerEventSource.onAdd(deploymentWithResourceVersion(1));
-    latch.countDown();
-
-    assertNoEventProduced();
-  }
-
-  @Test
-  void multipleCachingFilteringUpdates() {
-    withRealTemporaryResourceCache();
-    CountDownLatch latch = sendForEventFilteringUpdate(2);
-    CountDownLatch latch2 =
-        sendForEventFilteringUpdate(withResourceVersion(testDeployment(), 2), 3);
-
-    informerEventSource.onUpdate(
-        deploymentWithResourceVersion(1), deploymentWithResourceVersion(2));
-    latch.countDown();
-    latch2.countDown();
-    informerEventSource.onUpdate(
-        deploymentWithResourceVersion(2), deploymentWithResourceVersion(3));
-
-    assertNoEventProduced();
-  }
-
-  @Test
-  void multipleCachingFilteringUpdates_variant2() {
-    withRealTemporaryResourceCache();
-
-    CountDownLatch latch = sendForEventFilteringUpdate(2);
-    CountDownLatch latch2 =
-        sendForEventFilteringUpdate(withResourceVersion(testDeployment(), 2), 3);
-
-    informerEventSource.onUpdate(
-        deploymentWithResourceVersion(1), deploymentWithResourceVersion(2));
-    latch.countDown();
-    informerEventSource.onUpdate(
-        deploymentWithResourceVersion(2), deploymentWithResourceVersion(3));
-    latch2.countDown();
-
-    assertNoEventProduced();
-  }
-
-  @Test
-  void multipleCachingFilteringUpdates_variant3() {
-    withRealTemporaryResourceCache();
-
-    CountDownLatch latch = sendForEventFilteringUpdate(2);
-    CountDownLatch latch2 =
-        sendForEventFilteringUpdate(withResourceVersion(testDeployment(), 2), 3);
-
-    latch.countDown();
-    informerEventSource.onUpdate(
-        deploymentWithResourceVersion(1), deploymentWithResourceVersion(2));
-    informerEventSource.onUpdate(
-        deploymentWithResourceVersion(2), deploymentWithResourceVersion(3));
-    latch2.countDown();
-
-    assertNoEventProduced();
-  }
-
-  @Test
-  void multipleCachingFilteringUpdates_variant4() {
-    withRealTemporaryResourceCache();
-
-    CountDownLatch latch = sendForEventFilteringUpdate(2);
-    CountDownLatch latch2 =
-        sendForEventFilteringUpdate(withResourceVersion(testDeployment(), 2), 3);
-
-    informerEventSource.onUpdate(
-        deploymentWithResourceVersion(1), deploymentWithResourceVersion(2));
-    informerEventSource.onUpdate(
-        deploymentWithResourceVersion(2), deploymentWithResourceVersion(3));
-    latch.countDown();
-    latch2.countDown();
-
-    assertNoEventProduced();
-  }
-
-  @Test
-  void ghostCheckRemovesCachedResourceDuringFilteringUpdate() {
-    var mes = mock(ManagedInformerEventSource.class);
-    var mim = mock(InformerManager.class);
-    when(mes.manager()).thenReturn(mim);
-    when(mim.isWatchingNamespace(any())).thenReturn(true);
-    when(mim.lastSyncResourceVersion(any())).thenReturn("1");
-    when(mim.get(any())).thenReturn(Optional.empty());
-
-    temporaryResourceCache = spy(new TemporaryResourceCache<>(true, mes));
-    informerEventSource.setTemporalResourceCache(temporaryResourceCache);
-
-    // put resource in cache and start a filtering update
-    var deployment = deploymentWithResourceVersion(2);
-    temporaryResourceCache.putResource(deployment);
-    var resourceId = ResourceID.fromResource(deployment);
-    temporaryResourceCache.startEventFilteringModify(resourceId);
-
-    // advance sync version so ghost check considers the cached resource outdated
-    when(mim.lastSyncResourceVersion(any())).thenReturn("3");
-
-    // ghost check should remove the cached resource
-    temporaryResourceCache.checkGhostResources();
-    assertThat(temporaryResourceCache.getResourceFromCache(resourceId)).isEmpty();
-
-    // complete the filtering update - the resource should not reappear
-    temporaryResourceCache.doneEventFilterModify(resourceId, "2");
-    assertThat(temporaryResourceCache.getResourceFromCache(resourceId)).isEmpty();
-  }
-
-  @Test
   void ghostCheckRunsConcurrentlyWithPutResource() {
     var mes = mock(ManagedInformerEventSource.class);
     var mim = mock(InformerManager.class);
@@ -405,85 +207,13 @@ class InformerEventSourceTest {
         .isPresent();
   }
 
-  @Test
-  void filteringUpdateAndGhostCheckWithNamespaceChange() {
-    var mes = mock(ManagedInformerEventSource.class);
-    var mim = mock(InformerManager.class);
-    when(mes.manager()).thenReturn(mim);
-    when(mim.isWatchingNamespace(any())).thenReturn(true);
-    when(mim.lastSyncResourceVersion(any())).thenReturn("1");
-    when(mim.get(any())).thenReturn(Optional.empty());
-
-    temporaryResourceCache = spy(new TemporaryResourceCache<>(true, mes));
-    informerEventSource.setTemporalResourceCache(temporaryResourceCache);
-
-    // start filtering update and put resource
-    var deployment = deploymentWithResourceVersion(2);
-    var resourceId = ResourceID.fromResource(deployment);
-    temporaryResourceCache.startEventFilteringModify(resourceId);
-    temporaryResourceCache.putResource(deployment);
-
-    // namespace becomes unwatched - ghost check should clean up
-    when(mim.isWatchingNamespace(any())).thenReturn(false);
-
-    temporaryResourceCache.checkGhostResources();
-    assertThat(temporaryResourceCache.getResourceFromCache(resourceId)).isEmpty();
-
-    // complete the filtering update
-    var doneResult = temporaryResourceCache.doneEventFilterModify(resourceId, "2");
-    // resource was already cleaned by ghost check, so no deferred event
-    assertThat(doneResult).isEmpty();
-
-    // put should be rejected since namespace is no longer watched
-    temporaryResourceCache.putResource(deploymentWithResourceVersion(3));
-    assertThat(temporaryResourceCache.getResourceFromCache(resourceId)).isEmpty();
-  }
-
-  private void assertNoEventProduced() {
-    await()
-        .pollDelay(Duration.ofMillis(50))
-        .timeout(Duration.ofMillis(51))
-        .untilAsserted(
-            () -> verify(informerEventSource, never()).handleEvent(any(), any(), any(), any()));
-  }
-
-  private void expectHandleEvent(int newResourceVersion, int oldResourceVersion) {
-    await()
-        .untilAsserted(
-            () -> {
-              verify(informerEventSource, times(1))
-                  .handleEvent(
-                      eq(ResourceAction.UPDATED),
-                      argThat(
-                          newResource -> {
-                            assertThat(newResource.getMetadata().getResourceVersion())
-                                .isEqualTo("" + newResourceVersion);
-                            return true;
-                          }),
-                      argThat(
-                          newResource -> {
-                            assertThat(newResource.getMetadata().getResourceVersion())
-                                .isEqualTo("" + oldResourceVersion);
-                            return true;
-                          }),
-                      isNull());
-            });
-  }
-
-  private CountDownLatch sendForEventFilteringUpdate(int resourceVersion) {
-    return sendForEventFilteringUpdate(testDeployment(), resourceVersion);
-  }
-
-  private CountDownLatch sendForEventFilteringUpdate(Deployment deployment, int resourceVersion) {
-    return EventFilterTestUtils.sendForEventFilteringUpdate(
-        informerEventSource, deployment, r -> withResourceVersion(deployment, resourceVersion));
-  }
-
   private void withRealTemporaryResourceCache() {
     var mes = mock(ManagedInformerEventSource.class);
     var mim = mock(InformerManager.class);
     when(mes.manager()).thenReturn(mim);
-    when(mim.lastSyncResourceVersion(any())).thenReturn("1");
+    when(mim.isWatchingNamespace(any())).thenReturn(true);
+    when(mim.lastSyncResourceVersion(any())).thenReturn(PREV_RESOURCE_VERSION);
+    when(informerEventSource.manager()).thenReturn(mim);
 
     temporaryResourceCache = spy(new TemporaryResourceCache<>(true, mes));
     informerEventSource.setTemporalResourceCache(temporaryResourceCache);

@@ -22,7 +22,6 @@ import java.util.concurrent.CountDownLatch;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import io.fabric8.kubernetes.client.KubernetesClientException;
 import io.javaoperatorsdk.operator.MockKubernetesClient;
 import io.javaoperatorsdk.operator.ReconcilerUtilsInternal;
 import io.javaoperatorsdk.operator.TestUtils;
@@ -44,8 +43,6 @@ import io.javaoperatorsdk.operator.processing.event.source.filter.OnUpdateFilter
 import io.javaoperatorsdk.operator.sample.simple.TestCustomResource;
 
 import static io.javaoperatorsdk.operator.processing.event.source.EventFilterTestUtils.withResourceVersion;
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.awaitility.Awaitility.await;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
@@ -140,123 +137,6 @@ class ControllerEventSourceTest
     verify(testController.getEventSourceManager(), times(1))
         .broadcastOnResourceEvent(
             eq(ResourceAction.UPDATED), eq(customResource1), eq(customResource1));
-  }
-
-  @Test
-  void filtersOutEventsOnAddAndUpdate() {
-    TestCustomResource cr = TestUtils.testCustomResource();
-
-    OnAddFilter<TestCustomResource> onAddFilter = (res) -> false;
-    OnUpdateFilter<TestCustomResource> onUpdatePredicate = (res, res2) -> false;
-    source = new ControllerEventSource<>(new TestController(onAddFilter, onUpdatePredicate, null));
-    setUpSource(source, true, controllerConfig);
-
-    source.handleEvent(ResourceAction.ADDED, cr, null, null);
-    source.handleEvent(ResourceAction.UPDATED, cr, cr, null);
-
-    verify(eventHandler, never()).handleEvent(any());
-  }
-
-  @Test
-  void genericFilterFiltersOutAddUpdateAndDeleteEvents() {
-    TestCustomResource cr = TestUtils.testCustomResource();
-
-    source = new ControllerEventSource<>(new TestController(null, null, res -> false));
-    setUpSource(source, true, controllerConfig);
-
-    source.handleEvent(ResourceAction.ADDED, cr, null, null);
-    source.handleEvent(ResourceAction.UPDATED, cr, cr, null);
-    source.handleEvent(ResourceAction.DELETED, cr, cr, true);
-
-    verify(eventHandler, never()).handleEvent(any());
-  }
-
-  @Test
-  void testEventFilteringBasicScenario() throws InterruptedException {
-    source = spy(new ControllerEventSource<>(new TestController(null, null, null)));
-    setUpSource(source, true, controllerConfig);
-
-    var latch = sendForEventFilteringUpdate(2);
-    source.onUpdate(testResourceWithVersion(1), testResourceWithVersion(2));
-    latch.countDown();
-
-    Thread.sleep(100);
-    verify(eventHandler, never()).handleEvent(any());
-  }
-
-  @Test
-  void eventFilteringNewEventDuringUpdate() {
-    source = spy(new ControllerEventSource<>(new TestController(null, null, null)));
-    setUpSource(source, true, controllerConfig);
-
-    var latch = sendForEventFilteringUpdate(2);
-    source.onUpdate(testResourceWithVersion(2), testResourceWithVersion(3));
-    latch.countDown();
-
-    await().untilAsserted(() -> expectHandleEvent(3, 2));
-  }
-
-  @Test
-  void eventFilteringMoreNewEventsDuringUpdate() {
-    source = spy(new ControllerEventSource<>(new TestController(null, null, null)));
-    setUpSource(source, true, controllerConfig);
-
-    var latch = sendForEventFilteringUpdate(2);
-    source.onUpdate(testResourceWithVersion(2), testResourceWithVersion(3));
-    source.onUpdate(testResourceWithVersion(3), testResourceWithVersion(4));
-    latch.countDown();
-
-    await().untilAsserted(() -> expectHandleEvent(4, 2));
-  }
-
-  @Test
-  void eventFilteringExceptionDuringUpdate() {
-    source = spy(new ControllerEventSource<>(new TestController(null, null, null)));
-    setUpSource(source, true, controllerConfig);
-
-    var latch =
-        EventFilterTestUtils.sendForEventFilteringUpdate(
-            source,
-            TestUtils.testCustomResource1(),
-            r -> {
-              throw new KubernetesClientException("fake");
-            });
-    source.onUpdate(testResourceWithVersion(1), testResourceWithVersion(2));
-    latch.countDown();
-
-    expectHandleEvent(2, 1);
-  }
-
-  private void expectHandleEvent(int newResourceVersion, int oldResourceVersion) {
-    await()
-        .untilAsserted(
-            () -> {
-              verify(eventHandler, times(1)).handleEvent(any());
-              verify(source, times(1))
-                  .handleEvent(
-                      eq(ResourceAction.UPDATED),
-                      argThat(
-                          r -> {
-                            assertThat(r.getMetadata().getResourceVersion())
-                                .isEqualTo("" + newResourceVersion);
-                            return true;
-                          }),
-                      argThat(
-                          r -> {
-                            assertThat(r.getMetadata().getResourceVersion())
-                                .isEqualTo("" + oldResourceVersion);
-                            return true;
-                          }),
-                      isNull());
-            });
-  }
-
-  private TestCustomResource testResourceWithVersion(int v) {
-    return withResourceVersion(TestUtils.testCustomResource1(), v);
-  }
-
-  private CountDownLatch sendForEventFilteringUpdate(int v) {
-    return sendForEventFilteringUpdate(TestUtils.testCustomResource1(), v);
   }
 
   private CountDownLatch sendForEventFilteringUpdate(

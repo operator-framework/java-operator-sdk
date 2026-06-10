@@ -16,7 +16,6 @@
 package io.javaoperatorsdk.operator.processing.event.source.informer;
 
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
@@ -29,8 +28,6 @@ import io.javaoperatorsdk.operator.ReconcilerUtilsInternal;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependentResource;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
 import io.javaoperatorsdk.operator.processing.event.source.ResourceAction;
-import io.javaoperatorsdk.operator.processing.event.source.controller.ResourceDeleteEvent;
-import io.javaoperatorsdk.operator.processing.event.source.controller.ResourceEvent;
 
 /**
  * Temporal cache is used to solve the problem for {@link KubernetesDependentResource} that is, when
@@ -57,7 +54,6 @@ public class TemporaryResourceCache<T extends HasMetadata> {
   private static final Logger log = LoggerFactory.getLogger(TemporaryResourceCache.class);
 
   private final Map<ResourceID, T> cache = new ConcurrentHashMap<>();
-  private final Map<ResourceID, EventFilterDetails> activeUpdates = new HashMap<>();
   private final boolean comparableResourceVersions;
 
   private final ManagedInformerEventSource<T, ?, ?> managedInformerEventSource;
@@ -75,55 +71,17 @@ public class TemporaryResourceCache<T extends HasMetadata> {
     this.managedInformerEventSource = managedInformerEventSource;
   }
 
-  public synchronized void startEventFilteringModify(ResourceID resourceID) {
+  public void onDeleteEvent(T resource, boolean unknownState) {
+    onEvent(resource, unknownState);
+  }
+
+  public void onAddOrUpdateEvent(ResourceAction action, T resource, T prevResourceVersion) {
+    onEvent(resource, null);
+  }
+
+  private synchronized void onEvent(T resource, Boolean unknownState) {
     if (!comparableResourceVersions) {
       return;
-    }
-    var ed = activeUpdates.computeIfAbsent(resourceID, id -> new EventFilterDetails());
-    ed.increaseActiveUpdates();
-  }
-
-  public synchronized Optional<ResourceEvent> doneEventFilterModify(
-      ResourceID resourceID, String updatedResourceVersion) {
-    if (!comparableResourceVersions) {
-      return Optional.empty();
-    }
-    var ed = activeUpdates.get(resourceID);
-    if (ed == null || !ed.decreaseActiveUpdates(updatedResourceVersion)) {
-      log.debug(
-          "Active updates {} for resource id: {}",
-          ed != null ? ed.getActiveUpdates() : 0,
-          resourceID);
-      return Optional.empty();
-    }
-    activeUpdates.remove(resourceID);
-    var res = ed.getLatestEventAfterLastUpdateEvent();
-    log.debug(
-        "Zero active updates for resource id: {}; event after update event: {}; updated resource"
-            + " version: {}",
-        resourceID,
-        res.isPresent(),
-        updatedResourceVersion);
-    return res;
-  }
-
-  public void onDeleteEvent(T resource, boolean unknownState) {
-    onEvent(ResourceAction.DELETED, resource, null, unknownState, true);
-  }
-
-  public EventHandling onAddOrUpdateEvent(
-      ResourceAction action, T resource, T prevResourceVersion) {
-    return onEvent(action, resource, prevResourceVersion, false, false);
-  }
-
-  private synchronized EventHandling onEvent(
-      ResourceAction action,
-      T resource,
-      T prevResourceVersion,
-      boolean unknownState,
-      boolean delete) {
-    if (!comparableResourceVersions) {
-      return EventHandling.NEW;
     }
 
     var resourceId = ResourceID.fromResource(resource);
@@ -131,33 +89,15 @@ public class TemporaryResourceCache<T extends HasMetadata> {
       log.debug("Processing event");
     }
     var cached = cache.get(resourceId);
-    EventHandling result = EventHandling.NEW;
     if (cached != null) {
       int comp = ReconcilerUtilsInternal.compareResourceVersions(resource, cached);
-      if (comp >= 0 || unknownState) {
+      if (comp >= 0 || Boolean.TRUE.equals(unknownState)) {
         log.debug(
             "Removing resource from temp cache. comparison: {} unknown state: {}",
             comp,
             unknownState);
         cache.remove(resourceId);
-        // we propagate event only for our update or newer other can be discarded since we know we
-        // will receive
-        // additional event
-        result = comp == 0 ? EventHandling.OBSOLETE : EventHandling.NEW;
-      } else {
-        result = EventHandling.OBSOLETE;
       }
-    }
-    var ed = activeUpdates.get(resourceId);
-    if (ed != null && result != EventHandling.OBSOLETE) {
-      log.debug("Setting last event for id: {} delete: {}", resourceId, delete);
-      ed.setLastEvent(
-          delete
-              ? new ResourceDeleteEvent(ResourceAction.DELETED, resourceId, resource, unknownState)
-              : new ExtendedResourceEvent(action, resourceId, resource, prevResourceVersion));
-      return EventHandling.DEFER;
-    } else {
-      return result;
     }
   }
 

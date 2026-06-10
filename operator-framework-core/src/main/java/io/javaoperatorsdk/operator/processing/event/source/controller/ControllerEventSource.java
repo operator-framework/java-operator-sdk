@@ -32,7 +32,6 @@ import io.javaoperatorsdk.operator.processing.event.source.ResourceAction;
 import io.javaoperatorsdk.operator.processing.event.source.filter.OnDeleteFilter;
 import io.javaoperatorsdk.operator.processing.event.source.filter.OnUpdateFilter;
 import io.javaoperatorsdk.operator.processing.event.source.informer.ManagedInformerEventSource;
-import io.javaoperatorsdk.operator.processing.event.source.informer.TemporaryResourceCache.EventHandling;
 
 import static io.javaoperatorsdk.operator.ReconcilerUtilsInternal.handleKubernetesClientException;
 import static io.javaoperatorsdk.operator.processing.event.source.controller.InternalEventFilters.*;
@@ -139,13 +138,8 @@ public class ControllerEventSource<T extends HasMetadata>
 
   private void handleOnAddOrUpdate(
       ResourceAction action, T oldCustomResource, T newCustomResource) {
-    var handling =
-        temporaryResourceCache.onAddOrUpdateEvent(action, newCustomResource, oldCustomResource);
-    if (handling == EventHandling.NEW) {
-      handleEvent(action, newCustomResource, oldCustomResource, null);
-    } else if (log.isDebugEnabled()) {
-      log.debug("{} event propagation for action: {}", handling, action);
-    }
+    temporaryResourceCache.onAddOrUpdateEvent(action, newCustomResource, oldCustomResource);
+    handleEvent(action, newCustomResource, oldCustomResource, null);
   }
 
   @Override
