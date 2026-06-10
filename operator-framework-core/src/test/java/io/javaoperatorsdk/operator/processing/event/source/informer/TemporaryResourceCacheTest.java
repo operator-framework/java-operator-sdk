@@ -446,6 +446,145 @@ class TemporaryResourceCacheTest {
     assertThat(temporaryResourceCache.getResourceFromCache(ResourceID.fromResource(tr))).isEmpty();
   }
 
+  @Test
+  void deleteEventDuringActiveUpdateIsEmittedAsSummary() {
+    var testResource = testResource();
+    var resourceId = ResourceID.fromResource(testResource);
+
+    temporaryResourceCache.startEventFilteringModify(resourceId);
+    temporaryResourceCache.putResource(testResource);
+
+    var deleted =
+        new ConfigMapBuilder(testResource)
+            .editMetadata()
+            .withResourceVersion("4")
+            .endMetadata()
+            .build();
+    var duringFilter = temporaryResourceCache.onDeleteEvent(deleted, false);
+    assertThat(duringFilter).isEmpty();
+
+    var doneRes = temporaryResourceCache.doneEventFilterModify(resourceId);
+    assertThat(doneRes)
+        .hasValueSatisfying(
+            e -> {
+              assertThat(e.getAction()).isEqualTo(ResourceAction.DELETED);
+              assertThat(e.getResource()).contains(deleted);
+            });
+  }
+
+  // todo is this right thing to do, shall we evict only if no activeUpdate?
+  @Test
+  void unknownStateDeleteEvictsTempCacheEvenWhenOlder() {
+    var newer =
+        new ConfigMapBuilder(testResource())
+            .editMetadata()
+            .withResourceVersion("5")
+            .endMetadata()
+            .build();
+    temporaryResourceCache.putResource(newer);
+
+    var olderUnknownState = testResource();
+    var result = temporaryResourceCache.onDeleteEvent(olderUnknownState, true);
+
+    assertThat(result).isPresent();
+    assertThat(result.get().getAction()).isEqualTo(ResourceAction.DELETED);
+    assertThat(temporaryResourceCache.getResourceFromCache(ResourceID.fromResource(newer)))
+        .isEmpty();
+  }
+
+  @Test
+  void counterDelaysFinaleUntilLastConcurrentUpdateDone() {
+    var testResource = testResource();
+    var resourceId = ResourceID.fromResource(testResource);
+
+    temporaryResourceCache.startEventFilteringModify(resourceId);
+    temporaryResourceCache.startEventFilteringModify(resourceId);
+    temporaryResourceCache.putResource(testResource);
+
+    var firstDone = temporaryResourceCache.doneEventFilterModify(resourceId);
+    assertThat(firstDone).isEmpty();
+    assertThat(temporaryResourceCache.getActiveUpdates()).containsKey(resourceId);
+
+    // event for our own RV arrives between the two `done` calls
+    var ownEvent =
+        temporaryResourceCache.onAddOrUpdateEvent(ResourceAction.UPDATED, testResource, null);
+    assertThat(ownEvent).isEmpty();
+    assertThat(temporaryResourceCache.getActiveUpdates()).containsKey(resourceId);
+
+    var secondDone = temporaryResourceCache.doneEventFilterModify(resourceId);
+    assertThat(secondDone).isEmpty();
+    assertThat(temporaryResourceCache.getActiveUpdates()).doesNotContainKey(resourceId);
+  }
+
+  @Test
+  void eventMatchingTempCacheRvIsPropagatedDuringRelist() {
+    var testResource = testResource();
+    temporaryResourceCache.putResource(testResource);
+
+    temporaryResourceCache.setOngoingRelist();
+
+    var result =
+        temporaryResourceCache.onAddOrUpdateEvent(ResourceAction.UPDATED, testResource, null);
+
+    // outside a relist this would return empty (matches our temp cache RV);
+    // during relist we must propagate so reconciler is not denied a sync state
+    assertThat(result).isPresent();
+  }
+
+  @Test
+  void setOngoingRelistMarksExistingActiveUpdatesAsAffected() {
+    var resourceId = ResourceID.fromResource(testResource());
+    temporaryResourceCache.startEventFilteringModify(resourceId);
+
+    assertThat(temporaryResourceCache.getActiveUpdates().get(resourceId).isAffectedByReList())
+        .isFalse();
+
+    temporaryResourceCache.setOngoingRelist();
+
+    assertThat(temporaryResourceCache.getActiveUpdates().get(resourceId).isAffectedByReList())
+        .isTrue();
+  }
+
+  @Test
+  void filterStartedDuringRelistIsAffectedByReList() {
+    temporaryResourceCache.setOngoingRelist();
+
+    var resourceId = ResourceID.fromResource(testResource());
+    temporaryResourceCache.startEventFilteringModify(resourceId);
+
+    assertThat(temporaryResourceCache.getActiveUpdates().get(resourceId).isAffectedByReList())
+        .isTrue();
+  }
+
+  @Test
+  void foreignEventDuringRelistActiveUpdateSurfacesInSummary() {
+    var testResource = testResource();
+    var resourceId = ResourceID.fromResource(testResource);
+
+    temporaryResourceCache.startEventFilteringModify(resourceId);
+    temporaryResourceCache.setOngoingRelist();
+    temporaryResourceCache.putResource(testResource);
+
+    var foreign =
+        new ConfigMapBuilder(testResource)
+            .editMetadata()
+            .withResourceVersion("4")
+            .endMetadata()
+            .build();
+    var duringFilter =
+        temporaryResourceCache.onAddOrUpdateEvent(ResourceAction.UPDATED, foreign, testResource);
+    assertThat(duringFilter).isEmpty();
+
+    var doneRes = temporaryResourceCache.doneEventFilterModify(resourceId);
+
+    assertThat(doneRes)
+        .hasValueSatisfying(
+            e -> {
+              assertThat(e.getAction()).isEqualTo(ResourceAction.UPDATED);
+              assertThat(e.getResource()).contains(foreign);
+            });
+  }
+
   private ConfigMap propagateTestResourceToCache() {
     var testResource = testResource();
     temporaryResourceCache.putResource(testResource);
