@@ -13,16 +13,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.javaoperatorsdk.operator.baseapi.deletionduringstatusupdate;
+package io.javaoperatorsdk.operator.baseapi.readcacheafterwrite.externalupdateduringownupdate;
 
-import io.fabric8.kubernetes.api.model.Namespaced;
-import io.fabric8.kubernetes.client.CustomResource;
-import io.fabric8.kubernetes.model.annotation.Group;
-import io.fabric8.kubernetes.model.annotation.ShortNames;
-import io.fabric8.kubernetes.model.annotation.Version;
+public class ExternalUpdateDuringOwnUpdateStatus {
 
-@Group("sample.javaoperatorsdk")
-@Version("v1")
-@ShortNames("ddsu")
-public class DeletionDuringStatusUpdateCustomResource
-    extends CustomResource<Void, DeletionDuringStatusUpdateStatus> implements Namespaced {}
+  private String value;
+
+  public String getValue() {
+    return value;
+  }
+
+  public ExternalUpdateDuringOwnUpdateStatus setValue(String value) {
+    this.value = value;
+    return this;
+  }
+}

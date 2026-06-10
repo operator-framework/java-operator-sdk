@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.javaoperatorsdk.operator.baseapi.deletionduringstatusupdate;
+package io.javaoperatorsdk.operator.baseapi.readcacheafterwrite.deletionduringstatusupdate;
 
 import java.time.Duration;
 import java.util.Collections;
