@@ -168,6 +168,28 @@ class InformerEventSourceTest {
     verify(eventHandlerMock, never()).handleEvent(any());
   }
 
+  @Test
+  void deletePropagatesEventWhenTempCacheReturnsDeleteEvent() {
+    var resource = testDeployment();
+    when(temporaryResourceCache.onDeleteEvent(resource, false))
+        .thenReturn(
+            Optional.of(new GenericResourceEvent(ResourceAction.DELETED, resource, null, false)));
+
+    informerEventSource.onDelete(resource, false);
+
+    verify(eventHandlerMock, times(1)).handleEvent(any());
+  }
+
+  @Test
+  void deleteDoesNotPropagateWhenTempCacheReturnsEmpty() {
+    var resource = testDeployment();
+    when(temporaryResourceCache.onDeleteEvent(resource, false)).thenReturn(Optional.empty());
+
+    informerEventSource.onDelete(resource, false);
+
+    verify(eventHandlerMock, never()).handleEvent(any());
+  }
+
   @RepeatedTest(REPEAT_COUNT)
   void handlesPrevResourceVersionForUpdate() {
     withRealTemporaryResourceCache();
@@ -187,19 +209,106 @@ class InformerEventSourceTest {
   void handlesPrevResourceVersionForUpdateInCaseOfException() {
     withRealTemporaryResourceCache();
 
-    CountDownLatch latch =
-        EventFilterTestUtils.sendForEventFilteringUpdate(
-            informerEventSource,
-            testDeployment(),
-            r -> {
-              throw new KubernetesClientException("fake");
-            });
+    CountDownLatch latch = sendForExceptionThrowingUpdate();
     informerEventSource.onUpdate(
         deploymentWithResourceVersion(1), deploymentWithResourceVersion(2));
     latch.countDown();
 
     expectHandleAddEvent(2, 1);
     expectNoActiveUpdates();
+  }
+
+  @RepeatedTest(REPEAT_COUNT)
+  void failedUpdate_withNoEventsDuringWindow_propagatesNothing() {
+    // No event arrives between start and the thrown exception. doneEventFilterModify
+    // sees an empty filter window with no own writes — summary must be empty.
+    withRealTemporaryResourceCache();
+
+    CountDownLatch latch = sendForExceptionThrowingUpdate();
+    latch.countDown();
+
+    assertNoEventProduced();
+    expectNoActiveUpdates();
+    assertThat(temporaryResourceCache.getResources()).isEmpty();
+  }
+
+  @RepeatedTest(REPEAT_COUNT)
+  void failedUpdate_withMultipleEventsDuringWindow_synthesizesSummary() {
+    // Multiple foreign updates arrive while we are about to fail. Since no own write
+    // happened, every related event is foreign and must be folded into one summary
+    // event spanning first.previous → last.resource.
+    withRealTemporaryResourceCache();
+
+    CountDownLatch latch = sendForExceptionThrowingUpdate();
+    informerEventSource.onUpdate(
+        deploymentWithResourceVersion(1), deploymentWithResourceVersion(2));
+    informerEventSource.onUpdate(
+        deploymentWithResourceVersion(2), deploymentWithResourceVersion(3));
+    latch.countDown();
+
+    expectHandleAddEvent(3, 1);
+    expectNoActiveUpdates();
+  }
+
+  @RepeatedTest(REPEAT_COUNT)
+  void failedUpdate_withDeleteEventDuringWindow_propagatesDelete() {
+    // delete arrives during the (failing) filter window — must surface as DELETE.
+    withRealTemporaryResourceCache();
+
+    CountDownLatch latch = sendForExceptionThrowingUpdate();
+    informerEventSource.onDelete(deploymentWithResourceVersion(2), false);
+    latch.countDown();
+
+    expectHandleDeleteEvent(2);
+    expectNoActiveUpdates();
+  }
+
+  @RepeatedTest(REPEAT_COUNT)
+  void failedUpdate_withUpdateThenDelete_propagatesDelete() {
+    // Update followed by delete inside a failing filter window: last event is DELETE,
+    // so the summary must surface the delete (not a synthesized update).
+    withRealTemporaryResourceCache();
+
+    CountDownLatch latch = sendForExceptionThrowingUpdate();
+    informerEventSource.onUpdate(
+        deploymentWithResourceVersion(1), deploymentWithResourceVersion(2));
+    informerEventSource.onDelete(deploymentWithResourceVersion(3), false);
+    latch.countDown();
+
+    expectHandleDeleteEvent(3);
+    expectNoActiveUpdates();
+  }
+
+  @RepeatedTest(REPEAT_COUNT)
+  void failedUpdate_doesNotPopulateTempCache() {
+    // putResource is only called from handleRecentResourceUpdate, which never runs
+    // when updateMethod throws. The temp cache must therefore stay empty.
+    withRealTemporaryResourceCache();
+
+    CountDownLatch latch = sendForExceptionThrowingUpdate();
+    informerEventSource.onUpdate(
+        deploymentWithResourceVersion(1), deploymentWithResourceVersion(2));
+    latch.countDown();
+
+    expectHandleAddEvent(2, 1);
+    expectNoActiveUpdates();
+    assertThat(temporaryResourceCache.getResources()).isEmpty();
+  }
+
+  @RepeatedTest(REPEAT_COUNT)
+  void eventReceivedAfterFailedUpdate_isPropagatedNormally() {
+    // After the exception unwinds and the filter window is fully closed, subsequent
+    // events must propagate via the regular non-filtered path.
+    withRealTemporaryResourceCache();
+
+    CountDownLatch latch = sendForExceptionThrowingUpdate();
+    latch.countDown();
+    expectNoActiveUpdates();
+
+    informerEventSource.onUpdate(
+        deploymentWithResourceVersion(1), deploymentWithResourceVersion(2));
+
+    expectHandleAddEvent(2, 1);
   }
 
   @RepeatedTest(REPEAT_COUNT)
@@ -595,6 +704,15 @@ class InformerEventSourceTest {
   private CountDownLatch sendForEventFilteringUpdate(Deployment deployment, int resourceVersion) {
     return EventFilterTestUtils.sendForEventFilteringUpdate(
         informerEventSource, deployment, r -> withResourceVersion(deployment, resourceVersion));
+  }
+
+  private CountDownLatch sendForExceptionThrowingUpdate() {
+    return EventFilterTestUtils.sendForEventFilteringUpdate(
+        informerEventSource,
+        testDeployment(),
+        r -> {
+          throw new KubernetesClientException("fake");
+        });
   }
 
   private void withRealTemporaryResourceCache() {
