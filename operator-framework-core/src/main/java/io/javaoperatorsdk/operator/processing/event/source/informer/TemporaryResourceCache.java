@@ -277,4 +277,9 @@ public class TemporaryResourceCache<T extends HasMetadata> {
   synchronized Map<ResourceID, T> getResources() {
     return Collections.unmodifiableMap(cache);
   }
+
+  // for testing purposes
+  synchronized Map<ResourceID, EventFilterDetails> getActiveUpdates() {
+    return Collections.unmodifiableMap(activeUpdates);
+  }
 }
