@@ -53,8 +53,8 @@ import io.javaoperatorsdk.operator.processing.event.source.ResourceAction;
  * <ul>
  *   <li>We propagate events only if we received an event that has the same resourceVersion or newer
  *       than resource version from update
-  *   <li>The propagated event should correspond to a possible real world scenario - considering also
-  *       ones that could happen if the Informer does a re-list.
+ *   <li>The propagated event should correspond to a possible real world scenario - considering also
+ *       ones that could happen if the Informer does a re-list.
  * </ul>
  *
  * @param <T> resource to cache.
