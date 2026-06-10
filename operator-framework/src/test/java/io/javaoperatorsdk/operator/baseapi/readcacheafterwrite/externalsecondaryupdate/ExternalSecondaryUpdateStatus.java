@@ -13,17 +13,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.javaoperatorsdk.operator.baseapi.deletionduringstatusupdate;
+package io.javaoperatorsdk.operator.baseapi.readcacheafterwrite.externalsecondaryupdate;
 
-public class DeletionDuringStatusUpdateStatus {
+public class ExternalSecondaryUpdateStatus {
 
-  private boolean ready;
+  private Integer reconciliations;
 
-  public boolean isReady() {
-    return ready;
+  public Integer getReconciliations() {
+    return reconciliations;
   }
 
-  public void setReady(boolean ready) {
-    this.ready = ready;
+  public ExternalSecondaryUpdateStatus setReconciliations(Integer reconciliations) {
+    this.reconciliations = reconciliations;
+    return this;
   }
 }

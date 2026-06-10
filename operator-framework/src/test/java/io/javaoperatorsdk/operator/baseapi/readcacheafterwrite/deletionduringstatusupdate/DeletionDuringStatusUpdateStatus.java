@@ -13,17 +13,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.javaoperatorsdk.operator.baseapi.cachingfilteringupdate;
+package io.javaoperatorsdk.operator.baseapi.readcacheafterwrite.deletionduringstatusupdate;
 
-public class CachingFilteringUpdateStatus {
+public class DeletionDuringStatusUpdateStatus {
 
-  private Boolean updated;
+  private boolean ready;
 
-  public Boolean getUpdated() {
-    return updated;
+  public boolean isReady() {
+    return ready;
   }
 
-  public void setUpdated(Boolean updated) {
-    this.updated = updated;
+  public void setReady(boolean ready) {
+    this.ready = ready;
   }
 }

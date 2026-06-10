@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.javaoperatorsdk.operator.baseapi.cachingfilteringupdate;
+package io.javaoperatorsdk.operator.baseapi.readcacheafterwrite.externalupdateduringownupdate;
 
 import io.fabric8.kubernetes.api.model.Namespaced;
 import io.fabric8.kubernetes.client.CustomResource;
@@ -23,6 +23,6 @@ import io.fabric8.kubernetes.model.annotation.Version;
 
 @Group("sample.javaoperatorsdk")
 @Version("v1")
-@ShortNames("cfu")
-public class CachingFilteringUpdateCustomResource
-    extends CustomResource<Void, CachingFilteringUpdateStatus> implements Namespaced {}
+@ShortNames("eudou")
+public class ExternalUpdateDuringOwnUpdateCustomResource
+    extends CustomResource<Void, ExternalUpdateDuringOwnUpdateStatus> implements Namespaced {}
