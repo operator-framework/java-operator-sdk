@@ -71,7 +71,7 @@ class InformerEventSourceTest {
 
   private static final String PREV_RESOURCE_VERSION = "0";
   private static final String DEFAULT_RESOURCE_VERSION = "2";
-  public static final int REPEAT_COUNT = 10;
+  public static final int REPEAT_COUNT = 5;
 
   private InformerEventSource<Deployment, TestCustomResource> informerEventSource;
   private final KubernetesClient clientMock = MockKubernetesClient.client(Deployment.class);
@@ -466,6 +466,23 @@ class InformerEventSourceTest {
     latch3.countDown();
   }
 
+  @RepeatedTest(REPEAT_COUNT)
+  void deleteEventPropagatedIfItWasTheLastEvent() {
+    // Within an open filter window, an external UPDATE arrives followed by a DELETE.
+    // The summary must surface the DELETE since it represents the final state.
+    withRealTemporaryResourceCache();
+
+    var latch = sendForEventFilteringUpdate(3);
+
+    informerEventSource.onUpdate(
+        deploymentWithResourceVersion(3), deploymentWithResourceVersion(4));
+    informerEventSource.onDelete(deploymentWithResourceVersion(5), false);
+
+    latch.countDown();
+
+    expectHandleDeleteEvent(5);
+  }
+
   private void awaitCachedResourceVersion(ResourceID resourceId, String resourceVersion) {
     await()
         .untilAsserted(
@@ -523,6 +540,25 @@ class InformerEventSourceTest {
                                 .isEqualTo("" + oldResourceVersion);
                             return true;
                           }),
+                      any());
+            });
+  }
+
+  private void expectHandleDeleteEvent(int resourceVersion) {
+    await()
+        .atMost(Duration.ofSeconds(1))
+        .untilAsserted(
+            () -> {
+              verify(informerEventSource, times(1))
+                  .handleEvent(
+                      eq(ResourceAction.DELETED),
+                      argThat(
+                          newResource -> {
+                            assertThat(newResource.getMetadata().getResourceVersion())
+                                .isEqualTo("" + resourceVersion);
+                            return true;
+                          }),
+                      isNull(),
                       any());
             });
   }

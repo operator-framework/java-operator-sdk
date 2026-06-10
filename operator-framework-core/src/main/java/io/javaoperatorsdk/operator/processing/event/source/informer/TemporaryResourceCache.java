@@ -288,6 +288,11 @@ public class TemporaryResourceCache<T extends HasMetadata> {
     return Collections.unmodifiableMap(cache);
   }
 
+  // for testing purposes
+  synchronized Map<ResourceID, EventFilterDetails> getActiveUpdates() {
+    return Collections.unmodifiableMap(activeUpdates);
+  }
+
   public synchronized void setOngoingRelist() {
     this.informerOngoingRelist = true;
     cachingFilteringUpdates.values().forEach(EventFilterDetails::affectedByReList);
