@@ -31,8 +31,27 @@ jobs:
           echo "tmp_version_branch=v4" >> "$GITHUB_ENV"
       - if: ${{ startsWith(github.event.release.tag_name, 'v5.' ) }}
         run: |
-          echo "Setting version_branch to main"
-          echo "tmp_version_branch=main" >> "$GITHUB_ENV"
+          RELEASE_VERSION="${{ github.event.release.tag_name }}"
+          RELEASE_VERSION="${RELEASE_VERSION#v}"
+          RELEASE_MAJOR_MINOR=$(echo "$RELEASE_VERSION" | cut -d. -f1-2)
+
+          MAIN_POM_VERSION=$(curl -fsSL "https://raw.githubusercontent.com/${{ github.repository }}/main/pom.xml" | yq -p xml '.project.version')
+          if [ -z "$MAIN_POM_VERSION" ]; then
+            echo "Failed to determine main branch POM version"
+            exit 1
+          fi
+          MAIN_MAJOR_MINOR=$(echo "$MAIN_POM_VERSION" | cut -d. -f1-2)
+
+          echo "Release tag major.minor: $RELEASE_MAJOR_MINOR"
+          echo "Main branch major.minor: $MAIN_MAJOR_MINOR"
+
+          if [ "$RELEASE_MAJOR_MINOR" = "$MAIN_MAJOR_MINOR" ]; then
+            echo "Setting version_branch to main"
+            echo "tmp_version_branch=main" >> "$GITHUB_ENV"
+          else
+            echo "Setting version_branch to ${RELEASE_MAJOR_MINOR}.x"
+            echo "tmp_version_branch=${RELEASE_MAJOR_MINOR}.x" >> "$GITHUB_ENV"
+          fi
       - if: ${{ env.tmp_version_branch == '' }}
         name: Fail if version_branch is not set
         run: |
