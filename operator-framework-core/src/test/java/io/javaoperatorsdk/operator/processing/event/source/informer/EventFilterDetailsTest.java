@@ -24,6 +24,7 @@ import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
 import io.javaoperatorsdk.operator.processing.event.source.ResourceAction;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatIllegalStateException;
 
 class EventFilterDetailsTest {
 
@@ -31,7 +32,7 @@ class EventFilterDetailsTest {
 
   @BeforeEach
   void setup() {
-    details = new EventFilterDetails();
+    details = new EventFilterDetails(false);
   }
 
   @Test
@@ -58,7 +59,7 @@ class EventFilterDetailsTest {
     details.addRelatedEvent(updatedEvent("2", null));
     details.addRelatedEvent(updatedEvent("3", "2"));
 
-    assertThat(details.prepareSummaryEventIfNotOwnEventsPresent()).isEmpty();
+    assertThat(details.summaryEvent()).isEmpty();
   }
 
   @Test
@@ -67,7 +68,7 @@ class EventFilterDetailsTest {
     details.addToOwnResourceVersions("2");
     details.addRelatedEvent(thirdParty);
 
-    var summary = details.prepareSummaryEventIfNotOwnEventsPresent();
+    var summary = details.summaryEvent();
 
     assertThat(summary).contains(thirdParty);
   }
@@ -79,7 +80,7 @@ class EventFilterDetailsTest {
     details.addRelatedEvent(firstUpdate);
     details.addRelatedEvent(deleteAtEnd);
 
-    var summary = details.prepareSummaryEventIfNotOwnEventsPresent();
+    var summary = details.summaryEvent();
 
     assertThat(summary).contains(deleteAtEnd);
   }
@@ -93,7 +94,7 @@ class EventFilterDetailsTest {
     details.addRelatedEvent(deleteEvent);
     details.addRelatedEvent(recreate);
 
-    var summary = details.prepareSummaryEventIfNotOwnEventsPresent();
+    var summary = details.summaryEvent();
 
     assertThat(summary).isPresent();
     assertThat(summary.get().getAction()).isEqualTo(ResourceAction.UPDATED);
@@ -109,7 +110,7 @@ class EventFilterDetailsTest {
     details.addRelatedEvent(middle);
     details.addRelatedEvent(last);
 
-    var summary = details.prepareSummaryEventIfNotOwnEventsPresent().orElseThrow();
+    var summary = details.summaryEvent().orElseThrow();
 
     assertThat(summary.getAction()).isEqualTo(ResourceAction.UPDATED);
     assertThat(summary.getResource().orElseThrow()).isEqualTo(last.getResource().get());
@@ -126,7 +127,7 @@ class EventFilterDetailsTest {
     details.addRelatedEvent(added);
     details.addRelatedEvent(updated);
 
-    var summary = details.prepareSummaryEventIfNotOwnEventsPresent().orElseThrow();
+    var summary = details.summaryEvent().orElseThrow();
 
     assertThat(summary.getAction()).isEqualTo(ResourceAction.UPDATED);
     assertThat(summary.getResource().orElseThrow()).isEqualTo(updated.getResource().get());
@@ -142,7 +143,7 @@ class EventFilterDetailsTest {
     details.addRelatedEvent(ownEvent);
     details.addRelatedEvent(foreign);
 
-    var summary = details.prepareSummaryEventIfNotOwnEventsPresent().orElseThrow();
+    var summary = details.summaryEvent().orElseThrow();
 
     assertThat(summary.getAction()).isEqualTo(ResourceAction.UPDATED);
     assertThat(summary.getResource().orElseThrow()).isEqualTo(foreign.getResource().get());
@@ -188,6 +189,56 @@ class EventFilterDetailsTest {
     details.addRelatedEvent(updatedEvent("7", "3"));
 
     assertThat(details.newerOrEqualEventReceivedForOwnLastUpdate()).isTrue();
+  }
+
+  @Test
+  void summaryEventReturnsEmptyWhenNoRelatedEvents() {
+    assertThat(details.summaryEvent()).isEmpty();
+  }
+
+  @Test
+  void summaryEventForReListReturnsEmptyWhenNoRelatedEventsAndMarksSent() {
+    var reListDetails = new EventFilterDetails(true);
+
+    assertThat(reListDetails.summaryEventForReList()).isEmpty();
+    assertThat(reListDetails.isReListSummaryEventSent()).isTrue();
+  }
+
+  @Test
+  void summaryEventForReListReturnsSummaryAndMarksSent() {
+    var reListDetails = new EventFilterDetails(true);
+    var event = updatedEvent("3", "2");
+    reListDetails.addRelatedEvent(event);
+
+    var summary = reListDetails.summaryEventForReList();
+
+    assertThat(summary).contains(event);
+    assertThat(reListDetails.isReListSummaryEventSent()).isTrue();
+  }
+
+  @Test
+  void summaryEventForReListThrowsWhenNotAffectedByReList() {
+    details.addRelatedEvent(updatedEvent("3", "2"));
+
+    assertThatIllegalStateException().isThrownBy(() -> details.summaryEventForReList());
+  }
+
+  @Test
+  void summaryEventForReListThrowsWhenAlreadySent() {
+    var reListDetails = new EventFilterDetails(true);
+    reListDetails.addRelatedEvent(updatedEvent("3", "2"));
+    reListDetails.summaryEventForReList();
+
+    assertThatIllegalStateException().isThrownBy(() -> reListDetails.summaryEventForReList());
+  }
+
+  @Test
+  void affectedByReListFlagCanBeSet() {
+    assertThat(details.isAffectedByReList()).isFalse();
+
+    details.affectedByReList();
+
+    assertThat(details.isAffectedByReList()).isTrue();
   }
 
   private static GenericResourceEvent addedEvent(String resourceVersion) {

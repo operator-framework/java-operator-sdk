@@ -96,12 +96,12 @@ class EventFilterDetails {
   }
 
   private Optional<GenericResourceEvent> summaryEventInternal() {
-      // we propagate delete event only if it is the last, if there are newer events
-      // means the resource was re-created (not necessarily by our controller)
-      var lastEvent = relatedEvents.get(relatedEvents.size() - 1);
-      if (lastEvent.getAction() == ResourceAction.DELETED) {
-          return Optional.of(lastEvent);
-      }
+    // we propagate delete event only if it is the last, if there are newer events
+    // means the resource was re-created (not necessarily by our controller)
+    var lastEvent = relatedEvents.get(relatedEvents.size() - 1);
+    if (lastEvent.getAction() == ResourceAction.DELETED) {
+      return Optional.of(lastEvent);
+    }
     if (relatedEvents.size() == 1) {
       return Optional.of(relatedEvents.get(0));
     }

@@ -64,7 +64,7 @@ public class TemporaryResourceCache<T extends HasMetadata> {
   private static final Logger log = LoggerFactory.getLogger(TemporaryResourceCache.class);
 
   private final Map<ResourceID, T> cache = new ConcurrentHashMap<>();
-  private final Map<ResourceID, EventFilterDetails> cachingFilteringUpdates = new HashMap<>();
+  private final Map<ResourceID, EventFilterDetails> activeUpdates = new HashMap<>();
   private final boolean comparableResourceVersions;
   private boolean informerOngoingRelist = false;
 
@@ -82,7 +82,7 @@ public class TemporaryResourceCache<T extends HasMetadata> {
       return;
     }
     var ed =
-        cachingFilteringUpdates.computeIfAbsent(
+        activeUpdates.computeIfAbsent(
             resourceID, id -> new EventFilterDetails(informerOngoingRelist));
     ed.increaseActiveUpdates();
   }
@@ -91,12 +91,13 @@ public class TemporaryResourceCache<T extends HasMetadata> {
     if (!comparableResourceVersions) {
       return Optional.empty();
     }
-      var ed = cachingFilteringUpdates.get(resourceID);
-      if (!ed.decreaseActiveUpdates()) {
-          log.debug("Active updates {} for resource id: {}", ed.getActiveUpdates(), resourceID);
-          return Optional.empty();
-      }
-      return finaleEventHandlingAndCleanup(resourceID, ed);
+    var ed = activeUpdates.get(resourceID);
+    if (ed == null) return Optional.empty();
+    if (!ed.decreaseActiveUpdates()) {
+      log.debug("Active updates {} for resource id: {}", ed.getActiveUpdates(), resourceID);
+      return Optional.empty();
+    }
+    return finaleEventHandlingAndCleanup(resourceID, ed);
   }
 
   public Optional<GenericResourceEvent> onDeleteEvent(T resource, boolean unknownState) {
@@ -142,7 +143,7 @@ public class TemporaryResourceCache<T extends HasMetadata> {
         log.debug("Received intermediate event.");
       }
     }
-    var au = cachingFilteringUpdates.get(resourceId);
+    var au = activeUpdates.get(resourceId);
     if (au != null) {
       log.debug("Recording relevant event");
       au.addRelatedEvent(
@@ -211,7 +212,7 @@ public class TemporaryResourceCache<T extends HasMetadata> {
 
     // also make sure that we're later than the existing temporary entry
     var cachedResource = getResourceFromCache(resourceId).orElse(null);
-    Optional.ofNullable(cachingFilteringUpdates.get(resourceId))
+    Optional.ofNullable(activeUpdates.get(resourceId))
         .ifPresent(
             au -> au.addToOwnResourceVersions(newResource.getMetadata().getResourceVersion()));
 
@@ -271,7 +272,7 @@ public class TemporaryResourceCache<T extends HasMetadata> {
   private Optional<GenericResourceEvent> finaleEventHandlingAndCleanup(
       ResourceID resourceID, EventFilterDetails ed) {
     if (ed.newerOrEqualEventReceivedForOwnLastUpdate()) {
-      cachingFilteringUpdates.remove(resourceID);
+      activeUpdates.remove(resourceID);
       if (ed.isAffectedByReList()) {
         return ed.summaryEventForReList();
       } else {
@@ -301,7 +302,7 @@ public class TemporaryResourceCache<T extends HasMetadata> {
 
   public synchronized void setOngoingRelist() {
     this.informerOngoingRelist = true;
-    cachingFilteringUpdates.values().forEach(EventFilterDetails::affectedByReList);
+    activeUpdates.values().forEach(EventFilterDetails::affectedByReList);
   }
 
   public synchronized void setRelistFinished() {
