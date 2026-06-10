@@ -17,7 +17,6 @@ package io.javaoperatorsdk.operator.processing.event.source.controller;
 
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.concurrent.CountDownLatch;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -35,14 +34,12 @@ import io.javaoperatorsdk.operator.processing.Controller;
 import io.javaoperatorsdk.operator.processing.event.EventHandler;
 import io.javaoperatorsdk.operator.processing.event.EventSourceManager;
 import io.javaoperatorsdk.operator.processing.event.source.AbstractEventSourceTestBase;
-import io.javaoperatorsdk.operator.processing.event.source.EventFilterTestUtils;
 import io.javaoperatorsdk.operator.processing.event.source.ResourceAction;
 import io.javaoperatorsdk.operator.processing.event.source.filter.GenericFilter;
 import io.javaoperatorsdk.operator.processing.event.source.filter.OnAddFilter;
 import io.javaoperatorsdk.operator.processing.event.source.filter.OnUpdateFilter;
 import io.javaoperatorsdk.operator.sample.simple.TestCustomResource;
 
-import static io.javaoperatorsdk.operator.processing.event.source.EventFilterTestUtils.withResourceVersion;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
@@ -137,12 +134,6 @@ class ControllerEventSourceTest
     verify(testController.getEventSourceManager(), times(1))
         .broadcastOnResourceEvent(
             eq(ResourceAction.UPDATED), eq(customResource1), eq(customResource1));
-  }
-
-  private CountDownLatch sendForEventFilteringUpdate(
-      TestCustomResource testResource, int resourceVersion) {
-    return EventFilterTestUtils.sendForEventFilteringUpdate(
-        source, testResource, r -> withResourceVersion(testResource, resourceVersion));
   }
 
   @SuppressWarnings("unchecked")

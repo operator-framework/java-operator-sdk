@@ -15,43 +15,9 @@
  */
 package io.javaoperatorsdk.operator.processing.event.source;
 
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.function.UnaryOperator;
-
 import io.fabric8.kubernetes.api.model.HasMetadata;
-import io.javaoperatorsdk.operator.processing.event.source.informer.ManagedInformerEventSource;
 
 public class EventFilterTestUtils {
-
-  static ExecutorService executorService = Executors.newCachedThreadPool();
-
-  public static <R extends HasMetadata> CountDownLatch sendForEventFilteringUpdate(
-      ManagedInformerEventSource<R, ?, ?> eventSource, R resource, UnaryOperator<R> updateMethod) {
-    try {
-      CountDownLatch latch = new CountDownLatch(1);
-      CountDownLatch sendOnGoingLatch = new CountDownLatch(1);
-      executorService.submit(
-          () ->
-              eventSource.eventFilteringUpdateAndCacheResource(
-                  resource,
-                  r -> {
-                    try {
-                      sendOnGoingLatch.countDown();
-                      latch.await();
-                      var resp = updateMethod.apply(r);
-                      return resp;
-                    } catch (InterruptedException e) {
-                      throw new RuntimeException(e);
-                    }
-                  }));
-      sendOnGoingLatch.await();
-      return latch;
-    } catch (InterruptedException e) {
-      throw new RuntimeException(e);
-    }
-  }
 
   public static <R extends HasMetadata> R withResourceVersion(R resource, int resourceVersion) {
     var v = resource.getMetadata().getResourceVersion();

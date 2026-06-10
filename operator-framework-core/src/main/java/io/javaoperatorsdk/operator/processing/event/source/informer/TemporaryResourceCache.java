@@ -58,12 +58,6 @@ public class TemporaryResourceCache<T extends HasMetadata> {
 
   private final ManagedInformerEventSource<T, ?, ?> managedInformerEventSource;
 
-  public enum EventHandling {
-    DEFER,
-    OBSOLETE,
-    NEW
-  }
-
   public TemporaryResourceCache(
       boolean comparableResourceVersions,
       ManagedInformerEventSource<T, ?, ?> managedInformerEventSource) {
