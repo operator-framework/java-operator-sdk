@@ -16,6 +16,7 @@
 package io.javaoperatorsdk.operator.processing.event.source.informer;
 
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import io.fabric8.kubernetes.api.model.ConfigMap;
@@ -194,6 +195,31 @@ class EventFilterDetailsTest {
   @Test
   void summaryEventReturnsEmptyWhenNoRelatedEvents() {
     assertThat(details.summaryEvent()).isEmpty();
+  }
+
+  @Test
+  @Disabled(
+      "Demonstrates carryover bug from analysis point #2: a relatedEvent older than the smallest"
+          + " own RV — i.e. a stale event left over from a previously-parked filter window — is"
+          + " used as `firstEvent` in synthesis and surfaces as the synthesized previousResource."
+          + " The current code emits a misleading UPDATED with previousResource=stale-rv. Desired"
+          + " behavior: such pre-window events are filtered out before synthesis, leaving the"
+          + " summary empty (or synthesized only from in-window events).")
+  void summaryShouldDiscardEventOlderThanSmallestOwnVersion() {
+    details.addToOwnResourceVersions("3");
+    details.addToOwnResourceVersions("5");
+    // pre-window stale event left behind from a previously-parked filter entry
+    details.addRelatedEvent(updatedEvent("2", null));
+    // in-window own echo
+    details.addRelatedEvent(updatedEvent("5", "3"));
+
+    var summary = details.summaryEvent();
+
+    assertThat(summary)
+        .as(
+            "summary must not surface a relatedEvent older than smallest own RV — that event is"
+                + " carryover from a previously-parked filter entry")
+        .isEmpty();
   }
 
   @Test
