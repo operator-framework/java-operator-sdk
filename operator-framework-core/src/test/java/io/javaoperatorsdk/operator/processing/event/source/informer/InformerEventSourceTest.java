@@ -180,6 +180,7 @@ class InformerEventSourceTest {
         deploymentWithResourceVersion(2), deploymentWithResourceVersion(3));
 
     expectHandleAddEvent(3, 1);
+    expectNoActiveUpdates();
   }
 
   @RepeatedTest(REPEAT_COUNT)
@@ -198,6 +199,7 @@ class InformerEventSourceTest {
     latch.countDown();
 
     expectHandleAddEvent(2, 1);
+    expectNoActiveUpdates();
   }
 
   @RepeatedTest(REPEAT_COUNT)
@@ -213,6 +215,7 @@ class InformerEventSourceTest {
     latch.countDown();
 
     expectHandleAddEvent(4, 2);
+    expectNoActiveUpdates();
   }
 
   @RepeatedTest(REPEAT_COUNT)
@@ -225,6 +228,7 @@ class InformerEventSourceTest {
     latch.countDown();
 
     assertNoEventProduced();
+    expectNoActiveUpdates();
   }
 
   @RepeatedTest(REPEAT_COUNT)
@@ -242,6 +246,7 @@ class InformerEventSourceTest {
         deploymentWithResourceVersion(3), deploymentWithResourceVersion(4));
 
     assertNoEventProduced();
+    expectNoActiveUpdates();
   }
 
   @RepeatedTest(REPEAT_COUNT)
@@ -260,6 +265,7 @@ class InformerEventSourceTest {
     latch2.countDown();
 
     assertNoEventProduced();
+    expectNoActiveUpdates();
   }
 
   @RepeatedTest(REPEAT_COUNT)
@@ -278,6 +284,7 @@ class InformerEventSourceTest {
     latch2.countDown();
 
     assertNoEventProduced();
+    expectNoActiveUpdates();
   }
 
   @RepeatedTest(REPEAT_COUNT)
@@ -296,6 +303,7 @@ class InformerEventSourceTest {
     latch2.countDown();
 
     assertNoEventProduced();
+    expectNoActiveUpdates();
   }
 
   @RepeatedTest(REPEAT_COUNT)
@@ -314,6 +322,7 @@ class InformerEventSourceTest {
         deploymentWithResourceVersion(3), deploymentWithResourceVersion(4));
 
     assertNoEventProduced();
+    expectNoActiveUpdates();
   }
 
   @RepeatedTest(REPEAT_COUNT)
@@ -436,6 +445,7 @@ class InformerEventSourceTest {
         deploymentWithResourceVersion(4), deploymentWithResourceVersion(5));
 
     expectHandleAddEvent(5, 2);
+    expectNoActiveUpdates();
   }
 
   @RepeatedTest(REPEAT_COUNT)
@@ -464,6 +474,14 @@ class InformerEventSourceTest {
     verify(eventHandlerMock, never()).handleEvent(any());
 
     latch3.countDown();
+    awaitCachedResourceVersion(resourceId, "5");
+    // drain the filter with the event for our own rv 5 — all events are now own,
+    // summary must be empty and no event propagated.
+    informerEventSource.onUpdate(
+        deploymentWithResourceVersion(4), deploymentWithResourceVersion(5));
+
+    assertNoEventProduced();
+    expectNoActiveUpdates();
   }
 
   @RepeatedTest(REPEAT_COUNT)
@@ -481,6 +499,7 @@ class InformerEventSourceTest {
     latch.countDown();
 
     expectHandleDeleteEvent(5);
+    expectNoActiveUpdates();
   }
 
   private void awaitCachedResourceVersion(ResourceID resourceId, String resourceVersion) {
@@ -499,6 +518,12 @@ class InformerEventSourceTest {
         .pollDelay(Duration.ofMillis(70))
         .timeout(Duration.ofMillis(71))
         .untilAsserted(() -> verify(informerEventSource, never()).propagateEvent(any()));
+  }
+
+  private void expectNoActiveUpdates() {
+    await()
+        .atMost(Duration.ofSeconds(1))
+        .untilAsserted(() -> assertThat(temporaryResourceCache.getActiveUpdates()).isEmpty());
   }
 
   private void expectHandleAddEvent(int newResourceVersion) {
