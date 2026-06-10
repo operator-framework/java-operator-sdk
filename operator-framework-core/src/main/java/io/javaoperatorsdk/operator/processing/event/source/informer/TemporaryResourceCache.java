@@ -139,7 +139,7 @@ public class TemporaryResourceCache<T extends HasMetadata> {
           result = Optional.empty();
         }
       } else {
-        // in this case we received and event that might be in some edge case that was
+        // in this case we received an event that might be in some edge case that was
         // already used in reconciler or after that, but before our updated resource version.
         // That would be hard to distinguish, so for those we are propagating the event further.
         log.debug("Received intermediate event.");
