@@ -18,6 +18,7 @@ package io.javaoperatorsdk.operator.processing.event.source.informer;
 import java.util.Map;
 
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import io.fabric8.kubernetes.api.model.ConfigMap;
@@ -583,6 +584,61 @@ class TemporaryResourceCacheTest {
               assertThat(e.getAction()).isEqualTo(ResourceAction.UPDATED);
               assertThat(e.getResource()).contains(foreign);
             });
+  }
+
+  @Test
+  @Disabled(
+      "Demonstrates analysis point #2: when an update completes without ever observing its own"
+          + " echo, the activeUpdates entry is parked. A subsequent update on the same resource"
+          + " reuses the parked entry, carrying its stale relatedEvents into the new window."
+          + " A pre-window event then surfaces in the synthesized summary as previousResource,"
+          + " misleading the reconciler. Desired behavior: the second update's summary is empty"
+          + " (only own echoes were seen in its window).")
+  void parkedFilterEntryLeaksStaleEventIntoNextSummary() {
+    var resource = testResource(); // rv=2
+    var resourceId = ResourceID.fromResource(resource);
+
+    // ---- Update A: succeeds at rv=3, but its own echo never arrives ----
+    temporaryResourceCache.startEventFilteringModify(resourceId);
+
+    var ourFirstUpdate =
+        new ConfigMapBuilder(resource)
+            .editMetadata()
+            .withResourceVersion("3")
+            .endMetadata()
+            .build();
+    temporaryResourceCache.putResource(ourFirstUpdate);
+
+    // an older "intermediate" event (rv=2) arrives during the window — e.g. a watch
+    // replay from before the update; not our own RV, so it accumulates in relatedEvents
+    var staleOlder = resource;
+    temporaryResourceCache.onAddOrUpdateEvent(ResourceAction.UPDATED, staleOlder, null);
+
+    // own echo (rv=3) never arrives → done parks the entry with relatedEvents=[evt2]
+    var doneA = temporaryResourceCache.doneEventFilterModify(resourceId);
+    assertThat(doneA).isEmpty();
+
+    // ---- Update B: same resource, fresh window. Reuses the parked entry. ----
+    temporaryResourceCache.startEventFilteringModify(resourceId);
+
+    var ourSecondUpdate =
+        new ConfigMapBuilder(resource)
+            .editMetadata()
+            .withResourceVersion("5")
+            .endMetadata()
+            .build();
+    temporaryResourceCache.putResource(ourSecondUpdate);
+
+    // echo for B arrives within the window
+    temporaryResourceCache.onAddOrUpdateEvent(ResourceAction.UPDATED, ourSecondUpdate, null);
+
+    var doneB = temporaryResourceCache.doneEventFilterModify(resourceId);
+
+    assertThat(doneB)
+        .as(
+            "stale event from a previously-parked filter window must not surface as the"
+                + " synthesized previousResource of a subsequent update's summary")
+        .isEmpty();
   }
 
   private ConfigMap propagateTestResourceToCache() {
