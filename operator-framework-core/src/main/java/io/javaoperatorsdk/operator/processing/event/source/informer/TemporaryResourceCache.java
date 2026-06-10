@@ -81,6 +81,14 @@ public class TemporaryResourceCache<T extends HasMetadata> {
     if (!comparableResourceVersions) {
       return;
     }
+    var existing = activeUpdates.get(resourceID);
+    if (existing != null && existing.isNoActiveUpdate()) {
+      log.warn(
+          "Reusing parked event filter entry for resource {}: prior update's own echo not yet"
+              + " observed before this new update started. {}",
+          resourceID,
+          existing);
+    }
     var ed =
         activeUpdates.computeIfAbsent(
             resourceID, id -> new EventFilterDetails(informerOngoingRelist));
@@ -182,6 +190,12 @@ public class TemporaryResourceCache<T extends HasMetadata> {
       return;
     }
 
+    // also make sure that we're later than the existing temporary entry
+    var cachedResource = getResourceFromCache(resourceId).orElse(null);
+    Optional.ofNullable(activeUpdates.get(resourceId))
+        .ifPresent(
+            au -> au.addToOwnResourceVersions(newResource.getMetadata().getResourceVersion()));
+
     var ns = newResource.getMetadata().getNamespace();
     // this can happen when we dynamically change the followed namespace list
     if (!managedInformerEventSource.manager().isWatchingNamespace(ns)) {
@@ -209,12 +223,6 @@ public class TemporaryResourceCache<T extends HasMetadata> {
           latestRV);
       return;
     }
-
-    // also make sure that we're later than the existing temporary entry
-    var cachedResource = getResourceFromCache(resourceId).orElse(null);
-    Optional.ofNullable(activeUpdates.get(resourceId))
-        .ifPresent(
-            au -> au.addToOwnResourceVersions(newResource.getMetadata().getResourceVersion()));
 
     if (cachedResource == null
         || ReconcilerUtilsInternal.compareResourceVersions(newResource, cachedResource) > 0) {
@@ -279,6 +287,10 @@ public class TemporaryResourceCache<T extends HasMetadata> {
         return ed.summaryEvent();
       }
     } else {
+      log.debug(
+          "Parking event filter entry for {}: own-update echo not yet received. {}",
+          resourceID,
+          ed);
       return Optional.empty();
     }
   }
@@ -292,7 +304,7 @@ public class TemporaryResourceCache<T extends HasMetadata> {
   }
 
   synchronized Map<ResourceID, T> getResources() {
-    return Collections.unmodifiableMap(cache);
+    return Map.copyOf(cache);
   }
 
   // for testing purposes
