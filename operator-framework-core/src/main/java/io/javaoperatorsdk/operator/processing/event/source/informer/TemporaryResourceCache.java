@@ -48,6 +48,15 @@ import io.javaoperatorsdk.operator.processing.event.source.ResourceAction;
  *
  * <p>If comparable resource versions are disabled, then this cache is effectively disabled.
  *
+ * <p>Some principles to realize with the current filtering algorithm:
+ *
+ * <ul>
+ *   <li>We propagate events only if we received an event that has the same resourceVersion or newer
+ *       than resource version from update
+ *   <li>The propagated event should correspond to a possible real world scenario - considering also
+ *       ones that could happen is the Informer does a re-list.
+ * </ul>
+ *
  * @param <T> resource to cache.
  */
 public class TemporaryResourceCache<T extends HasMetadata> {

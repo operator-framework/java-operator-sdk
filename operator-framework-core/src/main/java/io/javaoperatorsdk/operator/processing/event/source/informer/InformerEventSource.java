@@ -122,8 +122,15 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
             log.debug(
                 "On delete event received. deletedFinalStateUnknown: {}", deletedFinalStateUnknown);
           }
+          var resultEvent =
+              temporaryResourceCache.onDeleteEvent(resource, deletedFinalStateUnknown);
+          if (resultEvent.isEmpty()) {
+            return;
+          }
+          if (resultEvent.orElseThrow().getAction() != ResourceAction.DELETED) {
+            log.warn("Non delete event received on onDelete handling. This should not happen.");
+          }
           primaryToSecondaryIndex.onDelete(resource);
-          temporaryResourceCache.onDeleteEvent(resource, deletedFinalStateUnknown);
           if (acceptedByDeleteFilters(resource, deletedFinalStateUnknown)) {
             propagateEvent(resource);
           }
@@ -151,15 +158,15 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
     primaryToSecondaryIndex.onAddOrUpdate(newObject);
     var resourceID = ResourceID.fromResource(newObject);
 
-    var eventHandling = temporaryResourceCache.onAddOrUpdateEvent(action, newObject, oldObject);
+    var resultEvent = temporaryResourceCache.onAddOrUpdateEvent(action, newObject, oldObject);
 
-    if (eventHandling.isEmpty()) {
+    if (resultEvent.isEmpty()) {
       log.debug("Deferring event propagation");
     } else if (eventAcceptedByFilter(action, newObject, oldObject)) {
       log.debug(
           "Propagating event for {}, resource with same version not result of a our update.",
           action);
-      var event = eventHandling.get();
+      var event = resultEvent.get();
       handleEvent(
           event.getAction(),
           (R) event.getResource().orElseThrow(),
