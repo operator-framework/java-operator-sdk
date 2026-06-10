@@ -13,16 +13,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.javaoperatorsdk.operator.baseapi.filterpatchevent;
+package io.javaoperatorsdk.operator.baseapi.readcacheafterwrite.filterpatchevent;
 
-import io.fabric8.kubernetes.api.model.Namespaced;
-import io.fabric8.kubernetes.client.CustomResource;
-import io.fabric8.kubernetes.model.annotation.Group;
-import io.fabric8.kubernetes.model.annotation.ShortNames;
-import io.fabric8.kubernetes.model.annotation.Version;
+public class FilterPatchEventTestCustomResourceStatus {
 
-@Group("sample.javaoperatorsdk")
-@Version("v1")
-@ShortNames("fpe")
-public class FilterPatchEventTestCustomResource
-    extends CustomResource<Void, FilterPatchEventTestCustomResourceStatus> implements Namespaced {}
+  private String value;
+
+  public String getValue() {
+    return value;
+  }
+
+  public FilterPatchEventTestCustomResourceStatus setValue(String value) {
+    this.value = value;
+    return this;
+  }
+}

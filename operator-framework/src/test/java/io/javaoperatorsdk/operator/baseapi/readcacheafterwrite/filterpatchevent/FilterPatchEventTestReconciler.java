@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.javaoperatorsdk.operator.baseapi.filterpatchevent;
+package io.javaoperatorsdk.operator.baseapi.readcacheafterwrite.filterpatchevent;
 
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -23,7 +23,7 @@ import io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
 
-import static io.javaoperatorsdk.operator.baseapi.filterpatchevent.FilterPatchEventIT.UPDATED;
+import static io.javaoperatorsdk.operator.baseapi.readcacheafterwrite.filterpatchevent.FilterPatchEventIT.UPDATED;
 
 @ControllerConfiguration(generationAwareEventProcessing = false)
 public class FilterPatchEventTestReconciler
