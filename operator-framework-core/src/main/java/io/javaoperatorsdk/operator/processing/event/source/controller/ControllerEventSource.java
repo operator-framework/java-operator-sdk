@@ -145,7 +145,7 @@ public class ControllerEventSource<T extends HasMetadata>
         this::handleEvent,
         () -> {
           if (log.isDebugEnabled()) {
-            log.debug("{} event propagation for action: {}", handling, action);
+            log.debug("Skipping/deferring event propagation for action: {}", action);
           }
         });
   }
