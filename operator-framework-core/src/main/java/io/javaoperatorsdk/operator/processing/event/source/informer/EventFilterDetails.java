@@ -23,11 +23,16 @@ import java.util.Set;
 import java.util.function.UnaryOperator;
 import java.util.stream.Collectors;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.ReconcilerUtilsInternal;
 import io.javaoperatorsdk.operator.processing.event.source.ResourceAction;
 
 class EventFilterDetails {
+
+  private static final Logger log = LoggerFactory.getLogger(EventFilterDetails.class);
 
   private int activeUpdates = 0;
   private final List<GenericResourceEvent> relatedEvents = new ArrayList<>(5);
@@ -106,6 +111,13 @@ class EventFilterDetails {
       return Optional.of(relatedEvents.get(0));
     }
     var firstEvent = relatedEvents.get(0);
+    if (log.isDebugEnabled()) {
+      warnIfFirstEventLooksStale(firstEvent);
+    }
+    // Multiple events are collapsed into a single synthesized UPDATED. If the first event is an
+    // ADD (no previous resource), the added resource itself is used as the synthesized previous,
+    // intentionally losing the "creation" semantic — the reconciler is triggered by the merged
+    // event and reads the latest state on its own.
     var firstResource =
         firstEvent.getPreviousResource().orElseGet(() -> firstEvent.getResource().orElseThrow());
 
@@ -115,6 +127,26 @@ class EventFilterDetails {
             relatedEvents.get(relatedEvents.size() - 1).getResource().orElseThrow(),
             firstResource,
             null));
+  }
+
+  private void warnIfFirstEventLooksStale(GenericResourceEvent firstEvent) {
+    if (allOwnResourceVersions.isEmpty()) {
+      return;
+    }
+    var firstRv = firstEvent.getResource().orElseThrow().getMetadata().getResourceVersion();
+    var minOwn =
+        allOwnResourceVersions.stream()
+            .reduce((a, b) -> ReconcilerUtilsInternal.compareResourceVersions(a, b) <= 0 ? a : b)
+            .orElseThrow();
+    if (ReconcilerUtilsInternal.compareResourceVersions(firstRv, minOwn) < 0) {
+      log.warn(
+          "Synthesizing summary event with first relatedEvent rv={} older than smallest own rv={};"
+              + " this likely indicates stale event carryover from a previously-parked filter"
+              + " entry. {}",
+          firstRv,
+          minOwn,
+          this);
+    }
   }
 
   private Set<String> relatedEventResourceVersions() {
@@ -147,5 +179,20 @@ class EventFilterDetails {
 
   public boolean isReListSummaryEventSent() {
     return reListSummaryEventSent;
+  }
+
+  @Override
+  public String toString() {
+    return "EventFilterDetails{activeUpdates="
+        + activeUpdates
+        + ", relatedEvents="
+        + relatedEvents.size()
+        + ", ownResourceVersions="
+        + allOwnResourceVersions
+        + ", affectedByReList="
+        + affectedByReList
+        + ", reListSummaryEventSent="
+        + reListSummaryEventSent
+        + "}";
   }
 }
