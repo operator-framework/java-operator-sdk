@@ -96,11 +96,15 @@ class EventFilterDetails {
   }
 
   private Optional<GenericResourceEvent> summaryEventInternal() {
-    var deleteEvent =
-        relatedEvents.stream().filter(e -> e.getAction() == ResourceAction.DELETED).findFirst();
-    if (deleteEvent.isPresent()) {
-      return deleteEvent;
-    }
+      // we propagate delete event only if it is the last, if there are newer events
+      // means the resource was re-created (not necessarily by our controller)
+      var lastEvent = relatedEvents.get(relatedEvents.size() - 1);
+      if (lastEvent.getAction() == ResourceAction.DELETED) {
+          return Optional.of(lastEvent);
+      }
+      if (relatedEvents.size() == 1) {
+          return Optional.of(relatedEvents.get(0));
+      }
     if (relatedEvents.size() == 1) {
       return Optional.of(relatedEvents.get(0));
     }
@@ -123,6 +127,7 @@ class EventFilterDetails {
   }
 
   public boolean newerOrEqualEventReceivedForOwnLastUpdate() {
+    // this means our update was not successful
     if (allOwnResourceVersions.isEmpty()) {
       return true;
     }
