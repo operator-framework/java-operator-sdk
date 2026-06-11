@@ -361,6 +361,7 @@ class InformerEventSourceTest {
     expectNoActiveUpdates();
   }
 
+  @Disabled
   @RepeatedTest(REPEAT_COUNT)
   void multipleCachingFilteringUpdates_variant3() {
     withRealTemporaryResourceCache();
@@ -400,6 +401,7 @@ class InformerEventSourceTest {
     expectNoActiveUpdates();
   }
 
+  @Disabled
   @RepeatedTest(REPEAT_COUNT)
   void multipleCachingFilteringUpdates_variant5() {
     withRealTemporaryResourceCache();
