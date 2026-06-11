@@ -250,6 +250,18 @@ class EventingDetailTest {
     eventingDetail.addToOwnResourceVersions(s(FIRST_OWN_VERSION + 2));
   }
 
+  @Test
+  void deleteEventAsLastEvent_simpleCase() {}
+
+  @Test
+  void deleteEventOnMiddleOfOwnUpdate() {}
+
+  @Test
+  void deleteEventAsAdditionalEventAfterOwnUpdates() {}
+
+  @Test
+  void ifDeleteEventAboutToBePropagatedShouldUseTheEventNotASynthUpdateEvent() {}
+
   void assertSyntUpdateEvent(GenericResourceEvent event) {
     assertSyntUpdateEvent(event, FIRST_OWN_VERSION);
   }
