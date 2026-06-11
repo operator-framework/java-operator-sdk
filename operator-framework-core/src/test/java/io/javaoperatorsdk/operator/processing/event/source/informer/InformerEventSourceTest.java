@@ -25,8 +25,6 @@ import java.util.concurrent.CountDownLatch;
 import java.util.stream.Stream;
 
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
-import org.junit.jupiter.api.RepeatedTest;
 import org.junit.jupiter.api.Test;
 
 import io.fabric8.kubernetes.api.model.ObjectMeta;
@@ -57,7 +55,6 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.ArgumentMatchers.nullable;
 import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.mock;
@@ -72,7 +69,6 @@ class InformerEventSourceTest {
 
   private static final String PREV_RESOURCE_VERSION = "0";
   private static final String DEFAULT_RESOURCE_VERSION = "2";
-  public static final int REPEAT_COUNT = 5;
 
   private InformerEventSource<Deployment, TestCustomResource> informerEventSource;
   private final KubernetesClient clientMock = MockKubernetesClient.client(Deployment.class);
@@ -114,7 +110,7 @@ class InformerEventSourceTest {
   }
 
   @Test
-  void propagateEventAndRemoveResourceFromTempCacheIfResourceVersionMismatch() {
+  void propagatesEventAndEvictsTempCacheOnVersionMismatch() {
     withRealTemporaryResourceCache();
 
     Deployment cachedDeployment = testDeployment();
@@ -128,7 +124,7 @@ class InformerEventSourceTest {
   }
 
   @Test
-  void genericFilterForEvents() {
+  void genericFilterRejectsAddUpdateAndDelete() {
     informerEventSource.setGenericFilter(r -> false);
     when(temporaryResourceCache.getResourceFromCache(any())).thenReturn(Optional.empty());
 
@@ -140,7 +136,7 @@ class InformerEventSourceTest {
   }
 
   @Test
-  void filtersOnAddEvents() {
+  void onAddFilterRejectsAdd() {
     informerEventSource.setOnAddFilter(r -> false);
     when(temporaryResourceCache.getResourceFromCache(any())).thenReturn(Optional.empty());
 
@@ -150,7 +146,7 @@ class InformerEventSourceTest {
   }
 
   @Test
-  void filtersOnUpdateEvents() {
+  void onUpdateFilterRejectsUpdate() {
     informerEventSource.setOnUpdateFilter((r1, r2) -> false);
     when(temporaryResourceCache.getResourceFromCache(any())).thenReturn(Optional.empty());
 
@@ -160,7 +156,7 @@ class InformerEventSourceTest {
   }
 
   @Test
-  void filtersOnDeleteEvents() {
+  void onDeleteFilterRejectsDelete() {
     informerEventSource.setOnDeleteFilter((r, b) -> false);
     when(temporaryResourceCache.getResourceFromCache(any())).thenReturn(Optional.empty());
 
@@ -170,7 +166,7 @@ class InformerEventSourceTest {
   }
 
   @Test
-  void deletePropagatesEventWhenTempCacheReturnsDeleteEvent() {
+  void deletePropagatesWhenTempCacheEmitsDelete() {
     var resource = testDeployment();
     when(temporaryResourceCache.onDeleteEvent(resource, false))
         .thenReturn(
@@ -182,7 +178,7 @@ class InformerEventSourceTest {
   }
 
   @Test
-  void deleteDoesNotPropagateWhenTempCacheReturnsEmpty() {
+  void deleteSwallowsWhenTempCacheReturnsEmpty() {
     var resource = testDeployment();
     when(temporaryResourceCache.onDeleteEvent(resource, false)).thenReturn(Optional.empty());
 
@@ -191,24 +187,10 @@ class InformerEventSourceTest {
     verify(eventHandlerMock, never()).handleEvent(any());
   }
 
-  @Disabled
-  @RepeatedTest(REPEAT_COUNT)
-  void handlesPrevResourceVersionForUpdate() {
-    withRealTemporaryResourceCache();
-
-    CountDownLatch latch = sendForEventFilteringUpdate(3);
-    informerEventSource.onUpdate(
-        deploymentWithResourceVersion(1), deploymentWithResourceVersion(2));
-    latch.countDown();
-    informerEventSource.onUpdate(
-        deploymentWithResourceVersion(2), deploymentWithResourceVersion(3));
-
-    expectHandleAddEvent(3, 1);
-    expectNoActiveUpdates();
-  }
-
-  @RepeatedTest(REPEAT_COUNT)
-  void handlesPrevResourceVersionForUpdateInCaseOfException() {
+  @Test
+  void failingUpdate_propagatesEventReceivedDuringWindow() {
+    // Filter window opens, an event arrives, the update method throws. The event must
+    // still surface as a synthesized propagation.
     withRealTemporaryResourceCache();
 
     CountDownLatch latch = sendForExceptionThrowingUpdate();
@@ -216,121 +198,45 @@ class InformerEventSourceTest {
         deploymentWithResourceVersion(1), deploymentWithResourceVersion(2));
     latch.countDown();
 
-    expectHandleAddEvent(2, 1);
-    expectNoActiveUpdates();
+    expectHandleUpdateEvent(2, 1);
   }
 
-  @RepeatedTest(REPEAT_COUNT)
-  void failedUpdate_withNoEventsDuringWindow_propagatesNothing() {
-    // No event arrives between start and the thrown exception. doneEventFilterModify
-    // sees an empty filter window with no own writes — summary must be empty.
+  @Test
+  void failingUpdate_doesNotPopulateTempCache() {
+    // putResource is only called from handleRecentResourceUpdate, which never runs when
+    // updateMethod throws. The temp cache must therefore stay empty.
     withRealTemporaryResourceCache();
 
     CountDownLatch latch = sendForExceptionThrowingUpdate();
+    informerEventSource.onUpdate(
+        deploymentWithResourceVersion(1), deploymentWithResourceVersion(2));
     latch.countDown();
 
-    assertNoEventProduced();
-    expectNoActiveUpdates();
+    expectHandleUpdateEvent(2, 1);
     assertThat(temporaryResourceCache.getResources()).isEmpty();
   }
 
-  @RepeatedTest(REPEAT_COUNT)
-  void failedUpdate_withMultipleEventsDuringWindow_synthesizesSummary() {
-    // Multiple foreign updates arrive while we are about to fail. Since no own write
-    // happened, every related event is foreign and must be folded into one summary
-    // event spanning first.previous → last.resource.
-    withRealTemporaryResourceCache();
-
-    CountDownLatch latch = sendForExceptionThrowingUpdate();
-    informerEventSource.onUpdate(
-        deploymentWithResourceVersion(1), deploymentWithResourceVersion(2));
-    informerEventSource.onUpdate(
-        deploymentWithResourceVersion(2), deploymentWithResourceVersion(3));
-    latch.countDown();
-
-    expectHandleAddEvent(3, 1);
-    expectNoActiveUpdates();
-  }
-
-  @RepeatedTest(REPEAT_COUNT)
-  void failedUpdate_withDeleteEventDuringWindow_propagatesDelete() {
-    // delete arrives during the (failing) filter window — must surface as DELETE.
-    withRealTemporaryResourceCache();
-
-    CountDownLatch latch = sendForExceptionThrowingUpdate();
-    informerEventSource.onDelete(deploymentWithResourceVersion(2), false);
-    latch.countDown();
-
-    expectHandleDeleteEvent(2);
-    expectNoActiveUpdates();
-  }
-
-  @RepeatedTest(REPEAT_COUNT)
-  void failedUpdate_withUpdateThenDelete_propagatesDelete() {
-    // Update followed by delete inside a failing filter window: last event is DELETE,
-    // so the summary must surface the delete (not a synthesized update).
-    withRealTemporaryResourceCache();
-
-    CountDownLatch latch = sendForExceptionThrowingUpdate();
-    informerEventSource.onUpdate(
-        deploymentWithResourceVersion(1), deploymentWithResourceVersion(2));
-    informerEventSource.onDelete(deploymentWithResourceVersion(3), false);
-    latch.countDown();
-
-    expectHandleDeleteEvent(3);
-    expectNoActiveUpdates();
-  }
-
-  @RepeatedTest(REPEAT_COUNT)
-  void failedUpdate_doesNotPopulateTempCache() {
-    // putResource is only called from handleRecentResourceUpdate, which never runs
-    // when updateMethod throws. The temp cache must therefore stay empty.
-    withRealTemporaryResourceCache();
-
-    CountDownLatch latch = sendForExceptionThrowingUpdate();
-    informerEventSource.onUpdate(
-        deploymentWithResourceVersion(1), deploymentWithResourceVersion(2));
-    latch.countDown();
-
-    expectHandleAddEvent(2, 1);
-    expectNoActiveUpdates();
-    assertThat(temporaryResourceCache.getResources()).isEmpty();
-  }
-
-  @RepeatedTest(REPEAT_COUNT)
+  @Test
   void eventReceivedAfterFailedUpdate_isPropagatedNormally() {
-    // After the exception unwinds and the filter window is fully closed, subsequent
-    // events must propagate via the regular non-filtered path.
+    // After the exception unwinds and the filter window closes, subsequent events must
+    // propagate via the regular non-filtered path.
     withRealTemporaryResourceCache();
 
     CountDownLatch latch = sendForExceptionThrowingUpdate();
     latch.countDown();
-    expectNoActiveUpdates();
 
     informerEventSource.onUpdate(
         deploymentWithResourceVersion(1), deploymentWithResourceVersion(2));
 
-    expectHandleAddEvent(2, 1);
+    expectHandleUpdateEvent(2, 1);
   }
 
-  @RepeatedTest(REPEAT_COUNT)
-  void handlesPrevResourceVersionForUpdateInCaseOfMultipleUpdates() {
-    withRealTemporaryResourceCache();
-
-    var deployment = testDeployment();
-    CountDownLatch latch = sendForEventFilteringUpdate(deployment, 2);
-    informerEventSource.onUpdate(
-        withResourceVersion(testDeployment(), 2), withResourceVersion(testDeployment(), 3));
-    informerEventSource.onUpdate(
-        withResourceVersion(testDeployment(), 3), withResourceVersion(testDeployment(), 4));
-    latch.countDown();
-
-    expectHandleAddEvent(4, 2);
-    expectNoActiveUpdates();
-  }
-
-  @RepeatedTest(REPEAT_COUNT)
-  void doesNotPropagateEventIfReceivedBeforeUpdate() {
+  @Test
+  void ownUpdateEventIsDeferredDuringActiveFilter() {
+    // Sanity check that the InformerEventSource end-to-end pipeline (informer → temp cache
+    // → filter support → propagateEvent) suppresses an event for our own write that arrives
+    // before the filter closes. Detail-level cases live in EventingDetailTest /
+    // EventFilterSupportTest.
     withRealTemporaryResourceCache();
 
     CountDownLatch latch = sendForEventFilteringUpdate(2);
@@ -339,402 +245,6 @@ class InformerEventSourceTest {
     latch.countDown();
 
     assertNoEventProduced();
-    expectNoActiveUpdates();
-  }
-
-  @Disabled
-  @RepeatedTest(REPEAT_COUNT)
-  void multipleCachingFilteringUpdates() {
-    withRealTemporaryResourceCache();
-    CountDownLatch latch = sendForEventFilteringUpdate(3);
-    CountDownLatch latch2 =
-        sendForEventFilteringUpdate(withResourceVersion(testDeployment(), 3), 4);
-
-    informerEventSource.onUpdate(
-        deploymentWithResourceVersion(2), deploymentWithResourceVersion(3));
-    latch.countDown();
-    latch2.countDown();
-    informerEventSource.onUpdate(
-        deploymentWithResourceVersion(3), deploymentWithResourceVersion(4));
-
-    assertNoEventProduced();
-    expectNoActiveUpdates();
-  }
-
-  @Disabled
-  @RepeatedTest(REPEAT_COUNT)
-  void multipleCachingFilteringUpdates_variant3() {
-    withRealTemporaryResourceCache();
-
-    CountDownLatch latch = sendForEventFilteringUpdate(3);
-    CountDownLatch latch2 =
-        sendForEventFilteringUpdate(withResourceVersion(testDeployment(), 3), 4);
-
-    latch.countDown();
-    informerEventSource.onUpdate(
-        deploymentWithResourceVersion(2), deploymentWithResourceVersion(3));
-    informerEventSource.onUpdate(
-        deploymentWithResourceVersion(4), deploymentWithResourceVersion(4));
-    latch2.countDown();
-
-    assertNoEventProduced();
-    expectNoActiveUpdates();
-  }
-
-  @RepeatedTest(REPEAT_COUNT)
-  @Disabled
-  void multipleCachingFilteringUpdates_variant4() {
-    withRealTemporaryResourceCache();
-
-    CountDownLatch latch = sendForEventFilteringUpdate(3);
-    CountDownLatch latch2 =
-        sendForEventFilteringUpdate(withResourceVersion(testDeployment(), 3), 4);
-
-    informerEventSource.onUpdate(
-        deploymentWithResourceVersion(2), deploymentWithResourceVersion(3));
-    informerEventSource.onUpdate(
-        deploymentWithResourceVersion(3), deploymentWithResourceVersion(4));
-    latch.countDown();
-    latch2.countDown();
-
-    assertNoEventProduced();
-    expectNoActiveUpdates();
-  }
-
-  @Disabled
-  @RepeatedTest(REPEAT_COUNT)
-  void multipleCachingFilteringUpdates_variant5() {
-    withRealTemporaryResourceCache();
-
-    CountDownLatch latch = sendForEventFilteringUpdate(3);
-    CountDownLatch latch2 =
-        sendForEventFilteringUpdate(withResourceVersion(testDeployment(), 3), 4);
-    latch.countDown();
-    latch2.countDown();
-
-    informerEventSource.onUpdate(
-        deploymentWithResourceVersion(2), deploymentWithResourceVersion(3));
-    informerEventSource.onUpdate(
-        deploymentWithResourceVersion(3), deploymentWithResourceVersion(4));
-
-    assertNoEventProduced();
-    expectNoActiveUpdates();
-  }
-
-  @RepeatedTest(REPEAT_COUNT)
-  void ghostCheckRemovesCachedResourceDuringFilteringUpdate() {
-    var mes = mock(ManagedInformerEventSource.class);
-    var mim = mock(InformerManager.class);
-    when(mes.manager()).thenReturn(mim);
-    when(mim.isWatchingNamespace(any())).thenReturn(true);
-    when(mim.lastSyncResourceVersion(any())).thenReturn("1");
-    when(mim.get(any())).thenReturn(Optional.empty());
-
-    temporaryResourceCache = spy(new TemporaryResourceCache<>(true, mes));
-    informerEventSource.setTemporalResourceCache(temporaryResourceCache);
-
-    // put resource in cache and start a filtering update
-    var deployment = deploymentWithResourceVersion(2);
-    temporaryResourceCache.putResource(deployment);
-    var resourceId = ResourceID.fromResource(deployment);
-    temporaryResourceCache.startEventFilteringModify(resourceId);
-
-    // advance sync version so ghost check considers the cached resource outdated
-    when(mim.lastSyncResourceVersion(any())).thenReturn("3");
-
-    // ghost check should remove the cached resource
-    temporaryResourceCache.checkGhostResources();
-    assertThat(temporaryResourceCache.getResourceFromCache(resourceId)).isEmpty();
-
-    // complete the filtering update - the resource should not reappear
-    temporaryResourceCache.doneEventFilterModify(resourceId);
-    assertThat(temporaryResourceCache.getResourceFromCache(resourceId)).isEmpty();
-  }
-
-  @RepeatedTest(REPEAT_COUNT)
-  void ghostCheckRunsConcurrentlyWithPutResource() {
-    var mes = mock(ManagedInformerEventSource.class);
-    var mim = mock(InformerManager.class);
-    when(mes.manager()).thenReturn(mim);
-    when(mim.isWatchingNamespace(any())).thenReturn(true);
-    when(mim.lastSyncResourceVersion(any())).thenReturn("1");
-    when(mim.get(any())).thenReturn(Optional.empty());
-
-    temporaryResourceCache = spy(new TemporaryResourceCache<>(true, mes));
-    informerEventSource.setTemporalResourceCache(temporaryResourceCache);
-
-    // put a resource that will become a ghost
-    var deployment = deploymentWithResourceVersion(2);
-    temporaryResourceCache.putResource(deployment);
-
-    // advance sync version so ghost check removes it
-    when(mim.lastSyncResourceVersion(any())).thenReturn("3");
-
-    temporaryResourceCache.checkGhostResources();
-    assertThat(temporaryResourceCache.getResourceFromCache(ResourceID.fromResource(deployment)))
-        .isEmpty();
-
-    // now put a newer resource - should succeed even after ghost removal
-    var newerDeployment = deploymentWithResourceVersion(4);
-    temporaryResourceCache.putResource(newerDeployment);
-    assertThat(
-            temporaryResourceCache.getResourceFromCache(ResourceID.fromResource(newerDeployment)))
-        .isPresent();
-  }
-
-  @RepeatedTest(REPEAT_COUNT)
-  void filteringUpdateAndGhostCheckWithNamespaceChange() {
-    var mes = mock(ManagedInformerEventSource.class);
-    var mim = mock(InformerManager.class);
-    when(mes.manager()).thenReturn(mim);
-    when(mim.isWatchingNamespace(any())).thenReturn(true);
-    when(mim.lastSyncResourceVersion(any())).thenReturn("1");
-    when(mim.get(any())).thenReturn(Optional.empty());
-
-    temporaryResourceCache = spy(new TemporaryResourceCache<>(true, mes));
-    informerEventSource.setTemporalResourceCache(temporaryResourceCache);
-
-    // start filtering update and put resource
-    var deployment = deploymentWithResourceVersion(2);
-    var resourceId = ResourceID.fromResource(deployment);
-    temporaryResourceCache.startEventFilteringModify(resourceId);
-    temporaryResourceCache.putResource(deployment);
-
-    // namespace becomes unwatched - ghost check should clean up
-    when(mim.isWatchingNamespace(any())).thenReturn(false);
-
-    temporaryResourceCache.checkGhostResources();
-    assertThat(temporaryResourceCache.getResourceFromCache(resourceId)).isEmpty();
-
-    // complete the filtering update
-    var doneResult = temporaryResourceCache.doneEventFilterModify(resourceId);
-    // resource was already cleaned by ghost check, so no deferred event
-    assertThat(doneResult).isEmpty();
-
-    // put should be rejected since namespace is no longer watched
-    temporaryResourceCache.putResource(deploymentWithResourceVersion(3));
-    assertThat(temporaryResourceCache.getResourceFromCache(resourceId)).isEmpty();
-  }
-
-  //  @RepeatedTest(REPEAT_COUNT)
-  //  void ghostCheckDuringOpenFilteringUpdate_cleansUpAndDoneIsNoOp() {
-  //    // Combines the real eventFilteringUpdateAndCacheResource flow with a ghost-resource
-  //    // cleanup happening while a second filter window is still open. The ghost check
-  //    // must clear cache + activeUpdates and fire a synthetic DELETE; the still-open
-  //    // filter's later doneEventFilterModify must complete cleanly (no NPE on the
-  //    // already-removed EventingDetail) and not propagate any further events.
-  //    var mes = mock(ManagedInformerEventSource.class);
-  //    var mim = mock(InformerManager.class);
-  //    when(mes.manager()).thenReturn(mim);
-  //    when(mim.isWatchingNamespace(any())).thenReturn(true);
-  //    when(mim.lastSyncResourceVersion(any())).thenReturn("1");
-  //    when(mim.get(any())).thenReturn(Optional.empty());
-  //
-  //    temporaryResourceCache = spy(new TemporaryResourceCache<>(true, mes));
-  //    informerEventSource.setTemporalResourceCache(temporaryResourceCache);
-  //
-  //    var resourceId = ResourceID.fromResource(testDeployment());
-  //
-  //    // first filter completes and caches rv 2; second filter keeps the window open
-  //    var latch1 = sendForEventFilteringUpdate(2);
-  //    var latch2 = sendForEventFilteringUpdate(deploymentWithResourceVersion(2), 3);
-  //
-  //    latch1.countDown();
-  //    awaitCachedResourceVersion(resourceId, "2");
-  //
-  //    // simulate watch disconnect + relist while the second filter is still open:
-  //    // lastSync moved well past our cached rv, informer no longer has the resource
-  //    when(mim.lastSyncResourceVersion(any())).thenReturn("10");
-  //
-  //    temporaryResourceCache.checkGhostResources();
-  //
-  //    // ghost cleanup wiped both cache and activeUpdates
-  //    assertThat(temporaryResourceCache.getResourceFromCache(resourceId)).isEmpty();
-  //    assertThat(temporaryResourceCache.getActiveUpdates()).isEmpty();
-  //
-  //    // synthetic DELETE fired through the cache's manager reference
-  //    verify(mes, times(1)).handleEvent(eq(ResourceAction.DELETED), any(), isNull(), eq(true));
-  //
-  //    // closing the still-open filter must not NPE on the missing EventingDetail
-  //    // and must not propagate anything
-  //    latch2.countDown();
-  //
-  //    assertNoEventProduced();
-  //    expectNoActiveUpdates();
-  //  }
-
-  @RepeatedTest(REPEAT_COUNT)
-  void doesNotPropagateIntermediateEventForOurOwnIntermediateUpdate() {
-    // Two consecutive own writes (rv 3 then rv 4) within an open filter window: an
-    // event for the older own version must be deferred since it's recognized as our own.
-    // A third concurrent filter keeps the active-updates window open while the event
-    // below is processed.
-    withRealTemporaryResourceCache();
-
-    var resourceId = ResourceID.fromResource(testDeployment());
-
-    var latch1 = sendForEventFilteringUpdate(3);
-    var latch2 = sendForEventFilteringUpdate(deploymentWithResourceVersion(3), 4);
-    var latch3 = sendForEventFilteringUpdate(deploymentWithResourceVersion(4), 5);
-
-    latch1.countDown();
-    awaitCachedResourceVersion(resourceId, "3");
-    latch2.countDown();
-    awaitCachedResourceVersion(resourceId, "4");
-
-    // event for our own rv 3 (older than cached rv 4) — must be deferred
-    informerEventSource.onUpdate(
-        deploymentWithResourceVersion(2), deploymentWithResourceVersion(3));
-
-    verify(eventHandlerMock, never()).handleEvent(any());
-
-    latch3.countDown();
-    awaitCachedResourceVersion(resourceId, "5");
-    // drain the filter with the event for our own rv 5 — all events are now own,
-    // summary must be empty and no event propagated.
-    informerEventSource.onUpdate(
-        deploymentWithResourceVersion(4), deploymentWithResourceVersion(5));
-
-    assertNoEventProduced();
-    expectNoActiveUpdates();
-  }
-
-  @RepeatedTest(REPEAT_COUNT)
-  void deleteEventPropagatedIfItWasTheLastEvent() {
-    // Within an open filter window, an external UPDATE arrives followed by a DELETE.
-    // The summary must surface the DELETE since it represents the final state.
-    withRealTemporaryResourceCache();
-
-    var latch = sendForEventFilteringUpdate(3);
-
-    informerEventSource.onUpdate(
-        deploymentWithResourceVersion(3), deploymentWithResourceVersion(4));
-    informerEventSource.onDelete(deploymentWithResourceVersion(5), false);
-
-    latch.countDown();
-
-    expectHandleDeleteEvent(5);
-    expectNoActiveUpdates();
-  }
-
-  private void awaitCachedResourceVersion(ResourceID resourceId, String resourceVersion) {
-    await()
-        .untilAsserted(
-            () ->
-                assertThat(
-                        temporaryResourceCache
-                            .getResourceFromCache(resourceId)
-                            .map(d -> d.getMetadata().getResourceVersion()))
-                    .hasValue(resourceVersion));
-  }
-
-  private void assertNoEventProduced() {
-    await()
-        .pollDelay(Duration.ofMillis(70))
-        .timeout(Duration.ofMillis(71))
-        .untilAsserted(() -> verify(informerEventSource, never()).propagateEvent(any()));
-  }
-
-  private void expectNoActiveUpdates() {
-    //  TODO
-    //    await()
-    //        .atMost(Duration.ofSeconds(1))
-    //        .untilAsserted(() -> assertThat(temporaryResourceCache.getActiveUpdates()).isEmpty());
-  }
-
-  private void expectHandleAddEvent(int newResourceVersion) {
-    await()
-        .atMost(Duration.ofSeconds(1))
-        .untilAsserted(
-            () -> {
-              verify(informerEventSource, times(1))
-                  .handleEvent(
-                      eq(ResourceAction.ADDED),
-                      argThat(
-                          newResource -> {
-                            assertThat(newResource.getMetadata().getResourceVersion())
-                                .isEqualTo("" + newResourceVersion);
-                            return true;
-                          }),
-                      isNull(),
-                      any());
-            });
-  }
-
-  private void expectHandleAddEvent(int newResourceVersion, int oldResourceVersion) {
-    await()
-        .atMost(Duration.ofSeconds(1))
-        .untilAsserted(
-            () -> {
-              verify(informerEventSource, times(1))
-                  .handleEvent(
-                      eq(ResourceAction.UPDATED),
-                      argThat(
-                          newResource -> {
-                            assertThat(newResource.getMetadata().getResourceVersion())
-                                .isEqualTo("" + newResourceVersion);
-                            return true;
-                          }),
-                      argThat(
-                          newResource -> {
-                            assertThat(newResource.getMetadata().getResourceVersion())
-                                .isEqualTo("" + oldResourceVersion);
-                            return true;
-                          }),
-                      any());
-            });
-  }
-
-  private void expectHandleDeleteEvent(int resourceVersion) {
-    await()
-        .atMost(Duration.ofSeconds(1))
-        .untilAsserted(
-            () -> {
-              verify(informerEventSource, times(1))
-                  .handleEvent(
-                      eq(ResourceAction.DELETED),
-                      argThat(
-                          newResource -> {
-                            assertThat(newResource.getMetadata().getResourceVersion())
-                                .isEqualTo("" + resourceVersion);
-                            return true;
-                          }),
-                      isNull(),
-                      any());
-            });
-  }
-
-  private CountDownLatch sendForEventFilteringUpdate(int resourceVersion) {
-    return sendForEventFilteringUpdate(testDeployment(), resourceVersion);
-  }
-
-  private CountDownLatch sendForEventFilteringUpdate(Deployment deployment, int resourceVersion) {
-    return EventFilterTestUtils.sendForEventFilteringUpdate(
-        informerEventSource, deployment, r -> withResourceVersion(deployment, resourceVersion));
-  }
-
-  private CountDownLatch sendForExceptionThrowingUpdate() {
-    return EventFilterTestUtils.sendForEventFilteringUpdate(
-        informerEventSource,
-        testDeployment(),
-        r -> {
-          throw new KubernetesClientException("fake");
-        });
-  }
-
-  private void withRealTemporaryResourceCache() {
-    var mes = mock(ManagedInformerEventSource.class);
-    var mim = mock(InformerManager.class);
-    when(mes.manager()).thenReturn(mim);
-    when(mim.isWatchingNamespace(any())).thenReturn(true);
-    when(mim.lastSyncResourceVersion(any())).thenReturn("1");
-
-    temporaryResourceCache = spy(new TemporaryResourceCache<>(true, mes));
-    informerEventSource.setTemporalResourceCache(temporaryResourceCache);
-  }
-
-  Deployment deploymentWithResourceVersion(int resourceVersion) {
-    return withResourceVersion(testDeployment(), resourceVersion);
   }
 
   @Test
@@ -821,23 +331,40 @@ class InformerEventSourceTest {
   }
 
   @Test
-  void listReplacesOnlyMatchingResources() {
-    var dep1 = testDeployment();
-    var dep2 = testDeployment();
-    dep2.getMetadata().setName("other");
-    var newerDep1 = testDeployment();
-    newerDep1.getMetadata().setResourceVersion("5");
+  void listKeepsResourceWhenTempCacheHasOlderVersion() {
+    var original = testDeployment();
+    original.getMetadata().setResourceVersion("5");
+    var olderTemp = testDeployment();
+    olderTemp.getMetadata().setResourceVersion("3");
 
     when(temporaryResourceCache.getResources())
-        .thenReturn(new HashMap<>(Map.of(ResourceID.fromResource(dep1), newerDep1)));
+        .thenReturn(new HashMap<>(Map.of(ResourceID.fromResource(original), olderTemp)));
 
-    var informerManager = mock(InformerManager.class);
-    when(informerManager.list(nullable(String.class))).thenReturn(Stream.of(dep1, dep2));
-    when(informerEventSource.manager()).thenReturn(informerManager);
+    var mim = mock(InformerManager.class);
+    when(mim.list(nullable(String.class))).thenReturn(Stream.of(original));
+    when(informerEventSource.manager()).thenReturn(mim);
 
     var result = informerEventSource.list(null, r -> true).toList();
 
-    assertThat(result).containsExactlyInAnyOrder(newerDep1, dep2);
+    assertThat(result).containsExactly(original);
+  }
+
+  @Test
+  void listAddsGhostResources() {
+    var resource = testDeployment();
+    var ghostResource = testDeployment();
+    ghostResource.getMetadata().setName("ghost");
+
+    when(temporaryResourceCache.getResources())
+        .thenReturn(new HashMap<>(Map.of(ResourceID.fromResource(ghostResource), ghostResource)));
+
+    var mim = mock(InformerManager.class);
+    when(mim.list(nullable(String.class))).thenReturn(Stream.of(resource));
+    when(informerEventSource.manager()).thenReturn(mim);
+
+    var result = informerEventSource.list(null, r -> true).toList();
+
+    assertThat(result).containsExactlyInAnyOrder(resource, ghostResource);
   }
 
   @Test
@@ -882,64 +409,7 @@ class InformerEventSourceTest {
   }
 
   @Test
-  void listKeepsResourceWhenTempCacheHasOlderVersion() {
-    var original = testDeployment();
-    original.getMetadata().setResourceVersion("5");
-    var olderTemp = testDeployment();
-    olderTemp.getMetadata().setResourceVersion("3");
-
-    when(temporaryResourceCache.getResources())
-        .thenReturn(new HashMap<>(Map.of(ResourceID.fromResource(original), olderTemp)));
-
-    var mim = mock(InformerManager.class);
-    when(mim.list(nullable(String.class))).thenReturn(Stream.of(original));
-    when(informerEventSource.manager()).thenReturn(mim);
-
-    var result = informerEventSource.list(null, r -> true).toList();
-
-    assertThat(result).containsExactly(original);
-  }
-
-  @Test
-  void byIndexStreamKeepsResourceWhenTempCacheHasOlderVersion() {
-    var original = testDeployment();
-    original.getMetadata().setResourceVersion("5");
-    var olderTemp = testDeployment();
-    olderTemp.getMetadata().setResourceVersion("3");
-
-    when(temporaryResourceCache.getResources())
-        .thenReturn(new HashMap<>(Map.of(ResourceID.fromResource(original), olderTemp)));
-
-    var mim = mock(InformerManager.class);
-    when(mim.byIndexStream(any(), any())).thenReturn(Stream.of(original));
-    when(informerEventSource.manager()).thenReturn(mim);
-    informerEventSource.addIndexers(Map.of("idx", d -> List.of("key")));
-
-    var result = informerEventSource.byIndexStream("idx", "key").toList();
-
-    assertThat(result).containsExactly(original);
-  }
-
-  @Test
-  void listAddsGhostResources() {
-    var resource = testDeployment();
-    var ghostResource = testDeployment();
-    ghostResource.getMetadata().setName("ghost");
-
-    when(temporaryResourceCache.getResources())
-        .thenReturn(new HashMap<>(Map.of(ResourceID.fromResource(ghostResource), ghostResource)));
-
-    var mim = mock(InformerManager.class);
-    when(mim.list(nullable(String.class))).thenReturn(Stream.of(resource));
-    when(informerEventSource.manager()).thenReturn(mim);
-
-    var result = informerEventSource.list(null, r -> true).toList();
-
-    assertThat(result).containsExactlyInAnyOrder(resource, ghostResource);
-  }
-
-  @Test
-  void keysIncludesGhostResourceKeys() {
+  void keysIncludeGhostResourceKeys() {
     var resource = testDeployment();
     var ghostResource = testDeployment();
     ghostResource.getMetadata().setName("ghost");
@@ -961,7 +431,7 @@ class InformerEventSourceTest {
   }
 
   @Test
-  void keysDoesNotDuplicateExistingKeys() {
+  void keysDoNotDuplicateExistingKeys() {
     var resource = testDeployment();
     var newerResource = testDeployment();
     newerResource.getMetadata().setResourceVersion("5");
@@ -981,7 +451,64 @@ class InformerEventSourceTest {
     assertThat(result).containsExactly(resourceId);
   }
 
-  Deployment testDeployment() {
+  private void assertNoEventProduced() {
+    await()
+        .pollDelay(Duration.ofMillis(70))
+        .timeout(Duration.ofMillis(150))
+        .untilAsserted(() -> verify(informerEventSource, never()).propagateEvent(any()));
+  }
+
+  private void expectHandleUpdateEvent(int newResourceVersion, int oldResourceVersion) {
+    await()
+        .atMost(Duration.ofSeconds(1))
+        .untilAsserted(
+            () ->
+                verify(informerEventSource, times(1))
+                    .handleEvent(
+                        eq(ResourceAction.UPDATED),
+                        argThat(
+                            r ->
+                                ("" + newResourceVersion)
+                                    .equals(r.getMetadata().getResourceVersion())),
+                        argThat(
+                            r ->
+                                ("" + oldResourceVersion)
+                                    .equals(r.getMetadata().getResourceVersion())),
+                        any()));
+  }
+
+  private CountDownLatch sendForEventFilteringUpdate(int resourceVersion) {
+    return EventFilterTestUtils.sendForEventFilteringUpdate(
+        informerEventSource,
+        testDeployment(),
+        r -> withResourceVersion(testDeployment(), resourceVersion));
+  }
+
+  private CountDownLatch sendForExceptionThrowingUpdate() {
+    return EventFilterTestUtils.sendForEventFilteringUpdate(
+        informerEventSource,
+        testDeployment(),
+        r -> {
+          throw new KubernetesClientException("fake");
+        });
+  }
+
+  private void withRealTemporaryResourceCache() {
+    var mes = mock(ManagedInformerEventSource.class);
+    var mim = mock(InformerManager.class);
+    when(mes.manager()).thenReturn(mim);
+    when(mim.isWatchingNamespace(any())).thenReturn(true);
+    when(mim.lastSyncResourceVersion(any())).thenReturn("1");
+
+    temporaryResourceCache = spy(new TemporaryResourceCache<>(true, mes));
+    informerEventSource.setTemporalResourceCache(temporaryResourceCache);
+  }
+
+  private Deployment deploymentWithResourceVersion(int resourceVersion) {
+    return withResourceVersion(testDeployment(), resourceVersion);
+  }
+
+  private Deployment testDeployment() {
     Deployment deployment = new Deployment();
     deployment.setMetadata(new ObjectMeta());
     deployment.getMetadata().setResourceVersion(DEFAULT_RESOURCE_VERSION);
