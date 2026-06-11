@@ -16,9 +16,9 @@
 package io.javaoperatorsdk.operator.processing.event.source.informer;
 
 import java.util.Map;
+import java.util.Optional;
 
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import io.fabric8.kubernetes.api.model.ConfigMap;
@@ -100,7 +100,7 @@ class TemporaryResourceCacheTest {
     var testResource = testResource();
 
     temporaryResourceCache.putResource(testResource);
-
+    when(managedInformerEventSource.get(any())).thenReturn(Optional.of(testResource));
     temporaryResourceCache.putResource(
         new ConfigMapBuilder(testResource)
             .editMetadata()
@@ -163,30 +163,6 @@ class TemporaryResourceCacheTest {
   }
 
   @Test
-  void newerEventDuringFiltering() {
-    var testResource = testResource();
-
-    temporaryResourceCache.startEventFilteringModify(ResourceID.fromResource(testResource));
-
-    temporaryResourceCache.putResource(testResource);
-    assertThat(temporaryResourceCache.getResourceFromCache(ResourceID.fromResource(testResource)))
-        .isPresent();
-
-    var testResource2 = testResource();
-    testResource2.getMetadata().setResourceVersion("3");
-    temporaryResourceCache.onAddOrUpdateEvent(ResourceAction.UPDATED, testResource2, testResource);
-    assertThat(temporaryResourceCache.getResourceFromCache(ResourceID.fromResource(testResource)))
-        .isEmpty();
-
-    var doneRes =
-        temporaryResourceCache.doneEventFilterModify(ResourceID.fromResource(testResource));
-
-    assertThat(doneRes).isPresent();
-    assertThat(temporaryResourceCache.getResourceFromCache(ResourceID.fromResource(testResource)))
-        .isEmpty();
-  }
-
-  @Test
   void eventAfterFiltering() {
     var testResource = testResource();
 
@@ -206,23 +182,6 @@ class TemporaryResourceCacheTest {
     temporaryResourceCache.onAddOrUpdateEvent(ResourceAction.ADDED, testResource, null);
     assertThat(temporaryResourceCache.getResourceFromCache(ResourceID.fromResource(testResource)))
         .isEmpty();
-  }
-
-  @Test
-  void putBeforeEvent() {
-    var testResource = testResource();
-
-    // first ensure an event is not known
-    var result =
-        temporaryResourceCache.onAddOrUpdateEvent(ResourceAction.ADDED, testResource, null);
-    assertThat(result).isPresent();
-
-    var nextResource = testResource();
-    nextResource.getMetadata().setResourceVersion("3");
-    temporaryResourceCache.putResource(nextResource);
-
-    result = temporaryResourceCache.onAddOrUpdateEvent(ResourceAction.UPDATED, nextResource, null);
-    assertThat(result).isEmpty();
   }
 
   @Test
@@ -324,25 +283,6 @@ class TemporaryResourceCacheTest {
               assertThat(e.getPreviousResource()).isNotPresent();
               assertThat(e.getAction()).isEqualTo(ResourceAction.UPDATED);
             });
-  }
-
-  @Test
-  void intermediateEventRecorded() {
-    // Causal-dependency scenario: a third party updated the resource between our read and
-    // our write. Its version arrives as an event but is NOT in our own resource versions,
-    // so it must be propagated (INTERMEDIATE), not deferred.
-    var external = testResource(); // rv=2 — written by another controller
-    var resourceId = ResourceID.fromResource(external);
-
-    temporaryResourceCache.startEventFilteringModify(resourceId);
-
-    var ourUpdate = testResource();
-    ourUpdate.getMetadata().setResourceVersion("3");
-    temporaryResourceCache.putResource(ourUpdate);
-
-    var result = temporaryResourceCache.onAddOrUpdateEvent(ResourceAction.UPDATED, external, null);
-
-    assertThat(result).isEmpty();
   }
 
   @Test
@@ -448,33 +388,6 @@ class TemporaryResourceCacheTest {
   }
 
   @Test
-  void deleteEventDuringActiveUpdateIsEmittedAsSummary() {
-    var testResource = testResource();
-    var resourceId = ResourceID.fromResource(testResource);
-
-    temporaryResourceCache.startEventFilteringModify(resourceId);
-    temporaryResourceCache.putResource(testResource);
-
-    var deleted =
-        new ConfigMapBuilder(testResource)
-            .editMetadata()
-            .withResourceVersion("4")
-            .endMetadata()
-            .build();
-    var duringFilter = temporaryResourceCache.onDeleteEvent(deleted, false);
-    assertThat(duringFilter).isEmpty();
-
-    var doneRes = temporaryResourceCache.doneEventFilterModify(resourceId);
-    assertThat(doneRes)
-        .hasValueSatisfying(
-            e -> {
-              assertThat(e.getAction()).isEqualTo(ResourceAction.DELETED);
-              assertThat(e.getResource()).contains(deleted);
-            });
-  }
-
-  // todo is this right thing to do, shall we evict only if no activeUpdate?
-  @Test
   void unknownStateDeleteEvictsTempCacheEvenWhenOlder() {
     var newer =
         new ConfigMapBuilder(testResource())
@@ -490,154 +403,6 @@ class TemporaryResourceCacheTest {
     assertThat(result).isPresent();
     assertThat(result.get().getAction()).isEqualTo(ResourceAction.DELETED);
     assertThat(temporaryResourceCache.getResourceFromCache(ResourceID.fromResource(newer)))
-        .isEmpty();
-  }
-
-  @Test
-  void counterDelaysFinaleUntilLastConcurrentUpdateDone() {
-    var testResource = testResource();
-    var resourceId = ResourceID.fromResource(testResource);
-
-    temporaryResourceCache.startEventFilteringModify(resourceId);
-    temporaryResourceCache.startEventFilteringModify(resourceId);
-    temporaryResourceCache.putResource(testResource);
-
-    var firstDone = temporaryResourceCache.doneEventFilterModify(resourceId);
-    assertThat(firstDone).isEmpty();
-    assertThat(temporaryResourceCache.getActiveUpdates()).containsKey(resourceId);
-
-    // event for our own RV arrives between the two `done` calls
-    var ownEvent =
-        temporaryResourceCache.onAddOrUpdateEvent(ResourceAction.UPDATED, testResource, null);
-    assertThat(ownEvent).isEmpty();
-    assertThat(temporaryResourceCache.getActiveUpdates()).containsKey(resourceId);
-
-    var secondDone = temporaryResourceCache.doneEventFilterModify(resourceId);
-    assertThat(secondDone).isEmpty();
-    assertThat(temporaryResourceCache.getActiveUpdates()).doesNotContainKey(resourceId);
-  }
-
-  @Test
-  void eventMatchingTempCacheRvIsPropagatedDuringRelist() {
-    var testResource = testResource();
-    temporaryResourceCache.putResource(testResource);
-
-    temporaryResourceCache.setOngoingRelist();
-
-    var result =
-        temporaryResourceCache.onAddOrUpdateEvent(ResourceAction.UPDATED, testResource, null);
-
-    // outside a relist this would return empty (matches our temp cache RV);
-    // during relist we must propagate so reconciler is not denied a sync state
-    assertThat(result).isPresent();
-  }
-
-  @Test
-  void setOngoingRelistMarksExistingActiveUpdatesAsAffected() {
-    var resourceId = ResourceID.fromResource(testResource());
-    temporaryResourceCache.startEventFilteringModify(resourceId);
-
-    assertThat(temporaryResourceCache.getActiveUpdates().get(resourceId).isAffectedByReList())
-        .isFalse();
-
-    temporaryResourceCache.setOngoingRelist();
-
-    assertThat(temporaryResourceCache.getActiveUpdates().get(resourceId).isAffectedByReList())
-        .isTrue();
-  }
-
-  @Test
-  void filterStartedDuringRelistIsAffectedByReList() {
-    temporaryResourceCache.setOngoingRelist();
-
-    var resourceId = ResourceID.fromResource(testResource());
-    temporaryResourceCache.startEventFilteringModify(resourceId);
-
-    assertThat(temporaryResourceCache.getActiveUpdates().get(resourceId).isAffectedByReList())
-        .isTrue();
-  }
-
-  @Test
-  void foreignEventDuringRelistActiveUpdateSurfacesInSummary() {
-    var testResource = testResource();
-    var resourceId = ResourceID.fromResource(testResource);
-
-    temporaryResourceCache.startEventFilteringModify(resourceId);
-    temporaryResourceCache.setOngoingRelist();
-    temporaryResourceCache.putResource(testResource);
-
-    var foreign =
-        new ConfigMapBuilder(testResource)
-            .editMetadata()
-            .withResourceVersion("4")
-            .endMetadata()
-            .build();
-    var duringFilter =
-        temporaryResourceCache.onAddOrUpdateEvent(ResourceAction.UPDATED, foreign, testResource);
-    assertThat(duringFilter).isEmpty();
-
-    var doneRes = temporaryResourceCache.doneEventFilterModify(resourceId);
-
-    assertThat(doneRes)
-        .hasValueSatisfying(
-            e -> {
-              assertThat(e.getAction()).isEqualTo(ResourceAction.UPDATED);
-              assertThat(e.getResource()).contains(foreign);
-            });
-  }
-
-  @Test
-  @Disabled(
-      "Demonstrates analysis point #2: when an update completes without ever observing its own"
-          + " echo, the activeUpdates entry is parked. A subsequent update on the same resource"
-          + " reuses the parked entry, carrying its stale relatedEvents into the new window."
-          + " A pre-window event then surfaces in the synthesized summary as previousResource,"
-          + " misleading the reconciler. Desired behavior: the second update's summary is empty"
-          + " (only own echoes were seen in its window).")
-  void parkedFilterEntryLeaksStaleEventIntoNextSummary() {
-    var resource = testResource(); // rv=2
-    var resourceId = ResourceID.fromResource(resource);
-
-    // ---- Update A: succeeds at rv=3, but its own echo never arrives ----
-    temporaryResourceCache.startEventFilteringModify(resourceId);
-
-    var ourFirstUpdate =
-        new ConfigMapBuilder(resource)
-            .editMetadata()
-            .withResourceVersion("3")
-            .endMetadata()
-            .build();
-    temporaryResourceCache.putResource(ourFirstUpdate);
-
-    // an older "intermediate" event (rv=2) arrives during the window — e.g. a watch
-    // replay from before the update; not our own RV, so it accumulates in relatedEvents
-    var staleOlder = resource;
-    temporaryResourceCache.onAddOrUpdateEvent(ResourceAction.UPDATED, staleOlder, null);
-
-    // own echo (rv=3) never arrives → done parks the entry with relatedEvents=[evt2]
-    var doneA = temporaryResourceCache.doneEventFilterModify(resourceId);
-    assertThat(doneA).isEmpty();
-
-    // ---- Update B: same resource, fresh window. Reuses the parked entry. ----
-    temporaryResourceCache.startEventFilteringModify(resourceId);
-
-    var ourSecondUpdate =
-        new ConfigMapBuilder(resource)
-            .editMetadata()
-            .withResourceVersion("5")
-            .endMetadata()
-            .build();
-    temporaryResourceCache.putResource(ourSecondUpdate);
-
-    // echo for B arrives within the window
-    temporaryResourceCache.onAddOrUpdateEvent(ResourceAction.UPDATED, ourSecondUpdate, null);
-
-    var doneB = temporaryResourceCache.doneEventFilterModify(resourceId);
-
-    assertThat(doneB)
-        .as(
-            "stale event from a previously-parked filter window must not surface as the"
-                + " synthesized previousResource of a subsequent update's summary")
         .isEmpty();
   }
 

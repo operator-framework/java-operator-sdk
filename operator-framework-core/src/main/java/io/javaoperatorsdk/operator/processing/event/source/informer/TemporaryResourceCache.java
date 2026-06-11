@@ -15,8 +15,6 @@
  */
 package io.javaoperatorsdk.operator.processing.event.source.informer;
 
-import java.util.Collections;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
@@ -63,10 +61,9 @@ public class TemporaryResourceCache<T extends HasMetadata> {
 
   private static final Logger log = LoggerFactory.getLogger(TemporaryResourceCache.class);
 
-  private final Map<ResourceID, T> cache = new ConcurrentHashMap<>();
-  private final Map<ResourceID, EventFilterDetails> activeUpdates = new HashMap<>();
   private final boolean comparableResourceVersions;
-  private boolean informerOngoingRelist = false;
+  private final Map<ResourceID, T> cache = new ConcurrentHashMap<>();
+  private final EventFilterSupport eventFilteringSupport = new EventFilterSupport();
 
   private final ManagedInformerEventSource<T, ?, ?> managedInformerEventSource;
 
@@ -81,31 +78,14 @@ public class TemporaryResourceCache<T extends HasMetadata> {
     if (!comparableResourceVersions) {
       return;
     }
-    var existing = activeUpdates.get(resourceID);
-    if (existing != null && existing.isNoActiveUpdate()) {
-      log.warn(
-          "Reusing parked event filter entry for resource {}: prior update's own echo not yet"
-              + " observed before this new update started. {}",
-          resourceID,
-          existing);
-    }
-    var ed =
-        activeUpdates.computeIfAbsent(
-            resourceID, id -> new EventFilterDetails(informerOngoingRelist));
-    ed.increaseActiveUpdates();
+    eventFilteringSupport.startEventFilteringModify(resourceID);
   }
 
   public synchronized Optional<GenericResourceEvent> doneEventFilterModify(ResourceID resourceID) {
     if (!comparableResourceVersions) {
       return Optional.empty();
     }
-    var ed = activeUpdates.get(resourceID);
-    if (ed == null) return Optional.empty();
-    if (!ed.decreaseActiveUpdates()) {
-      log.debug("Active updates {} for resource id: {}", ed.getActiveUpdates(), resourceID);
-      return Optional.empty();
-    }
-    return finaleEventHandlingAndCleanup(resourceID, ed);
+    return eventFilteringSupport.doneEventFilterModify(resourceID);
   }
 
   public Optional<GenericResourceEvent> onDeleteEvent(T resource, boolean unknownState) {
@@ -129,7 +109,6 @@ public class TemporaryResourceCache<T extends HasMetadata> {
       log.debug("Processing event");
     }
     var cached = cache.get(resourceId);
-    Optional<GenericResourceEvent> result = Optional.of(actualEvent);
     if (cached != null) {
       int comp = ReconcilerUtilsInternal.compareResourceVersions(resource, cached);
       if (comp >= 0 || Boolean.TRUE.equals(unknownState)) {
@@ -138,34 +117,9 @@ public class TemporaryResourceCache<T extends HasMetadata> {
             comp,
             unknownState);
         cache.remove(resourceId);
-        // we propagate event only for our update or newer other can be discarded since we know we
-        // will receive
-        // additional event
-        if (comp == 0) {
-          result = Optional.empty();
-        }
-      } else {
-        // in this case we received an event that might be in some edge case that was
-        // already used in reconciler or after that, but before our updated resource version.
-        // That would be hard to distinguish, so for those we are propagating the event further.
-        log.debug("Received intermediate event.");
       }
     }
-    var au = activeUpdates.get(resourceId);
-    if (au != null) {
-      log.debug("Recording relevant event");
-      au.addRelatedEvent(
-          new GenericResourceEvent(action, resource, prevResourceVersion, unknownState));
-      // this is to cover the situation when we finished the filtering and caching update but
-      // did not receive events for our own updates yet.
-      if (au.isNoActiveUpdate() && au.newerOrEqualEventReceivedForOwnLastUpdate()) {
-        return finaleEventHandlingAndCleanup(resourceId, au);
-      }
-      return Optional.empty();
-    } else {
-      log.debug("No active recording, event handling: {}", result);
-      return informerOngoingRelist ? Optional.of(actualEvent) : result;
-    }
+    return eventFilteringSupport.processRelevantEvent(resourceId, actualEvent);
   }
 
   static <T extends HasMetadata> GenericResourceEvent toGenericResourceEvent(
@@ -191,10 +145,10 @@ public class TemporaryResourceCache<T extends HasMetadata> {
     }
 
     // also make sure that we're later than the existing temporary entry
-    var cachedResource = getResourceFromCache(resourceId).orElse(null);
-    Optional.ofNullable(activeUpdates.get(resourceId))
-        .ifPresent(
-            au -> au.addToOwnResourceVersions(newResource.getMetadata().getResourceVersion()));
+
+    var cachedResource = managedInformerEventSource.get(resourceId).orElse(null);
+    eventFilteringSupport.addToOwnResourceVersions(
+        resourceId, newResource.getMetadata().getResourceVersion());
 
     var ns = newResource.getMetadata().getNamespace();
     // this can happen when we dynamically change the followed namespace list
@@ -261,7 +215,7 @@ public class TemporaryResourceCache<T extends HasMetadata> {
             e.getKey(),
             ns);
         iterator.remove();
-        activeUpdates.remove(e.getKey());
+        eventFilteringSupport.handleGhostResourceRemoval(e.getKey());
         continue;
       }
       if ((ReconcilerUtilsInternal.compareResourceVersions(
@@ -271,27 +225,9 @@ public class TemporaryResourceCache<T extends HasMetadata> {
           && managedInformerEventSource.manager().get(e.getKey()).isEmpty()) {
         log.debug("Removing ghost resource with ID: {}", e.getKey());
         iterator.remove();
-        activeUpdates.remove(e.getKey());
+        eventFilteringSupport.handleGhostResourceRemoval(e.getKey());
         managedInformerEventSource.handleEvent(ResourceAction.DELETED, e.getValue(), null, true);
       }
-    }
-  }
-
-  private Optional<GenericResourceEvent> finaleEventHandlingAndCleanup(
-      ResourceID resourceID, EventFilterDetails ed) {
-    if (ed.newerOrEqualEventReceivedForOwnLastUpdate()) {
-      activeUpdates.remove(resourceID);
-      if (ed.isAffectedByReList()) {
-        return ed.summaryEventForReList();
-      } else {
-        return ed.summaryEvent();
-      }
-    } else {
-      log.debug(
-          "Parking event filter entry for {}: own-update echo not yet received. {}",
-          resourceID,
-          ed);
-      return Optional.empty();
     }
   }
 
@@ -308,16 +244,15 @@ public class TemporaryResourceCache<T extends HasMetadata> {
   }
 
   // for testing purposes
-  synchronized Map<ResourceID, EventFilterDetails> getActiveUpdates() {
-    return Collections.unmodifiableMap(activeUpdates);
+  synchronized EventFilterSupport getEventFilterSupport() {
+    return eventFilteringSupport;
   }
 
-  public synchronized void setOngoingRelist() {
-    this.informerOngoingRelist = true;
-    activeUpdates.values().forEach(EventFilterDetails::affectedByReList);
+  public synchronized void setOngoingRelist(String lastKnownSyncVersion) {
+    eventFilteringSupport.setStartingReList(lastKnownSyncVersion);
   }
 
-  public synchronized void setRelistFinished() {
-    this.informerOngoingRelist = false;
+  public synchronized void setRelistFinished(String syncResourceVersions) {
+    eventFilteringSupport.setRelistFinished(syncResourceVersions);
   }
 }
