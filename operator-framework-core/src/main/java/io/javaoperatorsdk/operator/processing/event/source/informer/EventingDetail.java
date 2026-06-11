@@ -39,6 +39,7 @@ class EventingDetail {
   private Long lastResourceVersionBeforeReList;
   private int activeUpdates = 0;
   private boolean ownRvEverAdded = false;
+  private int ownRvCount = 0;
   private Long lastEmittedResourceRv;
   private Long lastSeenRelatedRv;
 
@@ -72,9 +73,10 @@ class EventingDetail {
     // While an in-flight write hasn't recorded its own RV yet, events past
     // the highest known own RV may still turn out to be that write's echo —
     // restrict the synth window so they're held until either the RV arrives
-    // or the write completes.
+    // or the write completes. ownRvCount is monotonic across cleanups so
+    // already-recorded RVs are not re-classified as "pending" once forgotten.
     Long cutoff;
-    if (activeUpdates > ownResourceVersions.size()) {
+    if (activeUpdates > ownRvCount) {
       if (ownResourceVersions.isEmpty()) {
         return Optional.empty();
       }
@@ -106,39 +108,45 @@ class EventingDetail {
         foundForeign || (lastEmittedResourceRv != null && (prevSeen == null || cutoff > prevSeen));
 
     if (shouldEmit) {
-      var firstEvent = windowMap.get(windowMap.firstKey());
-      var lastEvent = windowMap.get(windowMap.lastKey());
+      // Synthesize only from events that are *new* since the last check;
+      // carryover events (RV ≤ prevSeen) were already considered before and
+      // should not drive the synthesized event's resource versions.
+      var synthWindow = prevSeen == null ? windowMap : windowMap.tailMap(prevSeen + 1);
+      if (!synthWindow.isEmpty()) {
+        var firstEvent = synthWindow.get(synthWindow.firstKey());
+        var lastEvent = synthWindow.get(synthWindow.lastKey());
 
-      // Identify the last DELETE in the window; a DELETE marks the boundary of
-      // the "current life" of the resource — anything before it represents a
-      // state that no longer exists.
-      GenericResourceEvent lastDelete = null;
-      for (var entry : windowMap.entrySet()) {
-        var ev = entry.getValue();
-        if (ev.getAction() == ResourceAction.DELETED) {
-          lastDelete = ev;
+        // Identify the last DELETE in the synth window; a DELETE marks the
+        // boundary of the "current life" of the resource — anything before it
+        // represents a state that no longer exists.
+        GenericResourceEvent lastDelete = null;
+        for (var entry : synthWindow.entrySet()) {
+          var ev = entry.getValue();
+          if (ev.getAction() == ResourceAction.DELETED) {
+            lastDelete = ev;
+          }
         }
-      }
 
-      if (windowMap.size() == 1) {
-        result = Optional.of(firstEvent);
-      } else if (lastEvent.getAction() == ResourceAction.DELETED) {
-        result = Optional.of(lastEvent);
-      } else if (lastDelete != null) {
-        // A DELETE happened in the middle and the resource was recreated/updated
-        // afterwards. Synth UPDATED with previous = the deleted state.
-        HasMetadata previous = lastDelete.getResource().orElseThrow();
-        HasMetadata latest = lastEvent.getResource().orElseThrow();
-        result =
-            Optional.of(new GenericResourceEvent(ResourceAction.UPDATED, latest, previous, null));
-      } else {
-        HasMetadata previous =
-            firstEvent
-                .getPreviousResource()
-                .orElseGet(() -> firstEvent.getResource().orElseThrow());
-        HasMetadata latest = lastEvent.getResource().orElseThrow();
-        result =
-            Optional.of(new GenericResourceEvent(ResourceAction.UPDATED, latest, previous, null));
+        if (synthWindow.size() == 1) {
+          result = Optional.of(firstEvent);
+        } else if (lastEvent.getAction() == ResourceAction.DELETED) {
+          result = Optional.of(lastEvent);
+        } else if (lastDelete != null) {
+          // A DELETE happened in the middle and the resource was recreated/updated
+          // afterwards. Synth UPDATED with previous = the deleted state.
+          HasMetadata previous = lastDelete.getResource().orElseThrow();
+          HasMetadata latest = lastEvent.getResource().orElseThrow();
+          result =
+              Optional.of(new GenericResourceEvent(ResourceAction.UPDATED, latest, previous, null));
+        } else {
+          HasMetadata previous =
+              firstEvent
+                  .getPreviousResource()
+                  .orElseGet(() -> firstEvent.getResource().orElseThrow());
+          HasMetadata latest = lastEvent.getResource().orElseThrow();
+          result =
+              Optional.of(new GenericResourceEvent(ResourceAction.UPDATED, latest, previous, null));
+        }
       }
       lastEmittedResourceRv = cutoff;
     }
@@ -167,6 +175,7 @@ class EventingDetail {
   void addToOwnResourceVersions(String resourceVersion) {
     ownResourceVersions.add(Long.parseLong(resourceVersion));
     ownRvEverAdded = true;
+    ownRvCount++;
   }
 
   public void addRelatedEvent(GenericResourceEvent event) {

@@ -28,9 +28,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 class EventingDetailTest {
 
-  // todo delete events
-  // todo onBefore on list
-
   static final Long FIRST_OWN_VERSION = 5L;
 
   static final ResourceID RESOURCE_ID = new ResourceID("id1", "default");
@@ -350,6 +347,58 @@ class EventingDetailTest {
     assertThat(eventingDetail.canRemoved()).isTrue();
   }
 
+  @Test
+  void deleteEventInMiddleTwoUpdates() {
+    eventingDetail.increaseActiveUpdates();
+    eventingDetail.addToOwnResourceVersions(s(FIRST_OWN_VERSION));
+    eventingDetail.addRelatedEvent(updateEvent(FIRST_OWN_VERSION));
+    eventingDetail.addRelatedEvent(deleteEvent(FIRST_OWN_VERSION + 1));
+
+    eventingDetail
+        .increaseActiveUpdates(); // started new update delete event should not be included in first
+    // check
+
+    assertThat(eventingDetail.check()).isEmpty();
+
+    eventingDetail.addToOwnResourceVersions(s(FIRST_OWN_VERSION + 2));
+    eventingDetail.addRelatedEvent(addEvent(FIRST_OWN_VERSION + 2));
+    // delete event should be skipped in these cases and taking directly the last event
+    assertThat(eventingDetail.check())
+        .hasValueSatisfying(e -> assertAddEvent(e, FIRST_OWN_VERSION + 2));
+
+    eventingDetail.decreaseActiveUpdates();
+
+    assertEmptyState();
+    eventingDetail.decreaseActiveUpdates();
+    assertThat(eventingDetail.canRemoved()).isTrue();
+  }
+
+  @Test
+  void deleteEventInMiddleTwoUpdatesAdditionalEventAfter() {
+    eventingDetail.increaseActiveUpdates();
+    eventingDetail.addToOwnResourceVersions(s(FIRST_OWN_VERSION));
+    eventingDetail.addRelatedEvent(updateEvent(FIRST_OWN_VERSION));
+    eventingDetail.addRelatedEvent(deleteEvent(FIRST_OWN_VERSION + 1));
+
+    eventingDetail.increaseActiveUpdates();
+
+    assertThat(eventingDetail.check()).isEmpty();
+
+    eventingDetail.addToOwnResourceVersions(s(FIRST_OWN_VERSION + 2));
+    eventingDetail.addRelatedEvent(addEvent(FIRST_OWN_VERSION + 2));
+    eventingDetail.addRelatedEvent(updateEvent(FIRST_OWN_VERSION + 3));
+    // updated event as merged event for last two updates
+    assertThat(eventingDetail.check())
+        .hasValueSatisfying(
+            e -> assertUpdateEvent(e, FIRST_OWN_VERSION + 3, FIRST_OWN_VERSION + 2));
+
+    eventingDetail.decreaseActiveUpdates();
+
+    assertEmptyState();
+    eventingDetail.decreaseActiveUpdates();
+    assertThat(eventingDetail.canRemoved()).isTrue();
+  }
+
   // this is very similar to reList since unknown state only happens during reList
   @Test
   void deleteEventWithUnknownState() {}
@@ -362,10 +411,6 @@ class EventingDetailTest {
 
   @Test
   void reListAfterAllUpdatesReceived() {}
-
-  void assertUpdateEvent(GenericResourceEvent event) {
-    assertUpdateEvent(event, FIRST_OWN_VERSION);
-  }
 
   void assertUpdateEvent(GenericResourceEvent event, Long resourceVersion) {
     assertUpdateEvent(event, resourceVersion, resourceVersion - 1);
@@ -381,10 +426,6 @@ class EventingDetailTest {
     assertThat(event.getLastStateUnknow()).isNull();
   }
 
-  void assertAddEvent(GenericResourceEvent event) {
-    assertAddEvent(event, FIRST_OWN_VERSION);
-  }
-
   void assertAddEvent(GenericResourceEvent event, Long resourceVersion) {
     assertThat(event.getAction()).isEqualTo(ADDED);
     assertThat(event.getResource().orElseThrow().getMetadata().getResourceVersion())
@@ -394,20 +435,15 @@ class EventingDetailTest {
   }
 
   void assertDeleteEvent(GenericResourceEvent event) {
-    assertDeleteEvent(event, FIRST_OWN_VERSION, true);
+    assertDeleteEvent(event, FIRST_OWN_VERSION);
   }
 
   void assertDeleteEvent(GenericResourceEvent event, Long resourceVersion) {
-    assertDeleteEvent(event, resourceVersion, true);
-  }
-
-  void assertDeleteEvent(
-      GenericResourceEvent event, Long resourceVersion, boolean lastStateUnknown) {
     assertThat(event.getAction()).isEqualTo(DELETED);
     assertThat(event.getResource().orElseThrow().getMetadata().getResourceVersion())
         .isEqualTo(s(resourceVersion));
     assertThat(event.getPreviousResource()).isEmpty();
-    assertThat(event.getLastStateUnknow()).isEqualTo(lastStateUnknown);
+    assertThat(event.getLastStateUnknow()).isTrue();
   }
 
   GenericResourceEvent updateEvent(long version) {
@@ -421,10 +457,6 @@ class EventingDetailTest {
 
   GenericResourceEvent deleteEvent(long version) {
     return new GenericResourceEvent(DELETED, testResource(version), null, true);
-  }
-
-  GenericResourceEvent deleteEventUnknownLastState(long version) {
-    return new GenericResourceEvent(DELETED, testResource(version), null, null);
   }
 
   ConfigMap testResource(Long version) {

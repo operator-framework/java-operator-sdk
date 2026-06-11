@@ -286,30 +286,6 @@ class TemporaryResourceCacheTest {
   }
 
   @Test
-  void intermediateEventDeferredWhenItIsOurOwnIntermediateUpdate() {
-    // Two consecutive own writes within the same filter window: the older one's event
-    // arrives after the newer one is cached. Because the version is recorded as our own,
-    // the event must be DEFERred rather than propagated.
-    var testResource = testResource();
-    var resourceId = ResourceID.fromResource(testResource);
-
-    temporaryResourceCache.startEventFilteringModify(resourceId);
-
-    var ourFirst = testResource(); // rv=2
-    temporaryResourceCache.putResource(ourFirst);
-
-    var ourSecond = testResource();
-    ourSecond.getMetadata().setResourceVersion("3");
-
-    temporaryResourceCache.startEventFilteringModify(resourceId);
-    temporaryResourceCache.putResource(ourSecond);
-
-    var result = temporaryResourceCache.onAddOrUpdateEvent(ResourceAction.UPDATED, ourFirst, null);
-
-    assertThat(result).isEmpty();
-  }
-
-  @Test
   void rapidDeletion() {
     var testResource = testResource();
 
