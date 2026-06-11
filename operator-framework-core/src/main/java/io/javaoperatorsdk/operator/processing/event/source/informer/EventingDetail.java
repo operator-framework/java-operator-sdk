@@ -40,6 +40,7 @@ class EventingDetail {
   private int activeUpdates = 0;
   private boolean ownRvEverAdded = false;
   private Long lastEmittedResourceRv;
+  private Long lastSeenRelatedRv;
 
   public EventingDetail(Long lastResourceVersionBeforeReList) {
     this.lastResourceVersionBeforeReList = lastResourceVersionBeforeReList;
@@ -66,37 +67,70 @@ class EventingDetail {
       return Optional.empty();
     }
 
+    long maxRelatedRv = relatedEvents.lastKey();
+
+    // While an in-flight write hasn't recorded its own RV yet, events past
+    // the highest known own RV may still turn out to be that write's echo —
+    // restrict the synth window so they're held until either the RV arrives
+    // or the write completes.
+    Long cutoff;
+    if (activeUpdates > ownResourceVersions.size()) {
+      if (ownResourceVersions.isEmpty()) {
+        return Optional.empty();
+      }
+      cutoff = ownResourceVersions.last();
+    } else {
+      cutoff = maxRelatedRv;
+    }
+
+    var windowMap = relatedEvents.headMap(cutoff + 1);
+    if (windowMap.isEmpty()) {
+      return Optional.empty();
+    }
+
     boolean foundForeign = false;
-    for (var entry : relatedEvents.entrySet()) {
+    for (var entry : windowMap.entrySet()) {
       if (!isOwnEcho(entry.getKey(), entry.getValue())) {
         foundForeign = true;
         break;
       }
     }
 
-    // While an in-flight write hasn't yet recorded its own RV, an apparent
-    // foreign event might still turn out to be our own echo once the write
-    // completes — hold it instead of emitting.
-    if (foundForeign && activeUpdates > ownResourceVersions.size()) {
-      return Optional.empty();
-    }
-
-    long maxRelatedRv = relatedEvents.lastKey();
+    Long prevSeen = lastSeenRelatedRv;
     Optional<GenericResourceEvent> result = Optional.empty();
 
     // Emit if there is a foreign event in the window, or if a previously emitted
-    // event already advanced the reconciler's view past some RV and a fresh own
-    // echo now moves it further — the reconciler needs the catch-up.
+    // event already advanced the reconciler's view and a *new* event (not one we
+    // already saw at a prior check) now moves it further.
     boolean shouldEmit =
-        foundForeign || (lastEmittedResourceRv != null && maxRelatedRv > lastEmittedResourceRv);
+        foundForeign || (lastEmittedResourceRv != null && (prevSeen == null || cutoff > prevSeen));
 
     if (shouldEmit) {
-      var firstEvent = relatedEvents.get(relatedEvents.firstKey());
-      var lastEvent = relatedEvents.get(maxRelatedRv);
-      if (relatedEvents.size() == 1) {
+      var firstEvent = windowMap.get(windowMap.firstKey());
+      var lastEvent = windowMap.get(windowMap.lastKey());
+
+      // Identify the last DELETE in the window; a DELETE marks the boundary of
+      // the "current life" of the resource — anything before it represents a
+      // state that no longer exists.
+      GenericResourceEvent lastDelete = null;
+      for (var entry : windowMap.entrySet()) {
+        var ev = entry.getValue();
+        if (ev.getAction() == ResourceAction.DELETED) {
+          lastDelete = ev;
+        }
+      }
+
+      if (windowMap.size() == 1) {
         result = Optional.of(firstEvent);
       } else if (lastEvent.getAction() == ResourceAction.DELETED) {
         result = Optional.of(lastEvent);
+      } else if (lastDelete != null) {
+        // A DELETE happened in the middle and the resource was recreated/updated
+        // afterwards. Synth UPDATED with previous = the deleted state.
+        HasMetadata previous = lastDelete.getResource().orElseThrow();
+        HasMetadata latest = lastEvent.getResource().orElseThrow();
+        result =
+            Optional.of(new GenericResourceEvent(ResourceAction.UPDATED, latest, previous, null));
       } else {
         HasMetadata previous =
             firstEvent
@@ -106,16 +140,17 @@ class EventingDetail {
         result =
             Optional.of(new GenericResourceEvent(ResourceAction.UPDATED, latest, previous, null));
       }
-      lastEmittedResourceRv = maxRelatedRv;
+      lastEmittedResourceRv = cutoff;
     }
 
-    relatedEvents.clear();
-    ownResourceVersions.headSet(maxRelatedRv + 1).clear();
+    lastSeenRelatedRv = prevSeen == null ? maxRelatedRv : Math.max(prevSeen, maxRelatedRv);
+    relatedEvents.headMap(cutoff + 1).clear();
+    ownResourceVersions.headSet(cutoff + 1).clear();
     return result;
   }
 
   private boolean isOwnEcho(Long resourceVersion, GenericResourceEvent event) {
-    return event.getAction() == ResourceAction.UPDATED
+    return event.getAction() != ResourceAction.DELETED
         && ownResourceVersions.contains(resourceVersion);
   }
 
