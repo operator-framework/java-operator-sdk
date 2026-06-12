@@ -28,6 +28,7 @@ public class GenericResourceEvent extends ResourceEvent {
 
   private final HasMetadata previousResource;
   private final Boolean lastStateUnknow;
+  private boolean partOfReList = false;
 
   public GenericResourceEvent(
       ResourceAction action,
@@ -74,5 +75,17 @@ public class GenericResourceEvent extends ResourceEvent {
   @Override
   public int hashCode() {
     return Objects.hash(super.hashCode(), previousResource);
+  }
+
+  public long getResourceVersion() {
+    return Long.parseLong(getResource().orElseThrow().getMetadata().getResourceVersion());
+  }
+
+  public boolean isPartOfReList() {
+    return partOfReList;
+  }
+
+  public void setPartOfReList(boolean partOfReList) {
+    this.partOfReList = partOfReList;
   }
 }
