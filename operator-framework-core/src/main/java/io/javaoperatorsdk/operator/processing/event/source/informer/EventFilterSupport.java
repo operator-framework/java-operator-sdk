@@ -24,12 +24,11 @@ import io.javaoperatorsdk.operator.processing.event.ResourceID;
 public class EventFilterSupport {
 
   private final Map<ResourceID, EventFilterWindow> eventFilterWindows = new HashMap<>();
-  private Long lastKnownVersionBeforeRelist = null;
+  private boolean ongoingReList = false;
 
   public synchronized void startEventFilteringModify(ResourceID resourceID) {
     var ed =
-        eventFilterWindows.computeIfAbsent(
-            resourceID, id -> new EventFilterWindow(lastKnownVersionBeforeRelist));
+        eventFilterWindows.computeIfAbsent(resourceID, id -> new EventFilterWindow(ongoingReList));
     ed.increaseActiveUpdates();
   }
 
@@ -75,12 +74,12 @@ public class EventFilterSupport {
   }
 
   public synchronized void setStartingReList(String lastKnownVersion) {
-    lastKnownVersionBeforeRelist = Long.parseLong(lastKnownVersion);
-    eventFilterWindows.values().forEach(au -> au.setReListStartedFrom(lastKnownVersion));
+    ongoingReList = true;
+    eventFilterWindows.values().forEach(EventFilterWindow::setReListStarted);
   }
 
-  public synchronized void setRelistFinished(String syncResourceVersions) {
-    lastKnownVersionBeforeRelist = null;
+  public synchronized void setRelistFinished() {
+    ongoingReList = false;
     eventFilterWindows.values().forEach(EventFilterWindow::setReListFinished);
   }
 

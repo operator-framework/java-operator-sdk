@@ -35,11 +35,11 @@ class EventFilterWindow {
 
   private final SortedMap<Long, GenericResourceEvent> relatedEvents = new TreeMap<>();
   private final SortedSet<Long> ownResourceVersions = new TreeSet<>();
-  private Long lastResourceVersionBeforeReList;
+  private boolean reListOnGoing;
   private int activeUpdates = 0;
 
-  public EventFilterWindow(Long lastResourceVersionBeforeReList) {
-    this.lastResourceVersionBeforeReList = lastResourceVersionBeforeReList;
+  public EventFilterWindow(boolean reListOnGoing) {
+    this.reListOnGoing = reListOnGoing;
   }
 
   // Before we run this method
@@ -179,7 +179,7 @@ class EventFilterWindow {
   }
 
   public synchronized void addRelatedEvent(GenericResourceEvent event) {
-    if (lastResourceVersionBeforeReList != null) {
+    if (reListOnGoing) {
       event.setPartOfReList(true);
     }
 
@@ -188,12 +188,12 @@ class EventFilterWindow {
         event);
   }
 
-  public synchronized void setReListStartedFrom(String lastResourceVersionBeforeReList) {
-    this.lastResourceVersionBeforeReList = Long.parseLong(lastResourceVersionBeforeReList);
+  public synchronized void setReListStarted() {
+    reListOnGoing = true;
   }
 
   public synchronized void setReListFinished() {
-    lastResourceVersionBeforeReList = null;
+    reListOnGoing = false;
   }
 
   public synchronized void increaseActiveUpdates() {
