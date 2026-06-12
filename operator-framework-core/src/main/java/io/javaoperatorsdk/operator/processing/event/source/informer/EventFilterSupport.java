@@ -73,7 +73,7 @@ public class EventFilterSupport {
     return eventFilterWindows;
   }
 
-  public synchronized void setStartingReList(String lastKnownVersion) {
+  public synchronized void setStartingReList() {
     ongoingReList = true;
     eventFilterWindows.values().forEach(EventFilterWindow::setReListStarted);
   }

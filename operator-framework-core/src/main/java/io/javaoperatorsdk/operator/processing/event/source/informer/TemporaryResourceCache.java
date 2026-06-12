@@ -254,7 +254,7 @@ public class TemporaryResourceCache<T extends HasMetadata> {
   }
 
   public synchronized void setOngoingRelist(String lastKnownSyncVersion) {
-    eventFilteringSupport.setStartingReList(lastKnownSyncVersion);
+    eventFilteringSupport.setStartingReList();
   }
 
   public synchronized void setRelistFinished(String syncResourceVersions) {

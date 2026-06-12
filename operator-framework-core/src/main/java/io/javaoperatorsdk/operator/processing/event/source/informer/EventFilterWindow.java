@@ -70,7 +70,7 @@ class EventFilterWindow {
       return eventForRangeAndClear(relatedEvents, ownResourceVersions);
     }
 
-    var lastEventVersion = getLastRelatedEvent().getResourceVersion();
+    var lastEventVersion = relatedEvents.lastKey();
     var numberOwnUpdatesSelected = 0;
     long lastOwnVersion = -1;
     for (long ownVersion : ownResourceVersions) {
@@ -174,7 +174,7 @@ class EventFilterWindow {
     return false;
   }
 
-  void addToOwnResourceVersions(String resourceVersion) {
+  public synchronized void addToOwnResourceVersions(String resourceVersion) {
     ownResourceVersions.add(Long.parseLong(resourceVersion));
   }
 
