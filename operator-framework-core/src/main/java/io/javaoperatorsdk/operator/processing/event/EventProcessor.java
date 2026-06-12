@@ -532,6 +532,10 @@ public class EventProcessor<P extends HasMetadata> implements EventHandler, Life
             }
           } else {
             log.debug("Skipping execution; primary resource missing from cache");
+            // release the under-processing state, otherwise the resource is
+            // wedged: every subsequent event would be skipped with
+            // "Controller in execution: true" until the process restarts
+            eventProcessingFinished(executionScope, PostExecutionControl.defaultDispatch());
             return;
           }
         }

@@ -124,6 +124,37 @@ class EventProcessorTest {
   }
 
   @Test
+  void recoversWhenResourceTransientlyMissingFromCacheAtExecutorRun() {
+    // submitReconciliationExecution sees the resource in the cache and
+    // dispatches a ReconcilerExecutor, but by the time the executor thread
+    // runs, the resource has transiently vanished from the informer cache
+    // (e.g. relist / watch-reconnect race). The executor must release the
+    // under-processing state on that early return; otherwise the resource
+    // state is wedged and every subsequent event is skipped forever
+    // ("Skipping executing controller. Controller in execution: true").
+    when(reconciliationDispatcherMock.handleExecution(any()))
+        .thenReturn(PostExecutionControl.defaultDispatch());
+    ResourceID resourceID = new ResourceID(UUID.randomUUID().toString(), TEST_NAMESPACE);
+    TestCustomResource customResource = testCustomResource(resourceID);
+    when(controllerEventSourceMock.get(eq(resourceID)))
+        .thenReturn(Optional.of(customResource)) // submit-time presence check
+        .thenReturn(Optional.empty()) // executor-run read: transient miss
+        .thenReturn(Optional.of(customResource)); // cache repopulated
+
+    eventProcessor.handleEvent(
+        new ResourceEvent(ResourceAction.UPDATED, resourceID, customResource));
+    // wait until the executor performed its cache read and hit the miss
+    verify(controllerEventSourceMock, timeout(SEPARATE_EXECUTION_TIMEOUT).atLeast(2))
+        .get(eq(resourceID));
+
+    eventProcessor.handleEvent(
+        new ResourceEvent(ResourceAction.UPDATED, resourceID, customResource));
+
+    verify(reconciliationDispatcherMock, timeout(SEPARATE_EXECUTION_TIMEOUT).times(1))
+        .handleExecution(any());
+  }
+
+  @Test
   void skipProcessingIfLatestCustomResourceNotInCache() {
     Event event = prepareCREvent();
     when(controllerEventSourceMock.get(event.getRelatedCustomResourceID()))
