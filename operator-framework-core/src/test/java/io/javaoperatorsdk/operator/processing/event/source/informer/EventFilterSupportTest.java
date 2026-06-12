@@ -61,7 +61,7 @@ class EventFilterSupportTest {
   void doneEventFilterModifyRemovesDetailWhenRemovable() {
     support.startEventFilteringModify(RESOURCE_ID);
     support.addToOwnResourceVersions(RESOURCE_ID, s(FIRST_OWN_VERSION));
-    support.processRelevantEvent(RESOURCE_ID, updateEvent(FIRST_OWN_VERSION));
+    support.processEvent(RESOURCE_ID, updateEvent(FIRST_OWN_VERSION));
 
     var res = support.doneEventFilterModify(RESOURCE_ID);
 
@@ -70,44 +70,49 @@ class EventFilterSupportTest {
   }
 
   @Test
-  void processRelevantEventPropagatesWhenNoEventingDetail() {
+  void processEventPropagatesWhenNoEventingDetail() {
     var event = updateEvent(FIRST_OWN_VERSION);
 
-    var res = support.processRelevantEvent(RESOURCE_ID, event);
+    var res = support.processEvent(RESOURCE_ID, event);
 
     assertThat(res).contains(event);
   }
 
   @Test
-  void processRelevantEventHoldsOwnEcho() {
+  void processEventHoldsOwnEcho() {
     support.startEventFilteringModify(RESOURCE_ID);
     support.addToOwnResourceVersions(RESOURCE_ID, s(FIRST_OWN_VERSION));
 
-    var res = support.processRelevantEvent(RESOURCE_ID, updateEvent(FIRST_OWN_VERSION));
+    var res = support.processEvent(RESOURCE_ID, updateEvent(FIRST_OWN_VERSION));
 
     assertThat(res).isEmpty();
   }
 
   @Test
-  void processRelevantEventEmitsSynthForForeignEvent() {
+  void processEventEmitsSynthForForeignEvent() {
     support.startEventFilteringModify(RESOURCE_ID);
     support.addToOwnResourceVersions(RESOURCE_ID, s(FIRST_OWN_VERSION));
-    support.processRelevantEvent(RESOURCE_ID, updateEvent(FIRST_OWN_VERSION - 1));
+    support.processEvent(RESOURCE_ID, updateEvent(FIRST_OWN_VERSION - 1));
 
-    var res = support.processRelevantEvent(RESOURCE_ID, updateEvent(FIRST_OWN_VERSION));
+    var res = support.processEvent(RESOURCE_ID, updateEvent(FIRST_OWN_VERSION));
 
     assertThat(res).hasValueSatisfying(e -> assertThat(e.getAction()).isEqualTo(UPDATED));
   }
 
   @Test
-  void processRelevantEventEmitsAddedForeignVerbatim() {
+  void processEventEmitsAddedForeignVerbatim() {
     support.startEventFilteringModify(RESOURCE_ID);
     support.addToOwnResourceVersions(RESOURCE_ID, s(FIRST_OWN_VERSION));
+    var addEvent = addEvent(FIRST_OWN_VERSION);
+    var updateEvent = addEvent(FIRST_OWN_VERSION + 1);
+    support.processEvent(RESOURCE_ID, addEvent);
 
-    var added = addEvent(FIRST_OWN_VERSION + 1);
-    var res = support.processRelevantEvent(RESOURCE_ID, added);
+    var res = support.processEvent(RESOURCE_ID, updateEvent);
+    assertThat(res).isEmpty();
 
-    assertThat(res).contains(added);
+    res = support.doneEventFilterModify(RESOURCE_ID);
+
+    assertThat(res).contains(addEvent);
   }
 
   @Test
@@ -118,15 +123,12 @@ class EventFilterSupportTest {
   }
 
   @Test
-  void handleGhostResourceRemovalKeepsWindowWhileUpdateIsOngoing() {
+  void handleGhostResourceRemovalDropsWindow() {
     support.startEventFilteringModify(RESOURCE_ID);
 
     support.handleGhostResourceRemoval(RESOURCE_ID);
 
-    // An in-flight write may still record its own RV; removing the window now
-    // would lose that filtering. The upcoming doneEventFilterModify will
-    // clean up the window itself when the write completes.
-    assertThat(support.isActiveUpdateFor(RESOURCE_ID)).isTrue();
+    assertThat(support.isActiveUpdateFor(RESOURCE_ID)).isFalse();
   }
 
   @Test
@@ -143,7 +145,7 @@ class EventFilterSupportTest {
   void fullLifecycleOwnWriteOnlyEmitsNothingAndCleansUp() {
     support.startEventFilteringModify(RESOURCE_ID);
     support.addToOwnResourceVersions(RESOURCE_ID, s(FIRST_OWN_VERSION));
-    assertThat(support.processRelevantEvent(RESOURCE_ID, updateEvent(FIRST_OWN_VERSION))).isEmpty();
+    assertThat(support.processEvent(RESOURCE_ID, updateEvent(FIRST_OWN_VERSION))).isEmpty();
 
     var res = support.doneEventFilterModify(RESOURCE_ID);
 
@@ -157,11 +159,10 @@ class EventFilterSupportTest {
     support.addToOwnResourceVersions(RESOURCE_ID, s(FIRST_OWN_VERSION));
 
     var foreign = updateEvent(FIRST_OWN_VERSION - 1);
-    assertThat(support.processRelevantEvent(RESOURCE_ID, foreign)).contains(foreign);
+    assertThat(support.processEvent(RESOURCE_ID, foreign)).isEmpty();
 
     // catch-up emit triggered by the own echo arriving after the prior emit
-    assertThat(support.processRelevantEvent(RESOURCE_ID, updateEvent(FIRST_OWN_VERSION)))
-        .isPresent();
+    assertThat(support.processEvent(RESOURCE_ID, updateEvent(FIRST_OWN_VERSION))).isPresent();
     assertThat(support.doneEventFilterModify(RESOURCE_ID)).isEmpty();
     assertThat(support.isActiveUpdateFor(RESOURCE_ID)).isFalse();
   }

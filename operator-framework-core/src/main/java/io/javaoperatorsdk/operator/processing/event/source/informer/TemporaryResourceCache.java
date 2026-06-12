@@ -119,7 +119,7 @@ public class TemporaryResourceCache<T extends HasMetadata> {
         cache.remove(resourceId);
       }
     }
-    return eventFilteringSupport.processRelevantEvent(resourceId, actualEvent);
+    return eventFilteringSupport.processEvent(resourceId, actualEvent);
   }
 
   static <T extends HasMetadata> GenericResourceEvent toGenericResourceEvent(

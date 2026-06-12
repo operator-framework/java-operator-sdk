@@ -19,14 +19,9 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
 
 public class EventFilterSupport {
-
-  private static final Logger log = LoggerFactory.getLogger(EventFilterSupport.class);
 
   private final Map<ResourceID, EventFilterWindow> eventFilterWindows = new HashMap<>();
   private Long lastKnownVersionBeforeRelist = null;
@@ -45,7 +40,7 @@ public class EventFilterSupport {
     return check(ed, resourceID);
   }
 
-  public synchronized Optional<GenericResourceEvent> processRelevantEvent(
+  public synchronized Optional<GenericResourceEvent> processEvent(
       ResourceID resourceId, GenericResourceEvent genericResourceEvent) {
     var ed = eventFilterWindows.get(resourceId);
     if (ed != null) {
@@ -71,10 +66,6 @@ public class EventFilterSupport {
   }
 
   public synchronized void handleGhostResourceRemoval(ResourceID resourceId) {
-    var ed = eventFilterWindows.get(resourceId);
-    if (ed != null && !ed.canRemoved()) {
-      return;
-    }
     eventFilterWindows.remove(resourceId);
   }
 
@@ -84,10 +75,12 @@ public class EventFilterSupport {
   }
 
   public synchronized void setStartingReList(String lastKnownVersion) {
+    lastKnownVersionBeforeRelist = Long.parseLong(lastKnownVersion);
     eventFilterWindows.values().forEach(au -> au.setReListStartedFrom(lastKnownVersion));
   }
 
   public synchronized void setRelistFinished(String syncResourceVersions) {
+    lastKnownVersionBeforeRelist = null;
     eventFilterWindows.values().forEach(EventFilterWindow::setReListFinished);
   }
 

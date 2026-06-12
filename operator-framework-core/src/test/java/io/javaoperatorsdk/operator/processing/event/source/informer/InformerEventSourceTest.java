@@ -451,6 +451,65 @@ class InformerEventSourceTest {
     assertThat(result).containsExactly(resourceId);
   }
 
+  @Test
+  void checkGhostResourcesPropagatesDeleteForMissingTempCacheEntry() {
+    // A resource lingers in the temp cache after our write but the informer never
+    // observed it (e.g. the resource was deleted before the watch caught up).
+    // checkGhostResources should remove it and surface a synthetic DELETE event
+    // so the reconciler is notified.
+    var ghost = testDeployment();
+    ghost.getMetadata().setNamespace("default");
+    ghost.getMetadata().setResourceVersion("3");
+
+    var tempCache = new TemporaryResourceCache<>(true, informerEventSource);
+    informerEventSource.setTemporalResourceCache(tempCache);
+
+    var manager = mock(InformerManager.class);
+    when(manager.isWatchingNamespace(any())).thenReturn(true);
+    when(manager.lastSyncResourceVersion(any())).thenReturn("1");
+    when(manager.get(any())).thenReturn(Optional.empty());
+    when(informerEventSource.manager()).thenReturn(manager);
+
+    tempCache.putResource(ghost);
+    assertThat(tempCache.getResources()).containsKey(ResourceID.fromResource(ghost));
+
+    // Informer's last-sync moves past the temp cache entry's RV and the resource
+    // is missing from the informer's cache → it qualifies as a ghost.
+    when(manager.lastSyncResourceVersion(any())).thenReturn("5");
+
+    tempCache.checkGhostResources();
+
+    assertThat(tempCache.getResources()).isEmpty();
+    verify(eventHandlerMock, times(1)).handleEvent(any());
+  }
+
+  @Test
+  void checkGhostResourcesKeepsResourcePresentInInformerCache() {
+    // Same setup as the ghost test, but the informer's cache still has the
+    // resource — it is NOT a ghost; the temp cache entry should be left alone
+    // and no DELETE should propagate.
+    var resource = testDeployment();
+    resource.getMetadata().setNamespace("default");
+    resource.getMetadata().setResourceVersion("3");
+
+    var tempCache = new TemporaryResourceCache<>(true, informerEventSource);
+    informerEventSource.setTemporalResourceCache(tempCache);
+
+    var manager = mock(InformerManager.class);
+    when(manager.isWatchingNamespace(any())).thenReturn(true);
+    when(manager.lastSyncResourceVersion(any())).thenReturn("1");
+    when(manager.get(any())).thenReturn(Optional.of(resource));
+    when(informerEventSource.manager()).thenReturn(manager);
+
+    tempCache.putResource(resource);
+    when(manager.lastSyncResourceVersion(any())).thenReturn("5");
+
+    tempCache.checkGhostResources();
+
+    assertThat(tempCache.getResources()).containsKey(ResourceID.fromResource(resource));
+    verify(eventHandlerMock, never()).handleEvent(any());
+  }
+
   private void assertNoEventProduced() {
     await()
         .pollDelay(Duration.ofMillis(70))

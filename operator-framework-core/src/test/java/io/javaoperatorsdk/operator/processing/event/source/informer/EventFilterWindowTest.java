@@ -15,6 +15,7 @@
  */
 package io.javaoperatorsdk.operator.processing.event.source.informer;
 
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import io.fabric8.kubernetes.api.model.ConfigMap;
@@ -33,6 +34,8 @@ class EventFilterWindowTest {
   static final ResourceID RESOURCE_ID = new ResourceID("id1", "default");
 
   EventFilterWindow eventFilterWindow = new EventFilterWindow(null);
+
+  // todo ensure real call scenarios
 
   @Test
   void oneOwnVersionNoEvent() {
@@ -137,11 +140,25 @@ class EventFilterWindowTest {
     eventFilterWindow.increaseActiveUpdates();
     eventFilterWindow.addToOwnResourceVersions(s(FIRST_OWN_VERSION));
     eventFilterWindow.addRelatedEvent(addEvent(FIRST_OWN_VERSION + 1));
+    eventFilterWindow.decreaseActiveUpdates();
 
     assertThat(eventFilterWindow.check())
         .hasValueSatisfying(e -> assertAddEvent(e, FIRST_OWN_VERSION + 1));
 
+    assertThat(eventFilterWindow.check()).isEmpty();
+    assertThat(eventFilterWindow.canRemoved()).isTrue();
+    assertEmptyState();
+  }
+
+  @Test
+  void receivedAddEventAfterOurUpdateDone() {
+    eventFilterWindow.increaseActiveUpdates();
+    eventFilterWindow.addToOwnResourceVersions(s(FIRST_OWN_VERSION));
     eventFilterWindow.decreaseActiveUpdates();
+    eventFilterWindow.addRelatedEvent(addEvent(FIRST_OWN_VERSION + 1));
+    assertThat(eventFilterWindow.check())
+        .hasValueSatisfying(e -> assertAddEvent(e, FIRST_OWN_VERSION + 1));
+
     assertThat(eventFilterWindow.check()).isEmpty();
     assertThat(eventFilterWindow.canRemoved()).isTrue();
     assertEmptyState();
@@ -166,7 +183,7 @@ class EventFilterWindowTest {
 
     assertThat(eventFilterWindow.check())
         .hasValueSatisfying(e -> assertUpdateEvent(e, FIRST_OWN_VERSION));
-    assertThat(eventFilterWindow.canRemoved()).isFalse();
+    assertThat(eventFilterWindow.canRemoved()).isTrue();
     assertEmptyState();
   }
 
@@ -179,11 +196,14 @@ class EventFilterWindowTest {
     eventFilterWindow.addRelatedEvent(updateEvent(FIRST_OWN_VERSION + 1));
     eventFilterWindow.addRelatedEvent(updateEvent(FIRST_OWN_VERSION + 2));
 
+    eventFilterWindow.decreaseActiveUpdates();
+
     assertThat(eventFilterWindow.check())
         .hasValueSatisfying(
             e -> assertUpdateEvent(e, FIRST_OWN_VERSION + 2, FIRST_OWN_VERSION - 1));
 
-    eventFilterWindow.decreaseActiveUpdates();
+    assertThat(eventFilterWindow.check()).isEmpty();
+
     assertThat(eventFilterWindow.canRemoved()).isTrue();
     assertEmptyState();
   }
@@ -260,8 +280,7 @@ class EventFilterWindowTest {
     assertThat(eventFilterWindow.getOwnResourceVersions()).containsExactly(FIRST_OWN_VERSION + 2);
 
     eventFilterWindow.addRelatedEvent(updateEvent(FIRST_OWN_VERSION + 2));
-    assertThat(eventFilterWindow.check())
-        .hasValueSatisfying(e -> assertUpdateEvent(e, FIRST_OWN_VERSION + 2));
+    assertThat(eventFilterWindow.check()).isEmpty();
 
     eventFilterWindow.decreaseActiveUpdates();
     assertThat(eventFilterWindow.canRemoved()).isTrue();
@@ -273,12 +292,12 @@ class EventFilterWindowTest {
     eventFilterWindow.increaseActiveUpdates();
     eventFilterWindow.addToOwnResourceVersions(s(FIRST_OWN_VERSION));
     eventFilterWindow.addRelatedEvent(deleteEvent(FIRST_OWN_VERSION));
-
-    // check also cleans up the current since we received event for our own resource
     assertThat(eventFilterWindow.check()).hasValueSatisfying(this::assertDeleteEvent);
     assertThat(eventFilterWindow.canRemoved()).isFalse();
+
     eventFilterWindow.decreaseActiveUpdates();
     assertThat(eventFilterWindow.canRemoved()).isTrue();
+    assertEmptyState();
   }
 
   @Test
@@ -307,7 +326,8 @@ class EventFilterWindowTest {
     // it is questionable in this particular case we should propagate last Add or Update event.
     // check also cleans up the current since we received event for our own resource
     assertThat(eventFilterWindow.check())
-        .hasValueSatisfying(e -> assertUpdateEvent(e, FIRST_OWN_VERSION + 2));
+        .hasValueSatisfying(
+            e -> assertUpdateEvent(e, FIRST_OWN_VERSION + 2, FIRST_OWN_VERSION - 1));
     eventFilterWindow.decreaseActiveUpdates();
     assertThat(eventFilterWindow.canRemoved()).isTrue();
   }
@@ -316,15 +336,16 @@ class EventFilterWindowTest {
   void deleteEventAsAdditionalEventAfterOwnUpdates() {
     eventFilterWindow.increaseActiveUpdates();
     eventFilterWindow.addToOwnResourceVersions(s(FIRST_OWN_VERSION));
-    eventFilterWindow.addRelatedEvent(deleteEvent(FIRST_OWN_VERSION));
+    eventFilterWindow.addRelatedEvent(updateEvent(FIRST_OWN_VERSION));
     eventFilterWindow.addRelatedEvent(deleteEvent(FIRST_OWN_VERSION + 1));
 
     // check also cleans up the current since we received event for our own resource
-    assertThat(eventFilterWindow.check())
-        .hasValueSatisfying(e -> assertDeleteEvent(e, FIRST_OWN_VERSION + 1));
+    assertThat(eventFilterWindow.check()).isEmpty();
 
     assertThat(eventFilterWindow.canRemoved()).isFalse();
     eventFilterWindow.decreaseActiveUpdates();
+    assertThat(eventFilterWindow.check())
+        .hasValueSatisfying(e -> assertDeleteEvent(e, FIRST_OWN_VERSION + 1));
     assertThat(eventFilterWindow.canRemoved()).isTrue();
   }
 
@@ -337,11 +358,15 @@ class EventFilterWindowTest {
     eventFilterWindow.addRelatedEvent(deleteEvent(FIRST_OWN_VERSION + 2));
 
     assertThat(eventFilterWindow.check())
-        .hasValueSatisfying(e -> assertDeleteEvent(e, FIRST_OWN_VERSION + 2));
-    assertThat(eventFilterWindow.check()).isEmpty();
+        .hasValueSatisfying(
+            e -> assertUpdateEvent(e, FIRST_OWN_VERSION + 1, FIRST_OWN_VERSION - 1));
 
-    assertEmptyState();
     eventFilterWindow.decreaseActiveUpdates();
+
+    assertThat(eventFilterWindow.canRemoved()).isFalse();
+    assertThat(eventFilterWindow.check())
+        .hasValueSatisfying(e -> assertDeleteEvent(e, FIRST_OWN_VERSION + 2));
+
     assertThat(eventFilterWindow.canRemoved()).isTrue();
   }
 
@@ -350,6 +375,24 @@ class EventFilterWindowTest {
     eventFilterWindow.increaseActiveUpdates();
     eventFilterWindow.addToOwnResourceVersions(s(FIRST_OWN_VERSION));
     eventFilterWindow.addRelatedEvent(updateEvent(FIRST_OWN_VERSION));
+
+    eventFilterWindow.addRelatedEvent(updateEvent(FIRST_OWN_VERSION + 1));
+    eventFilterWindow.addRelatedEvent(deleteEvent(FIRST_OWN_VERSION + 2));
+
+    assertThat(eventFilterWindow.check()).isEmpty();
+
+    eventFilterWindow.decreaseActiveUpdates();
+    assertThat(eventFilterWindow.check())
+        .hasValueSatisfying(e -> assertDeleteEvent(e, FIRST_OWN_VERSION + 2));
+    assertThat(eventFilterWindow.canRemoved()).isTrue();
+  }
+
+  @Test
+  @Disabled("should be part of event filter support")
+  void additionalEventAndDeleteEventNoUpdate() {
+    eventFilterWindow.increaseActiveUpdates();
+    eventFilterWindow.addToOwnResourceVersions(s(FIRST_OWN_VERSION));
+    eventFilterWindow.addRelatedEvent(updateEvent(FIRST_OWN_VERSION));
     eventFilterWindow.addRelatedEvent(updateEvent(FIRST_OWN_VERSION + 1));
     eventFilterWindow.addRelatedEvent(deleteEvent(FIRST_OWN_VERSION + 2));
 
@@ -359,6 +402,7 @@ class EventFilterWindowTest {
 
     assertEmptyState();
     eventFilterWindow.decreaseActiveUpdates();
+
     assertThat(eventFilterWindow.canRemoved()).isTrue();
   }
 
@@ -367,49 +411,26 @@ class EventFilterWindowTest {
     eventFilterWindow.increaseActiveUpdates();
     eventFilterWindow.addToOwnResourceVersions(s(FIRST_OWN_VERSION));
     eventFilterWindow.addRelatedEvent(updateEvent(FIRST_OWN_VERSION));
+    assertThat(eventFilterWindow.check()).isEmpty();
+
     eventFilterWindow.addRelatedEvent(deleteEvent(FIRST_OWN_VERSION + 1));
 
     eventFilterWindow
         .increaseActiveUpdates(); // started new update delete event should not be included in first
-    // check
 
-    assertThat(eventFilterWindow.check()).isEmpty();
+    assertThat(eventFilterWindow.check())
+        .hasValueSatisfying(e -> assertDeleteEvent(e, FIRST_OWN_VERSION + 1));
+    assertEmptyState();
 
     eventFilterWindow.addToOwnResourceVersions(s(FIRST_OWN_VERSION + 2));
     eventFilterWindow.addRelatedEvent(addEvent(FIRST_OWN_VERSION + 2));
     // delete event should be skipped in these cases and taking directly the last event
-    assertThat(eventFilterWindow.check())
-        .hasValueSatisfying(e -> assertAddEvent(e, FIRST_OWN_VERSION + 2));
-
-    eventFilterWindow.decreaseActiveUpdates();
-
-    assertEmptyState();
-    eventFilterWindow.decreaseActiveUpdates();
-    assertThat(eventFilterWindow.canRemoved()).isTrue();
-  }
-
-  @Test
-  void deleteEventInMiddleTwoUpdatesAdditionalEventAfter() {
-    eventFilterWindow.increaseActiveUpdates();
-    eventFilterWindow.addToOwnResourceVersions(s(FIRST_OWN_VERSION));
-    eventFilterWindow.addRelatedEvent(updateEvent(FIRST_OWN_VERSION));
-    eventFilterWindow.addRelatedEvent(deleteEvent(FIRST_OWN_VERSION + 1));
-
-    eventFilterWindow.increaseActiveUpdates();
-
     assertThat(eventFilterWindow.check()).isEmpty();
 
-    eventFilterWindow.addToOwnResourceVersions(s(FIRST_OWN_VERSION + 2));
-    eventFilterWindow.addRelatedEvent(addEvent(FIRST_OWN_VERSION + 2));
-    eventFilterWindow.addRelatedEvent(updateEvent(FIRST_OWN_VERSION + 3));
-    // updated event as merged event for last two updates
-    assertThat(eventFilterWindow.check())
-        .hasValueSatisfying(
-            e -> assertUpdateEvent(e, FIRST_OWN_VERSION + 3, FIRST_OWN_VERSION + 2));
+    eventFilterWindow.decreaseActiveUpdates();
 
-    eventFilterWindow.decreaseActiveUpdates();
-    eventFilterWindow.decreaseActiveUpdates();
     assertEmptyState();
+    eventFilterWindow.decreaseActiveUpdates();
     assertThat(eventFilterWindow.canRemoved()).isTrue();
   }
 
@@ -417,19 +438,44 @@ class EventFilterWindowTest {
   void deleteEventAfterTwoUpdates() {
     eventFilterWindow.increaseActiveUpdates();
     eventFilterWindow.addToOwnResourceVersions(s(FIRST_OWN_VERSION));
-    eventFilterWindow.addRelatedEvent(updateEvent(FIRST_OWN_VERSION));
 
     eventFilterWindow.increaseActiveUpdates();
     eventFilterWindow.addToOwnResourceVersions(s(FIRST_OWN_VERSION + 1));
+
+    eventFilterWindow.addRelatedEvent(updateEvent(FIRST_OWN_VERSION));
     eventFilterWindow.addRelatedEvent(updateEvent(FIRST_OWN_VERSION + 1));
 
     eventFilterWindow.addRelatedEvent(deleteEvent(FIRST_OWN_VERSION + 2));
 
-    assertThat(eventFilterWindow.check())
-        .hasValueSatisfying(e -> assertDeleteEvent(e, FIRST_OWN_VERSION + 2));
+    assertThat(eventFilterWindow.check()).isEmpty();
 
     eventFilterWindow.decreaseActiveUpdates();
     eventFilterWindow.decreaseActiveUpdates();
+    assertThat(eventFilterWindow.check())
+        .hasValueSatisfying(e -> assertDeleteEvent(e, FIRST_OWN_VERSION + 2));
+
+    assertEmptyState();
+    assertThat(eventFilterWindow.canRemoved()).isTrue();
+  }
+
+  @Test
+  void deleteEventAfterTwoUpdatesFinished() {
+    eventFilterWindow.increaseActiveUpdates();
+    eventFilterWindow.addToOwnResourceVersions(s(FIRST_OWN_VERSION));
+
+    eventFilterWindow.increaseActiveUpdates();
+    eventFilterWindow.addToOwnResourceVersions(s(FIRST_OWN_VERSION + 1));
+
+    eventFilterWindow.addRelatedEvent(updateEvent(FIRST_OWN_VERSION));
+    eventFilterWindow.addRelatedEvent(updateEvent(FIRST_OWN_VERSION + 1));
+
+    eventFilterWindow.addRelatedEvent(deleteEvent(FIRST_OWN_VERSION + 2));
+
+    eventFilterWindow.decreaseActiveUpdates();
+    eventFilterWindow.decreaseActiveUpdates();
+    assertThat(eventFilterWindow.check())
+        .hasValueSatisfying(e -> assertDeleteEvent(e, FIRST_OWN_VERSION + 2));
+
     assertEmptyState();
     assertThat(eventFilterWindow.canRemoved()).isTrue();
   }
@@ -445,7 +491,7 @@ class EventFilterWindowTest {
     eventFilterWindow.setReListFinished();
 
     assertThat(eventFilterWindow.check())
-        .hasValueSatisfying(e -> assertDeleteEvent(e, FIRST_OWN_VERSION));
+        .hasValueSatisfying(e -> assertUpdateEvent(e, FIRST_OWN_VERSION));
 
     eventFilterWindow.decreaseActiveUpdates();
     assertEmptyState();
@@ -461,11 +507,11 @@ class EventFilterWindowTest {
     eventFilterWindow.addRelatedEvent(updateEvent(FIRST_OWN_VERSION + 1));
     eventFilterWindow.setReListFinished();
 
-    // this should be the case regardless of re-list
-    assertThat(eventFilterWindow.check())
-        .hasValueSatisfying(e -> assertDeleteEvent(e, FIRST_OWN_VERSION + 1));
-
+    assertThat(eventFilterWindow.check()).isEmpty();
     eventFilterWindow.decreaseActiveUpdates();
+
+    assertThat(eventFilterWindow.check())
+        .hasValueSatisfying(e -> assertUpdateEvent(e, FIRST_OWN_VERSION + 1));
     assertEmptyState();
     assertThat(eventFilterWindow.canRemoved()).isTrue();
   }
@@ -484,7 +530,8 @@ class EventFilterWindowTest {
 
     // this should be the case regardless of re-list
     assertThat(eventFilterWindow.check())
-        .hasValueSatisfying(e -> assertUpdateEvent(e, FIRST_OWN_VERSION + 1, FIRST_OWN_VERSION));
+        .hasValueSatisfying(
+            e -> assertUpdateEvent(e, FIRST_OWN_VERSION + 1, FIRST_OWN_VERSION - 1));
 
     eventFilterWindow.decreaseActiveUpdates();
     eventFilterWindow.decreaseActiveUpdates();
