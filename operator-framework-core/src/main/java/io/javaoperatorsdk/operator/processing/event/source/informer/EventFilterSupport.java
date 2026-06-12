@@ -28,18 +28,18 @@ public class EventFilterSupport {
 
   private static final Logger log = LoggerFactory.getLogger(EventFilterSupport.class);
 
-  private final Map<ResourceID, EventingDetail> activeUpdates = new HashMap<>();
+  private final Map<ResourceID, EventFilterWindow> eventFilterWindows = new HashMap<>();
   private Long lastKnownVersionBeforeRelist = null;
 
   public synchronized void startEventFilteringModify(ResourceID resourceID) {
     var ed =
-        activeUpdates.computeIfAbsent(
-            resourceID, id -> new EventingDetail(lastKnownVersionBeforeRelist));
+        eventFilterWindows.computeIfAbsent(
+            resourceID, id -> new EventFilterWindow(lastKnownVersionBeforeRelist));
     ed.increaseActiveUpdates();
   }
 
   public synchronized Optional<GenericResourceEvent> doneEventFilterModify(ResourceID resourceID) {
-    var ed = activeUpdates.get(resourceID);
+    var ed = eventFilterWindows.get(resourceID);
     if (ed == null) return Optional.empty();
     ed.decreaseActiveUpdates();
     return check(ed, resourceID);
@@ -47,7 +47,7 @@ public class EventFilterSupport {
 
   public synchronized Optional<GenericResourceEvent> processRelevantEvent(
       ResourceID resourceId, GenericResourceEvent genericResourceEvent) {
-    var ed = activeUpdates.get(resourceId);
+    var ed = eventFilterWindows.get(resourceId);
     if (ed != null) {
       ed.addRelatedEvent(genericResourceEvent);
       return check(ed, resourceId);
@@ -57,37 +57,41 @@ public class EventFilterSupport {
   }
 
   private Optional<GenericResourceEvent> check(
-      EventingDetail eventingDetail, ResourceID resourceID) {
-    var res = eventingDetail.check();
-    if (eventingDetail.canRemoved()) {
-      activeUpdates.remove(resourceID);
+      EventFilterWindow eventFilterWindow, ResourceID resourceID) {
+    var res = eventFilterWindow.check();
+    if (eventFilterWindow.canRemoved()) {
+      eventFilterWindows.remove(resourceID);
     }
     return res;
   }
 
   public synchronized void addToOwnResourceVersions(ResourceID resourceId, String resourceVersion) {
-    Optional.ofNullable(activeUpdates.get(resourceId))
+    Optional.ofNullable(eventFilterWindows.get(resourceId))
         .ifPresent(au -> au.addToOwnResourceVersions(resourceVersion));
   }
 
   public synchronized void handleGhostResourceRemoval(ResourceID resourceId) {
-    activeUpdates.remove(resourceId);
+    var ed = eventFilterWindows.get(resourceId);
+    if (ed != null && !ed.canRemoved()) {
+      return;
+    }
+    eventFilterWindows.remove(resourceId);
   }
 
   // for testing purposes
-  synchronized Map<ResourceID, EventingDetail> getActiveUpdates() {
-    return activeUpdates;
+  synchronized Map<ResourceID, EventFilterWindow> getEventFilterWindows() {
+    return eventFilterWindows;
   }
 
   public synchronized void setStartingReList(String lastKnownVersion) {
-    activeUpdates.values().forEach(au -> au.setReListStartedFrom(lastKnownVersion));
+    eventFilterWindows.values().forEach(au -> au.setReListStartedFrom(lastKnownVersion));
   }
 
   public synchronized void setRelistFinished(String syncResourceVersions) {
-    activeUpdates.values().forEach(au -> au.setReListFinished(syncResourceVersions));
+    eventFilterWindows.values().forEach(EventFilterWindow::setReListFinished);
   }
 
   public synchronized boolean isActiveUpdateFor(ResourceID resourceId) {
-    return activeUpdates.containsKey(resourceId);
+    return eventFilterWindows.containsKey(resourceId);
   }
 }

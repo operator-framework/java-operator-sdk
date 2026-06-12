@@ -38,16 +38,16 @@ class EventFilterSupportTest {
     support.startEventFilteringModify(RESOURCE_ID);
 
     assertThat(support.isActiveUpdateFor(RESOURCE_ID)).isTrue();
-    assertThat(support.getActiveUpdates()).containsOnlyKeys(RESOURCE_ID);
+    assertThat(support.getEventFilterWindows()).containsOnlyKeys(RESOURCE_ID);
   }
 
   @Test
   void startEventFilteringTwiceReusesEventingDetail() {
     support.startEventFilteringModify(RESOURCE_ID);
-    var first = support.getActiveUpdates().get(RESOURCE_ID);
+    var first = support.getEventFilterWindows().get(RESOURCE_ID);
 
     support.startEventFilteringModify(RESOURCE_ID);
-    var second = support.getActiveUpdates().get(RESOURCE_ID);
+    var second = support.getEventFilterWindows().get(RESOURCE_ID);
 
     assertThat(second).isSameAs(first);
   }
@@ -118,23 +118,25 @@ class EventFilterSupportTest {
   }
 
   @Test
-  void handleGhostResourceRemovalDropsEventingDetail() {
+  void handleGhostResourceRemovalKeepsWindowWhileUpdateIsOngoing() {
     support.startEventFilteringModify(RESOURCE_ID);
 
     support.handleGhostResourceRemoval(RESOURCE_ID);
 
-    assertThat(support.isActiveUpdateFor(RESOURCE_ID)).isFalse();
+    // An in-flight write may still record its own RV; removing the window now
+    // would lose that filtering. The upcoming doneEventFilterModify will
+    // clean up the window itself when the write completes.
+    assertThat(support.isActiveUpdateFor(RESOURCE_ID)).isTrue();
   }
 
   @Test
-  void independentResourcesAreTrackedSeparately() {
+  void handleGhostResourceRemovalIsNoOpForUnknownResource() {
     support.startEventFilteringModify(RESOURCE_ID);
-    support.startEventFilteringModify(OTHER_RESOURCE_ID);
 
-    support.handleGhostResourceRemoval(RESOURCE_ID);
+    support.handleGhostResourceRemoval(OTHER_RESOURCE_ID);
 
-    assertThat(support.isActiveUpdateFor(RESOURCE_ID)).isFalse();
-    assertThat(support.isActiveUpdateFor(OTHER_RESOURCE_ID)).isTrue();
+    assertThat(support.isActiveUpdateFor(RESOURCE_ID)).isTrue();
+    assertThat(support.isActiveUpdateFor(OTHER_RESOURCE_ID)).isFalse();
   }
 
   @Test

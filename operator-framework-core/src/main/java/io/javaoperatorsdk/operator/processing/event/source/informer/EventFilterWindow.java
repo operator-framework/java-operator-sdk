@@ -30,21 +30,23 @@ import io.javaoperatorsdk.operator.processing.event.source.ResourceAction;
 /**
  * Contains all the relevant information around the eventing and algorithms of a single resources.
  */
-class EventingDetail {
+class EventFilterWindow {
 
-  private static final Logger log = LoggerFactory.getLogger(EventingDetail.class);
+  private static final Logger log = LoggerFactory.getLogger(EventFilterWindow.class);
 
   private final SortedMap<Long, GenericResourceEvent> relatedEvents = new TreeMap<>();
   private final SortedSet<Long> ownResourceVersions = new TreeSet<>();
   private Long lastResourceVersionBeforeReList;
+  private boolean affectedByReList;
   private int activeUpdates = 0;
   private boolean ownRvEverAdded = false;
   private int ownRvCount = 0;
   private Long lastEmittedResourceRv;
   private Long lastSeenRelatedRv;
 
-  public EventingDetail(Long lastResourceVersionBeforeReList) {
+  public EventFilterWindow(Long lastResourceVersionBeforeReList) {
     this.lastResourceVersionBeforeReList = lastResourceVersionBeforeReList;
+    this.affectedByReList = lastResourceVersionBeforeReList != null;
   }
 
   // Before we run this method
@@ -103,34 +105,75 @@ class EventingDetail {
 
     // Emit if there is a foreign event in the window, or if a previously emitted
     // event already advanced the reconciler's view and a *new* event (not one we
-    // already saw at a prior check) now moves it further.
+    // already saw at a prior check) now moves it further. ReList also forces an
+    // emit since it may have hidden events while it was running.
     boolean shouldEmit =
-        foundForeign || (lastEmittedResourceRv != null && (prevSeen == null || cutoff > prevSeen));
+        foundForeign
+            || (lastEmittedResourceRv != null && (prevSeen == null || cutoff > prevSeen))
+            || affectedByReList;
 
     if (shouldEmit) {
       // Synthesize only from events that are *new* since the last check;
       // carryover events (RV ≤ prevSeen) were already considered before and
       // should not drive the synthesized event's resource versions.
       var synthWindow = prevSeen == null ? windowMap : windowMap.tailMap(prevSeen + 1);
-      if (!synthWindow.isEmpty()) {
-        var firstEvent = synthWindow.get(synthWindow.firstKey());
-        var lastEvent = synthWindow.get(synthWindow.lastKey());
+
+      // When affected by a reList, treat events at or before the reList boundary
+      // as captured *during* relist and not informative — only events strictly
+      // after the boundary drive the synthesized output.
+      var effectiveWindow =
+          affectedByReList && lastResourceVersionBeforeReList != null
+              ? synthWindow.tailMap(lastResourceVersionBeforeReList + 1)
+              : synthWindow;
+
+      if (!effectiveWindow.isEmpty()) {
+        var firstEvent = effectiveWindow.get(effectiveWindow.firstKey());
+        var lastEvent = effectiveWindow.get(effectiveWindow.lastKey());
 
         // Identify the last DELETE in the synth window; a DELETE marks the
         // boundary of the "current life" of the resource — anything before it
         // represents a state that no longer exists.
         GenericResourceEvent lastDelete = null;
-        for (var entry : synthWindow.entrySet()) {
+        boolean hasForeign = false;
+        boolean allForeignAreDeletes = true;
+        for (var entry : effectiveWindow.entrySet()) {
           var ev = entry.getValue();
           if (ev.getAction() == ResourceAction.DELETED) {
             lastDelete = ev;
           }
+          if (!isOwnEcho(entry.getKey(), ev)) {
+            hasForeign = true;
+            if (ev.getAction() != ResourceAction.DELETED) {
+              allForeignAreDeletes = false;
+            }
+          }
         }
+        boolean lastIsOwnEcho = isOwnEcho(effectiveWindow.lastKey(), lastEvent);
+        boolean reListBeforeFirstOwn =
+            affectedByReList
+                && !ownResourceVersions.isEmpty()
+                && lastResourceVersionBeforeReList != null
+                && lastResourceVersionBeforeReList < ownResourceVersions.first();
 
-        if (synthWindow.size() == 1) {
+        if (affectedByReList && (hasForeign || reListBeforeFirstOwn)) {
+          // ReList obscured part of the timeline AND something happened that
+          // wasn't purely our own activity — surface a DELETE with
+          // lastStateUnknown=true so the reconciler knows the latest known
+          // state is uncertain.
+          HasMetadata deleted = lastEvent.getResource().orElseThrow();
+          result =
+              Optional.of(new GenericResourceEvent(ResourceAction.DELETED, deleted, null, true));
+          lastEmittedResourceRv = cutoff;
+        } else if (!affectedByReList && hasForeign && allForeignAreDeletes && lastIsOwnEcho) {
+          // The synth window represents a delete-then-our-recreate sequence:
+          // the only foreign activity was DELETE(s) and the resource is back
+          // under our control. Nothing for the reconciler to know about.
+        } else if (effectiveWindow.size() == 1) {
           result = Optional.of(firstEvent);
+          lastEmittedResourceRv = cutoff;
         } else if (lastEvent.getAction() == ResourceAction.DELETED) {
           result = Optional.of(lastEvent);
+          lastEmittedResourceRv = cutoff;
         } else if (lastDelete != null) {
           // A DELETE happened in the middle and the resource was recreated/updated
           // afterwards. Synth UPDATED with previous = the deleted state.
@@ -138,6 +181,7 @@ class EventingDetail {
           HasMetadata latest = lastEvent.getResource().orElseThrow();
           result =
               Optional.of(new GenericResourceEvent(ResourceAction.UPDATED, latest, previous, null));
+          lastEmittedResourceRv = cutoff;
         } else {
           HasMetadata previous =
               firstEvent
@@ -146,9 +190,14 @@ class EventingDetail {
           HasMetadata latest = lastEvent.getResource().orElseThrow();
           result =
               Optional.of(new GenericResourceEvent(ResourceAction.UPDATED, latest, previous, null));
+          lastEmittedResourceRv = cutoff;
         }
       }
-      lastEmittedResourceRv = cutoff;
+
+      if (affectedByReList) {
+        affectedByReList = false;
+        lastResourceVersionBeforeReList = null;
+      }
     }
 
     lastSeenRelatedRv = prevSeen == null ? maxRelatedRv : Math.max(prevSeen, maxRelatedRv);
@@ -186,10 +235,13 @@ class EventingDetail {
 
   public synchronized void setReListStartedFrom(String lastResourceVersionBeforeReList) {
     this.lastResourceVersionBeforeReList = Long.parseLong(lastResourceVersionBeforeReList);
+    this.affectedByReList = true;
   }
 
-  public synchronized void setReListFinished(String syncResourceVersion) {
-    this.lastResourceVersionBeforeReList = null;
+  public synchronized void setReListFinished() {
+    // Marker: relist has completed and check() may now process. The relist
+    // boundary (lastResourceVersionBeforeReList) is consumed by the next check
+    // and reset there along with affectedByReList.
   }
 
   public synchronized void increaseActiveUpdates() {

@@ -235,7 +235,7 @@ class InformerEventSourceTest {
   void ownUpdateEventIsDeferredDuringActiveFilter() {
     // Sanity check that the InformerEventSource end-to-end pipeline (informer → temp cache
     // → filter support → propagateEvent) suppresses an event for our own write that arrives
-    // before the filter closes. Detail-level cases live in EventingDetailTest /
+    // before the filter closes. Detail-level cases live in EventFilterWindowTest /
     // EventFilterSupportTest.
     withRealTemporaryResourceCache();
 
