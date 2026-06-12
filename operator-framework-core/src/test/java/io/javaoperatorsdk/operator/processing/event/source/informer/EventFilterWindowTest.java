@@ -33,7 +33,7 @@ class EventFilterWindowTest {
 
   static final ResourceID RESOURCE_ID = new ResourceID("id1", "default");
 
-  EventFilterWindow eventFilterWindow = new EventFilterWindow(null);
+  EventFilterWindow eventFilterWindow = new EventFilterWindow(false);
 
   // todo ensure real call scenarios
 
@@ -486,7 +486,7 @@ class EventFilterWindowTest {
   void reListBeforeUpdateStarted() {
     eventFilterWindow.increaseActiveUpdates();
     eventFilterWindow.addToOwnResourceVersions(s(FIRST_OWN_VERSION));
-    eventFilterWindow.setReListStartedFrom(s(FIRST_OWN_VERSION - 1));
+    eventFilterWindow.setReListStarted();
     eventFilterWindow.addRelatedEvent(updateEvent(FIRST_OWN_VERSION));
     eventFilterWindow.setReListFinished();
 
@@ -503,7 +503,7 @@ class EventFilterWindowTest {
     eventFilterWindow.increaseActiveUpdates();
     eventFilterWindow.addToOwnResourceVersions(s(FIRST_OWN_VERSION));
     eventFilterWindow.addRelatedEvent(updateEvent(FIRST_OWN_VERSION));
-    eventFilterWindow.setReListStartedFrom(s(FIRST_OWN_VERSION));
+    eventFilterWindow.setReListStarted();
     eventFilterWindow.addRelatedEvent(updateEvent(FIRST_OWN_VERSION + 1));
     eventFilterWindow.setReListFinished();
 
@@ -524,7 +524,7 @@ class EventFilterWindowTest {
 
     eventFilterWindow.increaseActiveUpdates();
     eventFilterWindow.addToOwnResourceVersions(s(FIRST_OWN_VERSION + 1));
-    eventFilterWindow.setReListStartedFrom(s(FIRST_OWN_VERSION));
+    eventFilterWindow.setReListStarted();
     eventFilterWindow.addRelatedEvent(updateEvent(FIRST_OWN_VERSION + 1));
     eventFilterWindow.setReListFinished();
 

@@ -258,6 +258,7 @@ public class TemporaryResourceCache<T extends HasMetadata> {
   }
 
   public synchronized void setRelistFinished(String syncResourceVersions) {
-    eventFilteringSupport.setRelistFinished(syncResourceVersions);
+    // turned off until client support
+    //    eventFilteringSupport.setRelistFinished();
   }
 }
