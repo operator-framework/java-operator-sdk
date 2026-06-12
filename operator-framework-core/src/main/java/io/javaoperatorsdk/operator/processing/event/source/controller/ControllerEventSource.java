@@ -31,8 +31,8 @@ import io.javaoperatorsdk.operator.processing.event.ResourceID;
 import io.javaoperatorsdk.operator.processing.event.source.ResourceAction;
 import io.javaoperatorsdk.operator.processing.event.source.filter.OnDeleteFilter;
 import io.javaoperatorsdk.operator.processing.event.source.filter.OnUpdateFilter;
+import io.javaoperatorsdk.operator.processing.event.source.informer.GenericResourceEvent;
 import io.javaoperatorsdk.operator.processing.event.source.informer.ManagedInformerEventSource;
-import io.javaoperatorsdk.operator.processing.event.source.informer.TemporaryResourceCache.EventHandling;
 
 import static io.javaoperatorsdk.operator.ReconcilerUtilsInternal.handleKubernetesClientException;
 import static io.javaoperatorsdk.operator.processing.event.source.controller.InternalEventFilters.*;
@@ -84,7 +84,7 @@ public class ControllerEventSource<T extends HasMetadata>
     try {
       if (log.isDebugEnabled()) {
         log.debug("Event received with action: {}", action);
-        log.trace("Event Old resource: {},\n new resource: {}", oldResource, resource);
+        log.debug("Event Old resource: {},\n new resource: {}", oldResource, resource);
       }
       MDCUtils.addResourceInfo(resource);
       controller.getEventSourceManager().broadcastOnResourceEvent(action, resource, oldResource);
@@ -141,11 +141,22 @@ public class ControllerEventSource<T extends HasMetadata>
       ResourceAction action, T oldCustomResource, T newCustomResource) {
     var handling =
         temporaryResourceCache.onAddOrUpdateEvent(action, newCustomResource, oldCustomResource);
-    if (handling == EventHandling.NEW) {
-      handleEvent(action, newCustomResource, oldCustomResource, null);
-    } else if (log.isDebugEnabled()) {
-      log.debug("{} event propagation for action: {}", handling, action);
-    }
+    handling.ifPresentOrElse(
+        this::handleEvent,
+        () -> {
+          if (log.isDebugEnabled()) {
+            log.debug("Skipping/deferring event propagation for action: {}", action);
+          }
+        });
+  }
+
+  @SuppressWarnings("unchecked")
+  private void handleEvent(GenericResourceEvent r) {
+    handleEvent(
+        r.getAction(),
+        (T) r.getResource().orElseThrow(),
+        (T) r.getPreviousResource().orElse(null),
+        r.getLastStateUnknow());
   }
 
   @Override
@@ -154,10 +165,10 @@ public class ControllerEventSource<T extends HasMetadata>
         resource,
         ResourceAction.DELETED,
         () -> {
-          temporaryResourceCache.onDeleteEvent(resource, deletedFinalStateUnknown);
+          var res = temporaryResourceCache.onDeleteEvent(resource, deletedFinalStateUnknown);
           // delete event is quite special here, that requires special care, since we clean up
           // caches on delete event.
-          handleEvent(ResourceAction.DELETED, resource, null, deletedFinalStateUnknown);
+          res.ifPresent(this::handleEvent);
         });
   }
 

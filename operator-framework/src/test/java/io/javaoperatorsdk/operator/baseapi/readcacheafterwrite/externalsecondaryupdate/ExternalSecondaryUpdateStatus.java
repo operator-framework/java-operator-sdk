@@ -13,16 +13,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.javaoperatorsdk.operator.baseapi.filterpatchevent;
+package io.javaoperatorsdk.operator.baseapi.readcacheafterwrite.externalsecondaryupdate;
 
-import io.fabric8.kubernetes.api.model.Namespaced;
-import io.fabric8.kubernetes.client.CustomResource;
-import io.fabric8.kubernetes.model.annotation.Group;
-import io.fabric8.kubernetes.model.annotation.ShortNames;
-import io.fabric8.kubernetes.model.annotation.Version;
+public class ExternalSecondaryUpdateStatus {
 
-@Group("sample.javaoperatorsdk")
-@Version("v1")
-@ShortNames("fpe")
-public class FilterPatchEventTestCustomResource
-    extends CustomResource<Void, FilterPatchEventTestCustomResourceStatus> implements Namespaced {}
+  private Integer reconciliations;
+
+  public Integer getReconciliations() {
+    return reconciliations;
+  }
+
+  public ExternalSecondaryUpdateStatus setReconciliations(Integer reconciliations) {
+    this.reconciliations = reconciliations;
+    return this;
+  }
+}

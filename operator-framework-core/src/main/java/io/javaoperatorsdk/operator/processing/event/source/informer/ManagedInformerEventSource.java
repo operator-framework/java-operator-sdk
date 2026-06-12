@@ -46,7 +46,6 @@ import io.javaoperatorsdk.operator.processing.MDCUtils;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
 import io.javaoperatorsdk.operator.processing.event.source.*;
 import io.javaoperatorsdk.operator.processing.event.source.ResourceAction;
-import io.javaoperatorsdk.operator.processing.event.source.controller.ResourceDeleteEvent;
 
 @SuppressWarnings("rawtypes")
 public abstract class ManagedInformerEventSource<
@@ -101,45 +100,19 @@ public abstract class ManagedInformerEventSource<
     try {
       temporaryResourceCache.startEventFilteringModify(id);
       updatedResource = updateMethod.apply(resourceToUpdate);
-      log.debug("Resource update successful");
       handleRecentResourceUpdate(id, updatedResource, resourceToUpdate);
+      log.debug("Caching resource update successful");
       return updatedResource;
     } finally {
-      var res =
-          temporaryResourceCache.doneEventFilterModify(
-              id,
-              updatedResource == null ? null : updatedResource.getMetadata().getResourceVersion());
-      var updatedForLambda = updatedResource;
+      var res = temporaryResourceCache.doneEventFilterModify(id);
       res.ifPresentOrElse(
           r -> {
-            R latestResource = (R) r.getResource().orElseThrow();
-            // as previous resource version we use the one from successful update, since
-            // we process new event here only if that is more recent then the event from our update.
-            // Note that this is equivalent with the scenario when an informer watch connection
-            // would reconnect and loose some events in between.
-            // If that update was not successful we still record the previous version from the
-            // actual event in the ExtendedResourceEvent.
-            R extendedResourcePrevVersion =
-                (r instanceof ExtendedResourceEvent)
-                    ? (R) ((ExtendedResourceEvent) r).getPreviousResource().orElse(null)
-                    : null;
-            R prevVersionOfResource =
-                updatedForLambda != null ? updatedForLambda : extendedResourcePrevVersion;
-            if (log.isDebugEnabled()) {
-              log.debug(
-                  "Previous resource version: {} resource from update present: {}"
-                      + " extendedPrevResource present: {}",
-                  prevVersionOfResource.getMetadata().getResourceVersion(),
-                  updatedForLambda != null,
-                  extendedResourcePrevVersion != null);
-            }
+            log.debug("Propagating not own event");
             handleEvent(
                 r.getAction(),
-                latestResource,
-                prevVersionOfResource,
-                (r instanceof ResourceDeleteEvent)
-                    ? ((ResourceDeleteEvent) r).isDeletedFinalStateUnknown()
-                    : null);
+                (R) r.getResource().orElseThrow(),
+                (R) r.getPreviousResource().orElse(null),
+                r.getLastStateUnknow());
           },
           () -> log.debug("No new event present after the filtering update"));
     }
@@ -173,8 +146,15 @@ public abstract class ManagedInformerEventSource<
 
   @Override
   public void onList(String resourceVersion, boolean remainedEmpty) {
+    temporaryResourceCache.setRelistFinished(resourceVersion);
     temporaryResourceCache.checkGhostResources();
   }
+
+  // should be enabled when related feature added to fabric8 client
+  //  @Override
+  //  public void onBeforeList(String lastSyncResourceVersion) {
+  //    temporaryResourceCache.setOngoingRelist(lastSyncResourceVersion);
+  //  }
 
   @Override
   public void handleRecentResourceUpdate(

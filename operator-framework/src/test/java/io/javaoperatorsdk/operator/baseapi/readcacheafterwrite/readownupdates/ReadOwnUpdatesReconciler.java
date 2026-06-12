@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.javaoperatorsdk.operator.baseapi.cachingfilteringupdate;
+package io.javaoperatorsdk.operator.baseapi.readcacheafterwrite.readownupdates;
 
 import java.util.List;
 import java.util.Map;
@@ -33,18 +33,16 @@ import io.javaoperatorsdk.operator.processing.event.source.EventSource;
 import io.javaoperatorsdk.operator.processing.event.source.informer.InformerEventSource;
 
 @ControllerConfiguration
-public class CachingFilteringUpdateReconciler
-    implements Reconciler<CachingFilteringUpdateCustomResource> {
+public class ReadOwnUpdatesReconciler implements Reconciler<ReadOwnUpdatesCustomResource> {
 
   public static final String RESOURCE_VERSION_INDEX = "resourceVersionIndex";
   private final AtomicBoolean issueFound = new AtomicBoolean(false);
 
-  private InformerEventSource<ConfigMap, CachingFilteringUpdateCustomResource> configMapEventSource;
+  private InformerEventSource<ConfigMap, ReadOwnUpdatesCustomResource> configMapEventSource;
 
   @Override
-  public UpdateControl<CachingFilteringUpdateCustomResource> reconcile(
-      CachingFilteringUpdateCustomResource resource,
-      Context<CachingFilteringUpdateCustomResource> context) {
+  public UpdateControl<ReadOwnUpdatesCustomResource> reconcile(
+      ReadOwnUpdatesCustomResource resource, Context<ReadOwnUpdatesCustomResource> context) {
     try {
       var updated = context.resourceOperations().serverSideApply(prepareCM(resource, 1));
       var cachedCM = context.getSecondaryResource(ConfigMap.class);
@@ -104,7 +102,7 @@ public class CachingFilteringUpdateReconciler
     }
   }
 
-  private static ConfigMap prepareCM(CachingFilteringUpdateCustomResource p, int num) {
+  private static ConfigMap prepareCM(ReadOwnUpdatesCustomResource p, int num) {
     var cm =
         new ConfigMapBuilder()
             .withMetadata(
@@ -119,12 +117,12 @@ public class CachingFilteringUpdateReconciler
   }
 
   @Override
-  public List<EventSource<?, CachingFilteringUpdateCustomResource>> prepareEventSources(
-      EventSourceContext<CachingFilteringUpdateCustomResource> context) {
+  public List<EventSource<?, ReadOwnUpdatesCustomResource>> prepareEventSources(
+      EventSourceContext<ReadOwnUpdatesCustomResource> context) {
     configMapEventSource =
         new InformerEventSource<>(
             InformerEventSourceConfiguration.from(
-                    ConfigMap.class, CachingFilteringUpdateCustomResource.class)
+                    ConfigMap.class, ReadOwnUpdatesCustomResource.class)
                 .build(),
             context);
     configMapEventSource.addIndexers(
@@ -132,10 +130,10 @@ public class CachingFilteringUpdateReconciler
     return List.of(configMapEventSource);
   }
 
-  private void ensureStatusExists(CachingFilteringUpdateCustomResource resource) {
-    CachingFilteringUpdateStatus status = resource.getStatus();
+  private void ensureStatusExists(ReadOwnUpdatesCustomResource resource) {
+    ReadOwnUpdatesStatus status = resource.getStatus();
     if (status == null) {
-      status = new CachingFilteringUpdateStatus();
+      status = new ReadOwnUpdatesStatus();
       resource.setStatus(status);
     }
   }

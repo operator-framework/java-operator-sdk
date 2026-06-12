@@ -15,8 +15,6 @@
  */
 package io.javaoperatorsdk.operator.processing.event.source.informer;
 
-import java.util.Collections;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
@@ -29,8 +27,6 @@ import io.javaoperatorsdk.operator.ReconcilerUtilsInternal;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependentResource;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
 import io.javaoperatorsdk.operator.processing.event.source.ResourceAction;
-import io.javaoperatorsdk.operator.processing.event.source.controller.ResourceDeleteEvent;
-import io.javaoperatorsdk.operator.processing.event.source.controller.ResourceEvent;
 
 /**
  * Temporal cache is used to solve the problem for {@link KubernetesDependentResource} that is, when
@@ -50,23 +46,26 @@ import io.javaoperatorsdk.operator.processing.event.source.controller.ResourceEv
  *
  * <p>If comparable resource versions are disabled, then this cache is effectively disabled.
  *
+ * <p>Some principles to realize with the current filtering algorithm:
+ *
+ * <ul>
+ *   <li>We propagate events only if we received an event that has the same resourceVersion or newer
+ *       than resource version from update
+ *   <li>The propagated event should correspond to a possible real world scenario - considering also
+ *       ones that could happen if the Informer does a re-list.
+ * </ul>
+ *
  * @param <T> resource to cache.
  */
 public class TemporaryResourceCache<T extends HasMetadata> {
 
   private static final Logger log = LoggerFactory.getLogger(TemporaryResourceCache.class);
 
-  private final Map<ResourceID, T> cache = new ConcurrentHashMap<>();
-  private final Map<ResourceID, EventFilterDetails> activeUpdates = new HashMap<>();
   private final boolean comparableResourceVersions;
+  private final Map<ResourceID, T> cache = new ConcurrentHashMap<>();
+  private final EventFilterSupport eventFilteringSupport = new EventFilterSupport();
 
   private final ManagedInformerEventSource<T, ?, ?> managedInformerEventSource;
-
-  public enum EventHandling {
-    DEFER,
-    OBSOLETE,
-    NEW
-  }
 
   public TemporaryResourceCache(
       boolean comparableResourceVersions,
@@ -79,86 +78,53 @@ public class TemporaryResourceCache<T extends HasMetadata> {
     if (!comparableResourceVersions) {
       return;
     }
-    var ed = activeUpdates.computeIfAbsent(resourceID, id -> new EventFilterDetails());
-    ed.increaseActiveUpdates();
+    eventFilteringSupport.startEventFilteringModify(resourceID);
   }
 
-  public synchronized Optional<ResourceEvent> doneEventFilterModify(
-      ResourceID resourceID, String updatedResourceVersion) {
+  public synchronized Optional<GenericResourceEvent> doneEventFilterModify(ResourceID resourceID) {
     if (!comparableResourceVersions) {
       return Optional.empty();
     }
-    var ed = activeUpdates.get(resourceID);
-    if (ed == null || !ed.decreaseActiveUpdates(updatedResourceVersion)) {
-      log.debug(
-          "Active updates {} for resource id: {}",
-          ed != null ? ed.getActiveUpdates() : 0,
-          resourceID);
-      return Optional.empty();
-    }
-    activeUpdates.remove(resourceID);
-    var res = ed.getLatestEventAfterLastUpdateEvent();
-    log.debug(
-        "Zero active updates for resource id: {}; event after update event: {}; updated resource"
-            + " version: {}",
-        resourceID,
-        res.isPresent(),
-        updatedResourceVersion);
-    return res;
+    return eventFilteringSupport.doneEventFilterModify(resourceID);
   }
 
-  public void onDeleteEvent(T resource, boolean unknownState) {
-    onEvent(ResourceAction.DELETED, resource, null, unknownState, true);
+  public Optional<GenericResourceEvent> onDeleteEvent(T resource, boolean unknownState) {
+    return onEvent(ResourceAction.DELETED, resource, null, unknownState);
   }
 
-  public EventHandling onAddOrUpdateEvent(
+  public Optional<GenericResourceEvent> onAddOrUpdateEvent(
       ResourceAction action, T resource, T prevResourceVersion) {
-    return onEvent(action, resource, prevResourceVersion, false, false);
+    return onEvent(action, resource, prevResourceVersion, null);
   }
 
-  private synchronized EventHandling onEvent(
-      ResourceAction action,
-      T resource,
-      T prevResourceVersion,
-      boolean unknownState,
-      boolean delete) {
+  private synchronized Optional<GenericResourceEvent> onEvent(
+      ResourceAction action, T resource, T prevResourceVersion, Boolean unknownState) {
+    GenericResourceEvent actualEvent =
+        toGenericResourceEvent(action, resource, prevResourceVersion, unknownState);
     if (!comparableResourceVersions) {
-      return EventHandling.NEW;
+      return Optional.of(actualEvent);
     }
-
     var resourceId = ResourceID.fromResource(resource);
     if (log.isDebugEnabled()) {
       log.debug("Processing event");
     }
     var cached = cache.get(resourceId);
-    EventHandling result = EventHandling.NEW;
     if (cached != null) {
       int comp = ReconcilerUtilsInternal.compareResourceVersions(resource, cached);
-      if (comp >= 0 || unknownState) {
+      if (comp >= 0 || Boolean.TRUE.equals(unknownState)) {
         log.debug(
             "Removing resource from temp cache. comparison: {} unknown state: {}",
             comp,
             unknownState);
         cache.remove(resourceId);
-        // we propagate event only for our update or newer other can be discarded since we know we
-        // will receive
-        // additional event
-        result = comp == 0 ? EventHandling.OBSOLETE : EventHandling.NEW;
-      } else {
-        result = EventHandling.OBSOLETE;
       }
     }
-    var ed = activeUpdates.get(resourceId);
-    if (ed != null && result != EventHandling.OBSOLETE) {
-      log.debug("Setting last event for id: {} delete: {}", resourceId, delete);
-      ed.setLastEvent(
-          delete
-              ? new ResourceDeleteEvent(ResourceAction.DELETED, resourceId, resource, unknownState)
-              : new ExtendedResourceEvent(action, resourceId, resource, prevResourceVersion));
-      return EventHandling.DEFER;
-    } else {
-      return result;
-    }
+    return eventFilteringSupport.processEvent(resourceId, actualEvent);
+  }
+
+  static <T extends HasMetadata> GenericResourceEvent toGenericResourceEvent(
+      ResourceAction action, T resource, T prevResourceVersion, Boolean unknownState) {
+    return new GenericResourceEvent(action, resource, prevResourceVersion, unknownState);
   }
 
   /** put the item into the cache if it's for a later state than what has already been observed. */
@@ -177,6 +143,17 @@ public class TemporaryResourceCache<T extends HasMetadata> {
           resourceId);
       return;
     }
+
+    // also make sure that we're later than the existing temporary entry — compare
+    // against the temp cache directly; using managedInformerEventSource.get() here
+    // would fall back to the informer cache and skip the put when this resource's
+    // latest RV in informer is the SSA result already (or, more subtly, when
+    // namespace-level lastSyncResourceVersion is ahead due to OTHER resources),
+    // breaking read-cache-after-write consistency for byIndex/list lookups that
+    // run before the watch event for the new RV reaches the indexer.
+    var cachedResource = getResourceFromCache(resourceId).orElse(null);
+    eventFilteringSupport.addToOwnResourceVersions(
+        resourceId, newResource.getMetadata().getResourceVersion());
 
     var ns = newResource.getMetadata().getNamespace();
     // this can happen when we dynamically change the followed namespace list
@@ -206,9 +183,6 @@ public class TemporaryResourceCache<T extends HasMetadata> {
       return;
     }
 
-    // also make sure that we're later than the existing temporary entry
-    var cachedResource = getResourceFromCache(resourceId).orElse(null);
-
     if (cachedResource == null
         || ReconcilerUtilsInternal.compareResourceVersions(newResource, cachedResource) > 0) {
       log.debug(
@@ -231,7 +205,7 @@ public class TemporaryResourceCache<T extends HasMetadata> {
    * explicitly add resources to this cache. Those are cleaned up by this check, which is triggered
    * by the informer's onList callback.
    */
-  public void checkGhostResources() {
+  public synchronized void checkGhostResources() {
     log.debug("Checking for ghost resources.");
     var iterator = cache.entrySet().iterator();
     while (iterator.hasNext()) {
@@ -246,19 +220,18 @@ public class TemporaryResourceCache<T extends HasMetadata> {
             e.getKey(),
             ns);
         iterator.remove();
+        eventFilteringSupport.handleGhostResourceRemoval(e.getKey());
         continue;
       }
       if ((ReconcilerUtilsInternal.compareResourceVersions(
                   e.getValue().getMetadata().getResourceVersion(), getLastSyncResourceVersion(ns))
               < 0)
           // making sure we have the situation where resource is missing from the cache
-          && managedInformerEventSource
-              .manager()
-              .get(ResourceID.fromResource(e.getValue()))
-              .isEmpty()) {
-        iterator.remove();
-        managedInformerEventSource.handleEvent(ResourceAction.DELETED, e.getValue(), null, true);
+          && managedInformerEventSource.manager().get(e.getKey()).isEmpty()) {
         log.debug("Removing ghost resource with ID: {}", e.getKey());
+        iterator.remove();
+        eventFilteringSupport.handleGhostResourceRemoval(e.getKey());
+        managedInformerEventSource.handleEvent(ResourceAction.DELETED, e.getValue(), null, true);
       }
     }
   }
@@ -272,6 +245,20 @@ public class TemporaryResourceCache<T extends HasMetadata> {
   }
 
   synchronized Map<ResourceID, T> getResources() {
-    return Collections.unmodifiableMap(cache);
+    return Map.copyOf(cache);
+  }
+
+  // for testing purposes
+  synchronized EventFilterSupport getEventFilterSupport() {
+    return eventFilteringSupport;
+  }
+
+  public synchronized void setOngoingRelist(String lastKnownSyncVersion) {
+    eventFilteringSupport.setStartingReList();
+  }
+
+  public synchronized void setRelistFinished(String syncResourceVersions) {
+    // turned off until client support
+    //    eventFilteringSupport.setRelistFinished();
   }
 }

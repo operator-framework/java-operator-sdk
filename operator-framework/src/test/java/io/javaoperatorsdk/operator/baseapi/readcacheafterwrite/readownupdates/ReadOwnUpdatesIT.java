@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.javaoperatorsdk.operator.baseapi.cachingfilteringupdate;
+package io.javaoperatorsdk.operator.baseapi.readcacheafterwrite.readownupdates;
 
 import java.time.Duration;
 
@@ -26,10 +26,10 @@ import io.javaoperatorsdk.operator.junit.LocallyRunOperatorExtension;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
 
-class CachingFilteringUpdateIT {
+class ReadOwnUpdatesIT {
 
   public static final int RESOURCE_NUMBER = 250;
-  CachingFilteringUpdateReconciler reconciler = new CachingFilteringUpdateReconciler();
+  ReadOwnUpdatesReconciler reconciler = new ReadOwnUpdatesReconciler();
 
   @RegisterExtension
   LocallyRunOperatorExtension operator =
@@ -52,26 +52,25 @@ class CachingFilteringUpdateIT {
               // Use a single representative resource to detect that updates have completed.
               var res =
                   operator.get(
-                      CachingFilteringUpdateCustomResource.class,
-                      "resource" + (RESOURCE_NUMBER - 1));
+                      ReadOwnUpdatesCustomResource.class, "resource" + (RESOURCE_NUMBER - 1));
               return res != null
                   && res.getStatus() != null
                   && Boolean.TRUE.equals(res.getStatus().getUpdated());
             });
 
-    if (operator.getReconcilerOfType(CachingFilteringUpdateReconciler.class).isIssueFound()) {
+    if (operator.getReconcilerOfType(ReadOwnUpdatesReconciler.class).isIssueFound()) {
       throw new IllegalStateException("Error already found.");
     }
 
     for (int i = 0; i < RESOURCE_NUMBER; i++) {
-      var res = operator.get(CachingFilteringUpdateCustomResource.class, "resource" + i);
+      var res = operator.get(ReadOwnUpdatesCustomResource.class, "resource" + i);
       assertThat(res.getStatus()).isNotNull();
       assertThat(res.getStatus().getUpdated()).isTrue();
     }
   }
 
-  public CachingFilteringUpdateCustomResource createCustomResource(int i) {
-    CachingFilteringUpdateCustomResource resource = new CachingFilteringUpdateCustomResource();
+  public ReadOwnUpdatesCustomResource createCustomResource(int i) {
+    ReadOwnUpdatesCustomResource resource = new ReadOwnUpdatesCustomResource();
     resource.setMetadata(
         new ObjectMetaBuilder()
             .withName("resource" + i)

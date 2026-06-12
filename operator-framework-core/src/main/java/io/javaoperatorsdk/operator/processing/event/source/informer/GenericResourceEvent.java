@@ -24,26 +24,33 @@ import io.javaoperatorsdk.operator.processing.event.source.ResourceAction;
 import io.javaoperatorsdk.operator.processing.event.source.controller.ResourceEvent;
 
 /** Used only for resource event filtering. */
-public class ExtendedResourceEvent extends ResourceEvent {
+public class GenericResourceEvent extends ResourceEvent {
 
   private final HasMetadata previousResource;
+  private final Boolean lastStateUnknow;
+  private boolean partOfReList = false;
 
-  public ExtendedResourceEvent(
+  public GenericResourceEvent(
       ResourceAction action,
-      ResourceID resourceID,
       HasMetadata latestResource,
-      HasMetadata previousResource) {
-    super(action, resourceID, latestResource);
+      HasMetadata previousResource,
+      Boolean lastStateUnknow) {
+    super(action, ResourceID.fromResource(latestResource), latestResource);
     this.previousResource = previousResource;
+    this.lastStateUnknow = lastStateUnknow;
   }
 
   public Optional<HasMetadata> getPreviousResource() {
     return Optional.ofNullable(previousResource);
   }
 
+  public Boolean getLastStateUnknow() {
+    return lastStateUnknow;
+  }
+
   @Override
   public String toString() {
-    return "ExtendedResourceEvent{"
+    return "GenericResourceEvent{"
         + getPreviousResource()
             .map(r -> "previousResourceVersion=" + r.getMetadata().getResourceVersion())
             .orElse("")
@@ -61,12 +68,24 @@ public class ExtendedResourceEvent extends ResourceEvent {
   public boolean equals(Object o) {
     if (o == null || getClass() != o.getClass()) return false;
     if (!super.equals(o)) return false;
-    ExtendedResourceEvent that = (ExtendedResourceEvent) o;
+    GenericResourceEvent that = (GenericResourceEvent) o;
     return Objects.equals(previousResource, that.previousResource);
   }
 
   @Override
   public int hashCode() {
     return Objects.hash(super.hashCode(), previousResource);
+  }
+
+  public long getResourceVersion() {
+    return Long.parseLong(getResource().orElseThrow().getMetadata().getResourceVersion());
+  }
+
+  public boolean isPartOfReList() {
+    return partOfReList;
+  }
+
+  public void setPartOfReList(boolean partOfReList) {
+    this.partOfReList = partOfReList;
   }
 }

@@ -13,9 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.javaoperatorsdk.operator.baseapi.cachingfilteringupdate;
+package io.javaoperatorsdk.operator.baseapi.readcacheafterwrite.readownupdates;
 
-public class CachingFilteringUpdateStatus {
+public class ReadOwnUpdatesStatus {
 
   private Boolean updated;
 
