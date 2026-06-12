@@ -167,7 +167,7 @@ class EventFilterWindow {
     return getLastRelatedEvent(relatedEvents);
   }
 
-  public synchronized boolean canRemoved() {
+  public synchronized boolean canBeRemoved() {
     if (activeUpdates == 0 && ownResourceVersions.isEmpty() && relatedEvents.isEmpty()) {
       return true;
     }

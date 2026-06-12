@@ -150,6 +150,7 @@ public abstract class ManagedInformerEventSource<
     temporaryResourceCache.checkGhostResources();
   }
 
+  // todo
   //  @Override
   //  public void onBeforeList(String lastSyncResourceVersion) {
   //    temporaryResourceCache.setOngoingRelist(lastSyncResourceVersion);
