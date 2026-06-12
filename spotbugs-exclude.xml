@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+
+    Copyright Java Operator SDK Authors
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+            http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+-->
+<FindBugsFilter>
+  <!--
+    Exposing/storing internal representation. This SDK intentionally shares references
+    (caches, primary resource, builder-held collections) for performance and by design;
+    defensive copies would change behavior. Treated as noise project-wide.
+  -->
+  <Match>
+    <Bug pattern="EI_EXPOSE_REP,EI_EXPOSE_REP2"/>
+  </Match>
+
+  <!--
+    Constructor may throw before object is fully constructed (finalizer-attack hardening,
+    Java 17+). None of these classes declare a finalizer, so the attack vector does not apply.
+  -->
+  <Match>
+    <Bug pattern="CT_CONSTRUCTOR_THROW"/>
+  </Match>
+
+  <!-- Intentional: losing leadership terminates the process. -->
+  <Match>
+    <Class name="io.javaoperatorsdk.operator.LeaderElectionManager"/>
+    <Bug pattern="DM_EXIT"/>
+  </Match>
+
+  <!-- Intentional tri-state (true/false/undefined) modelled with a nullable Boolean. -->
+  <Match>
+    <Class name="io.javaoperatorsdk.operator.processing.dependent.kubernetes.BooleanWithUndefined"/>
+    <Bug pattern="NP_BOOLEAN_RETURN_NULL"/>
+  </Match>
+
+  <!-- equals() is intentionally inherited from GroupVersionKind; plural is not part of identity. -->
+  <Match>
+    <Class name="io.javaoperatorsdk.operator.processing.dependent.kubernetes.GroupVersionKindPlural"/>
+    <Bug pattern="EQ_DOESNT_OVERRIDE_EQUALS"/>
+  </Match>
+
+  <!-- Package-private constructor is required for testing the matcher. -->
+  <Match>
+    <Class name="io.javaoperatorsdk.operator.processing.dependent.kubernetes.SSABasedGenericKubernetesResourceMatcher"/>
+    <Bug pattern="SING_SINGLETON_HAS_NONPRIVATE_CONSTRUCTOR"/>
+  </Match>
+
+  <!--
+    Not a singleton: ConfigLoader exposes a static DEFAULT convenience instance via getDefault(),
+    but is part of the public API and is meant to be instantiated with custom ConfigProviders
+    through its public constructors. The singleton heuristic is a false positive here.
+  -->
+  <Match>
+    <Class name="io.javaoperatorsdk.operator.config.loader.ConfigLoader"/>
+    <Bug pattern="SING_SINGLETON_HAS_NONPRIVATE_CONSTRUCTOR"/>
+  </Match>
+</FindBugsFilter>

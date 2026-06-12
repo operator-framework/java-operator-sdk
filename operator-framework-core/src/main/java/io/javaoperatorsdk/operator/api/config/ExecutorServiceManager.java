@@ -132,7 +132,7 @@ public class ExecutorServiceManager {
     return scheduledExecutorService;
   }
 
-  public void start(ConfigurationService configurationService) {
+  public synchronized void start(ConfigurationService configurationService) {
     if (!started) {
       this.configurationService = configurationService; // used to lazy init workflow executor
       this.cachingExecutorService = Executors.newCachedThreadPool();
@@ -142,7 +142,7 @@ public class ExecutorServiceManager {
     }
   }
 
-  public void stop(Duration gracefulShutdownTimeout) {
+  public synchronized void stop(Duration gracefulShutdownTimeout) {
     try {
       log.debug("Closing executor");
       var parallelExec = Executors.newFixedThreadPool(3);
