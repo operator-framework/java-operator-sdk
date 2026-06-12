@@ -539,6 +539,34 @@ class EventFilterWindowTest {
     assertThat(eventFilterWindow.canBeRemoved()).isTrue();
   }
 
+  @Test
+  void combinedCaseWithEarlyEvent() {
+    // Scenario: an own write is in flight (RV recorded), a foreign event with a
+    // lower RV arrives, then the write completes (active → 0) but no echo for
+    // our own RV ever arrives. The held foreign event must surface — otherwise
+    // the window wedges (canRemoved stays false because relatedEvents is not
+    // empty) and the reconciler never learns about the foreign change.
+    eventFilterWindow.increaseActiveUpdates();
+    eventFilterWindow.addToOwnResourceVersions(s(FIRST_OWN_VERSION));
+    eventFilterWindow.addRelatedEvent(updateEvent(FIRST_OWN_VERSION - 2));
+
+    // Held while the write is in flight.
+    assertThat(eventFilterWindow.check()).isEmpty();
+
+    // Write completes, no echo for own=[FIRST_OWN_VERSION] ever arrived.
+    eventFilterWindow.decreaseActiveUpdates();
+
+    eventFilterWindow.setReListStarted();
+    eventFilterWindow.addRelatedEvent(updateEvent(FIRST_OWN_VERSION));
+    // The foreign event must surface now.
+    eventFilterWindow.setReListFinished();
+    assertThat(eventFilterWindow.check())
+        .hasValueSatisfying(e -> assertUpdateEvent(e, FIRST_OWN_VERSION, FIRST_OWN_VERSION - 3));
+
+    assertEmptyState();
+    assertThat(eventFilterWindow.canBeRemoved()).isTrue();
+  }
+
   void assertUpdateEvent(GenericResourceEvent event, Long resourceVersion) {
     assertUpdateEvent(event, resourceVersion, resourceVersion - 1);
   }
