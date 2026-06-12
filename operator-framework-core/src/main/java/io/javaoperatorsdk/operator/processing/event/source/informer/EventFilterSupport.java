@@ -54,7 +54,7 @@ public class EventFilterSupport {
   private Optional<GenericResourceEvent> check(
       EventFilterWindow eventFilterWindow, ResourceID resourceID) {
     var res = eventFilterWindow.check();
-    if (eventFilterWindow.canRemoved()) {
+    if (eventFilterWindow.canBeRemoved()) {
       eventFilterWindows.remove(resourceID);
     }
     return res;
