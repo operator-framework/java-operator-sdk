@@ -199,6 +199,41 @@ class ControllerEventSourceTest
     await().untilAsserted(() -> expectHandleEvent(3, 2));
   }
 
+  @Test
+  void deleteEventDuringFilteringPropagatesAsDelete() {
+    // A DELETE arriving during the filter window must surface — the resource has gone,
+    // so the filter must not silence it just because our own write is still tracking RVs.
+    source = spy(new ControllerEventSource<>(new TestController(null, null, null)));
+    setUpSource(source, true, controllerConfig);
+
+    var latch = sendForEventFilteringUpdate(2);
+    source.onDelete(testResourceWithVersion(3), false);
+    latch.countDown();
+
+    await()
+        .untilAsserted(
+            () -> {
+              verify(eventHandler, atLeastOnce()).handleEvent(any());
+              verify(source, atLeastOnce())
+                  .handleEvent(eq(ResourceAction.DELETED), any(), any(), any());
+            });
+  }
+
+  @Test
+  void multipleForeignEventsDuringFilteringMergeIntoSingleEvent() {
+    // Several external events during one filter window collapse into a single
+    // synthesized event spanning prev → latest seen.
+    source = spy(new ControllerEventSource<>(new TestController(null, null, null)));
+    setUpSource(source, true, controllerConfig);
+
+    var latch = sendForEventFilteringUpdate(2);
+    source.onUpdate(testResourceWithVersion(2), testResourceWithVersion(3));
+    source.onUpdate(testResourceWithVersion(3), testResourceWithVersion(4));
+    latch.countDown();
+
+    await().untilAsserted(() -> expectHandleEvent(4, 2));
+  }
+
   private void expectHandleEvent(int newResourceVersion, int oldResourceVersion) {
     verify(eventHandler, times(1)).handleEvent(any());
     verify(source, times(1))

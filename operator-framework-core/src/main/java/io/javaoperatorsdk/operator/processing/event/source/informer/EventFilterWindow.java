@@ -59,6 +59,23 @@ class EventFilterWindow {
   //   already started. We should emit the synth event from this check method as soon as we received
   //   an event that has same resource version or newer as our resource
   public synchronized Optional<GenericResourceEvent> check() {
+    String stateSnapshot =
+        log.isDebugEnabled()
+            ? String.format(
+                "relatedEvents=%s, ownResourceVersions=%s, activeUpdates=%d, reListOnGoing=%s",
+                relatedEvents.keySet(), ownResourceVersions, activeUpdates, reListOnGoing)
+            : null;
+    Optional<GenericResourceEvent> result = doCheck();
+    if (log.isDebugEnabled()) {
+      log.debug(
+          "check() input state: {} → outcome: {}",
+          stateSnapshot,
+          result.map(GenericResourceEvent::toString).orElse("empty"));
+    }
+    return result;
+  }
+
+  private Optional<GenericResourceEvent> doCheck() {
     if (relatedEvents.isEmpty()) {
       return Optional.empty();
     }

@@ -179,6 +179,11 @@ From this point the idea of the algorithm is very simple:
 2. When the informer propagates an event, check if its resource version is greater than or equal to
    the one in the TRC. If yes, evict the resource from the TRC.
 3. When the controller reads a resource from cache, it checks the TRC first, then falls back to the Informer's cache.
+
+The actual filtering of events for our own writes is more nuanced than a simple
+"evict on RV ≥ TRC version" rule — it is driven by a per-resource state machine
+that tracks in-flight writes and the events received around them. See
+[Filtering events for our own updates](#filtering-events-for-our-own-updates) below.
     
 
 ```mermaid
@@ -221,13 +226,38 @@ sequenceDiagram
 When we update a resource, eventually the informer will propagate an event that would trigger a reconciliation.
 However, this is mostly not desired. Since we already have the up-to-date resource at that point,
 we would like to be notified only if the resource is changed after our change.
-Therefore, in addition to caching the resource, we also filter out events that contain a resource
-version older than or equal to our cached resource version.
 
-Note that the implementation of this is relatively complex, since while performing the update we want to record all the
-events received in the meantime and decide whether to propagate them further once the update request is complete.
+The framework runs a per-resource *event filter window* around each in-flight
+write: it records the resource version returned by our update, buffers any
+related events that arrive in the meantime, and at the end of the window
+decides what (if anything) to surface to the reconciler. The rules:
 
-However, this way we significantly reduce the number of reconciliations, making the whole process much more efficient.  
+- **Pure own echo**: if the only events in the window are watch events whose
+  resource versions match our recorded own writes (and the action is `UPDATED`),
+  they are filtered out — the reconciler isn't bothered.
+- **Foreign change in the window**: if a resource version arrived that was *not*
+  one of our own writes — e.g. a third party modified the resource between two
+  of our updates — the framework synthesizes a single `UPDATED` event covering
+  the whole window (`previousResource` = the resource just before the window,
+  `resource` = the latest known state). The reconciler is notified once, with a
+  faithful before/after picture, instead of receiving each underlying watch
+  event individually.
+- **DELETE in the middle**: if the resource was deleted at some point during
+  the window, that DELETE participates in the synthesis. A trailing `DELETED`
+  is surfaced verbatim; a DELETE-then-recreate inside the window collapses to
+  an `UPDATED` from the deleted state to the recreated state.
+- **Held foreign events**: a foreign event that arrives *before* the matching
+  own write echo is buffered until the write completes. This avoids
+  surfacing it as foreign only to immediately overwrite it with a synthesized
+  echo.
+- **ReList**: events arriving while the informer is performing a relist are
+  tagged. Because a relist may have hidden events, the framework defaults to
+  surfacing such events to the reconciler rather than silently filtering
+  them — even when they would otherwise look like our own echoes.
+
+This way we significantly reduce the number of reconciliations, making the whole
+process much more efficient, while preserving the invariant that any
+foreign change reaches the reconciler.
 
 ### The case for instant reschedule
 

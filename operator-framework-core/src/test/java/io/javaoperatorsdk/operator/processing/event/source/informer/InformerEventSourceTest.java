@@ -510,6 +510,37 @@ class InformerEventSourceTest {
     verify(eventHandlerMock, never()).handleEvent(any());
   }
 
+  @Test
+  void foreignUpdateDuringOwnUpdateIsPropagated() {
+    // Sanity check that an external update arriving while our write is in flight
+    // is surfaced to the reconciler — it isn't an own echo, so the filter must
+    // let it through.
+    withRealTemporaryResourceCache();
+
+    CountDownLatch latch = sendForEventFilteringUpdate(2);
+    informerEventSource.onUpdate(
+        deploymentWithResourceVersion(2), deploymentWithResourceVersion(3));
+    latch.countDown();
+
+    expectHandleUpdateEvent(3, 2);
+  }
+
+  @Test
+  void deleteEventDuringOwnUpdateIsPropagated() {
+    // A DELETE arriving while our write is in flight must surface — the
+    // resource has gone, so the filter should not silence it just because our
+    // own write is still tracking RVs.
+    withRealTemporaryResourceCache();
+
+    CountDownLatch latch = sendForEventFilteringUpdate(2);
+    informerEventSource.onDelete(deploymentWithResourceVersion(3), false);
+    latch.countDown();
+
+    await()
+        .atMost(Duration.ofSeconds(1))
+        .untilAsserted(() -> verify(eventHandlerMock, atLeastOnce()).handleEvent(any()));
+  }
+
   private void assertNoEventProduced() {
     await()
         .pollDelay(Duration.ofMillis(70))
