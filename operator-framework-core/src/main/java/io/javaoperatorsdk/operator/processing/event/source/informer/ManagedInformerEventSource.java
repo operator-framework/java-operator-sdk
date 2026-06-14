@@ -150,11 +150,10 @@ public abstract class ManagedInformerEventSource<
     temporaryResourceCache.checkGhostResources();
   }
 
-  // should be enabled when related feature added to fabric8 client
-  //  @Override
-  //  public void onBeforeList(String lastSyncResourceVersion) {
-  //    temporaryResourceCache.setOngoingRelist(lastSyncResourceVersion);
-  //  }
+  @Override
+  public void onBeforeList(String lastSyncResourceVersion) {
+    temporaryResourceCache.setOngoingRelist(lastSyncResourceVersion);
+  }
 
   @Override
   public void handleRecentResourceUpdate(
