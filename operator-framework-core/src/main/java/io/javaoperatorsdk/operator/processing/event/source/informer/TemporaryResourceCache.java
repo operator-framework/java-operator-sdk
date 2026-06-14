@@ -144,17 +144,6 @@ public class TemporaryResourceCache<T extends HasMetadata> {
       return;
     }
 
-    // also make sure that we're later than the existing temporary entry — compare
-    // against the temp cache directly; using managedInformerEventSource.get() here
-    // would fall back to the informer cache and skip the put when this resource's
-    // latest RV in informer is the SSA result already (or, more subtly, when
-    // namespace-level lastSyncResourceVersion is ahead due to OTHER resources),
-    // breaking read-cache-after-write consistency for byIndex/list lookups that
-    // run before the watch event for the new RV reaches the indexer.
-    var cachedResource = getResourceFromCache(resourceId).orElse(null);
-    eventFilteringSupport.addToOwnResourceVersions(
-        resourceId, newResource.getMetadata().getResourceVersion());
-
     var ns = newResource.getMetadata().getNamespace();
     // this can happen when we dynamically change the followed namespace list
     if (!managedInformerEventSource.manager().isWatchingNamespace(ns)) {
@@ -164,6 +153,10 @@ public class TemporaryResourceCache<T extends HasMetadata> {
           ns);
       return;
     }
+
+    var cachedResource = getResourceFromCache(resourceId).orElse(null);
+    eventFilteringSupport.addToOwnResourceVersions(
+        resourceId, newResource.getMetadata().getResourceVersion());
 
     // check against the latestResourceVersion processed by the TemporaryResourceCache
     // If the resource is older, then we can safely ignore.
