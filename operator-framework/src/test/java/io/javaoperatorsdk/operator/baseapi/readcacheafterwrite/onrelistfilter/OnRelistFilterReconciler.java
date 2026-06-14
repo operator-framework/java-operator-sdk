@@ -160,7 +160,8 @@ public class OnRelistFilterReconciler implements Reconciler<OnRelistFilterCustom
     }
 
     void simulateOnBeforeList() {
-      onBeforeList(null);
+      // uncomment when fabric8 supports re-list
+      //      onBeforeList(null);
     }
 
     void simulateOnList() {
