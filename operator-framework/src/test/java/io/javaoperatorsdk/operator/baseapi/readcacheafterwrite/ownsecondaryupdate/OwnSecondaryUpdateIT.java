@@ -17,6 +17,7 @@ package io.javaoperatorsdk.operator.baseapi.readcacheafterwrite.ownsecondaryupda
 
 import java.time.Duration;
 
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
@@ -32,6 +33,7 @@ import static org.awaitility.Awaitility.await;
  * the secondary are filtered and do NOT trigger additional reconciliations. Counterpart to {@code
  * ExternalSecondaryUpdateIT}, which asserts the opposite for third-party updates.
  */
+@Disabled("enable if re-list notification supported by fabric8 client")
 class OwnSecondaryUpdateIT {
 
   static final String RESOURCE_NAME = "test-resource";
