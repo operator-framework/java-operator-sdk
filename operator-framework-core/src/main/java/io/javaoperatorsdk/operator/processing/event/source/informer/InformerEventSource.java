@@ -127,9 +127,6 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
           if (resultEvent.isEmpty()) {
             return;
           }
-          if (resultEvent.orElseThrow().getAction() != ResourceAction.DELETED) {
-            log.warn("Non delete event received on onDelete handling. This should not happen.");
-          }
           primaryToSecondaryIndex.onDelete(resource);
           if (acceptedByDeleteFilters(resource, deletedFinalStateUnknown)) {
             propagateEvent(resource);
@@ -140,6 +137,12 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
   @Override
   protected void handleEvent(
       ResourceAction action, R resource, R oldResource, Boolean deletedFinalStateUnknown) {
+    // this is called only from ManagedInformerEventSource#eventFilteringUpdateAndCacheResource
+    // we want to skip delete when the delete event filtered out, but update the index if
+    // an actual event is propagated
+    if (action == ResourceAction.DELETED) {
+      primaryToSecondaryIndex.onDelete(resource);
+    }
     propagateEvent(resource);
   }
 
@@ -154,6 +157,7 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
     manager().list().forEach(primaryToSecondaryIndex::onAddOrUpdate);
   }
 
+  @SuppressWarnings("unchecked")
   private synchronized void onAddOrUpdate(ResourceAction action, R newObject, R oldObject) {
     primaryToSecondaryIndex.onAddOrUpdate(newObject);
     var resourceID = ResourceID.fromResource(newObject);
@@ -167,11 +171,7 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
           "Propagating event for {}, resource with same version not result of a our update.",
           action);
       var event = resultEvent.get();
-      handleEvent(
-          event.getAction(),
-          (R) event.getResource().orElseThrow(),
-          (R) event.getPreviousResource().orElse(null),
-          event.getLastStateUnknow());
+      propagateEvent((R) event.getResource().orElseThrow());
     } else {
       log.debug("Event filtered out for operation: {}, resourceID: {}", action, resourceID);
     }

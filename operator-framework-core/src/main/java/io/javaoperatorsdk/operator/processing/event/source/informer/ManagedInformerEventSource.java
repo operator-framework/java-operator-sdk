@@ -153,9 +153,9 @@ public abstract class ManagedInformerEventSource<
 
   //  @Override (enable when
   //  re-list supported by fabric8 client https://github.com/fabric8io/kubernetes-client/pull/7899
-  public void onBeforeList(String lastSyncResourceVersion) {
-    //    temporaryResourceCache.setOngoingRelist(lastSyncResourceVersion);
-  }
+  //  public void onBeforeList(String lastSyncResourceVersion) {
+  //    temporaryResourceCache.setOngoingRelist(lastSyncResourceVersion);
+  //  }
 
   @Override
   public void handleRecentResourceUpdate(

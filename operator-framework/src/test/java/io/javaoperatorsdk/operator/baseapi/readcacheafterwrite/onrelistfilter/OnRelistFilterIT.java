@@ -17,6 +17,7 @@ package io.javaoperatorsdk.operator.baseapi.readcacheafterwrite.onrelistfilter;
 
 import java.time.Duration;
 
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
@@ -36,6 +37,7 @@ import static org.awaitility.Awaitility.await;
  *   <li>re-list starts WHILE the update window is open — own write is propagated
  * </ul>
  */
+@Disabled("enable when fabric8 supports relist")
 class OnRelistFilterIT {
 
   static final String RESOURCE_NAME = "test-resource";

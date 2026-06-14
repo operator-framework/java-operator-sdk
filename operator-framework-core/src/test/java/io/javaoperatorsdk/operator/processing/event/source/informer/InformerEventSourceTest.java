@@ -15,6 +15,7 @@
  */
 package io.javaoperatorsdk.operator.processing.event.source.informer;
 
+import java.lang.reflect.Field;
 import java.time.Duration;
 import java.util.HashMap;
 import java.util.List;
@@ -224,11 +225,11 @@ class InformerEventSourceTest {
 
     CountDownLatch latch = sendForExceptionThrowingUpdate();
     latch.countDown();
+    var deployment = deploymentWithResourceVersion(2);
 
-    informerEventSource.onUpdate(
-        deploymentWithResourceVersion(1), deploymentWithResourceVersion(2));
+    informerEventSource.onUpdate(deploymentWithResourceVersion(1), deployment);
 
-    expectHandleUpdateEvent(2, 1);
+    expectPropagateEvent(deployment);
   }
 
   @Test
@@ -541,11 +542,57 @@ class InformerEventSourceTest {
         .untilAsserted(() -> verify(eventHandlerMock, atLeastOnce()).handleEvent(any()));
   }
 
+  @Test
+  void handleEventUpdatesIndexWhenDeletePropagatesFromTempCache() throws Exception {
+    // handleEvent is invoked from ManagedInformerEventSource#eventFilteringUpdateAndCacheResource
+    // only after the temp cache decided to surface the event. For a DELETE that means the resource
+    // is really gone and the secondary→primary index must drop it; otherwise stale entries linger
+    // and getSecondaryResources keeps returning a tombstone.
+    var indexMock = injectIndexMock();
+    var resource = testDeployment();
+
+    informerEventSource.handleEvent(ResourceAction.DELETED, resource, null, false);
+
+    verify(indexMock, times(1)).onDelete(resource);
+    verify(indexMock, never()).onAddOrUpdate(any());
+    verify(eventHandlerMock, times(1)).handleEvent(any());
+  }
+
+  @Test
+  void handleEventDoesNotTouchIndexForNonDeleteAction() throws Exception {
+    // The onAdd/onUpdate path maintains the index in onAddOrUpdate(); handleEvent must not
+    // double-update it for non-DELETE actions, otherwise we'd index resources twice.
+    var indexMock = injectIndexMock();
+
+    informerEventSource.handleEvent(
+        ResourceAction.UPDATED, testDeployment(), testDeployment(), null);
+
+    verify(indexMock, never()).onDelete(any());
+    verify(indexMock, never()).onAddOrUpdate(any());
+    verify(eventHandlerMock, times(1)).handleEvent(any());
+  }
+
+  private PrimaryToSecondaryIndex<Deployment> injectIndexMock() throws Exception {
+    @SuppressWarnings("unchecked")
+    PrimaryToSecondaryIndex<Deployment> indexMock = mock(PrimaryToSecondaryIndex.class);
+    Field field = InformerEventSource.class.getDeclaredField("primaryToSecondaryIndex");
+    field.setAccessible(true);
+    field.set(informerEventSource, indexMock);
+    return indexMock;
+  }
+
   private void assertNoEventProduced() {
     await()
         .pollDelay(Duration.ofMillis(70))
         .timeout(Duration.ofMillis(150))
         .untilAsserted(() -> verify(informerEventSource, never()).propagateEvent(any()));
+  }
+
+  private void expectPropagateEvent(Deployment newResourceVersion) {
+    await()
+        .atMost(Duration.ofSeconds(1))
+        .untilAsserted(
+            () -> verify(informerEventSource, times(1)).propagateEvent(newResourceVersion));
   }
 
   private void expectHandleUpdateEvent(int newResourceVersion, int oldResourceVersion) {
