@@ -182,8 +182,8 @@ supports stronger guarantees, both for primary and secondary resources. If this 
    - Foreign events received during the window are merged with the surrounding
      own writes into a single synthesized `UPDATED` event so the reconciler
      gets a faithful before/after picture rather than each individual watch
-     event. These events actually carefully crafted to they correspond
-     to a real life scenario, and still fully usable by filters.
+      event. These events are carefully crafted so they correspond to a real-life scenario,
+      and remain fully usable by filters.
    - A `DELETED` arriving in the window is propagated; a delete-then-recreate
      inside the window collapses into one synthesized `UPDATED` from the
      deleted state to the recreated state.
