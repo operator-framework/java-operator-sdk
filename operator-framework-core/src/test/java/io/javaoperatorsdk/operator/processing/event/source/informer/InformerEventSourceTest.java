@@ -572,6 +572,61 @@ class InformerEventSourceTest {
     verify(eventHandlerMock, times(1)).handleEvent(any());
   }
 
+  @Test
+  void handleEventRespectsOnDeleteFilter() throws Exception {
+    // The temp-cache pipeline must honor user-level filters: if onDeleteFilter rejects, the
+    // synthesized DELETE must not be surfaced. The index, however, is still updated because the
+    // resource is really gone — same semantics as the direct onDelete watch path.
+    var indexMock = injectIndexMock();
+    informerEventSource.setOnDeleteFilter((r, b) -> false);
+    var resource = testDeployment();
+
+    informerEventSource.handleEvent(ResourceAction.DELETED, resource, null, false);
+
+    verify(indexMock, times(1)).onDelete(resource);
+    verify(eventHandlerMock, never()).handleEvent(any());
+  }
+
+  @Test
+  void handleEventRespectsOnUpdateFilter() throws Exception {
+    var indexMock = injectIndexMock();
+    informerEventSource.setOnUpdateFilter((n, o) -> false);
+
+    informerEventSource.handleEvent(
+        ResourceAction.UPDATED, testDeployment(), testDeployment(), null);
+
+    verify(indexMock, never()).onDelete(any());
+    verify(eventHandlerMock, never()).handleEvent(any());
+  }
+
+  @Test
+  void handleEventRespectsOnAddFilter() throws Exception {
+    var indexMock = injectIndexMock();
+    informerEventSource.setOnAddFilter(r -> false);
+
+    informerEventSource.handleEvent(ResourceAction.ADDED, testDeployment(), null, null);
+
+    verify(indexMock, never()).onDelete(any());
+    verify(eventHandlerMock, never()).handleEvent(any());
+  }
+
+  @Test
+  void handleEventRespectsGenericFilter() throws Exception {
+    // The generic filter applies regardless of action and short-circuits per-action filters.
+    // For DELETE the index is still updated (resource really gone), but no event is propagated
+    // for any action.
+    var indexMock = injectIndexMock();
+    informerEventSource.setGenericFilter(r -> false);
+    var resource = testDeployment();
+
+    informerEventSource.handleEvent(ResourceAction.DELETED, resource, null, true);
+    informerEventSource.handleEvent(ResourceAction.UPDATED, resource, resource, null);
+    informerEventSource.handleEvent(ResourceAction.ADDED, resource, null, null);
+
+    verify(indexMock, times(1)).onDelete(resource);
+    verify(eventHandlerMock, never()).handleEvent(any());
+  }
+
   private PrimaryToSecondaryIndex<Deployment> injectIndexMock() throws Exception {
     @SuppressWarnings("unchecked")
     PrimaryToSecondaryIndex<Deployment> indexMock = mock(PrimaryToSecondaryIndex.class);

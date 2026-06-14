@@ -128,7 +128,8 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
             return;
           }
           primaryToSecondaryIndex.onDelete(resource);
-          if (acceptedByDeleteFilters(resource, deletedFinalStateUnknown)) {
+          if (eventAcceptedByFilter(
+              ResourceAction.DELETED, resource, null, deletedFinalStateUnknown)) {
             propagateEvent(resource);
           }
         });
@@ -137,11 +138,17 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
   @Override
   protected void handleEvent(
       ResourceAction action, R resource, R oldResource, Boolean deletedFinalStateUnknown) {
-    // this is called only from ManagedInformerEventSource#eventFilteringUpdateAndCacheResource
-    // we want to skip delete when the delete event filtered out, but update the index if
-    // an actual event is propagated
+    // Called from ManagedInformerEventSource#eventFilteringUpdateAndCacheResource after the temp
+    // cache decided to surface a (possibly synthesized) event. The user-level filters
+    // (onAdd/onUpdate/onDelete/genericFilter) still apply, so this path mirrors the direct
+    // onAdd/onUpdate/onDelete watch paths. The index is updated for DELETED regardless of the
+    // filter outcome — the resource is really gone, so leaving a tombstone in the index would
+    // make getSecondaryResources keep returning a stale entry.
     if (action == ResourceAction.DELETED) {
       primaryToSecondaryIndex.onDelete(resource);
+    }
+    if (!eventAcceptedByFilter(action, resource, oldResource, deletedFinalStateUnknown)) {
+      return;
     }
     propagateEvent(resource);
   }
@@ -166,7 +173,7 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
 
     if (resultEvent.isEmpty()) {
       log.debug("Deferring event propagation");
-    } else if (eventAcceptedByFilter(action, newObject, oldObject)) {
+    } else if (eventAcceptedByFilter(action, newObject, oldObject, null)) {
       log.debug(
           "Propagating event for {}, resource with same version not result of a our update.",
           action);
@@ -248,19 +255,17 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
     return configuration().followControllerNamespaceChanges();
   }
 
-  private boolean eventAcceptedByFilter(ResourceAction action, R newObject, R oldObject) {
+  private boolean eventAcceptedByFilter(
+      ResourceAction action, R newObject, R oldObject, Boolean deletedFinalStateUnknown) {
     if (genericFilter != null && !genericFilter.accept(newObject)) {
       return false;
     }
-    if (action == ResourceAction.ADDED) {
-      return onAddFilter == null || onAddFilter.accept(newObject);
-    } else {
-      return onUpdateFilter == null || onUpdateFilter.accept(newObject, oldObject);
-    }
-  }
-
-  private boolean acceptedByDeleteFilters(R resource, boolean b) {
-    return (onDeleteFilter == null || onDeleteFilter.accept(resource, b))
-        && (genericFilter == null || genericFilter.accept(resource));
+    return switch (action) {
+      case ADDED -> onAddFilter == null || onAddFilter.accept(newObject);
+      case UPDATED -> onUpdateFilter == null || onUpdateFilter.accept(newObject, oldObject);
+      case DELETED ->
+          onDeleteFilter == null
+              || onDeleteFilter.accept(newObject, Boolean.TRUE.equals(deletedFinalStateUnknown));
+    };
   }
 }
