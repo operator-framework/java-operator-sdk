@@ -62,12 +62,31 @@ class EventFilterSupportTest {
   void doneEventFilterModifyRemovesDetailWhenRemovable() {
     support.startEventFilteringModify(RESOURCE_ID);
     support.addToOwnResourceVersions(RESOURCE_ID, s(FIRST_OWN_VERSION));
-    support.processEvent(RESOURCE_ID, updateEvent(FIRST_OWN_VERSION));
+    assertThat(support.processEvent(RESOURCE_ID, updateEvent(FIRST_OWN_VERSION))).isEmpty();
 
     var res = support.doneEventFilterModify(RESOURCE_ID);
 
     assertThat(res).isEmpty();
     assertThat(support.isActiveUpdateFor(RESOURCE_ID)).isFalse();
+  }
+
+  @Test
+  void scenarioWithSurroundingEvent() {
+    assertThat(support.processEvent(RESOURCE_ID, updateEvent(FIRST_OWN_VERSION - 1)))
+        .hasValueSatisfying(e -> assertThat(e.getAction()).isEqualTo(UPDATED));
+
+    support.startEventFilteringModify(RESOURCE_ID);
+    support.addToOwnResourceVersions(RESOURCE_ID, s(FIRST_OWN_VERSION));
+    assertThat(support.processEvent(RESOURCE_ID, updateEvent(FIRST_OWN_VERSION))).isEmpty();
+    assertThat(support.processEvent(RESOURCE_ID, updateEvent(FIRST_OWN_VERSION + 1))).isEmpty();
+
+    var res = support.doneEventFilterModify(RESOURCE_ID);
+
+    assertThat(res).hasValueSatisfying(e -> assertThat(e.getAction()).isEqualTo(UPDATED));
+    assertThat(support.isActiveUpdateFor(RESOURCE_ID)).isFalse();
+
+    assertThat(support.processEvent(RESOURCE_ID, updateEvent(FIRST_OWN_VERSION + 2)))
+        .hasValueSatisfying(e -> assertThat(e.getAction()).isEqualTo(UPDATED));
   }
 
   @Test

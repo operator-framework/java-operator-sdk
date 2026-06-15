@@ -512,6 +512,111 @@ class InformerEventSourceTest {
   }
 
   @Test
+  void ghostCleanupDiscardsOrphanFilterWindow() {
+    // We did an own write, recorded its rv into the filter window, but the informer never
+    // delivered a watch event for it (resource deleted before the watch caught up).
+    // Ghost cleanup must drop both the temp cache entry AND the orphan filter window;
+    // otherwise the window leaks ownResourceVersions forever and a future event for a
+    // recreated resource at the same id would be wrongly filtered.
+    var ghost = testDeployment();
+    ghost.getMetadata().setNamespace("default");
+    ghost.getMetadata().setResourceVersion("3");
+    var resourceId = ResourceID.fromResource(ghost);
+
+    var tempCache = new TemporaryResourceCache<>(true, informerEventSource);
+    informerEventSource.setTemporalResourceCache(tempCache);
+
+    var manager = mock(InformerManager.class);
+    when(manager.isWatchingNamespace(any())).thenReturn(true);
+    when(manager.lastSyncResourceVersion(any())).thenReturn("1");
+    when(manager.get(any())).thenReturn(Optional.empty());
+    when(informerEventSource.manager()).thenReturn(manager);
+
+    // Open a filter window for an in-flight write, then close it (our update returned but
+    // the watch event never arrived).
+    tempCache.startEventFilteringModify(resourceId);
+    tempCache.putResource(ghost);
+    tempCache.doneEventFilterModify(resourceId);
+    assertThat(tempCache.getEventFilterSupport().isActiveUpdateFor(resourceId))
+        .as("filter window must persist while ownResourceVersions is non-empty")
+        .isTrue();
+
+    when(manager.lastSyncResourceVersion(any())).thenReturn("5");
+
+    tempCache.checkGhostResources();
+
+    assertThat(tempCache.getResources()).isEmpty();
+    assertThat(tempCache.getEventFilterSupport().isActiveUpdateFor(resourceId))
+        .as("orphan filter window must be discarded by ghost cleanup")
+        .isFalse();
+    verify(eventHandlerMock, times(1)).handleEvent(any());
+  }
+
+  @Test
+  void ghostCleanupSyntheticDeleteRespectsOnDeleteFilter() throws Exception {
+    // The synthetic DELETE produced by ghost cleanup flows through handleEvent and must
+    // honor the user's onDeleteFilter — same semantics as a real watch DELETE. The temp
+    // cache is still drained and the index still drops the entry; only propagation is
+    // skipped.
+    var indexMock = injectIndexMock();
+    var ghost = testDeployment();
+    ghost.getMetadata().setNamespace("default");
+    ghost.getMetadata().setResourceVersion("3");
+
+    var tempCache = new TemporaryResourceCache<>(true, informerEventSource);
+    informerEventSource.setTemporalResourceCache(tempCache);
+    informerEventSource.setOnDeleteFilter((r, b) -> false);
+
+    var manager = mock(InformerManager.class);
+    when(manager.isWatchingNamespace(any())).thenReturn(true);
+    when(manager.lastSyncResourceVersion(any())).thenReturn("1");
+    when(manager.get(any())).thenReturn(Optional.empty());
+    when(informerEventSource.manager()).thenReturn(manager);
+
+    tempCache.putResource(ghost);
+    when(manager.lastSyncResourceVersion(any())).thenReturn("5");
+
+    tempCache.checkGhostResources();
+
+    assertThat(tempCache.getResources()).isEmpty();
+    verify(indexMock, times(1)).onDelete(ghost);
+    verify(eventHandlerMock, never()).handleEvent(any());
+  }
+
+  @Test
+  void ghostCleanupRetainsActiveFilterWindowWhenResourcePresentInInformer() {
+    // Mirror of checkGhostResourcesKeepsResourcePresentInInformerCache, but with an active
+    // filter window: if the resource is still in the informer cache, the temp entry stays
+    // AND the filter window must stay too — the in-flight write echo is still expected.
+    var resource = testDeployment();
+    resource.getMetadata().setNamespace("default");
+    resource.getMetadata().setResourceVersion("3");
+    var resourceId = ResourceID.fromResource(resource);
+
+    var tempCache = new TemporaryResourceCache<>(true, informerEventSource);
+    informerEventSource.setTemporalResourceCache(tempCache);
+
+    var manager = mock(InformerManager.class);
+    when(manager.isWatchingNamespace(any())).thenReturn(true);
+    when(manager.lastSyncResourceVersion(any())).thenReturn("1");
+    when(manager.get(any())).thenReturn(Optional.of(resource));
+    when(informerEventSource.manager()).thenReturn(manager);
+
+    tempCache.startEventFilteringModify(resourceId);
+    tempCache.putResource(resource);
+    tempCache.doneEventFilterModify(resourceId);
+
+    when(manager.lastSyncResourceVersion(any())).thenReturn("5");
+    tempCache.checkGhostResources();
+
+    assertThat(tempCache.getResources()).containsKey(resourceId);
+    assertThat(tempCache.getEventFilterSupport().isActiveUpdateFor(resourceId))
+        .as("non-ghost: filter window must be preserved")
+        .isTrue();
+    verify(eventHandlerMock, never()).handleEvent(any());
+  }
+
+  @Test
   void foreignUpdateDuringOwnUpdateIsPropagated() {
     // Sanity check that an external update arriving while our write is in flight
     // is surfaced to the reconciler — it isn't an own echo, so the filter must
