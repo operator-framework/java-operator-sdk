@@ -56,6 +56,8 @@ import io.micrometer.registry.otlp.OtlpMeterRegistry;
 public class OperationsSampleOperator {
 
   private static final Logger log = LoggerFactory.getLogger(OperationsSampleOperator.class);
+  public static final String JOSDK_CONFIG_CONFIG_YAML = "/config/config.yaml";
+  public static final String CONFIG_PATH_ENV_VAR = "CONFIG_PATH";
 
   /**
    * Based on env variables a different flavor of Reconciler is used, showcasing how the same logic
@@ -66,7 +68,7 @@ public class OperationsSampleOperator {
 
     var configProviders = new ArrayList<ConfigProvider>();
     configProviders.add(new EnvVarConfigProvider());
-    var configPath = System.getenv().getOrDefault("CONFIG_PATH", "/config/config.yaml");
+    var configPath = System.getenv().getOrDefault(CONFIG_PATH_ENV_VAR, JOSDK_CONFIG_CONFIG_YAML);
     configProviders.add(new YamlConfigProvider(Path.of(configPath)));
     var configLoader = new ConfigLoader(new AggregatePriorityListConfigProvider(configProviders));
 
