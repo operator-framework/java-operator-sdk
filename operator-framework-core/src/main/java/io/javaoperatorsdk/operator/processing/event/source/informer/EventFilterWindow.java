@@ -27,7 +27,31 @@ import org.slf4j.LoggerFactory;
 import io.javaoperatorsdk.operator.processing.event.source.ResourceAction;
 
 /**
- * Contains all the relevant information around the eventing and algorithms of a single resources.
+ * Contains all the relevant information around the event filtering algorithms of a single
+ * resources.
+ *
+ * <p>How does it work:
+ *
+ * <ul>
+ *   <li>we continuously process incoming events from the informer
+ *   <li>we record the resource version of the updated resources for our own writes
+ * </ul>
+ *
+ * <p>The goal:
+ *
+ * <ul>
+ *   <li>is to filter out events for which we are sure that results of our own updates. Note that
+ *       updates can happen before our updates and after or between two updates since we don't
+ *       require optimistic locking.
+ *   <li>if we have to emit an event we should make it equivalent to a real life like event and
+ *       should be as wide as possible
+ *   <li>we receive events from informers, informers sometimes do relist. Meaning there might be
+ *       events lost. But we have callback when that is going on.
+ *   <li>we should emit events as soon as possible, thus for example we have two parallel updates,
+ *       we see that we have an additional event before our first update received but recording
+ *       already started. We should emit the synth event from this check method as soon as we
+ *       received an event that has same resource version or newer as our resource.
+ * </ul>
  */
 class EventFilterWindow {
 
@@ -42,22 +66,6 @@ class EventFilterWindow {
     this.reListOnGoing = reListOnGoing;
   }
 
-  // Before we run this method
-  // - we continuously process incoming events from the informer
-  // - we record the resource version of the updated resources for our own writes
-  // The goal:
-  // - is to filter out events for which we are sure that results of our own updates.
-  //   - note that updates can happen before our updates and after or between two updates
-  //     since we don't require optimistic locking
-  // - if we have to emit an event we should make it equivalent to a real life like event
-  //   and should be as wide as possible
-  // - we receive events from informers, informers sometimes do relist.
-  //   Meaning there might be events lost. But we have callback when that is going on.
-  // - we should emit events as soon as possible, thus for example we have two parallel
-  //   updates, we see that we have an additional event before our first update received but
-  // recording
-  //   already started. We should emit the synth event from this check method as soon as we received
-  //   an event that has same resource version or newer as our resource
   public synchronized Optional<GenericResourceEvent> check() {
     String beforeState = log.isDebugEnabled() ? snapshotState() : null;
     Optional<GenericResourceEvent> result = doCheck();

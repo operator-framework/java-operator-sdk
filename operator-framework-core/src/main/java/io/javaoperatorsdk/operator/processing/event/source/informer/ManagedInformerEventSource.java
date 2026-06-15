@@ -121,7 +121,7 @@ public abstract class ManagedInformerEventSource<
                 r.getAction(),
                 (R) r.getResource().orElseThrow(),
                 (R) r.getPreviousResource().orElse(null),
-                r.getLastStateUnknow());
+                r.isLastStateUnknow());
           },
           () -> log.debug("No new event present after the filtering update. id={}", id));
     }

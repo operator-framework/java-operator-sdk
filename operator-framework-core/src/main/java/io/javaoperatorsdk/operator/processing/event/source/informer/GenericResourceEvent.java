@@ -44,7 +44,7 @@ public class GenericResourceEvent extends ResourceEvent {
     return Optional.ofNullable(previousResource);
   }
 
-  public Boolean getLastStateUnknow() {
+  public Boolean isLastStateUnknow() {
     return lastStateUnknow;
   }
 

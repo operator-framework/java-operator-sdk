@@ -24,7 +24,7 @@ import org.slf4j.LoggerFactory;
 
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
 
-public class EventFilterSupport {
+class EventFilterSupport {
 
   private static final Logger log = LoggerFactory.getLogger(EventFilterSupport.class);
 

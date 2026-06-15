@@ -257,16 +257,15 @@ public class TemporaryResourceCache<T extends HasMetadata> {
     return Map.copyOf(cache);
   }
 
-  // for testing purposes
-  synchronized EventFilterSupport getEventFilterSupport() {
+  EventFilterSupport getEventFilterSupport() {
     return eventFilteringSupport;
   }
 
-  public synchronized void setOngoingRelist(String lastKnownSyncVersion) {
+  public void setOngoingRelist(String lastKnownSyncVersion) {
     eventFilteringSupport.setStartingReList();
   }
 
-  public synchronized void setRelistFinished(String syncResourceVersions) {
+  public void setRelistFinished(String syncResourceVersions) {
     eventFilteringSupport.setRelistFinished();
   }
 }

@@ -156,7 +156,7 @@ public class ControllerEventSource<T extends HasMetadata>
         r.getAction(),
         (T) r.getResource().orElseThrow(),
         (T) r.getPreviousResource().orElse(null),
-        r.getLastStateUnknow());
+        r.isLastStateUnknow());
   }
 
   @Override

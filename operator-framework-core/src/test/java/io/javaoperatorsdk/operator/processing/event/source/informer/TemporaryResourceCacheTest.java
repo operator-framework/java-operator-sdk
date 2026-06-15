@@ -220,7 +220,7 @@ class TemporaryResourceCacheTest {
               assertThat(v.getAction()).isEqualTo(ResourceAction.ADDED);
               assertThat(v.getPreviousResource()).isEmpty();
               assertThat(v.getResource()).contains(testResource);
-              assertThat(v.getLastStateUnknow()).isNull();
+              assertThat(v.isLastStateUnknow()).isNull();
             });
 
     var nextResource = testResource();

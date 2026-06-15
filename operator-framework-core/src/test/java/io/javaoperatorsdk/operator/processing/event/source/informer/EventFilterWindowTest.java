@@ -578,7 +578,7 @@ class EventFilterWindowTest {
         .isEqualTo(s(resourceVersion));
     assertThat(event.getPreviousResource().orElseThrow().getMetadata().getResourceVersion())
         .isEqualTo(s(previousResourceVersion));
-    assertThat(event.getLastStateUnknow()).isNull();
+    assertThat(event.isLastStateUnknow()).isNull();
   }
 
   void assertAddEvent(GenericResourceEvent event, Long resourceVersion) {
@@ -586,7 +586,7 @@ class EventFilterWindowTest {
     assertThat(event.getResource().orElseThrow().getMetadata().getResourceVersion())
         .isEqualTo(s(resourceVersion));
     assertThat(event.getPreviousResource()).isEmpty();
-    assertThat(event.getLastStateUnknow()).isNull();
+    assertThat(event.isLastStateUnknow()).isNull();
   }
 
   void assertDeleteEvent(GenericResourceEvent event) {
@@ -598,7 +598,7 @@ class EventFilterWindowTest {
     assertThat(event.getResource().orElseThrow().getMetadata().getResourceVersion())
         .isEqualTo(s(resourceVersion));
     assertThat(event.getPreviousResource()).isEmpty();
-    assertThat(event.getLastStateUnknow()).isTrue();
+    assertThat(event.isLastStateUnknow()).isTrue();
   }
 
   GenericResourceEvent updateEvent(long version) {
