@@ -215,6 +215,10 @@ public class TemporaryResourceCache<T extends HasMetadata> {
    * by the informer's onList callback.
    */
   public synchronized void checkGhostResources() {
+    if (!comparableResourceVersions) {
+      return;
+    }
+
     log.debug("Checking for ghost resources.");
     var iterator = cache.entrySet().iterator();
     while (iterator.hasNext()) {
