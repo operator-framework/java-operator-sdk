@@ -105,18 +105,28 @@ public class TemporaryResourceCache<T extends HasMetadata> {
       return Optional.of(actualEvent);
     }
     var resourceId = ResourceID.fromResource(resource);
-    if (log.isDebugEnabled()) {
-      log.debug("Processing event");
-    }
+    log.debug(
+        "Processing event in temp cache. id={}, action={}, rv={}, unknownState={}",
+        resourceId,
+        action,
+        resource.getMetadata().getResourceVersion(),
+        unknownState);
     var cached = cache.get(resourceId);
     if (cached != null) {
       int comp = ReconcilerUtilsInternal.compareResourceVersions(resource, cached);
       if (comp >= 0 || Boolean.TRUE.equals(unknownState)) {
         log.debug(
-            "Removing resource from temp cache. comparison: {} unknown state: {}",
+            "Removing resource from temp cache. id={}, comparison={}, unknownState={}",
+            resourceId,
             comp,
             unknownState);
         cache.remove(resourceId);
+      } else {
+        log.debug(
+            "Keeping temp cache entry; event rv {} is older than cached rv {}. id={}",
+            resource.getMetadata().getResourceVersion(),
+            cached.getMetadata().getResourceVersion(),
+            resourceId);
       }
     }
     return eventFilteringSupport.processEvent(resourceId, actualEvent);
@@ -183,6 +193,12 @@ public class TemporaryResourceCache<T extends HasMetadata> {
           newResource.getMetadata().getResourceVersion(),
           resourceId);
       cache.put(resourceId, newResource);
+    } else {
+      log.debug(
+          "Skipping temp cache put; new rv {} is not later than cached rv {}. id={}",
+          newResource.getMetadata().getResourceVersion(),
+          cachedResource.getMetadata().getResourceVersion(),
+          resourceId);
     }
   }
 

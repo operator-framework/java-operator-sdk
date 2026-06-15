@@ -95,26 +95,35 @@ public abstract class ManagedInformerEventSource<
   @SuppressWarnings("unchecked")
   public R eventFilteringUpdateAndCacheResource(R resourceToUpdate, UnaryOperator<R> updateMethod) {
     ResourceID id = ResourceID.fromResource(resourceToUpdate);
-    log.debug("Starting event filtering and caching update");
+    log.debug("Starting event filtering and caching update for id={}", id);
     R updatedResource = null;
     try {
       temporaryResourceCache.startEventFilteringModify(id);
       updatedResource = updateMethod.apply(resourceToUpdate);
       handleRecentResourceUpdate(id, updatedResource, resourceToUpdate);
-      log.debug("Caching resource update successful");
+      log.debug(
+          "Caching resource update successful. id={}, rv={}",
+          id,
+          updatedResource.getMetadata().getResourceVersion());
       return updatedResource;
     } finally {
       var res = temporaryResourceCache.doneEventFilterModify(id);
       res.ifPresentOrElse(
           r -> {
-            log.debug("Propagating not own event");
+            log.debug(
+                "Propagating not own event after filtering update. id={}, action={}, rv={}",
+                id,
+                r.getAction(),
+                r.getResource()
+                    .map(rr -> rr.getMetadata().getResourceVersion())
+                    .orElse("[not set]"));
             handleEvent(
                 r.getAction(),
                 (R) r.getResource().orElseThrow(),
                 (R) r.getPreviousResource().orElse(null),
                 r.getLastStateUnknow());
           },
-          () -> log.debug("No new event present after the filtering update"));
+          () -> log.debug("No new event present after the filtering update. id={}", id));
     }
   }
 

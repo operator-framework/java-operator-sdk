@@ -145,10 +145,26 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
     // filter outcome — the resource is really gone, so leaving a tombstone in the index would
     // make getSecondaryResources keep returning a stale entry.
     if (action == ResourceAction.DELETED) {
+      log.debug(
+          "handleEvent: removing from primaryToSecondaryIndex. id={}",
+          ResourceID.fromResource(resource));
       primaryToSecondaryIndex.onDelete(resource);
     }
     if (!eventAcceptedByFilter(action, resource, oldResource, deletedFinalStateUnknown)) {
+      if (log.isDebugEnabled()) {
+        log.debug(
+            "handleEvent: event rejected by user filter, not propagating. id={}, action={}",
+            ResourceID.fromResource(resource),
+            action);
+      }
       return;
+    }
+    if (log.isDebugEnabled()) {
+      log.debug(
+          "handleEvent: propagating event. id={}, action={}, rv={}",
+          ResourceID.fromResource(resource),
+          action,
+          resource.getMetadata().getResourceVersion());
     }
     propagateEvent(resource);
   }
