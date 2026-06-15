@@ -84,7 +84,7 @@ public class ControllerEventSource<T extends HasMetadata>
     try {
       if (log.isDebugEnabled()) {
         log.debug("Event received with action: {}", action);
-        log.debug("Event Old resource: {},\n new resource: {}", oldResource, resource);
+        log.trace("Event Old resource: {},\n new resource: {}", oldResource, resource);
       }
       MDCUtils.addResourceInfo(resource);
       controller.getEventSourceManager().broadcastOnResourceEvent(action, resource, oldResource);
