@@ -27,25 +27,25 @@ import io.javaoperatorsdk.operator.processing.event.source.controller.ResourceEv
 public class ExtendedResourceEvent extends ResourceEvent {
 
   private final HasMetadata previousResource;
-  private final Boolean lastStateUnknow;
+  private final Boolean lastStateUnknown;
   private boolean partOfReList = false;
 
   public ExtendedResourceEvent(
       ResourceAction action,
       HasMetadata latestResource,
       HasMetadata previousResource,
-      Boolean lastStateUnknow) {
+      Boolean lastStateUnknown) {
     super(action, ResourceID.fromResource(latestResource), latestResource);
     this.previousResource = previousResource;
-    this.lastStateUnknow = lastStateUnknow;
+    this.lastStateUnknown = lastStateUnknown;
   }
 
   public Optional<HasMetadata> getPreviousResource() {
     return Optional.ofNullable(previousResource);
   }
 
-  public Boolean isLastStateUnknow() {
-    return lastStateUnknow;
+  public Boolean isLastStateUnknown() {
+    return lastStateUnknown;
   }
 
   @Override
