@@ -13,17 +13,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.javaoperatorsdk.operator.baseapi.cachingfilteringupdate;
+package io.javaoperatorsdk.operator.baseapi.readcacheafterwrite.externalsecondaryupdate;
 
-public class CachingFilteringUpdateStatus {
+public class ExternalSecondaryUpdateStatus {
 
-  private Boolean updated;
+  private Integer reconciliations;
 
-  public Boolean getUpdated() {
-    return updated;
+  public Integer getReconciliations() {
+    return reconciliations;
   }
 
-  public void setUpdated(Boolean updated) {
-    this.updated = updated;
+  public ExternalSecondaryUpdateStatus setReconciliations(Integer reconciliations) {
+    this.reconciliations = reconciliations;
+    return this;
   }
 }

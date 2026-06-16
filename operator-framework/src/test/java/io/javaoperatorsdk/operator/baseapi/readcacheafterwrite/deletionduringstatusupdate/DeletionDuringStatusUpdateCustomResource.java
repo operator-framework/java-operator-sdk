@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.javaoperatorsdk.operator.baseapi.filterpatchevent;
+package io.javaoperatorsdk.operator.baseapi.readcacheafterwrite.deletionduringstatusupdate;
 
 import io.fabric8.kubernetes.api.model.Namespaced;
 import io.fabric8.kubernetes.client.CustomResource;
@@ -23,6 +23,6 @@ import io.fabric8.kubernetes.model.annotation.Version;
 
 @Group("sample.javaoperatorsdk")
 @Version("v1")
-@ShortNames("fpe")
-public class FilterPatchEventTestCustomResource
-    extends CustomResource<Void, FilterPatchEventTestCustomResourceStatus> implements Namespaced {}
+@ShortNames("ddsu")
+public class DeletionDuringStatusUpdateCustomResource
+    extends CustomResource<Void, DeletionDuringStatusUpdateStatus> implements Namespaced {}

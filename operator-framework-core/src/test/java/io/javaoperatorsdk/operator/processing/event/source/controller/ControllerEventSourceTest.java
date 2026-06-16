@@ -17,12 +17,12 @@ package io.javaoperatorsdk.operator.processing.event.source.controller;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.CountDownLatch;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import io.fabric8.kubernetes.client.KubernetesClientException;
 import io.javaoperatorsdk.operator.MockKubernetesClient;
 import io.javaoperatorsdk.operator.ReconcilerUtilsInternal;
 import io.javaoperatorsdk.operator.TestUtils;
@@ -44,7 +44,6 @@ import io.javaoperatorsdk.operator.processing.event.source.filter.OnUpdateFilter
 import io.javaoperatorsdk.operator.sample.simple.TestCustomResource;
 
 import static io.javaoperatorsdk.operator.processing.event.source.EventFilterTestUtils.withResourceVersion;
-import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
@@ -90,7 +89,6 @@ class ControllerEventSourceTest
     source.handleEvent(ResourceAction.UPDATED, customResource1, customResource1, null);
     verify(eventHandler, times(1)).handleEvent(any());
 
-    // mark for deletion
     customResource1.getMetadata().setDeletionTimestamp(LocalDateTime.now().toString());
     source.handleEvent(ResourceAction.UPDATED, customResource1, customResource1, null);
     verify(eventHandler, times(2)).handleEvent(any());
@@ -172,9 +170,13 @@ class ControllerEventSourceTest
   }
 
   @Test
-  void testEventFilteringBasicScenario() throws InterruptedException {
+  void ownUpdateEchoIsFilteredOutByEventFilter() throws InterruptedException {
+    // End-to-end smoke for the event-filter wiring on the controller path: an event for our
+    // own write must not propagate. Detail-level filter scenarios are covered in
+    // EventingDetailTest / EventFilterSupportTest.
     source = spy(new ControllerEventSource<>(new TestController(null, null, null)));
     setUpSource(source, true, controllerConfig);
+    doReturn(Optional.empty()).when(source).get(any());
 
     var latch = sendForEventFilteringUpdate(2);
     source.onUpdate(testResourceWithVersion(1), testResourceWithVersion(2));
@@ -185,7 +187,8 @@ class ControllerEventSourceTest
   }
 
   @Test
-  void eventFilteringNewEventDuringUpdate() {
+  void foreignUpdateDuringFilteringPropagatesAsUpdate() {
+    // An external event during the filter window must surface (not be filtered as own).
     source = spy(new ControllerEventSource<>(new TestController(null, null, null)));
     setUpSource(source, true, controllerConfig);
 
@@ -197,7 +200,29 @@ class ControllerEventSourceTest
   }
 
   @Test
-  void eventFilteringMoreNewEventsDuringUpdate() {
+  void deleteEventDuringFilteringPropagatesAsDelete() {
+    // A DELETE arriving during the filter window must surface — the resource has gone,
+    // so the filter must not silence it just because our own write is still tracking RVs.
+    source = spy(new ControllerEventSource<>(new TestController(null, null, null)));
+    setUpSource(source, true, controllerConfig);
+
+    var latch = sendForEventFilteringUpdate(2);
+    source.onDelete(testResourceWithVersion(3), false);
+    latch.countDown();
+
+    await()
+        .untilAsserted(
+            () -> {
+              verify(eventHandler, atLeastOnce()).handleEvent(any());
+              verify(source, atLeastOnce())
+                  .handleEvent(eq(ResourceAction.DELETED), any(), any(), any());
+            });
+  }
+
+  @Test
+  void multipleForeignEventsDuringFilteringMergeIntoSingleEvent() {
+    // Several external events during one filter window collapse into a single
+    // synthesized event spanning prev → latest seen.
     source = spy(new ControllerEventSource<>(new TestController(null, null, null)));
     setUpSource(source, true, controllerConfig);
 
@@ -209,58 +234,22 @@ class ControllerEventSourceTest
     await().untilAsserted(() -> expectHandleEvent(4, 2));
   }
 
-  @Test
-  void eventFilteringExceptionDuringUpdate() {
-    source = spy(new ControllerEventSource<>(new TestController(null, null, null)));
-    setUpSource(source, true, controllerConfig);
-
-    var latch =
-        EventFilterTestUtils.sendForEventFilteringUpdate(
-            source,
-            TestUtils.testCustomResource1(),
-            r -> {
-              throw new KubernetesClientException("fake");
-            });
-    source.onUpdate(testResourceWithVersion(1), testResourceWithVersion(2));
-    latch.countDown();
-
-    expectHandleEvent(2, 1);
-  }
-
   private void expectHandleEvent(int newResourceVersion, int oldResourceVersion) {
-    await()
-        .untilAsserted(
-            () -> {
-              verify(eventHandler, times(1)).handleEvent(any());
-              verify(source, times(1))
-                  .handleEvent(
-                      eq(ResourceAction.UPDATED),
-                      argThat(
-                          r -> {
-                            assertThat(r.getMetadata().getResourceVersion())
-                                .isEqualTo("" + newResourceVersion);
-                            return true;
-                          }),
-                      argThat(
-                          r -> {
-                            assertThat(r.getMetadata().getResourceVersion())
-                                .isEqualTo("" + oldResourceVersion);
-                            return true;
-                          }),
-                      isNull());
-            });
+    verify(eventHandler, times(1)).handleEvent(any());
+    verify(source, times(1))
+        .handleEvent(
+            eq(ResourceAction.UPDATED),
+            argThat(r -> ("" + newResourceVersion).equals(r.getMetadata().getResourceVersion())),
+            argThat(r -> ("" + oldResourceVersion).equals(r.getMetadata().getResourceVersion())),
+            any());
   }
 
   private TestCustomResource testResourceWithVersion(int v) {
     return withResourceVersion(TestUtils.testCustomResource1(), v);
   }
 
-  private CountDownLatch sendForEventFilteringUpdate(int v) {
-    return sendForEventFilteringUpdate(TestUtils.testCustomResource1(), v);
-  }
-
-  private CountDownLatch sendForEventFilteringUpdate(
-      TestCustomResource testResource, int resourceVersion) {
+  private CountDownLatch sendForEventFilteringUpdate(int resourceVersion) {
+    var testResource = TestUtils.testCustomResource1();
     return EventFilterTestUtils.sendForEventFilteringUpdate(
         source, testResource, r -> withResourceVersion(testResource, resourceVersion));
   }

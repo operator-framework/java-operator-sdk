@@ -27,18 +27,25 @@ import io.javaoperatorsdk.operator.processing.event.source.controller.ResourceEv
 public class ExtendedResourceEvent extends ResourceEvent {
 
   private final HasMetadata previousResource;
+  private final Boolean lastStateUnknown;
+  private boolean partOfReList = false;
 
   public ExtendedResourceEvent(
       ResourceAction action,
-      ResourceID resourceID,
       HasMetadata latestResource,
-      HasMetadata previousResource) {
-    super(action, resourceID, latestResource);
+      HasMetadata previousResource,
+      Boolean lastStateUnknown) {
+    super(action, ResourceID.fromResource(latestResource), latestResource);
     this.previousResource = previousResource;
+    this.lastStateUnknown = lastStateUnknown;
   }
 
   public Optional<HasMetadata> getPreviousResource() {
     return Optional.ofNullable(previousResource);
+  }
+
+  public Boolean isLastStateUnknown() {
+    return lastStateUnknown;
   }
 
   @Override
@@ -68,5 +75,17 @@ public class ExtendedResourceEvent extends ResourceEvent {
   @Override
   public int hashCode() {
     return Objects.hash(super.hashCode(), previousResource);
+  }
+
+  public long getResourceVersion() {
+    return Long.parseLong(getResource().orElseThrow().getMetadata().getResourceVersion());
+  }
+
+  public boolean isPartOfReList() {
+    return partOfReList;
+  }
+
+  public void setPartOfReList(boolean partOfReList) {
+    this.partOfReList = partOfReList;
   }
 }

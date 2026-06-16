@@ -175,6 +175,23 @@ supports stronger guarantees, both for primary and secondary resources. If this 
    that resource again. This feature also makes sure that the reconciliation is not triggered from the event from our
    writes.
 
+   The filter is implemented as a per-resource *event filter window* that opens
+   when an update starts and closes when it completes. Inside the window:
+   - Pure own echoes (watch events whose resource version matches one of our
+     recorded own writes) are dropped.
+   - Foreign events received during the window are merged with the surrounding
+     own writes into a single synthesized `UPDATED` event so the reconciler
+     gets a faithful before/after picture rather than each individual watch
+      event. These events are carefully crafted so they correspond to a real-life scenario,
+      and remain fully usable by filters.
+   - A `DELETED` arriving in the window is propagated; a delete-then-recreate
+     inside the window collapses into one synthesized `UPDATED` from the
+     deleted state to the recreated state.
+   - During an informer relist the filter degrades to "surface what we see":
+     events received while a relist is in progress are propagated even when
+     they would otherwise look like own echoes, since the relist may have
+     hidden events.
+
 
 In order to benefit from these stronger guarantees, use [`ResourceOperations`](https://github.com/operator-framework/java-operator-sdk/blob/main/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/api/reconciler/ResourceOperations.java)
 from the context of the reconciliation:   

@@ -16,6 +16,7 @@
 package io.javaoperatorsdk.operator.processing.event.source.informer;
 
 import java.util.Map;
+import java.util.Optional;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -25,7 +26,6 @@ import io.fabric8.kubernetes.api.model.ConfigMapBuilder;
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
 import io.javaoperatorsdk.operator.processing.event.source.ResourceAction;
-import io.javaoperatorsdk.operator.processing.event.source.informer.TemporaryResourceCache.EventHandling;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -100,7 +100,7 @@ class TemporaryResourceCacheTest {
     var testResource = testResource();
 
     temporaryResourceCache.putResource(testResource);
-
+    when(managedInformerEventSource.get(any())).thenReturn(Optional.of(testResource));
     temporaryResourceCache.putResource(
         new ConfigMapBuilder(testResource)
             .editMetadata()
@@ -155,33 +155,9 @@ class TemporaryResourceCacheTest {
         .isEmpty();
 
     var doneRes =
-        temporaryResourceCache.doneEventFilterModify(ResourceID.fromResource(testResource), "2");
+        temporaryResourceCache.doneEventFilterModify(ResourceID.fromResource(testResource));
 
     assertThat(doneRes).isEmpty();
-    assertThat(temporaryResourceCache.getResourceFromCache(ResourceID.fromResource(testResource)))
-        .isEmpty();
-  }
-
-  @Test
-  void newerEventDuringFiltering() {
-    var testResource = testResource();
-
-    temporaryResourceCache.startEventFilteringModify(ResourceID.fromResource(testResource));
-
-    temporaryResourceCache.putResource(testResource);
-    assertThat(temporaryResourceCache.getResourceFromCache(ResourceID.fromResource(testResource)))
-        .isPresent();
-
-    var testResource2 = testResource();
-    testResource2.getMetadata().setResourceVersion("3");
-    temporaryResourceCache.onAddOrUpdateEvent(ResourceAction.UPDATED, testResource2, testResource);
-    assertThat(temporaryResourceCache.getResourceFromCache(ResourceID.fromResource(testResource)))
-        .isEmpty();
-
-    var doneRes =
-        temporaryResourceCache.doneEventFilterModify(ResourceID.fromResource(testResource), "2");
-
-    assertThat(doneRes).isPresent();
     assertThat(temporaryResourceCache.getResourceFromCache(ResourceID.fromResource(testResource)))
         .isEmpty();
   }
@@ -197,7 +173,7 @@ class TemporaryResourceCacheTest {
         .isPresent();
 
     var doneRes =
-        temporaryResourceCache.doneEventFilterModify(ResourceID.fromResource(testResource), "2");
+        temporaryResourceCache.doneEventFilterModify(ResourceID.fromResource(testResource));
 
     assertThat(doneRes).isEmpty();
     assertThat(temporaryResourceCache.getResourceFromCache(ResourceID.fromResource(testResource)))
@@ -209,30 +185,13 @@ class TemporaryResourceCacheTest {
   }
 
   @Test
-  void putBeforeEvent() {
-    var testResource = testResource();
-
-    // first ensure an event is not known
-    var result =
-        temporaryResourceCache.onAddOrUpdateEvent(ResourceAction.ADDED, testResource, null);
-    assertThat(result).isEqualTo(EventHandling.NEW);
-
-    var nextResource = testResource();
-    nextResource.getMetadata().setResourceVersion("3");
-    temporaryResourceCache.putResource(nextResource);
-
-    result = temporaryResourceCache.onAddOrUpdateEvent(ResourceAction.UPDATED, nextResource, null);
-    assertThat(result).isEqualTo(EventHandling.OBSOLETE);
-  }
-
-  @Test
   void putBeforeEventWithEventFiltering() {
     var testResource = testResource();
 
     // first ensure an event is not known
     var result =
         temporaryResourceCache.onAddOrUpdateEvent(ResourceAction.ADDED, testResource, null);
-    assertThat(result).isEqualTo(EventHandling.NEW);
+    assertThat(result).isPresent();
     latestSyncVersion = RESOURCE_VERSION;
 
     var nextResource = testResource();
@@ -241,11 +200,11 @@ class TemporaryResourceCacheTest {
 
     temporaryResourceCache.startEventFilteringModify(resourceId);
     temporaryResourceCache.putResource(nextResource);
-    temporaryResourceCache.doneEventFilterModify(resourceId, "3");
+    temporaryResourceCache.doneEventFilterModify(resourceId);
 
     latestSyncVersion = "3";
     result = temporaryResourceCache.onAddOrUpdateEvent(ResourceAction.UPDATED, nextResource, null);
-    assertThat(result).isEqualTo(EventHandling.OBSOLETE);
+    assertThat(result).isEmpty();
   }
 
   @Test
@@ -255,7 +214,14 @@ class TemporaryResourceCacheTest {
     // first ensure an event is not known
     var result =
         temporaryResourceCache.onAddOrUpdateEvent(ResourceAction.ADDED, testResource, null);
-    assertThat(result).isEqualTo(EventHandling.NEW);
+    assertThat(result)
+        .hasValueSatisfying(
+            v -> {
+              assertThat(v.getAction()).isEqualTo(ResourceAction.ADDED);
+              assertThat(v.getPreviousResource()).isEmpty();
+              assertThat(v.getResource()).contains(testResource);
+              assertThat(v.isLastStateUnknown()).isNull();
+            });
 
     var nextResource = testResource();
     nextResource.getMetadata().setResourceVersion("3");
@@ -265,10 +231,10 @@ class TemporaryResourceCacheTest {
     result =
         temporaryResourceCache.onAddOrUpdateEvent(
             ResourceAction.UPDATED, nextResource, testResource);
-    // the result is deferred
-    assertThat(result).isEqualTo(EventHandling.DEFER);
+    assertThat(result).isEmpty();
+
     temporaryResourceCache.putResource(nextResource);
-    var postEvent = temporaryResourceCache.doneEventFilterModify(resourceId, "3");
+    var postEvent = temporaryResourceCache.doneEventFilterModify(resourceId);
 
     // there is no post event because the done call claimed responsibility for rv 3
     assertTrue(postEvent.isEmpty());
@@ -280,18 +246,43 @@ class TemporaryResourceCacheTest {
     var resourceId = ResourceID.fromResource(testResource);
     temporaryResourceCache.startEventFilteringModify(resourceId);
 
-    // this should be a corner case - watch had a hard reset since the start of the
+    // this should be a corner case - watch had a hard reset since the start
     // of the update operation, such that 4 rv event is seen prior to the update
     // completing with the 3 rv.
     var nextResource = testResource();
     nextResource.getMetadata().setResourceVersion("4");
     var result =
         temporaryResourceCache.onAddOrUpdateEvent(ResourceAction.ADDED, nextResource, null);
-    assertThat(result).isEqualTo(EventHandling.DEFER);
+    assertThat(result).isEmpty();
 
-    var postEvent = temporaryResourceCache.doneEventFilterModify(resourceId, "3");
+    var postEvent = temporaryResourceCache.doneEventFilterModify(resourceId);
 
     assertTrue(postEvent.isPresent());
+  }
+
+  @Test
+  void intermediateEventPropagatedWhenNoActiveUpdate() {
+    // Cache holds a newer version from a prior own write; no active filter is in progress.
+    // An older event arriving used to be OBSOLETE; now it must be propagated as INTERMEDIATE
+    // so callers can react to changes that happened between read and write.
+    var olderEvent = testResource();
+    var newer = testResource();
+    newer.getMetadata().setResourceVersion("3");
+
+    temporaryResourceCache.putResource(newer);
+    assertThat(temporaryResourceCache.getResourceFromCache(ResourceID.fromResource(olderEvent)))
+        .isPresent();
+
+    var result =
+        temporaryResourceCache.onAddOrUpdateEvent(ResourceAction.UPDATED, olderEvent, null);
+
+    assertThat(result)
+        .hasValueSatisfying(
+            e -> {
+              assertThat(e.getResource().orElseThrow()).isEqualTo(olderEvent);
+              assertThat(e.getPreviousResource()).isNotPresent();
+              assertThat(e.getAction()).isEqualTo(ResourceAction.UPDATED);
+            });
   }
 
   @Test
@@ -370,6 +361,25 @@ class TemporaryResourceCacheTest {
     temporaryResourceCache.putResource(tr);
 
     assertThat(temporaryResourceCache.getResourceFromCache(ResourceID.fromResource(tr))).isEmpty();
+  }
+
+  @Test
+  void unknownStateDeleteEvictsTempCacheEvenWhenOlder() {
+    var newer =
+        new ConfigMapBuilder(testResource())
+            .editMetadata()
+            .withResourceVersion("5")
+            .endMetadata()
+            .build();
+    temporaryResourceCache.putResource(newer);
+
+    var olderUnknownState = testResource();
+    var result = temporaryResourceCache.onDeleteEvent(olderUnknownState, true);
+
+    assertThat(result).isPresent();
+    assertThat(result.get().getAction()).isEqualTo(ResourceAction.DELETED);
+    assertThat(temporaryResourceCache.getResourceFromCache(ResourceID.fromResource(newer)))
+        .isEmpty();
   }
 
   private ConfigMap propagateTestResourceToCache() {
