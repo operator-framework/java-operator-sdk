@@ -58,7 +58,7 @@ class EventFilterWindow {
   private static final Logger log = LoggerFactory.getLogger(EventFilterWindow.class);
 
   private final SortedMap<Long, ExtendedResourceEvent> relatedEvents = new TreeMap<>();
-  private final SortedSet<Long> ownResourceVersions = new TreeSet<>();
+  private final SortedSet<Long> ownUpdateVersions = new TreeSet<>();
   private boolean reListOnGoing;
   private int activeUpdates = 0;
 
@@ -82,25 +82,30 @@ class EventFilterWindow {
   private String snapshotState() {
     return String.format(
         "relatedEvents=%s, ownResourceVersions=%s, activeUpdates=%d, reListOnGoing=%s",
-        relatedEvents.keySet(), ownResourceVersions, activeUpdates, reListOnGoing);
+        relatedEvents.keySet(), ownUpdateVersions, activeUpdates, reListOnGoing);
   }
 
   private Optional<ExtendedResourceEvent> doCheck() {
+    // if we don't have related events we have nothing to mit
     if (relatedEvents.isEmpty()) {
       return Optional.empty();
     }
-    if (activeUpdates == 0 && ownResourceVersions.isEmpty()) {
-      return eventForRangeAndClear(relatedEvents, ownResourceVersions);
+    // cleanup events which are not related to our updates
+    if (activeUpdates == 0 && ownUpdateVersions.isEmpty()) {
+      return eventForRangeAndClear(relatedEvents, ownUpdateVersions);
     }
-    if (ownResourceVersions.isEmpty()
+    // this is a special case that if we receive a delete event we
+    // early clean it up, since we don't do filtering for deletes
+    if (ownUpdateVersions.isEmpty()
         && getFirstRelatedEvent().getAction().equals(ResourceAction.DELETED)) {
-      return eventForRangeAndClear(relatedEvents, ownResourceVersions);
+      return eventForRangeAndClear(relatedEvents, ownUpdateVersions);
     }
-
     var lastEventVersion = relatedEvents.lastKey();
     var numberOwnUpdatesSelected = 0;
     long lastOwnVersion = -1;
-    for (long ownVersion : ownResourceVersions) {
+    // we find the last own update version for which we have event for
+    // so those are the once we are going to clear our in this execution
+    for (long ownVersion : ownUpdateVersions) {
       if (ownVersion <= lastEventVersion) {
         numberOwnUpdatesSelected++;
         lastOwnVersion = ownVersion;
@@ -109,54 +114,46 @@ class EventFilterWindow {
       }
     }
     if (numberOwnUpdatesSelected > 0) {
-      if (numberOwnUpdatesSelected == ownResourceVersions.size() && activeUpdates == 0) {
-        return eventForRangeAndClear(relatedEvents, ownResourceVersions);
+      // If we selected all own update versions we process the whole range.
+      // We check also if there is no active update, since if there still is
+      // an event might have come which is newer than own version what it is for the ongoing update.
+      // So If we have own version [1,3] and events [1,2,3,4] and active updates = 0
+      // we select all events [1,2,3,4] because for the active
+      // update we might add own version 4.
+      if (numberOwnUpdatesSelected == ownUpdateVersions.size() && activeUpdates == 0) {
+        return eventForRangeAndClear(relatedEvents, ownUpdateVersions);
       } else {
-        if (numberOwnUpdatesSelected < ownResourceVersions.size()) {
+        // if we select only a subset of own updates, we select related events
+        // up to the next own version (what is not selected).
+        // So If we have own updates version [1,3,5] and events [1,2,3,4]
+        // we select all those events (also 4) that happened before own version 5
+        // for which we don't have event yet.
+        if (numberOwnUpdatesSelected < ownUpdateVersions.size()) {
           return eventForRangeAndClear(
-              relatedEvents.headMap(ownResourceVersions.tailSet(lastOwnVersion + 1).first()),
-              ownResourceVersions.headSet(lastOwnVersion + 1));
+              relatedEvents.headMap(ownUpdateVersions.tailSet(lastOwnVersion + 1).first()),
+              ownUpdateVersions.headSet(lastOwnVersion + 1));
         } else
+          // this is essentially when we numberOwnUpdatesSelected == ownUpdateVersions.size() but
+          // with active update > 0. In that case we:
+          // So If we have own version [1,3] and events [1,2,3,4]
+          // we select only events [1,2,3] (so no 4), because for the active
+          // update we might add own version 4.
           return eventForRangeAndClear(
               relatedEvents.headMap(lastOwnVersion + 1),
-              ownResourceVersions.headSet(lastOwnVersion + 1));
+              ownUpdateVersions.headSet(lastOwnVersion + 1));
       }
     }
     return Optional.empty();
   }
 
-  // it has responsibility to clear those ranges and emit event if needed
+  // calculates and clears events and own resources for a sorted range of events and own resources
   Optional<ExtendedResourceEvent> eventForRangeAndClear(
       SortedMap<Long, ExtendedResourceEvent> events, SortedSet<Long> ownResourceVersions) {
+
     if (events.isEmpty()) {
       return Optional.empty();
     }
-    var isAnyEventFromReList =
-        events.values().stream().anyMatch(ExtendedResourceEvent::isPartOfReList);
 
-    var first = getFirstRelatedEvent(events);
-    if (events.size() > 1 && first.getAction() == ResourceAction.DELETED) {
-      events.remove(events.firstKey());
-      first = getFirstRelatedEvent(events);
-    }
-
-    if (events.keySet().equals(ownResourceVersions) && !isAnyEventFromReList) {
-      ExtendedResourceEvent res = null;
-      var lastEvent = getLastRelatedEvent(events);
-      if (lastEvent.getAction() == ResourceAction.DELETED) {
-        res = lastEvent;
-      }
-      events.clear();
-      ownResourceVersions.clear();
-      return Optional.ofNullable(res);
-    }
-
-    if (events.size() == 1) {
-      ownResourceVersions.clear();
-      var res = Optional.of(events.values().iterator().next());
-      events.clear();
-      return res;
-    }
     var lastEvent = getLastRelatedEvent(events);
     if (lastEvent.getAction() == ResourceAction.DELETED) {
       events.clear();
@@ -164,6 +161,36 @@ class EventFilterWindow {
       return Optional.of(lastEvent);
     }
 
+    // if any of the events is part of re-list (including first delete) we detect it
+    var isAnyEventFromReList =
+        events.values().stream().anyMatch(ExtendedResourceEvent::isPartOfReList);
+
+    var first = getFirstRelatedEvent(events);
+    // if delete event is first in the row and more events we can discard that
+    // since won't play role in synthesized (synt) event.
+    if (events.size() > 1 && first.getAction() == ResourceAction.DELETED) {
+      events.remove(events.firstKey());
+      first = getFirstRelatedEvent(events);
+    }
+
+    // if all updates are related to own updates we don't return event.
+    //
+    if (events.keySet().equals(ownResourceVersions) && !isAnyEventFromReList) {
+      events.clear();
+      ownResourceVersions.clear();
+      return Optional.empty();
+    }
+
+    // if only one event we return that
+    if (events.size() == 1) {
+      ownResourceVersions.clear();
+      var res = Optional.of(events.values().iterator().next());
+      events.clear();
+      return res;
+    }
+
+    // if none above we create a synt event that contains from the oldest know resource
+    // to the newest one. This is important to filters see the whole range
     var res =
         Optional.of(
             new ExtendedResourceEvent(
@@ -191,19 +218,15 @@ class EventFilterWindow {
     return subMap.get(subMap.lastKey());
   }
 
-  private ExtendedResourceEvent getLastRelatedEvent() {
-    return getLastRelatedEvent(relatedEvents);
-  }
-
   public synchronized boolean canBeRemoved() {
-    if (activeUpdates == 0 && ownResourceVersions.isEmpty() && relatedEvents.isEmpty()) {
+    if (activeUpdates == 0 && ownUpdateVersions.isEmpty() && relatedEvents.isEmpty()) {
       return true;
     }
     return false;
   }
 
-  public synchronized void addToOwnResourceVersions(String resourceVersion) {
-    ownResourceVersions.add(Long.parseLong(resourceVersion));
+  public synchronized void addToOwnUpdateVersions(String resourceVersion) {
+    ownUpdateVersions.add(Long.parseLong(resourceVersion));
   }
 
   public synchronized void addRelatedEvent(ExtendedResourceEvent event) {
@@ -237,6 +260,6 @@ class EventFilterWindow {
   }
 
   synchronized SortedSet<Long> getOwnResourceVersions() {
-    return ownResourceVersions;
+    return ownUpdateVersions;
   }
 }

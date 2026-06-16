@@ -35,12 +35,10 @@ class EventFilterWindowTest {
 
   EventFilterWindow eventFilterWindow = new EventFilterWindow(false);
 
-  // todo ensure real call scenarios
-
   @Test
   void oneOwnVersionNoEvent() {
     eventFilterWindow.increaseActiveUpdates();
-    eventFilterWindow.addToOwnResourceVersions(s(FIRST_OWN_VERSION));
+    eventFilterWindow.addToOwnUpdateVersions(s(FIRST_OWN_VERSION));
 
     assertThat(eventFilterWindow.check()).isEmpty();
     assertThat(eventFilterWindow.canBeRemoved()).isFalse();
@@ -52,7 +50,7 @@ class EventFilterWindowTest {
   @Test
   void oneOwnVersionEventReceivedEventForIt() {
     eventFilterWindow.increaseActiveUpdates();
-    eventFilterWindow.addToOwnResourceVersions(s(FIRST_OWN_VERSION));
+    eventFilterWindow.addToOwnUpdateVersions(s(FIRST_OWN_VERSION));
     eventFilterWindow.addRelatedEvent(updateEvent(FIRST_OWN_VERSION));
 
     // check also cleans up the current since we received event for our own resource
@@ -66,7 +64,7 @@ class EventFilterWindowTest {
   @Test
   void receivedAsFirstAddEventReturnTheSameEventIfThatIsOnlyRelevant() {
     eventFilterWindow.increaseActiveUpdates();
-    eventFilterWindow.addToOwnResourceVersions(s(FIRST_OWN_VERSION));
+    eventFilterWindow.addToOwnUpdateVersions(s(FIRST_OWN_VERSION));
     eventFilterWindow.addRelatedEvent(addEvent(FIRST_OWN_VERSION));
 
     assertThat(eventFilterWindow.check()).isEmpty();
@@ -75,7 +73,7 @@ class EventFilterWindowTest {
   @Test
   void oneOwnVersionAdditionalEventReceivedBeforeIt() {
     eventFilterWindow.increaseActiveUpdates();
-    eventFilterWindow.addToOwnResourceVersions(s(FIRST_OWN_VERSION));
+    eventFilterWindow.addToOwnUpdateVersions(s(FIRST_OWN_VERSION));
     eventFilterWindow.addRelatedEvent(updateEvent(FIRST_OWN_VERSION - 1));
     eventFilterWindow.addRelatedEvent(updateEvent(FIRST_OWN_VERSION));
 
@@ -91,9 +89,9 @@ class EventFilterWindowTest {
   @Test
   void twoOwnVersionEventReceivedEventOnlyForFirstThenForSecond() {
     eventFilterWindow.increaseActiveUpdates();
-    eventFilterWindow.addToOwnResourceVersions(s(FIRST_OWN_VERSION));
+    eventFilterWindow.addToOwnUpdateVersions(s(FIRST_OWN_VERSION));
     eventFilterWindow.increaseActiveUpdates();
-    eventFilterWindow.addToOwnResourceVersions(s(FIRST_OWN_VERSION + 1));
+    eventFilterWindow.addToOwnUpdateVersions(s(FIRST_OWN_VERSION + 1));
 
     eventFilterWindow.addRelatedEvent(updateEvent(FIRST_OWN_VERSION));
 
@@ -117,9 +115,9 @@ class EventFilterWindowTest {
   @Test
   void twoOwnVersionEventReceivedOne() {
     eventFilterWindow.increaseActiveUpdates();
-    eventFilterWindow.addToOwnResourceVersions(s(FIRST_OWN_VERSION));
+    eventFilterWindow.addToOwnUpdateVersions(s(FIRST_OWN_VERSION));
     eventFilterWindow.increaseActiveUpdates();
-    eventFilterWindow.addToOwnResourceVersions(s(FIRST_OWN_VERSION + 1));
+    eventFilterWindow.addToOwnUpdateVersions(s(FIRST_OWN_VERSION + 1));
 
     eventFilterWindow.addRelatedEvent(updateEvent(FIRST_OWN_VERSION));
 
@@ -138,7 +136,7 @@ class EventFilterWindowTest {
   @Test
   void receivedAddEventAfterOurUpdate() {
     eventFilterWindow.increaseActiveUpdates();
-    eventFilterWindow.addToOwnResourceVersions(s(FIRST_OWN_VERSION));
+    eventFilterWindow.addToOwnUpdateVersions(s(FIRST_OWN_VERSION));
     eventFilterWindow.addRelatedEvent(addEvent(FIRST_OWN_VERSION + 1));
     eventFilterWindow.decreaseActiveUpdates();
 
@@ -153,7 +151,7 @@ class EventFilterWindowTest {
   @Test
   void receivedAddEventAfterOurUpdateDone() {
     eventFilterWindow.increaseActiveUpdates();
-    eventFilterWindow.addToOwnResourceVersions(s(FIRST_OWN_VERSION));
+    eventFilterWindow.addToOwnUpdateVersions(s(FIRST_OWN_VERSION));
     eventFilterWindow.decreaseActiveUpdates();
     eventFilterWindow.addRelatedEvent(addEvent(FIRST_OWN_VERSION + 1));
     assertThat(eventFilterWindow.check())
@@ -190,7 +188,7 @@ class EventFilterWindowTest {
   @Test
   void receiveEventAfterEventForOwnUpdate() {
     eventFilterWindow.increaseActiveUpdates();
-    eventFilterWindow.addToOwnResourceVersions(s(FIRST_OWN_VERSION + 1));
+    eventFilterWindow.addToOwnUpdateVersions(s(FIRST_OWN_VERSION + 1));
 
     eventFilterWindow.addRelatedEvent(updateEvent(FIRST_OWN_VERSION));
     eventFilterWindow.addRelatedEvent(updateEvent(FIRST_OWN_VERSION + 1));
@@ -211,7 +209,7 @@ class EventFilterWindowTest {
   @Test
   void doNotIncludeAfterEventForFirstOwnUpdateIfOtherOwnUpdateIsActive() {
     eventFilterWindow.increaseActiveUpdates();
-    eventFilterWindow.addToOwnResourceVersions(s(FIRST_OWN_VERSION + 1));
+    eventFilterWindow.addToOwnUpdateVersions(s(FIRST_OWN_VERSION + 1));
 
     eventFilterWindow.increaseActiveUpdates();
 
@@ -227,7 +225,7 @@ class EventFilterWindowTest {
     eventFilterWindow.decreaseActiveUpdates();
 
     assertThat(eventFilterWindow.getRelatedEvents()).isNotEmpty();
-    eventFilterWindow.addToOwnResourceVersions(s(FIRST_OWN_VERSION + 2));
+    eventFilterWindow.addToOwnUpdateVersions(s(FIRST_OWN_VERSION + 2));
 
     assertThat(eventFilterWindow.check()).isEmpty();
 
@@ -240,9 +238,9 @@ class EventFilterWindowTest {
   @Test
   void assertMultipleUpdatesAndIntermediateEventBetween() {
     eventFilterWindow.increaseActiveUpdates();
-    eventFilterWindow.addToOwnResourceVersions(s(FIRST_OWN_VERSION));
+    eventFilterWindow.addToOwnUpdateVersions(s(FIRST_OWN_VERSION));
     eventFilterWindow.increaseActiveUpdates();
-    eventFilterWindow.addToOwnResourceVersions(s(FIRST_OWN_VERSION + 2));
+    eventFilterWindow.addToOwnUpdateVersions(s(FIRST_OWN_VERSION + 2));
 
     eventFilterWindow.addRelatedEvent(updateEvent(FIRST_OWN_VERSION));
     eventFilterWindow.addRelatedEvent(updateEvent(FIRST_OWN_VERSION + 1));
@@ -262,9 +260,9 @@ class EventFilterWindowTest {
   @Test
   void receiveIntermediateBetweenTwoOwnUpdates() {
     eventFilterWindow.increaseActiveUpdates();
-    eventFilterWindow.addToOwnResourceVersions(s(FIRST_OWN_VERSION));
+    eventFilterWindow.addToOwnUpdateVersions(s(FIRST_OWN_VERSION));
     eventFilterWindow.increaseActiveUpdates();
-    eventFilterWindow.addToOwnResourceVersions(s(FIRST_OWN_VERSION + 2));
+    eventFilterWindow.addToOwnUpdateVersions(s(FIRST_OWN_VERSION + 2));
 
     eventFilterWindow.addRelatedEvent(updateEvent(FIRST_OWN_VERSION));
     eventFilterWindow.addRelatedEvent(updateEvent(FIRST_OWN_VERSION + 1));
@@ -290,7 +288,7 @@ class EventFilterWindowTest {
   @Test
   void deleteEventAsLastEvent_simpleCase() {
     eventFilterWindow.increaseActiveUpdates();
-    eventFilterWindow.addToOwnResourceVersions(s(FIRST_OWN_VERSION));
+    eventFilterWindow.addToOwnUpdateVersions(s(FIRST_OWN_VERSION));
     eventFilterWindow.addRelatedEvent(deleteEvent(FIRST_OWN_VERSION));
     assertThat(eventFilterWindow.check()).hasValueSatisfying(this::assertDeleteEvent);
     assertThat(eventFilterWindow.canBeRemoved()).isFalse();
@@ -303,7 +301,7 @@ class EventFilterWindowTest {
   @Test
   void deleteEventBeforeOurUpdate() {
     eventFilterWindow.increaseActiveUpdates();
-    eventFilterWindow.addToOwnResourceVersions(s(FIRST_OWN_VERSION));
+    eventFilterWindow.addToOwnUpdateVersions(s(FIRST_OWN_VERSION));
     eventFilterWindow.addRelatedEvent(deleteEvent(FIRST_OWN_VERSION - 1));
     eventFilterWindow.addRelatedEvent(addEvent(FIRST_OWN_VERSION));
 
@@ -318,7 +316,7 @@ class EventFilterWindowTest {
   @Test
   void deleteEventOnMiddleOfOwnUpdate() {
     eventFilterWindow.increaseActiveUpdates();
-    eventFilterWindow.addToOwnResourceVersions(s(FIRST_OWN_VERSION + 2));
+    eventFilterWindow.addToOwnUpdateVersions(s(FIRST_OWN_VERSION + 2));
     eventFilterWindow.addRelatedEvent(updateEvent(FIRST_OWN_VERSION));
     eventFilterWindow.addRelatedEvent(deleteEvent(FIRST_OWN_VERSION + 1));
     eventFilterWindow.addRelatedEvent(addEvent(FIRST_OWN_VERSION + 2));
@@ -335,7 +333,7 @@ class EventFilterWindowTest {
   @Test
   void deleteEventAsAdditionalEventAfterOwnUpdates() {
     eventFilterWindow.increaseActiveUpdates();
-    eventFilterWindow.addToOwnResourceVersions(s(FIRST_OWN_VERSION));
+    eventFilterWindow.addToOwnUpdateVersions(s(FIRST_OWN_VERSION));
     eventFilterWindow.addRelatedEvent(updateEvent(FIRST_OWN_VERSION));
     eventFilterWindow.addRelatedEvent(deleteEvent(FIRST_OWN_VERSION + 1));
 
@@ -352,7 +350,7 @@ class EventFilterWindowTest {
   @Test
   void additionalDeleteEvent() {
     eventFilterWindow.increaseActiveUpdates();
-    eventFilterWindow.addToOwnResourceVersions(s(FIRST_OWN_VERSION + 1));
+    eventFilterWindow.addToOwnUpdateVersions(s(FIRST_OWN_VERSION + 1));
     eventFilterWindow.addRelatedEvent(updateEvent(FIRST_OWN_VERSION));
     eventFilterWindow.addRelatedEvent(updateEvent(FIRST_OWN_VERSION + 1));
     eventFilterWindow.addRelatedEvent(deleteEvent(FIRST_OWN_VERSION + 2));
@@ -373,7 +371,7 @@ class EventFilterWindowTest {
   @Test
   void additionalEventAndDeleteEvent() {
     eventFilterWindow.increaseActiveUpdates();
-    eventFilterWindow.addToOwnResourceVersions(s(FIRST_OWN_VERSION));
+    eventFilterWindow.addToOwnUpdateVersions(s(FIRST_OWN_VERSION));
     eventFilterWindow.addRelatedEvent(updateEvent(FIRST_OWN_VERSION));
 
     eventFilterWindow.addRelatedEvent(updateEvent(FIRST_OWN_VERSION + 1));
@@ -391,7 +389,7 @@ class EventFilterWindowTest {
   @Disabled("should be part of event filter support")
   void additionalEventAndDeleteEventNoUpdate() {
     eventFilterWindow.increaseActiveUpdates();
-    eventFilterWindow.addToOwnResourceVersions(s(FIRST_OWN_VERSION));
+    eventFilterWindow.addToOwnUpdateVersions(s(FIRST_OWN_VERSION));
     eventFilterWindow.addRelatedEvent(updateEvent(FIRST_OWN_VERSION));
     eventFilterWindow.addRelatedEvent(updateEvent(FIRST_OWN_VERSION + 1));
     eventFilterWindow.addRelatedEvent(deleteEvent(FIRST_OWN_VERSION + 2));
@@ -409,7 +407,7 @@ class EventFilterWindowTest {
   @Test
   void deleteEventInMiddleTwoUpdates() {
     eventFilterWindow.increaseActiveUpdates();
-    eventFilterWindow.addToOwnResourceVersions(s(FIRST_OWN_VERSION));
+    eventFilterWindow.addToOwnUpdateVersions(s(FIRST_OWN_VERSION));
     eventFilterWindow.addRelatedEvent(updateEvent(FIRST_OWN_VERSION));
     assertThat(eventFilterWindow.check()).isEmpty();
 
@@ -422,7 +420,7 @@ class EventFilterWindowTest {
         .hasValueSatisfying(e -> assertDeleteEvent(e, FIRST_OWN_VERSION + 1));
     assertEmptyState();
 
-    eventFilterWindow.addToOwnResourceVersions(s(FIRST_OWN_VERSION + 2));
+    eventFilterWindow.addToOwnUpdateVersions(s(FIRST_OWN_VERSION + 2));
     eventFilterWindow.addRelatedEvent(addEvent(FIRST_OWN_VERSION + 2));
     // delete event should be skipped in these cases and taking directly the last event
     assertThat(eventFilterWindow.check()).isEmpty();
@@ -437,10 +435,10 @@ class EventFilterWindowTest {
   @Test
   void deleteEventAfterTwoUpdates() {
     eventFilterWindow.increaseActiveUpdates();
-    eventFilterWindow.addToOwnResourceVersions(s(FIRST_OWN_VERSION));
+    eventFilterWindow.addToOwnUpdateVersions(s(FIRST_OWN_VERSION));
 
     eventFilterWindow.increaseActiveUpdates();
-    eventFilterWindow.addToOwnResourceVersions(s(FIRST_OWN_VERSION + 1));
+    eventFilterWindow.addToOwnUpdateVersions(s(FIRST_OWN_VERSION + 1));
 
     eventFilterWindow.addRelatedEvent(updateEvent(FIRST_OWN_VERSION));
     eventFilterWindow.addRelatedEvent(updateEvent(FIRST_OWN_VERSION + 1));
@@ -461,10 +459,10 @@ class EventFilterWindowTest {
   @Test
   void deleteEventAfterTwoUpdatesFinished() {
     eventFilterWindow.increaseActiveUpdates();
-    eventFilterWindow.addToOwnResourceVersions(s(FIRST_OWN_VERSION));
+    eventFilterWindow.addToOwnUpdateVersions(s(FIRST_OWN_VERSION));
 
     eventFilterWindow.increaseActiveUpdates();
-    eventFilterWindow.addToOwnResourceVersions(s(FIRST_OWN_VERSION + 1));
+    eventFilterWindow.addToOwnUpdateVersions(s(FIRST_OWN_VERSION + 1));
 
     eventFilterWindow.addRelatedEvent(updateEvent(FIRST_OWN_VERSION));
     eventFilterWindow.addRelatedEvent(updateEvent(FIRST_OWN_VERSION + 1));
@@ -485,7 +483,7 @@ class EventFilterWindowTest {
   @Test
   void reListBeforeUpdateStarted() {
     eventFilterWindow.increaseActiveUpdates();
-    eventFilterWindow.addToOwnResourceVersions(s(FIRST_OWN_VERSION));
+    eventFilterWindow.addToOwnUpdateVersions(s(FIRST_OWN_VERSION));
     eventFilterWindow.setReListStarted();
     eventFilterWindow.addRelatedEvent(updateEvent(FIRST_OWN_VERSION));
     eventFilterWindow.setReListFinished();
@@ -501,7 +499,7 @@ class EventFilterWindowTest {
   @Test
   void reListHappensAfterUpdate() {
     eventFilterWindow.increaseActiveUpdates();
-    eventFilterWindow.addToOwnResourceVersions(s(FIRST_OWN_VERSION));
+    eventFilterWindow.addToOwnUpdateVersions(s(FIRST_OWN_VERSION));
     eventFilterWindow.addRelatedEvent(updateEvent(FIRST_OWN_VERSION));
     eventFilterWindow.setReListStarted();
     eventFilterWindow.addRelatedEvent(updateEvent(FIRST_OWN_VERSION + 1));
@@ -519,11 +517,11 @@ class EventFilterWindowTest {
   @Test
   void reListBetweenTwoUpdates() {
     eventFilterWindow.increaseActiveUpdates();
-    eventFilterWindow.addToOwnResourceVersions(s(FIRST_OWN_VERSION));
+    eventFilterWindow.addToOwnUpdateVersions(s(FIRST_OWN_VERSION));
     eventFilterWindow.addRelatedEvent(updateEvent(FIRST_OWN_VERSION));
 
     eventFilterWindow.increaseActiveUpdates();
-    eventFilterWindow.addToOwnResourceVersions(s(FIRST_OWN_VERSION + 1));
+    eventFilterWindow.addToOwnUpdateVersions(s(FIRST_OWN_VERSION + 1));
     eventFilterWindow.setReListStarted();
     eventFilterWindow.addRelatedEvent(updateEvent(FIRST_OWN_VERSION + 1));
     eventFilterWindow.setReListFinished();
@@ -547,7 +545,7 @@ class EventFilterWindowTest {
     // the window wedges (canRemoved stays false because relatedEvents is not
     // empty) and the reconciler never learns about the foreign change.
     eventFilterWindow.increaseActiveUpdates();
-    eventFilterWindow.addToOwnResourceVersions(s(FIRST_OWN_VERSION));
+    eventFilterWindow.addToOwnUpdateVersions(s(FIRST_OWN_VERSION));
     eventFilterWindow.addRelatedEvent(updateEvent(FIRST_OWN_VERSION - 2));
 
     // Held while the write is in flight.

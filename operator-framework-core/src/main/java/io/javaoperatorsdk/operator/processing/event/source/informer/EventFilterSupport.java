@@ -91,7 +91,7 @@ class EventFilterSupport {
     var window = eventFilterWindows.get(resourceId);
     if (window != null) {
       log.debug("Recording own resourceVersion. id={}, rv={}", resourceId, resourceVersion);
-      window.addToOwnResourceVersions(resourceVersion);
+      window.addToOwnUpdateVersions(resourceVersion);
     } else {
       log.debug(
           "addToOwnResourceVersions: no active window for id={}, rv={} (skipped)",
