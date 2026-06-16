@@ -81,25 +81,25 @@ public class TemporaryResourceCache<T extends HasMetadata> {
     eventFilteringSupport.startEventFilteringModify(resourceID);
   }
 
-  public synchronized Optional<GenericResourceEvent> doneEventFilterModify(ResourceID resourceID) {
+  public synchronized Optional<ExtendedResourceEvent> doneEventFilterModify(ResourceID resourceID) {
     if (!comparableResourceVersions) {
       return Optional.empty();
     }
     return eventFilteringSupport.doneEventFilterModify(resourceID);
   }
 
-  public Optional<GenericResourceEvent> onDeleteEvent(T resource, boolean unknownState) {
+  public Optional<ExtendedResourceEvent> onDeleteEvent(T resource, boolean unknownState) {
     return onEvent(ResourceAction.DELETED, resource, null, unknownState);
   }
 
-  public Optional<GenericResourceEvent> onAddOrUpdateEvent(
+  public Optional<ExtendedResourceEvent> onAddOrUpdateEvent(
       ResourceAction action, T resource, T prevResourceVersion) {
     return onEvent(action, resource, prevResourceVersion, null);
   }
 
-  private synchronized Optional<GenericResourceEvent> onEvent(
+  private synchronized Optional<ExtendedResourceEvent> onEvent(
       ResourceAction action, T resource, T prevResourceVersion, Boolean unknownState) {
-    GenericResourceEvent actualEvent =
+    ExtendedResourceEvent actualEvent =
         toGenericResourceEvent(action, resource, prevResourceVersion, unknownState);
     if (!comparableResourceVersions) {
       return Optional.of(actualEvent);
@@ -132,9 +132,9 @@ public class TemporaryResourceCache<T extends HasMetadata> {
     return eventFilteringSupport.processEvent(resourceId, actualEvent);
   }
 
-  static <T extends HasMetadata> GenericResourceEvent toGenericResourceEvent(
+  static <T extends HasMetadata> ExtendedResourceEvent toGenericResourceEvent(
       ResourceAction action, T resource, T prevResourceVersion, Boolean unknownState) {
-    return new GenericResourceEvent(action, resource, prevResourceVersion, unknownState);
+    return new ExtendedResourceEvent(action, resource, prevResourceVersion, unknownState);
   }
 
   /** put the item into the cache if it's for a later state than what has already been observed. */

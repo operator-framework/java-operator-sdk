@@ -31,7 +31,7 @@ import io.javaoperatorsdk.operator.processing.event.ResourceID;
 import io.javaoperatorsdk.operator.processing.event.source.ResourceAction;
 import io.javaoperatorsdk.operator.processing.event.source.filter.OnDeleteFilter;
 import io.javaoperatorsdk.operator.processing.event.source.filter.OnUpdateFilter;
-import io.javaoperatorsdk.operator.processing.event.source.informer.GenericResourceEvent;
+import io.javaoperatorsdk.operator.processing.event.source.informer.ExtendedResourceEvent;
 import io.javaoperatorsdk.operator.processing.event.source.informer.ManagedInformerEventSource;
 
 import static io.javaoperatorsdk.operator.ReconcilerUtilsInternal.handleKubernetesClientException;
@@ -151,7 +151,7 @@ public class ControllerEventSource<T extends HasMetadata>
   }
 
   @SuppressWarnings("unchecked")
-  private void handleEvent(GenericResourceEvent r) {
+  private void handleEvent(ExtendedResourceEvent r) {
     handleEvent(
         r.getAction(),
         (T) r.getResource().orElseThrow(),

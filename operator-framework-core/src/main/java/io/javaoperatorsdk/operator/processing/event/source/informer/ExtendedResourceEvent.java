@@ -24,13 +24,13 @@ import io.javaoperatorsdk.operator.processing.event.source.ResourceAction;
 import io.javaoperatorsdk.operator.processing.event.source.controller.ResourceEvent;
 
 /** Used only for resource event filtering. */
-public class GenericResourceEvent extends ResourceEvent {
+public class ExtendedResourceEvent extends ResourceEvent {
 
   private final HasMetadata previousResource;
   private final Boolean lastStateUnknow;
   private boolean partOfReList = false;
 
-  public GenericResourceEvent(
+  public ExtendedResourceEvent(
       ResourceAction action,
       HasMetadata latestResource,
       HasMetadata previousResource,
@@ -50,7 +50,7 @@ public class GenericResourceEvent extends ResourceEvent {
 
   @Override
   public String toString() {
-    return "GenericResourceEvent{"
+    return "ExtendedResourceEvent{"
         + getPreviousResource()
             .map(r -> "previousResourceVersion=" + r.getMetadata().getResourceVersion())
             .orElse("")
@@ -68,7 +68,7 @@ public class GenericResourceEvent extends ResourceEvent {
   public boolean equals(Object o) {
     if (o == null || getClass() != o.getClass()) return false;
     if (!super.equals(o)) return false;
-    GenericResourceEvent that = (GenericResourceEvent) o;
+    ExtendedResourceEvent that = (ExtendedResourceEvent) o;
     return Objects.equals(previousResource, that.previousResource);
   }
 

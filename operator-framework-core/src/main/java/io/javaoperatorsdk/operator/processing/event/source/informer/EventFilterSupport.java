@@ -43,7 +43,7 @@ class EventFilterSupport {
         ongoingReList);
   }
 
-  public synchronized Optional<GenericResourceEvent> doneEventFilterModify(ResourceID resourceID) {
+  public synchronized Optional<ExtendedResourceEvent> doneEventFilterModify(ResourceID resourceID) {
     var ed = eventFilterWindows.get(resourceID);
     if (ed == null) {
       log.debug("doneEventFilterModify: no window for id={}", resourceID);
@@ -54,30 +54,30 @@ class EventFilterSupport {
     return check(ed, resourceID);
   }
 
-  public synchronized Optional<GenericResourceEvent> processEvent(
-      ResourceID resourceId, GenericResourceEvent genericResourceEvent) {
+  public synchronized Optional<ExtendedResourceEvent> processEvent(
+      ResourceID resourceId, ExtendedResourceEvent extendedResourceEvent) {
     var ed = eventFilterWindows.get(resourceId);
     if (ed != null) {
       log.debug(
           "processEvent: buffering event in window. id={}, action={}, rv={}",
           resourceId,
-          genericResourceEvent.getAction(),
-          genericResourceEvent
+          extendedResourceEvent.getAction(),
+          extendedResourceEvent
               .getResource()
               .map(r -> r.getMetadata().getResourceVersion())
               .orElse("?"));
-      ed.addRelatedEvent(genericResourceEvent);
+      ed.addRelatedEvent(extendedResourceEvent);
       return check(ed, resourceId);
     } else {
       log.debug(
           "processEvent: no active window, surfacing directly. id={}, action={}",
           resourceId,
-          genericResourceEvent.getAction());
-      return Optional.of(genericResourceEvent);
+          extendedResourceEvent.getAction());
+      return Optional.of(extendedResourceEvent);
     }
   }
 
-  private Optional<GenericResourceEvent> check(
+  private Optional<ExtendedResourceEvent> check(
       EventFilterWindow eventFilterWindow, ResourceID resourceID) {
     var res = eventFilterWindow.check();
     if (eventFilterWindow.canBeRemoved()) {

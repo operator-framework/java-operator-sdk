@@ -588,17 +588,17 @@ class EventFilterSupportTest {
 
   // -------- end of replicated tests --------
 
-  GenericResourceEvent updateEvent(long version) {
-    return new GenericResourceEvent(
+  ExtendedResourceEvent updateEvent(long version) {
+    return new ExtendedResourceEvent(
         UPDATED, testResource(version), testResource(version - 1), null);
   }
 
-  GenericResourceEvent addEvent(long version) {
-    return new GenericResourceEvent(ADDED, testResource(version), null, null);
+  ExtendedResourceEvent addEvent(long version) {
+    return new ExtendedResourceEvent(ADDED, testResource(version), null, null);
   }
 
-  GenericResourceEvent deleteEvent(long version) {
-    return new GenericResourceEvent(DELETED, testResource(version), null, true);
+  ExtendedResourceEvent deleteEvent(long version) {
+    return new ExtendedResourceEvent(DELETED, testResource(version), null, true);
   }
 
   ConfigMap testResource(long version) {

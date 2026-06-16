@@ -567,12 +567,12 @@ class EventFilterWindowTest {
     assertThat(eventFilterWindow.canBeRemoved()).isTrue();
   }
 
-  void assertUpdateEvent(GenericResourceEvent event, Long resourceVersion) {
+  void assertUpdateEvent(ExtendedResourceEvent event, Long resourceVersion) {
     assertUpdateEvent(event, resourceVersion, resourceVersion - 1);
   }
 
   void assertUpdateEvent(
-      GenericResourceEvent event, Long resourceVersion, Long previousResourceVersion) {
+      ExtendedResourceEvent event, Long resourceVersion, Long previousResourceVersion) {
     assertThat(event.getAction()).isEqualTo(UPDATED);
     assertThat(event.getResource().orElseThrow().getMetadata().getResourceVersion())
         .isEqualTo(s(resourceVersion));
@@ -581,7 +581,7 @@ class EventFilterWindowTest {
     assertThat(event.isLastStateUnknow()).isNull();
   }
 
-  void assertAddEvent(GenericResourceEvent event, Long resourceVersion) {
+  void assertAddEvent(ExtendedResourceEvent event, Long resourceVersion) {
     assertThat(event.getAction()).isEqualTo(ADDED);
     assertThat(event.getResource().orElseThrow().getMetadata().getResourceVersion())
         .isEqualTo(s(resourceVersion));
@@ -589,11 +589,11 @@ class EventFilterWindowTest {
     assertThat(event.isLastStateUnknow()).isNull();
   }
 
-  void assertDeleteEvent(GenericResourceEvent event) {
+  void assertDeleteEvent(ExtendedResourceEvent event) {
     assertDeleteEvent(event, FIRST_OWN_VERSION);
   }
 
-  void assertDeleteEvent(GenericResourceEvent event, Long resourceVersion) {
+  void assertDeleteEvent(ExtendedResourceEvent event, Long resourceVersion) {
     assertThat(event.getAction()).isEqualTo(DELETED);
     assertThat(event.getResource().orElseThrow().getMetadata().getResourceVersion())
         .isEqualTo(s(resourceVersion));
@@ -601,17 +601,17 @@ class EventFilterWindowTest {
     assertThat(event.isLastStateUnknow()).isTrue();
   }
 
-  GenericResourceEvent updateEvent(long version) {
-    return new GenericResourceEvent(
+  ExtendedResourceEvent updateEvent(long version) {
+    return new ExtendedResourceEvent(
         UPDATED, testResource(version), testResource(version - 1), null);
   }
 
-  GenericResourceEvent addEvent(long version) {
-    return new GenericResourceEvent(ADDED, testResource(version), null, null);
+  ExtendedResourceEvent addEvent(long version) {
+    return new ExtendedResourceEvent(ADDED, testResource(version), null, null);
   }
 
-  GenericResourceEvent deleteEvent(long version) {
-    return new GenericResourceEvent(DELETED, testResource(version), null, true);
+  ExtendedResourceEvent deleteEvent(long version) {
+    return new ExtendedResourceEvent(DELETED, testResource(version), null, true);
   }
 
   ConfigMap testResource(Long version) {

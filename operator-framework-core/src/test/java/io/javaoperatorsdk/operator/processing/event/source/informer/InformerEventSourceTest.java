@@ -171,7 +171,7 @@ class InformerEventSourceTest {
     var resource = testDeployment();
     when(temporaryResourceCache.onDeleteEvent(resource, false))
         .thenReturn(
-            Optional.of(new GenericResourceEvent(ResourceAction.DELETED, resource, null, false)));
+            Optional.of(new ExtendedResourceEvent(ResourceAction.DELETED, resource, null, false)));
 
     informerEventSource.onDelete(resource, false);
 

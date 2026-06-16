@@ -57,7 +57,7 @@ class EventFilterWindow {
 
   private static final Logger log = LoggerFactory.getLogger(EventFilterWindow.class);
 
-  private final SortedMap<Long, GenericResourceEvent> relatedEvents = new TreeMap<>();
+  private final SortedMap<Long, ExtendedResourceEvent> relatedEvents = new TreeMap<>();
   private final SortedSet<Long> ownResourceVersions = new TreeSet<>();
   private boolean reListOnGoing;
   private int activeUpdates = 0;
@@ -66,14 +66,14 @@ class EventFilterWindow {
     this.reListOnGoing = reListOnGoing;
   }
 
-  public synchronized Optional<GenericResourceEvent> check() {
+  public synchronized Optional<ExtendedResourceEvent> check() {
     String beforeState = log.isDebugEnabled() ? snapshotState() : null;
-    Optional<GenericResourceEvent> result = doCheck();
+    Optional<ExtendedResourceEvent> result = doCheck();
     if (log.isDebugEnabled()) {
       log.debug(
           "check() input state: {} → outcome: {} → state after: {}",
           beforeState,
-          result.map(GenericResourceEvent::toString).orElse("empty"),
+          result.map(ExtendedResourceEvent::toString).orElse("empty"),
           snapshotState());
     }
     return result;
@@ -85,7 +85,7 @@ class EventFilterWindow {
         relatedEvents.keySet(), ownResourceVersions, activeUpdates, reListOnGoing);
   }
 
-  private Optional<GenericResourceEvent> doCheck() {
+  private Optional<ExtendedResourceEvent> doCheck() {
     if (relatedEvents.isEmpty()) {
       return Optional.empty();
     }
@@ -126,13 +126,13 @@ class EventFilterWindow {
   }
 
   // it has responsibility to clear those ranges and emit event if needed
-  Optional<GenericResourceEvent> eventForRangeAndClear(
-      SortedMap<Long, GenericResourceEvent> events, SortedSet<Long> ownResourceVersions) {
+  Optional<ExtendedResourceEvent> eventForRangeAndClear(
+      SortedMap<Long, ExtendedResourceEvent> events, SortedSet<Long> ownResourceVersions) {
     if (events.isEmpty()) {
       return Optional.empty();
     }
     var isAnyEventFromReList =
-        events.values().stream().anyMatch(GenericResourceEvent::isPartOfReList);
+        events.values().stream().anyMatch(ExtendedResourceEvent::isPartOfReList);
 
     var first = getFirstRelatedEvent(events);
     if (events.size() > 1 && first.getAction() == ResourceAction.DELETED) {
@@ -141,7 +141,7 @@ class EventFilterWindow {
     }
 
     if (events.keySet().equals(ownResourceVersions) && !isAnyEventFromReList) {
-      GenericResourceEvent res = null;
+      ExtendedResourceEvent res = null;
       var lastEvent = getLastRelatedEvent(events);
       if (lastEvent.getAction() == ResourceAction.DELETED) {
         res = lastEvent;
@@ -166,7 +166,7 @@ class EventFilterWindow {
 
     var res =
         Optional.of(
-            new GenericResourceEvent(
+            new ExtendedResourceEvent(
                 ResourceAction.UPDATED,
                 lastEvent.getResource().orElseThrow(),
                 first.getPreviousResource().isEmpty()
@@ -178,19 +178,20 @@ class EventFilterWindow {
     return res;
   }
 
-  private GenericResourceEvent getFirstRelatedEvent() {
+  private ExtendedResourceEvent getFirstRelatedEvent() {
     return getFirstRelatedEvent(relatedEvents);
   }
 
-  private GenericResourceEvent getFirstRelatedEvent(SortedMap<Long, GenericResourceEvent> subMap) {
+  private ExtendedResourceEvent getFirstRelatedEvent(
+      SortedMap<Long, ExtendedResourceEvent> subMap) {
     return subMap.values().iterator().next();
   }
 
-  private GenericResourceEvent getLastRelatedEvent(SortedMap<Long, GenericResourceEvent> subMap) {
+  private ExtendedResourceEvent getLastRelatedEvent(SortedMap<Long, ExtendedResourceEvent> subMap) {
     return subMap.get(subMap.lastKey());
   }
 
-  private GenericResourceEvent getLastRelatedEvent() {
+  private ExtendedResourceEvent getLastRelatedEvent() {
     return getLastRelatedEvent(relatedEvents);
   }
 
@@ -205,7 +206,7 @@ class EventFilterWindow {
     ownResourceVersions.add(Long.parseLong(resourceVersion));
   }
 
-  public synchronized void addRelatedEvent(GenericResourceEvent event) {
+  public synchronized void addRelatedEvent(ExtendedResourceEvent event) {
     if (reListOnGoing) {
       event.setPartOfReList(true);
     }
@@ -231,7 +232,7 @@ class EventFilterWindow {
     activeUpdates--;
   }
 
-  synchronized SortedMap<Long, GenericResourceEvent> getRelatedEvents() {
+  synchronized SortedMap<Long, ExtendedResourceEvent> getRelatedEvents() {
     return relatedEvents;
   }
 
