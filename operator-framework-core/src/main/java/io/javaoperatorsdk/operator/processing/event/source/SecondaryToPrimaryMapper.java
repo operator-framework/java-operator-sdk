@@ -60,7 +60,8 @@ public interface SecondaryToPrimaryMapper<R> {
    *
    * <p>Implementations must therefore handle a {@code null} {@code oldResource} gracefully and not
    * rely on it being present for correctness — overriding this method is intended for edge cases
-   * only.
+   * only. Genericly speaking controller should also handle such change checking during
+   * reconciliation, so when controller starts and event is missed it is properly reconiled.
    *
    * @param newResource the current version of the secondary resource
    * @param oldResource the previous version of the secondary resource, or {@code null} if not
