@@ -162,8 +162,13 @@ class EventFilterWindow {
     }
 
     // if any of the events is part of re-list (including first delete) we detect it
-    var isAnyEventFromReList =
-        events.values().stream().anyMatch(ExtendedResourceEvent::isPartOfReList);
+    var isAnyEventFromReList = false;
+    for (var e : events.values()) {
+      if (e.isPartOfReList()) {
+        isAnyEventFromReList = true;
+        break;
+      }
+    }
 
     var first = getFirstRelatedEvent(events);
     // if delete event is first in the row and more events we can discard that
@@ -211,7 +216,7 @@ class EventFilterWindow {
 
   private ExtendedResourceEvent getFirstRelatedEvent(
       SortedMap<Long, ExtendedResourceEvent> subMap) {
-    return subMap.values().iterator().next();
+    return subMap.get(subMap.firstKey());
   }
 
   private ExtendedResourceEvent getLastRelatedEvent(SortedMap<Long, ExtendedResourceEvent> subMap) {
@@ -226,7 +231,7 @@ class EventFilterWindow {
   }
 
   public synchronized void addToOwnUpdateVersions(String resourceVersion) {
-    ownUpdateVersions.add(Long.parseLong(resourceVersion));
+    ownUpdateVersions.add(Long.valueOf(resourceVersion));
   }
 
   public synchronized void addRelatedEvent(ExtendedResourceEvent event) {
@@ -235,8 +240,7 @@ class EventFilterWindow {
     }
 
     relatedEvents.put(
-        Long.parseLong(event.getResource().orElseThrow().getMetadata().getResourceVersion()),
-        event);
+        Long.valueOf(event.getResource().orElseThrow().getMetadata().getResourceVersion()), event);
   }
 
   public synchronized void setReListStarted() {
