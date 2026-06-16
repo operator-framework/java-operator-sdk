@@ -86,7 +86,7 @@ class EventFilterWindow {
   }
 
   private Optional<ExtendedResourceEvent> doCheck() {
-    // if we don't have related events we have nothing to mit
+    // if we don't have related events we have nothing to emit
     if (relatedEvents.isEmpty()) {
       return Optional.empty();
     }
