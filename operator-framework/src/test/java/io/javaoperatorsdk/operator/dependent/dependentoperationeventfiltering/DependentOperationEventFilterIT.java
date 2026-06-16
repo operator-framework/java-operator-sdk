@@ -46,7 +46,6 @@ class DependentOperationEventFilterIT {
   @RegisterExtension
   LocallyRunOperatorExtension operator =
       LocallyRunOperatorExtension.builder()
-          .withNamespaceDeleteTimeout(2)
           .withReconciler(new DependentOperationEventFilterCustomResourceTestReconciler())
           .build();
 

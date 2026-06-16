@@ -15,6 +15,7 @@
  */
 package io.javaoperatorsdk.operator.sample.dependent;
 
+import java.nio.charset.StandardCharsets;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
@@ -121,7 +122,7 @@ public class SchemaDependentResource
   }
 
   public static String decode(String value) {
-    return new String(Base64.getDecoder().decode(value.getBytes()));
+    return new String(Base64.getDecoder().decode(value), StandardCharsets.UTF_8);
   }
 
   @Override

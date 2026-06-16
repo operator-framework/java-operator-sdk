@@ -18,6 +18,7 @@ package io.javaoperatorsdk.boostrapper;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
@@ -132,9 +133,10 @@ public class Bootstrapper {
               targetDir == null ? projectDir : targetDir,
               targetFileName == null ? fileName : targetFileName);
       FileUtils.forceMkdir(targetFile.getParentFile());
-      var writer = new FileWriter(targetFile);
-      mustache.execute(writer, values);
-      writer.flush();
+      try (var writer = new FileWriter(targetFile, StandardCharsets.UTF_8)) {
+        mustache.execute(writer, values);
+        writer.flush();
+      }
     } catch (IOException e) {
       throw new RuntimeException(e);
     }

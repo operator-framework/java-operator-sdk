@@ -36,7 +36,7 @@ public abstract class AbstractEventSourceHolderDependentResource<
 
   private T eventSource;
   private final Class<R> resourceType;
-  private boolean isCacheFillerEventSource;
+  private volatile boolean isCacheFillerEventSource;
   protected String eventSourceNameToUse;
 
   @SuppressWarnings("unchecked")

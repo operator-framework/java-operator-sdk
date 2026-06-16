@@ -87,6 +87,7 @@ public class LocallyRunOperatorExtension extends AbstractOperatorExtension {
       boolean preserveNamespaceOnError,
       boolean skipNamespaceDeletion,
       boolean waitForNamespaceDeletion,
+      int namespaceDeleteTimeout,
       boolean oneNamespacePerClass,
       KubernetesClient kubernetesClient,
       KubernetesClient infrastructureKubernetesClient,
@@ -103,6 +104,7 @@ public class LocallyRunOperatorExtension extends AbstractOperatorExtension {
         preserveNamespaceOnError,
         skipNamespaceDeletion,
         waitForNamespaceDeletion,
+        namespaceDeleteTimeout,
         kubernetesClient,
         infrastructureKubernetesClient,
         namespaceNameSupplier,
@@ -184,7 +186,8 @@ public class LocallyRunOperatorExtension extends AbstractOperatorExtension {
   private static void applyCrd(String crdString, String path, KubernetesClient client) {
     try {
       LOGGER.debug("Applying CRD: {}", crdString);
-      final var crd = client.load(new ByteArrayInputStream(crdString.getBytes()));
+      final var crd =
+          client.load(new ByteArrayInputStream(crdString.getBytes(StandardCharsets.UTF_8)));
       crd.serverSideApply();
       appliedCRDs.add(new AppliedCRD.FileCRD(crdString, path));
       Thread.sleep(CRD_READY_WAIT); // readiness is not applicable for CRD, just wait a little
@@ -446,7 +449,10 @@ public class LocallyRunOperatorExtension extends AbstractOperatorExtension {
       public void delete(KubernetesClient client) {
         try {
           LOGGER.debug("Deleting CRD: {}", crdString);
-          final var items = client.load(new ByteArrayInputStream(crdString.getBytes())).items();
+          final var items =
+              client
+                  .load(new ByteArrayInputStream(crdString.getBytes(StandardCharsets.UTF_8)))
+                  .items();
           if (items == null || items.isEmpty() || items.get(0) == null) {
             LOGGER.warn("Could not determine CRD name from yaml: {}", path);
             return;
@@ -620,6 +626,7 @@ public class LocallyRunOperatorExtension extends AbstractOperatorExtension {
           preserveNamespaceOnError,
           skipNamespaceDeletion,
           waitForNamespaceDeletion,
+          namespaceDeleteTimeout,
           oneNamespacePerClass,
           kubernetesClient,
           infrastructureKubernetesClient,

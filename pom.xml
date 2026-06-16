@@ -103,6 +103,7 @@
     <git-commit-id-maven-plugin.version>10.0.0</git-commit-id-maven-plugin.version>
     <jib-maven-plugin.version>3.5.1</jib-maven-plugin.version>
     <spotless.version>3.6.0</spotless.version>
+    <spotbugs-maven-plugin.version>4.9.8.3</spotbugs-maven-plugin.version>
   </properties>
 
   <dependencyManagement>
@@ -331,6 +332,11 @@
           <artifactId>spotless-maven-plugin</artifactId>
           <version>${spotless.version}</version>
         </plugin>
+        <plugin>
+          <groupId>com.github.spotbugs</groupId>
+          <artifactId>spotbugs-maven-plugin</artifactId>
+          <version>${spotbugs-maven-plugin.version}</version>
+        </plugin>
       </plugins>
     </pluginManagement>
     <plugins>
@@ -428,6 +434,25 @@
               <goal>format</goal>
             </goals>
             <phase>process-sources</phase>
+          </execution>
+        </executions>
+      </plugin>
+      <plugin>
+        <groupId>com.github.spotbugs</groupId>
+        <artifactId>spotbugs-maven-plugin</artifactId>
+        <configuration>
+          <effort>Max</effort>
+          <threshold>Medium</threshold>
+          <includeTests>false</includeTests>
+          <excludeFilterFile>${maven.multiModuleProjectDirectory}/spotbugs-exclude.xml</excludeFilterFile>
+        </configuration>
+        <executions>
+          <execution>
+            <id>spotbugs-check</id>
+            <goals>
+              <goal>check</goal>
+            </goals>
+            <phase>verify</phase>
           </execution>
         </executions>
       </plugin>
