@@ -648,7 +648,7 @@ class InformerEventSourceTest {
   }
 
   @Test
-  void handleEventUpdatesIndexWhenDeletePropagatesFromTempCache() throws Exception {
+  void handleSyntEventUpdatesIndexWhenDeletePropagatesFromTempCache() throws Exception {
     // handleEvent is invoked from ManagedInformerEventSource#eventFilteringUpdateAndCacheResource
     // only after the temp cache decided to surface the event. For a DELETE that means the resource
     // is really gone and the secondary→primary index must drop it; otherwise stale entries linger
@@ -658,7 +658,7 @@ class InformerEventSourceTest {
     // onDelete now returns the primaries to reconcile; propagateEvent uses that set directly
     when(indexMock.onDelete(resource)).thenReturn(Set.of(ResourceID.fromResource(resource)));
 
-    informerEventSource.handleEvent(ResourceAction.DELETED, resource, null, false);
+    informerEventSource.handleSyntEvent(ResourceAction.DELETED, resource, null, false);
 
     verify(indexMock, times(1)).onDelete(resource);
     verify(indexMock, never()).onAddOrUpdate(any(), any());
@@ -666,12 +666,12 @@ class InformerEventSourceTest {
   }
 
   @Test
-  void handleEventDoesNotTouchIndexForNonDeleteAction() throws Exception {
+  void handleSyntEventDoesNotTouchIndexForNonDeleteAction() throws Exception {
     // The onAdd/onUpdate path maintains the index in onAddOrUpdate(); handleEvent must not
     // double-update it for non-DELETE actions, otherwise we'd index resources twice.
     var indexMock = injectIndexMock();
 
-    informerEventSource.handleEvent(
+    informerEventSource.handleSyntEvent(
         ResourceAction.UPDATED, testDeployment(), testDeployment(), null);
 
     verify(indexMock, never()).onDelete(any());
@@ -680,7 +680,7 @@ class InformerEventSourceTest {
   }
 
   @Test
-  void handleEventRespectsOnDeleteFilter() throws Exception {
+  void handleSyntEventRespectsOnDeleteFilter() throws Exception {
     // The temp-cache pipeline must honor user-level filters: if onDeleteFilter rejects, the
     // synthesized DELETE must not be surfaced. The index, however, is still updated because the
     // resource is really gone — same semantics as the direct onDelete watch path.
@@ -688,18 +688,18 @@ class InformerEventSourceTest {
     informerEventSource.setOnDeleteFilter((r, b) -> false);
     var resource = testDeployment();
 
-    informerEventSource.handleEvent(ResourceAction.DELETED, resource, null, false);
+    informerEventSource.handleSyntEvent(ResourceAction.DELETED, resource, null, false);
 
     verify(indexMock, times(1)).onDelete(resource);
     verify(eventHandlerMock, never()).handleEvent(any());
   }
 
   @Test
-  void handleEventRespectsOnUpdateFilter() throws Exception {
+  void handleSyntEventRespectsOnUpdateFilter() throws Exception {
     var indexMock = injectIndexMock();
     informerEventSource.setOnUpdateFilter((n, o) -> false);
 
-    informerEventSource.handleEvent(
+    informerEventSource.handleSyntEvent(
         ResourceAction.UPDATED, testDeployment(), testDeployment(), null);
 
     verify(indexMock, never()).onDelete(any());
@@ -707,18 +707,18 @@ class InformerEventSourceTest {
   }
 
   @Test
-  void handleEventRespectsOnAddFilter() throws Exception {
+  void handleSyntEventRespectsOnAddFilter() throws Exception {
     var indexMock = injectIndexMock();
     informerEventSource.setOnAddFilter(r -> false);
 
-    informerEventSource.handleEvent(ResourceAction.ADDED, testDeployment(), null, null);
+    informerEventSource.handleSyntEvent(ResourceAction.ADDED, testDeployment(), null, null);
 
     verify(indexMock, never()).onDelete(any());
     verify(eventHandlerMock, never()).handleEvent(any());
   }
 
   @Test
-  void handleEventRespectsGenericFilter() throws Exception {
+  void handleSyntEventRespectsGenericFilter() throws Exception {
     // The generic filter applies regardless of action and short-circuits per-action filters.
     // For DELETE the index is still updated (resource really gone), but no event is propagated
     // for any action.
@@ -726,9 +726,9 @@ class InformerEventSourceTest {
     informerEventSource.setGenericFilter(r -> false);
     var resource = testDeployment();
 
-    informerEventSource.handleEvent(ResourceAction.DELETED, resource, null, true);
-    informerEventSource.handleEvent(ResourceAction.UPDATED, resource, resource, null);
-    informerEventSource.handleEvent(ResourceAction.ADDED, resource, null, null);
+    informerEventSource.handleSyntEvent(ResourceAction.DELETED, resource, null, true);
+    informerEventSource.handleSyntEvent(ResourceAction.UPDATED, resource, resource, null);
+    informerEventSource.handleSyntEvent(ResourceAction.ADDED, resource, null, null);
 
     verify(indexMock, times(1)).onDelete(resource);
     verify(eventHandlerMock, never()).handleEvent(any());
@@ -766,7 +766,7 @@ class InformerEventSourceTest {
         .untilAsserted(
             () ->
                 verify(informerEventSource, times(1))
-                    .handleEvent(
+                    .handleSyntEvent(
                         eq(ResourceAction.UPDATED),
                         argThat(
                             r ->
