@@ -38,7 +38,8 @@ class DefaultPrimaryToSecondaryIndex<R extends HasMetadata> implements PrimaryTo
     // (e.g. the previously referenced one) so that they get reconciled on a reference change; those
     // extra primaries are an event-propagation concern and must not be recorded as current
     // associations here.
-    Set<ResourceID> primaryResources = secondaryToPrimaryMapper.toPrimaryResourceIDs(resource);
+    Set<ResourceID> primaryResources =
+        secondaryToPrimaryMapper.toPrimaryResourceIDs(resource, oldResource);
 
     var secondaryId = ResourceID.fromResource(resource);
 
