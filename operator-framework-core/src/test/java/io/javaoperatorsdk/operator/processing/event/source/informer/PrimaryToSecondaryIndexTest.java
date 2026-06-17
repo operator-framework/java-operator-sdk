@@ -48,8 +48,12 @@ class PrimaryToSecondaryIndexTest {
 
   @BeforeEach
   void setup() {
-    when(secondaryToPrimaryMapperMock.toPrimaryResourceIDs(any(), any()))
+    when(secondaryToPrimaryMapperMock.toPrimaryResourceIDs(any()))
         .thenReturn(Set.of(primaryID1, primaryID2));
+    // mirror the real default: the two-argument variant delegates to the single-argument one, so
+    // tests only need to stub the single-argument method
+    when(secondaryToPrimaryMapperMock.toPrimaryResourceIDs(any(), any()))
+        .thenAnswer(inv -> secondaryToPrimaryMapperMock.toPrimaryResourceIDs(inv.getArgument(0)));
   }
 
   @Test
