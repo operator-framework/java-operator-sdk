@@ -32,12 +32,7 @@ class DefaultPrimaryToSecondaryIndex<R extends HasMetadata> implements PrimaryTo
   }
 
   @Override
-  public synchronized void onAddOrUpdate(R resource, R oldResource) {
-    // The index reflects the *current* associations of the secondary, so it must use the
-    // single-argument mapper. The two-argument variant may legitimately return additional primaries
-    // (e.g. the previously referenced one) so that they get reconciled on a reference change; those
-    // extra primaries are an event-propagation concern and must not be recorded as current
-    // associations here.
+  public synchronized Set<ResourceID> onAddOrUpdate(R resource, R oldResource) {
     Set<ResourceID> primaryResources =
         secondaryToPrimaryMapper.toPrimaryResourceIDs(resource, oldResource);
 
@@ -51,7 +46,6 @@ class DefaultPrimaryToSecondaryIndex<R extends HasMetadata> implements PrimaryTo
         });
 
     if (oldResource != null) {
-      // copy into a mutable set: mappers may return an immutable Set (e.g. Set.of(...))
       var obsoletePrimaries =
           new HashSet<>(secondaryToPrimaryMapper.toPrimaryResourceIDs(oldResource, null));
       obsoletePrimaries.removeAll(primaryResources);
@@ -64,10 +58,11 @@ class DefaultPrimaryToSecondaryIndex<R extends HasMetadata> implements PrimaryTo
                     return currentSet.isEmpty() ? null : currentSet;
                   }));
     }
+    return primaryResources;
   }
 
   @Override
-  public synchronized void onDelete(R resource) {
+  public synchronized Set<ResourceID> onDelete(R resource) {
     Set<ResourceID> primaryResources =
         secondaryToPrimaryMapper.toPrimaryResourceIDs(resource, null);
     primaryResources.forEach(
@@ -83,6 +78,7 @@ class DefaultPrimaryToSecondaryIndex<R extends HasMetadata> implements PrimaryTo
             }
           }
         });
+    return primaryResources;
   }
 
   @Override

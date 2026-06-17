@@ -127,10 +127,10 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
           if (resultEvent.isEmpty()) {
             return;
           }
-          primaryToSecondaryIndex.onDelete(resource);
+          var primaryIds = primaryToSecondaryIndex.onDelete(resource);
           if (eventAcceptedByFilter(
               ResourceAction.DELETED, resource, null, deletedFinalStateUnknown)) {
-            propagateEvent(resource, null);
+            propagateEvent(resource, null, primaryIds);
           }
         });
   }
@@ -144,11 +144,12 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
     // onAdd/onUpdate/onDelete watch paths. The index is updated for DELETED regardless of the
     // filter outcome — the resource is really gone, so leaving a tombstone in the index would
     // make getSecondaryResources keep returning a stale entry.
+    Set<ResourceID> primaryIds = null;
     if (action == ResourceAction.DELETED) {
       log.debug(
           "handleEvent: removing from primaryToSecondaryIndex. id={}",
           ResourceID.fromResource(resource));
-      primaryToSecondaryIndex.onDelete(resource);
+      primaryIds = primaryToSecondaryIndex.onDelete(resource);
     }
     if (!eventAcceptedByFilter(action, resource, oldResource, deletedFinalStateUnknown)) {
       if (log.isDebugEnabled()) {
@@ -166,7 +167,7 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
           action,
           resource.getMetadata().getResourceVersion());
     }
-    propagateEvent(resource, oldResource);
+    propagateEvent(resource, oldResource, primaryIds);
   }
 
   @Override
@@ -182,7 +183,7 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
 
   @SuppressWarnings("unchecked")
   private synchronized void onAddOrUpdate(ResourceAction action, R newObject, R oldObject) {
-    primaryToSecondaryIndex.onAddOrUpdate(newObject, oldObject);
+    var primaryIds = primaryToSecondaryIndex.onAddOrUpdate(newObject, oldObject);
     var resourceID = ResourceID.fromResource(newObject);
 
     var resultEvent = temporaryResourceCache.onAddOrUpdateEvent(action, newObject, oldObject);
@@ -194,15 +195,17 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
           "Propagating event for {}, resource with same version not result of a our update.",
           action);
       var event = resultEvent.get();
-      propagateEvent((R) event.getResource().orElseThrow(), oldObject);
+      propagateEvent((R) event.getResource().orElseThrow(), oldObject, primaryIds);
     } else {
       log.debug("Event filtered out for operation: {}, resourceID: {}", action, resourceID);
     }
   }
 
-  void propagateEvent(R resource, R oldResource) {
-    var primaryResourceIdSet =
-        configuration().getSecondaryToPrimaryMapper().toPrimaryResourceIDs(resource, oldResource);
+  void propagateEvent(R resource, R oldResource, Set<ResourceID> primaryResourceIdSet) {
+    if (primaryResourceIdSet == null) {
+      primaryResourceIdSet =
+          configuration().getSecondaryToPrimaryMapper().toPrimaryResourceIDs(resource, oldResource);
+    }
     if (primaryResourceIdSet.isEmpty()) {
       return;
     }

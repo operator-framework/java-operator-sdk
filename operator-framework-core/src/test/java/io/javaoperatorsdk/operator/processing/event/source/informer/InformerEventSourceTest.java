@@ -655,6 +655,8 @@ class InformerEventSourceTest {
     // and getSecondaryResources keeps returning a tombstone.
     var indexMock = injectIndexMock();
     var resource = testDeployment();
+    // onDelete now returns the primaries to reconcile; propagateEvent uses that set directly
+    when(indexMock.onDelete(resource)).thenReturn(Set.of(ResourceID.fromResource(resource)));
 
     informerEventSource.handleEvent(ResourceAction.DELETED, resource, null, false);
 
@@ -745,7 +747,8 @@ class InformerEventSourceTest {
     await()
         .pollDelay(Duration.ofMillis(70))
         .timeout(Duration.ofMillis(150))
-        .untilAsserted(() -> verify(informerEventSource, never()).propagateEvent(any(), any()));
+        .untilAsserted(
+            () -> verify(informerEventSource, never()).propagateEvent(any(), any(), any()));
   }
 
   private void expectPropagateEvent(Deployment newResourceVersion) {
@@ -754,7 +757,7 @@ class InformerEventSourceTest {
         .untilAsserted(
             () ->
                 verify(informerEventSource, times(1))
-                    .propagateEvent(eq(newResourceVersion), any()));
+                    .propagateEvent(eq(newResourceVersion), any(), any()));
   }
 
   private void expectHandleUpdateEvent(int newResourceVersion, int oldResourceVersion) {

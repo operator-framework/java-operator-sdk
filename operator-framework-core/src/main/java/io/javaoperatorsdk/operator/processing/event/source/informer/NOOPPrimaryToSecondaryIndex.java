@@ -15,6 +15,7 @@
  */
 package io.javaoperatorsdk.operator.processing.event.source.informer;
 
+import java.util.Collections;
 import java.util.Set;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
@@ -33,13 +34,14 @@ class NOOPPrimaryToSecondaryIndex<R extends HasMetadata> implements PrimaryToSec
   private NOOPPrimaryToSecondaryIndex() {}
 
   @Override
-  public void onAddOrUpdate(R resource, R oldResource) {
-    // empty method because of noop implementation
+  public Set<ResourceID> onAddOrUpdate(R resource, R oldResource) {
+    return Collections.emptySet();
   }
 
   @Override
-  public void onDelete(R resource) {
+  public Set<ResourceID> onDelete(R resource) {
     // empty method because of noop implementation
+    return Collections.emptySet();
   }
 
   @Override
