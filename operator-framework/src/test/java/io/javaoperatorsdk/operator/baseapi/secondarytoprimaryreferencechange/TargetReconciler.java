@@ -28,16 +28,17 @@ import io.javaoperatorsdk.operator.processing.event.source.EventSource;
 import io.javaoperatorsdk.operator.processing.event.source.informer.InformerEventSource;
 
 @Sample(
-    tldr = "Reconciling a Primary Driven by a Referencing Secondary Custom Resource",
+    tldr = "Reconciling Primaries Driven by a Referencing Secondary Custom Resource",
     description =
         """
-        A configuration custom resource (the secondary) references a target custom resource (the \
-        primary) through a spec field and acts as its input. This reconciler watches those config \
-        resources with an InformerEventSource and, on each reconciliation, sets the target's value \
-        from the config that currently references it, falling back to a default when none does. A \
-        SecondaryToPrimaryMapper that overrides the two-argument variant ensures that when a \
-        config's reference moves from one target to another, both the previously and the newly \
-        referenced target are reconciled.
+        A configuration custom resource (the secondary) references one or more target custom \
+        resources (the primaries) through a spec field and acts as their input. This reconciler \
+        watches those config resources with an InformerEventSource and, on each reconciliation, \
+        sets the target's value from the config that currently references it, falling back to a \
+        default when none does. When a config's set of references changes — including when only a \
+        subset of the referenced targets is replaced — the framework's primary-to-secondary index \
+        reconciles both the newly referenced targets and the ones that are no longer referenced, so \
+        a dropped target reverts to its default.
         """)
 @ControllerConfiguration
 public class TargetReconciler implements Reconciler<TargetCustomResource> {

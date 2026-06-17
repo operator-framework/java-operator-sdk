@@ -16,29 +16,33 @@
 package io.javaoperatorsdk.operator.baseapi.secondarytoprimaryreferencechange;
 
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
 import io.javaoperatorsdk.operator.processing.event.source.SecondaryToPrimaryMapper;
 
 /**
- * Maps a {@link ConfigCustomResource} (secondary) to the {@link TargetCustomResource} (primary) it
- * references via {@code spec.targetName}.
+ * Maps a {@link ConfigCustomResource} (secondary) to the {@link TargetCustomResource}s (primaries)
+ * it references via {@code spec.targetNames}. A config can reference multiple targets.
  *
- * <p>The interesting case is handling a <em>reference change</em>: when {@code spec.targetName} is
- * edited to point from one target to another, both targets must be reconciled — the previously
- * referenced one so it can fall back to its default value, and the newly referenced one so it can
- * pick up the config's value. The single-argument mapper only knows about the new reference, so it
- * would only enqueue the new target, leaving the old target with a stale value. By overriding the
- * two-argument variant we additionally enqueue the old target whenever the reference moved.
+ * <p>The mapper only reports the <em>current</em> references. When the referenced set changes — for
+ * example when a subset of the targets is replaced — the framework's primary-to-secondary index
+ * reconciles both the newly referenced targets and the ones that are no longer referenced, so a
+ * dropped target reverts to its default value. The mapper therefore does not need to know about the
+ * previous version of the resource.
  */
 public class ConfigToTargetMapper implements SecondaryToPrimaryMapper<ConfigCustomResource> {
 
   @Override
   public Set<ResourceID> toPrimaryResourceIDs(ConfigCustomResource config) {
-    var targetName = config.getSpec().getTargetName();
-    if (targetName == null || targetName.isBlank()) {
+    var targetNames = config.getSpec().getTargetNames();
+    if (targetNames == null || targetNames.isEmpty()) {
       return Set.of();
     }
-    return Set.of(new ResourceID(targetName, config.getMetadata().getNamespace()));
+    var namespace = config.getMetadata().getNamespace();
+    return targetNames.stream()
+        .filter(name -> name != null && !name.isBlank())
+        .map(name -> new ResourceID(name, namespace))
+        .collect(Collectors.toSet());
   }
 }

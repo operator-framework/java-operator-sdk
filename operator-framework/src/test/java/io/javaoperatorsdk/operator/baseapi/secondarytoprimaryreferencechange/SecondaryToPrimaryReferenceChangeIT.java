@@ -16,6 +16,7 @@
 package io.javaoperatorsdk.operator.baseapi.secondarytoprimaryreferencechange;
 
 import java.time.Duration;
+import java.util.List;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
@@ -29,21 +30,22 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
 
 @Sample(
-    tldr = "Handling a Secondary Resource Whose Reference to a Primary Changes",
+    tldr = "Handling a Secondary Resource Whose References to Primaries Change",
     description =
         """
-        Demonstrates a configuration custom resource (the secondary) that references a target \
-        custom resource (the primary) via a spec field and serves as input for it. The target is \
-        reconciled so that, if a config references it, it takes the value from that config; \
-        otherwise it falls back to a default. The test shows how to handle the config's reference \
-        changing from one target to another: a SecondaryToPrimaryMapper that overrides the \
-        two-argument variant enqueues both the previously referenced target (so it reverts to the \
-        default) and the newly referenced one (so it picks up the value).
+        Demonstrates a configuration custom resource (the secondary) that references multiple \
+        target custom resources (the primaries) via a spec field and serves as their input. Each \
+        target is reconciled so that, if a config references it, it takes the value from that \
+        config; otherwise it falls back to a default. The test shows how to handle a change of the \
+        referenced set where only a subset changes: a target that is dropped from the references \
+        reverts to the default, a target that stays keeps the value, and a newly referenced target \
+        picks it up.
         """)
 class SecondaryToPrimaryReferenceChangeIT {
 
   static final String TARGET_A = "target-a";
   static final String TARGET_B = "target-b";
+  static final String TARGET_C = "target-c";
   static final String CONFIG_NAME = "config";
   static final String CONFIG_VALUE = "value-from-config";
 
@@ -55,25 +57,30 @@ class SecondaryToPrimaryReferenceChangeIT {
           .build();
 
   @Test
-  void targetTakesValueFromReferencingConfigAndHandlesReferenceChange() {
+  void targetsTakeValueFromReferencingConfigAndHandleSubsetReferenceChange() {
     operator.create(target(TARGET_A));
     operator.create(target(TARGET_B));
+    operator.create(target(TARGET_C));
 
-    // With no config, both targets fall back to the default value.
+    // With no config, all targets fall back to the default value.
     awaitTargetValue(TARGET_A, DEFAULT_VALUE);
     awaitTargetValue(TARGET_B, DEFAULT_VALUE);
+    awaitTargetValue(TARGET_C, DEFAULT_VALUE);
 
-    // A config referencing target A makes A take the config's value; B stays on the default.
-    var config = operator.create(config(TARGET_A));
+    // A config referencing targets A and B makes both take the config's value; C stays default.
+    var config = operator.create(config(TARGET_A, TARGET_B));
     awaitTargetValue(TARGET_A, CONFIG_VALUE);
-    awaitTargetValue(TARGET_B, DEFAULT_VALUE);
+    awaitTargetValue(TARGET_B, CONFIG_VALUE);
+    awaitTargetValue(TARGET_C, DEFAULT_VALUE);
 
-    // Moving the reference from A to B reconciles both: A reverts to the default and B picks it up.
-    config.getSpec().setTargetName(TARGET_B);
+    // Change a subset of the references: drop A, keep B, add C. A reverts to the default, B keeps
+    // the value, and C now picks it up.
+    config.getSpec().setTargetNames(List.of(TARGET_B, TARGET_C));
     operator.replace(config);
 
-    awaitTargetValue(TARGET_B, CONFIG_VALUE);
+    awaitTargetValue(TARGET_C, CONFIG_VALUE);
     awaitTargetValue(TARGET_A, DEFAULT_VALUE);
+    awaitTargetValue(TARGET_B, CONFIG_VALUE);
   }
 
   private void awaitTargetValue(String name, String expectedValue) {
@@ -93,10 +100,10 @@ class SecondaryToPrimaryReferenceChangeIT {
     return target;
   }
 
-  private ConfigCustomResource config(String targetName) {
+  private ConfigCustomResource config(String... targetNames) {
     var config = new ConfigCustomResource();
     config.setMetadata(new ObjectMetaBuilder().withName(CONFIG_NAME).build());
-    config.setSpec(new ConfigSpec().setTargetName(targetName).setValue(CONFIG_VALUE));
+    config.setSpec(new ConfigSpec().setTargetNames(List.of(targetNames)).setValue(CONFIG_VALUE));
     return config;
   }
 }

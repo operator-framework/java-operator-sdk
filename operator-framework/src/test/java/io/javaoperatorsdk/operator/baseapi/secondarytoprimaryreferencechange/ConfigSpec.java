@@ -15,22 +15,25 @@
  */
 package io.javaoperatorsdk.operator.baseapi.secondarytoprimaryreferencechange;
 
+import java.util.List;
+
 public class ConfigSpec {
 
   /**
-   * Name of the {@link TargetCustomResource} (in the same namespace) this config provides input.
+   * Names of the {@link TargetCustomResource}s (in the same namespace) this config provides input
+   * for. A single config can reference multiple targets.
    */
-  private String targetName;
+  private List<String> targetNames;
 
-  /** Value to be applied to the referenced target's status. */
+  /** Value to be applied to the referenced targets' status. */
   private String value;
 
-  public String getTargetName() {
-    return targetName;
+  public List<String> getTargetNames() {
+    return targetNames;
   }
 
-  public ConfigSpec setTargetName(String targetName) {
-    this.targetName = targetName;
+  public ConfigSpec setTargetNames(List<String> targetNames) {
+    this.targetNames = targetNames;
     return this;
   }
 
