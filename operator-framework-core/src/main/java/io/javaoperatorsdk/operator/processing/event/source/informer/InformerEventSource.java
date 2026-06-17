@@ -15,6 +15,7 @@
  */
 package io.javaoperatorsdk.operator.processing.event.source.informer;
 
+import java.util.HashSet;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -203,8 +204,13 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
 
   void propagateEvent(R resource, R oldResource, Set<ResourceID> primaryResourceIdSet) {
     if (primaryResourceIdSet == null) {
-      primaryResourceIdSet =
-          configuration().getSecondaryToPrimaryMapper().toPrimaryResourceIDs(resource, oldResource);
+      primaryResourceIdSet = new HashSet<>();
+      primaryResourceIdSet.addAll(
+          configuration().getSecondaryToPrimaryMapper().toPrimaryResourceIDs(resource));
+      if (oldResource != null) {
+        primaryResourceIdSet.addAll(
+            configuration().getSecondaryToPrimaryMapper().toPrimaryResourceIDs(oldResource));
+      }
     }
     if (primaryResourceIdSet.isEmpty()) {
       return;

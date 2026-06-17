@@ -15,7 +15,6 @@
  */
 package io.javaoperatorsdk.operator.baseapi.secondarytoprimaryreferencechange;
 
-import java.util.HashSet;
 import java.util.Set;
 
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
@@ -41,17 +40,5 @@ public class ConfigToTargetMapper implements SecondaryToPrimaryMapper<ConfigCust
       return Set.of();
     }
     return Set.of(new ResourceID(targetName, config.getMetadata().getNamespace()));
-  }
-
-  @Override
-  public Set<ResourceID> toPrimaryResourceIDs(
-      ConfigCustomResource newConfig, ConfigCustomResource oldConfig) {
-    var result = new HashSet<>(toPrimaryResourceIDs(newConfig));
-    // oldConfig is only populated for genuine update events while the controller is running; for
-    // adds, deletes and startup it is null and there is no previous reference to reconcile.
-    if (oldConfig != null) {
-      result.addAll(toPrimaryResourceIDs(oldConfig));
-    }
-    return result;
   }
 }
