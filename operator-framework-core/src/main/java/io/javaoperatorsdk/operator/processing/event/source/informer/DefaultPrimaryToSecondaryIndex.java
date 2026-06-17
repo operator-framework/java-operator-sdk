@@ -33,8 +33,12 @@ class DefaultPrimaryToSecondaryIndex<R extends HasMetadata> implements PrimaryTo
 
   @Override
   public synchronized void onAddOrUpdate(R resource, R oldResource) {
-    Set<ResourceID> primaryResources =
-        secondaryToPrimaryMapper.toPrimaryResourceIDs(resource, oldResource);
+    // The index reflects the *current* associations of the secondary, so it must use the
+    // single-argument mapper. The two-argument variant may legitimately return additional primaries
+    // (e.g. the previously referenced one) so that they get reconciled on a reference change; those
+    // extra primaries are an event-propagation concern and must not be recorded as current
+    // associations here.
+    Set<ResourceID> primaryResources = secondaryToPrimaryMapper.toPrimaryResourceIDs(resource);
 
     var secondaryId = ResourceID.fromResource(resource);
 
@@ -42,18 +46,23 @@ class DefaultPrimaryToSecondaryIndex<R extends HasMetadata> implements PrimaryTo
         primaryResource -> {
           var resourceSet =
               index.computeIfAbsent(primaryResource, pr -> ConcurrentHashMap.newKeySet());
-          resourceSet.add(ResourceID.fromResource(resource));
+          resourceSet.add(secondaryId);
         });
 
-      if (oldResource != null) {
-          var oldPrimaryResources = secondaryToPrimaryMapper.toPrimaryResourceIDs(oldResource, null);
-          oldPrimaryResources.removeAll(primaryResources);
-          oldPrimaryResources.forEach(p->index.computeIfPresent(p,
-                  (id,currentSet)-> {
-                                                                   currentSet.remove(secondaryId);
-                                                                   return currentSet.isEmpty() ? null : currentSet;
-          }));
-      }
+    if (oldResource != null) {
+      // copy into a mutable set: mappers may return an immutable Set (e.g. Set.of(...))
+      var obsoletePrimaries =
+          new HashSet<>(secondaryToPrimaryMapper.toPrimaryResourceIDs(oldResource, null));
+      obsoletePrimaries.removeAll(primaryResources);
+      obsoletePrimaries.forEach(
+          p ->
+              index.computeIfPresent(
+                  p,
+                  (id, currentSet) -> {
+                    currentSet.remove(secondaryId);
+                    return currentSet.isEmpty() ? null : currentSet;
+                  }));
+    }
   }
 
   @Override

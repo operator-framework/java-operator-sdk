@@ -177,12 +177,12 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
     super.start();
     // this makes sure that on first reconciliation all resources are
     // present on the index
-    manager().list().forEach(r->primaryToSecondaryIndex.onAddOrUpdate(r,null));
+    manager().list().forEach(r -> primaryToSecondaryIndex.onAddOrUpdate(r, null));
   }
 
   @SuppressWarnings("unchecked")
   private synchronized void onAddOrUpdate(ResourceAction action, R newObject, R oldObject) {
-    primaryToSecondaryIndex.onAddOrUpdate(newObject,oldObject);
+    primaryToSecondaryIndex.onAddOrUpdate(newObject, oldObject);
     var resourceID = ResourceID.fromResource(newObject);
 
     var resultEvent = temporaryResourceCache.onAddOrUpdateEvent(action, newObject, oldObject);
@@ -249,12 +249,12 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
   @Override
   public void handleRecentResourceUpdate(
       ResourceID resourceID, R resource, R previousVersionOfResource) {
-    handleRecentCreateOrUpdate(resource,previousVersionOfResource);
+    handleRecentCreateOrUpdate(resource, previousVersionOfResource);
   }
 
   @Override
   public void handleRecentResourceCreate(ResourceID resourceID, R resource) {
-    handleRecentCreateOrUpdate(resource,null);
+    handleRecentCreateOrUpdate(resource, null);
   }
 
   private void handleRecentCreateOrUpdate(R newResource, R previousVersion) {

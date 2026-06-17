@@ -659,7 +659,7 @@ class InformerEventSourceTest {
     informerEventSource.handleEvent(ResourceAction.DELETED, resource, null, false);
 
     verify(indexMock, times(1)).onDelete(resource);
-    verify(indexMock, never()).onAddOrUpdate(any());
+    verify(indexMock, never()).onAddOrUpdate(any(), any());
     verify(eventHandlerMock, times(1)).handleEvent(any());
   }
 
@@ -673,7 +673,7 @@ class InformerEventSourceTest {
         ResourceAction.UPDATED, testDeployment(), testDeployment(), null);
 
     verify(indexMock, never()).onDelete(any());
-    verify(indexMock, never()).onAddOrUpdate(any());
+    verify(indexMock, never()).onAddOrUpdate(any(), any());
     verify(eventHandlerMock, times(1)).handleEvent(any());
   }
 
