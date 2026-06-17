@@ -23,8 +23,8 @@ import io.fabric8.kubernetes.model.annotation.ShortNames;
 import io.fabric8.kubernetes.model.annotation.Version;
 
 /**
- * Secondary resource that references a {@link TargetCustomResource} via {@code spec.targetName} and
- * serves as input for it.
+ * Secondary resource that references one or more {@link TargetCustomResource}s via
+ * {@code spec.targetNames} and serves as input for them.
  */
 @Group("sample.javaoperatorsdk")
 @Version("v1")
