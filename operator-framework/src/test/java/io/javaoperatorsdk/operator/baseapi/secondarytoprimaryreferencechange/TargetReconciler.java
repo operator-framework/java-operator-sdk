@@ -48,7 +48,6 @@ public class TargetReconciler implements Reconciler<TargetCustomResource> {
         InformerEventSourceConfiguration.from(
                 ConfigCustomResource.class, TargetCustomResource.class)
             .withSecondaryToPrimaryMapper(new ConfigToTargetMapper())
-            .withPrimaryToSecondaryMapper(p -> null)
             .build();
 
     var ies = new InformerEventSource<>(configuration, context);
