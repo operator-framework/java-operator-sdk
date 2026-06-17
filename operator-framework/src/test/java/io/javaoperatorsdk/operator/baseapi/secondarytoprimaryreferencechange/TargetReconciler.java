@@ -17,6 +17,7 @@ package io.javaoperatorsdk.operator.baseapi.secondarytoprimaryreferencechange;
 
 import java.util.List;
 
+import io.javaoperatorsdk.annotation.Sample;
 import io.javaoperatorsdk.operator.api.config.informer.InformerEventSourceConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration;
@@ -26,15 +27,18 @@ import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
 import io.javaoperatorsdk.operator.processing.event.source.EventSource;
 import io.javaoperatorsdk.operator.processing.event.source.informer.InformerEventSource;
 
-/**
- * Reconciles {@link TargetCustomResource}s. The desired status value comes from a {@link
- * ConfigCustomResource} that references the target via {@code spec.targetName}; if no config
- * references the target, {@link #DEFAULT_VALUE} is used.
- *
- * <p>{@link ConfigCustomResource}s are watched as secondary resources through an {@link
- * InformerEventSource} configured with {@link ConfigToTargetMapper}, so changes to a config trigger
- * reconciliation of the referenced target(s).
- */
+@Sample(
+    tldr = "Reconciling a Primary Driven by a Referencing Secondary Custom Resource",
+    description =
+        """
+        A configuration custom resource (the secondary) references a target custom resource (the \
+        primary) through a spec field and acts as its input. This reconciler watches those config \
+        resources with an InformerEventSource and, on each reconciliation, sets the target's value \
+        from the config that currently references it, falling back to a default when none does. A \
+        SecondaryToPrimaryMapper that overrides the two-argument variant ensures that when a \
+        config's reference moves from one target to another, both the previously and the newly \
+        referenced target are reconciled.
+        """)
 @ControllerConfiguration
 public class TargetReconciler implements Reconciler<TargetCustomResource> {
 
@@ -58,13 +62,13 @@ public class TargetReconciler implements Reconciler<TargetCustomResource> {
   public UpdateControl<TargetCustomResource> reconcile(
       TargetCustomResource target, Context<TargetCustomResource> context) {
 
-    // There may be a stale secondary mapping after a reference change (the primary-to-secondary
-    // index does not remove the old association), so we also verify here that the config actually
-    // references this target. This makes reconciliation robust regardless of how the event arrived.
+    // The framework keeps the primary-to-secondary index up to date on reference changes, so a
+    // config is only associated with the target it currently references. We take the value from
+    // the referencing config, or fall back to the default when none references this target.
     var value =
-        context.getSecondaryResource(ConfigCustomResource.class).stream()
+        context
+            .getSecondaryResource(ConfigCustomResource.class)
             .map(config -> config.getSpec().getValue())
-            .findFirst()
             .orElse(DEFAULT_VALUE);
 
     target.setStatus(new TargetStatus().setValue(value));
