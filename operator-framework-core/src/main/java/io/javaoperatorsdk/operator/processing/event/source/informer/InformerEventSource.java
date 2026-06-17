@@ -130,7 +130,7 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
           primaryToSecondaryIndex.onDelete(resource);
           if (eventAcceptedByFilter(
               ResourceAction.DELETED, resource, null, deletedFinalStateUnknown)) {
-            propagateEvent(resource);
+            propagateEvent(resource, null);
           }
         });
   }
@@ -166,7 +166,7 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
           action,
           resource.getMetadata().getResourceVersion());
     }
-    propagateEvent(resource);
+    propagateEvent(resource, oldResource);
   }
 
   @Override
@@ -194,13 +194,13 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
           "Propagating event for {}, resource with same version not result of a our update.",
           action);
       var event = resultEvent.get();
-      propagateEvent((R) event.getResource().orElseThrow());
+      propagateEvent((R) event.getResource().orElseThrow(), oldObject);
     } else {
       log.debug("Event filtered out for operation: {}, resourceID: {}", action, resourceID);
     }
   }
 
-  private void propagateEvent(R resource, R oldResource) {
+  void propagateEvent(R resource, R oldResource) {
     var primaryResourceIdSet =
         configuration().getSecondaryToPrimaryMapper().toPrimaryResourceIDs(resource, oldResource);
     if (primaryResourceIdSet.isEmpty()) {

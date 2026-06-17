@@ -745,14 +745,16 @@ class InformerEventSourceTest {
     await()
         .pollDelay(Duration.ofMillis(70))
         .timeout(Duration.ofMillis(150))
-        .untilAsserted(() -> verify(informerEventSource, never()).propagateEvent(any()));
+        .untilAsserted(() -> verify(informerEventSource, never()).propagateEvent(any(), any()));
   }
 
   private void expectPropagateEvent(Deployment newResourceVersion) {
     await()
         .atMost(Duration.ofSeconds(1))
         .untilAsserted(
-            () -> verify(informerEventSource, times(1)).propagateEvent(newResourceVersion));
+            () ->
+                verify(informerEventSource, times(1))
+                    .propagateEvent(eq(newResourceVersion), any()));
   }
 
   private void expectHandleUpdateEvent(int newResourceVersion, int oldResourceVersion) {
