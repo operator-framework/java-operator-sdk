@@ -22,7 +22,7 @@ import io.javaoperatorsdk.operator.processing.event.ResourceID;
 
 public interface PrimaryToSecondaryIndex<R extends HasMetadata> {
 
-  void onAddOrUpdate(R resource);
+  void onAddOrUpdate(R resource, R oldResource);
 
   void onDelete(R resource);
 

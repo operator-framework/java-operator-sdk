@@ -32,15 +32,28 @@ class DefaultPrimaryToSecondaryIndex<R extends HasMetadata> implements PrimaryTo
   }
 
   @Override
-  public synchronized void onAddOrUpdate(R resource) {
+  public synchronized void onAddOrUpdate(R resource, R oldResource) {
     Set<ResourceID> primaryResources =
-        secondaryToPrimaryMapper.toPrimaryResourceIDs(resource, null);
+        secondaryToPrimaryMapper.toPrimaryResourceIDs(resource, oldResource);
+
+    var secondaryId = ResourceID.fromResource(resource);
+
     primaryResources.forEach(
         primaryResource -> {
           var resourceSet =
               index.computeIfAbsent(primaryResource, pr -> ConcurrentHashMap.newKeySet());
           resourceSet.add(ResourceID.fromResource(resource));
         });
+
+      if (oldResource != null) {
+          var oldPrimaryResources = secondaryToPrimaryMapper.toPrimaryResourceIDs(oldResource, null);
+          oldPrimaryResources.removeAll(primaryResources);
+          oldPrimaryResources.forEach(p->index.computeIfPresent(p,
+                  (id,currentSet)-> {
+                                                                   currentSet.remove(secondaryId);
+                                                                   return currentSet.isEmpty() ? null : currentSet;
+          }));
+      }
   }
 
   @Override

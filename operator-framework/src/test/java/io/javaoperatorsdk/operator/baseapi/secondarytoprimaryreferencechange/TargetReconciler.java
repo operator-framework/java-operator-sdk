@@ -62,9 +62,7 @@ public class TargetReconciler implements Reconciler<TargetCustomResource> {
     // index does not remove the old association), so we also verify here that the config actually
     // references this target. This makes reconciliation robust regardless of how the event arrived.
     var value =
-        context.getSecondaryResources(ConfigCustomResource.class).stream()
-            .filter(
-                config -> target.getMetadata().getName().equals(config.getSpec().getTargetName()))
+        context.getSecondaryResource(ConfigCustomResource.class).stream()
             .map(config -> config.getSpec().getValue())
             .findFirst()
             .orElse(DEFAULT_VALUE);
