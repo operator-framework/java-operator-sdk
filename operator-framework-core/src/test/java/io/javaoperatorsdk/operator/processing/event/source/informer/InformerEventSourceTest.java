@@ -87,7 +87,7 @@ class InformerEventSourceTest {
     secondaryToPrimaryMapper = mock(SecondaryToPrimaryMapper.class);
     when(informerEventSourceConfiguration.getSecondaryToPrimaryMapper())
         .thenReturn(secondaryToPrimaryMapper);
-    when(secondaryToPrimaryMapper.toPrimaryResourceIDs(any(), any()))
+    when(secondaryToPrimaryMapper.toPrimaryResourceIDs(any()))
         .thenReturn(Set.of(ResourceID.fromResource(testDeployment())));
     when(informerEventSourceConfiguration.getInformerConfig()).thenReturn(informerConfig);
 
