@@ -135,38 +135,24 @@ class InformerManager<R extends HasMetadata, C extends Informable<R>>
 
   private InformerWrapper<R> createEventSourceForNamespace(String namespace) {
     final InformerWrapper<R> source;
-    final var labelSelector = combinedLabelSelector();
+    final var labelSelector = configuration.getInformerConfig().getLabelSelector();
+    final var shardSelector = configuration.getInformerConfig().getShardSelector();
     if (namespace.equals(WATCH_ALL_NAMESPACES)) {
-      final var filteredBySelectorClient = client.inAnyNamespace().withLabelSelector(labelSelector);
+      final var filteredBySelectorClient =
+          client.inAnyNamespace().withLabelSelector(labelSelector).withShardSelector(shardSelector);
       source = createEventSource(filteredBySelectorClient, eventHandler, WATCH_ALL_NAMESPACES);
     } else {
       source =
           createEventSource(
-              client.inNamespace(namespace).withLabelSelector(labelSelector),
+              client
+                  .inNamespace(namespace)
+                  .withLabelSelector(labelSelector)
+                  .withShardSelector(shardSelector),
               eventHandler,
               namespace);
     }
     source.addIndexers(indexers);
     return source;
-  }
-
-  /**
-   * Combines the configured label selector and shard selector into a single label selector applied
-   * to the informer. Both use the label selector syntax where comma separated requirements act as a
-   * logical AND, so when both are set they are simply joined with a comma. Returns {@code null}
-   * when neither is set.
-   */
-  private String combinedLabelSelector() {
-    final var informerConfig = configuration.getInformerConfig();
-    final var labelSelector = informerConfig.getLabelSelector();
-    final var shardSelector = informerConfig.getShardSelector();
-    if (labelSelector == null) {
-      return shardSelector;
-    }
-    if (shardSelector == null) {
-      return labelSelector;
-    }
-    return labelSelector + "," + shardSelector;
   }
 
   private InformerWrapper<R> createEventSource(
@@ -294,12 +280,14 @@ class InformerManager<R extends HasMetadata, C extends Informable<R>>
   @Override
   public String toString() {
     final var informerConfig = configuration.getInformerConfig();
-    final var selector = combinedLabelSelector();
+    final var labelSelector = informerConfig.getLabelSelector();
+    final var shardSelector = informerConfig.getShardSelector();
     return "InformerManager ["
         + ReconcilerUtilsInternal.getResourceTypeNameWithVersion(configuration.getResourceClass())
         + "] watching: "
         + informerConfig.getEffectiveNamespaces(controllerConfiguration)
-        + (selector != null ? " selector: " + selector : "");
+        + (labelSelector != null ? " label selector: " + labelSelector : "")
+        + (shardSelector != null ? " shard selector: " + shardSelector : "");
   }
 
   public Map<String, InformerHealthIndicator> informerHealthIndicators() {
