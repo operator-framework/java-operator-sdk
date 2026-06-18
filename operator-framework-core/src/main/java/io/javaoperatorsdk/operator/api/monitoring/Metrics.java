@@ -18,6 +18,7 @@ package io.javaoperatorsdk.operator.api.monitoring;
 import java.util.Map;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
+import io.javaoperatorsdk.operator.api.Public;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.RetryInfo;
 import io.javaoperatorsdk.operator.processing.Controller;
@@ -29,6 +30,7 @@ import io.javaoperatorsdk.operator.processing.retry.RetryExecution;
  * An interface that metrics providers can implement and that the SDK will call at different times
  * of its execution cycle.
  */
+@Public
 public interface Metrics {
 
   /** The default Metrics provider: a no-operation implementation. */

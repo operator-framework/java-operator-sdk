@@ -20,8 +20,10 @@ import java.util.Map;
 import java.util.function.Function;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
+import io.javaoperatorsdk.operator.api.Public;
 import io.javaoperatorsdk.operator.api.reconciler.IndexedResourceCache;
 
+@Public
 public interface IndexerResourceCache<T extends HasMetadata> extends IndexedResourceCache<T> {
 
   void addIndexers(Map<String, Function<T, List<String>>> indexers);

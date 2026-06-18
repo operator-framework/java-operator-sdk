@@ -17,8 +17,11 @@ package io.javaoperatorsdk.operator.api.config;
 
 import java.util.Set;
 
+import io.javaoperatorsdk.operator.api.Public;
+
 import static io.javaoperatorsdk.operator.api.reconciler.Constants.DEFAULT_NAMESPACES_SET;
 
+@Public
 public interface NamespaceChangeable {
 
   /**

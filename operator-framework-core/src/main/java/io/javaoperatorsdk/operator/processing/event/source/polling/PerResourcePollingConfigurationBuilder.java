@@ -20,8 +20,10 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.function.Predicate;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
+import io.javaoperatorsdk.operator.api.Public;
 import io.javaoperatorsdk.operator.processing.ResourceIDMapper;
 
+@Public
 public final class PerResourcePollingConfigurationBuilder<R, P extends HasMetadata, ID> {
 
   private final Duration defaultPollingPeriod;

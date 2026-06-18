@@ -20,9 +20,11 @@ import java.util.List;
 import java.util.Map;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
+import io.javaoperatorsdk.operator.api.Public;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
 
+@Public
 public interface Workflow<P extends HasMetadata> {
 
   boolean THROW_EXCEPTION_AUTOMATICALLY_DEFAULT = true;

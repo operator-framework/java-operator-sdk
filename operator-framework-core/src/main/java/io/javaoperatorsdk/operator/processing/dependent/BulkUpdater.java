@@ -16,6 +16,7 @@
 package io.javaoperatorsdk.operator.processing.dependent;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
+import io.javaoperatorsdk.operator.api.Public;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 
 /**
@@ -25,6 +26,7 @@ import io.javaoperatorsdk.operator.api.reconciler.Context;
  * @param <R> secondary resource type
  * @param <P> primary resource type
  */
+@Public
 public interface BulkUpdater<R, P extends HasMetadata> extends Updater<R, P> {
 
   default Matcher.Result<R> match(R actualResource, P primary, Context<P> context) {

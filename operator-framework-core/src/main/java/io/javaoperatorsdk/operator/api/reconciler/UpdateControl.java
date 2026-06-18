@@ -19,7 +19,9 @@ import java.util.Optional;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.client.CustomResource;
+import io.javaoperatorsdk.operator.api.Public;
 
+@Public
 public class UpdateControl<P extends HasMetadata> extends BaseControl<UpdateControl<P>> {
 
   private final P resource;

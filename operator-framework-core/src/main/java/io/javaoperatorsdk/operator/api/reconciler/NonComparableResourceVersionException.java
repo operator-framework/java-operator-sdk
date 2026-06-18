@@ -16,7 +16,9 @@
 package io.javaoperatorsdk.operator.api.reconciler;
 
 import io.javaoperatorsdk.operator.OperatorException;
+import io.javaoperatorsdk.operator.api.Public;
 
+@Public
 public class NonComparableResourceVersionException extends OperatorException {
 
   public NonComparableResourceVersionException(String message) {

@@ -18,6 +18,7 @@ package io.javaoperatorsdk.operator.processing.dependent;
 import java.util.Map;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
+import io.javaoperatorsdk.operator.api.Public;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.Deleter;
 import io.javaoperatorsdk.operator.processing.dependent.Matcher.Result;
@@ -31,6 +32,7 @@ import io.javaoperatorsdk.operator.processing.dependent.Matcher.Result;
  * @param <R> the dependent resource type
  * @param <P> the primary resource type
  */
+@Public
 public interface BulkDependentResource<R, P extends HasMetadata, ID> {
 
   /**

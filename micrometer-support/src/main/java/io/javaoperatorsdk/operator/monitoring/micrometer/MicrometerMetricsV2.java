@@ -24,6 +24,7 @@ import java.util.function.Function;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.OperatorException;
+import io.javaoperatorsdk.operator.api.Public;
 import io.javaoperatorsdk.operator.api.monitoring.Metrics;
 import io.javaoperatorsdk.operator.api.reconciler.Constants;
 import io.javaoperatorsdk.operator.api.reconciler.RetryInfo;
@@ -39,6 +40,7 @@ import io.micrometer.core.instrument.Timer;
 /**
  * @since 5.3.0
  */
+@Public
 public class MicrometerMetricsV2 implements Metrics {
 
   private static final String CONTROLLER_NAME = "controller.name";

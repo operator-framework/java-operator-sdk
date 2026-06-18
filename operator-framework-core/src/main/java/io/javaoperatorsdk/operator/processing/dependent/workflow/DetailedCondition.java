@@ -16,6 +16,7 @@
 package io.javaoperatorsdk.operator.processing.dependent.workflow;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
+import io.javaoperatorsdk.operator.api.Public;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
 
@@ -27,6 +28,7 @@ import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
  *     part of
  * @param <T> the type of the extra information returned by the condition
  */
+@Public
 public interface DetailedCondition<R, P extends HasMetadata, T> extends Condition<R, P> {
 
   /**

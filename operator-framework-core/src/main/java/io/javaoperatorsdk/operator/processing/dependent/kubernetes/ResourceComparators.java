@@ -19,7 +19,9 @@ import java.util.Objects;
 
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.Secret;
+import io.javaoperatorsdk.operator.api.Public;
 
+@Public
 public class ResourceComparators {
 
   public static boolean compareConfigMapData(ConfigMap c1, ConfigMap c2) {

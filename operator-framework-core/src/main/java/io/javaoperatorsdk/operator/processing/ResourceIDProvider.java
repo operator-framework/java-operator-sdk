@@ -15,6 +15,8 @@
  */
 package io.javaoperatorsdk.operator.processing;
 
+import io.javaoperatorsdk.operator.api.Public;
+
 /**
  * Provides the identifier for an object that represents a resource. This ID is used:
  *
@@ -31,6 +33,7 @@ package io.javaoperatorsdk.operator.processing;
  * @see ResourceIDMapper
  * @param <ID> type of the id
  */
+@Public
 public interface ResourceIDProvider<ID> {
 
   /** ID for the resource POJO that implement this interface. */

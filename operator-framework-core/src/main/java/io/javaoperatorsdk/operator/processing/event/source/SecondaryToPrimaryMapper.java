@@ -17,6 +17,7 @@ package io.javaoperatorsdk.operator.processing.event.source;
 
 import java.util.Set;
 
+import io.javaoperatorsdk.operator.api.Public;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
 
 /**
@@ -25,6 +26,7 @@ import io.javaoperatorsdk.operator.processing.event.ResourceID;
  * @param <R> secondary resource type
  */
 @FunctionalInterface
+@Public
 public interface SecondaryToPrimaryMapper<R> {
   /**
    * @param resource - secondary

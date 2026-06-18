@@ -15,6 +15,9 @@
  */
 package io.javaoperatorsdk.operator.health;
 
+import io.javaoperatorsdk.operator.api.Public;
+
+@Public
 public interface EventSourceHealthIndicator {
 
   /**

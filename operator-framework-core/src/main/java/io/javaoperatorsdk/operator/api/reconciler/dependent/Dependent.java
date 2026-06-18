@@ -15,6 +15,7 @@
  */
 package io.javaoperatorsdk.operator.api.reconciler.dependent;
 
+import io.javaoperatorsdk.operator.api.Public;
 import io.javaoperatorsdk.operator.processing.dependent.workflow.Condition;
 
 import static io.javaoperatorsdk.operator.api.reconciler.Constants.NO_VALUE_SET;
@@ -23,6 +24,7 @@ import static io.javaoperatorsdk.operator.api.reconciler.Constants.NO_VALUE_SET;
  * The annotation used to create managed {@link DependentResource} associated with a given {@link
  * io.javaoperatorsdk.operator.api.reconciler.Reconciler}
  */
+@Public
 public @interface Dependent {
 
   @SuppressWarnings("rawtypes")

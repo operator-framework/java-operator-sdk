@@ -13,16 +13,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.javaoperatorsdk.operator.processing.event.source.cache;
+package io.javaoperatorsdk.operator.api;
 
-import io.javaoperatorsdk.operator.api.Public;
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 
-@Public
-public interface BoundedCache<K, R> {
-
-  R get(K key);
-
-  R remove(K key);
-
-  void put(K key, R object);
-}
+/**
+ * Marks API as public. Such API is subject of semantic versioning. If a class is marked, it means
+ * all it's public methods are part of the public API.
+ */
+@Retention(RetentionPolicy.SOURCE)
+@Target({ElementType.METHOD, ElementType.TYPE, ElementType.FIELD, ElementType.PACKAGE})
+public @interface Public {}

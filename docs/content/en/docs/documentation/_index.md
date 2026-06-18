@@ -26,5 +26,6 @@ This section contains detailed documentation for all Java Operator SDK features 
 - **[Accessing Resources in Caches](working-with-es-caches/)** - How to access resources in caches
 - **[Operations](operations/)** - Helm chart, metrics, logging, configurations, leader election 
 - **[Other Features](features/)** - Additional capabilities and integrations
+- **[Public API and Versioning](api-stability/)** - What is covered by semantic versioning
 
 Each guide includes practical examples and best practices to help you build robust, production-ready operators.

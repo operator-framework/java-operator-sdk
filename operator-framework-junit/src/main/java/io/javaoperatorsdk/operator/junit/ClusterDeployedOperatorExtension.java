@@ -36,7 +36,9 @@ import io.fabric8.kubernetes.api.model.rbac.ClusterRoleBinding;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClientBuilder;
 import io.fabric8.kubernetes.client.KubernetesClientTimeoutException;
+import io.javaoperatorsdk.operator.api.Public;
 
+@Public
 public class ClusterDeployedOperatorExtension extends AbstractOperatorExtension {
 
   private static final Logger LOGGER =

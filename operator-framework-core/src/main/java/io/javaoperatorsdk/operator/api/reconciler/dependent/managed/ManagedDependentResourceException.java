@@ -16,7 +16,9 @@
 package io.javaoperatorsdk.operator.api.reconciler.dependent.managed;
 
 import io.javaoperatorsdk.operator.OperatorException;
+import io.javaoperatorsdk.operator.api.Public;
 
+@Public
 public class ManagedDependentResourceException extends OperatorException {
   private final String associatedDependentName;
 

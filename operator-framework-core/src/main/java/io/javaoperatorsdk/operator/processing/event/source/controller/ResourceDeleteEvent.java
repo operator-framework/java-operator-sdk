@@ -18,6 +18,7 @@ package io.javaoperatorsdk.operator.processing.event.source.controller;
 import java.util.Objects;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
+import io.javaoperatorsdk.operator.api.Public;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
 import io.javaoperatorsdk.operator.processing.event.source.ResourceAction;
 
@@ -25,6 +26,7 @@ import io.javaoperatorsdk.operator.processing.event.source.ResourceAction;
  * Extends ResourceEvent for informer Delete events, it holds also information if the final state is
  * unknown for the deleted resource.
  */
+@Public
 public class ResourceDeleteEvent extends ResourceEvent {
 
   private final boolean deletedFinalStateUnknown;

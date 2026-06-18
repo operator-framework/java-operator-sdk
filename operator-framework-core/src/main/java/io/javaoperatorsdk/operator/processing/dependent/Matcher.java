@@ -18,6 +18,7 @@ package io.javaoperatorsdk.operator.processing.dependent;
 import java.util.Optional;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
+import io.javaoperatorsdk.operator.api.Public;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 
 /**
@@ -31,6 +32,7 @@ import io.javaoperatorsdk.operator.api.reconciler.Context;
  *     io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource} implementation is
  *     associated
  */
+@Public
 public interface Matcher<R, P extends HasMetadata> {
 
   /**

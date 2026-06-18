@@ -18,8 +18,10 @@ package io.javaoperatorsdk.operator.processing.event.source.polling;
 import java.time.Duration;
 import java.util.Objects;
 
+import io.javaoperatorsdk.operator.api.Public;
 import io.javaoperatorsdk.operator.processing.ResourceIDMapper;
 
+@Public
 public record PollingConfiguration<R, ID>(
     String name,
     PollingEventSource.GenericResourceFetcher<R> genericResourceFetcher,

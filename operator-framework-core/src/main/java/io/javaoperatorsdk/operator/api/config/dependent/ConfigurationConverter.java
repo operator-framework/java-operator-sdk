@@ -17,8 +17,10 @@ package io.javaoperatorsdk.operator.api.config.dependent;
 
 import java.lang.annotation.Annotation;
 
+import io.javaoperatorsdk.operator.api.Public;
 import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
 
+@Public
 public interface ConfigurationConverter<A extends Annotation, C> {
 
   C configFrom(

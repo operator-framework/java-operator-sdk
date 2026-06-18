@@ -20,6 +20,8 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
+import io.javaoperatorsdk.operator.api.Public;
+
 /**
  * An annotation for downstream tooling to ignore the annotated {@link Reconciler}. This allows to
  * mark some implementations as not provided by user and should therefore be ignored by processes
@@ -27,4 +29,5 @@ import java.lang.annotation.Target;
  */
 @Retention(RetentionPolicy.RUNTIME)
 @Target({ElementType.TYPE})
+@Public
 public @interface Ignore {}

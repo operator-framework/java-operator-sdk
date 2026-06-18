@@ -21,10 +21,12 @@ import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
+import io.javaoperatorsdk.operator.api.Public;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
 import io.javaoperatorsdk.operator.processing.ResourceIDMapper;
 
+@Public
 public interface ResourceIDMapperBulkDependentResource<R, P extends HasMetadata, ID>
     extends BulkDependentResource<R, P, ID>, DependentResource<R, P> {
 

@@ -31,6 +31,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
+import io.javaoperatorsdk.operator.api.Internal;
+import io.javaoperatorsdk.operator.api.Public;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.RecentOperationCacheFiller;
 import io.javaoperatorsdk.operator.processing.ResourceIDMapper;
 import io.javaoperatorsdk.operator.processing.ResourceIDProvider;
@@ -57,6 +59,7 @@ import io.javaoperatorsdk.operator.processing.event.ResourceID;
  * @param <R> type of polled external secondary resource
  * @param <P> primary resource
  */
+@Public
 public abstract class ExternalResourceCachingEventSource<R, P extends HasMetadata, ID>
     extends AbstractEventSource<R, P> implements RecentOperationCacheFiller<R> {
 
@@ -207,6 +210,7 @@ public abstract class ExternalResourceCachingEventSource<R, P extends HasMetadat
   }
 
   @Override
+  @Internal
   public synchronized void handleRecentResourceCreate(ResourceID primaryID, R resource) {
     var actualValues = cache.get(primaryID);
     var resourceId = resourceIDMapper.idFor(resource);
@@ -220,6 +224,7 @@ public abstract class ExternalResourceCachingEventSource<R, P extends HasMetadat
   }
 
   @Override
+  @Internal
   public synchronized void handleRecentResourceUpdate(
       ResourceID primaryID, R resource, R previousVersionOfResource) {
     var actualValues = cache.get(primaryID);

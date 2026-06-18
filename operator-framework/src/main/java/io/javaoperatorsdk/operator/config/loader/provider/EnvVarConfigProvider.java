@@ -18,6 +18,7 @@ package io.javaoperatorsdk.operator.config.loader.provider;
 import java.util.Optional;
 import java.util.function.Function;
 
+import io.javaoperatorsdk.operator.api.Public;
 import io.javaoperatorsdk.operator.config.loader.ConfigProvider;
 
 /**
@@ -30,6 +31,7 @@ import io.javaoperatorsdk.operator.config.loader.ConfigProvider;
  * <p>Supported value types are: {@link String}, {@link Boolean}, {@link Integer}, {@link Long},
  * {@link Double}, and {@link java.time.Duration} (ISO-8601 format, e.g. {@code PT30S}).
  */
+@Public
 public class EnvVarConfigProvider implements ConfigProvider {
 
   private final Function<String, String> envLookup;

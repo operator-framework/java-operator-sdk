@@ -19,6 +19,7 @@ import java.util.Optional;
 import java.util.Set;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
+import io.javaoperatorsdk.operator.api.Public;
 import io.javaoperatorsdk.operator.health.EventSourceHealthIndicator;
 import io.javaoperatorsdk.operator.health.Status;
 import io.javaoperatorsdk.operator.processing.LifecycleAware;
@@ -37,6 +38,7 @@ import io.javaoperatorsdk.operator.processing.event.source.filter.OnUpdateFilter
  * @param <P> the primary resource type which reconciler needs to be triggered when events occur on
  *     resources of type R
  */
+@Public
 public interface EventSource<R, P extends HasMetadata>
     extends LifecycleAware, EventSourceHealthIndicator {
 

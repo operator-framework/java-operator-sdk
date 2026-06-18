@@ -19,8 +19,10 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
+import io.javaoperatorsdk.operator.api.Public;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
 
+@Public
 public class ReconcileResult<R> {
 
   private final Map<R, Operation> resourceOperations;

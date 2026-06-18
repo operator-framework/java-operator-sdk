@@ -27,6 +27,7 @@ import org.slf4j.LoggerFactory;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.OperatorException;
+import io.javaoperatorsdk.operator.api.Public;
 import io.javaoperatorsdk.operator.health.Status;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
 import io.javaoperatorsdk.operator.processing.event.source.ExternalResourceCachingEventSource;
@@ -57,6 +58,7 @@ import io.javaoperatorsdk.operator.processing.event.source.ExternalResourceCachi
  * @param <R> type of the polled resource
  * @param <P> primary resource type
  */
+@Public
 public class PollingEventSource<R, P extends HasMetadata, ID>
     extends ExternalResourceCachingEventSource<R, P, ID> {
 

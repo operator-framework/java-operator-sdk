@@ -16,7 +16,9 @@
 package io.javaoperatorsdk.operator.processing.event;
 
 import io.javaoperatorsdk.operator.OperatorException;
+import io.javaoperatorsdk.operator.api.Public;
 
+@Public
 public class NoEventSourceForClassException extends OperatorException {
 
   private Class<?> clazz;

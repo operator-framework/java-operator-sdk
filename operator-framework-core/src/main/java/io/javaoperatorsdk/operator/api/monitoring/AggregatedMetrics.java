@@ -20,6 +20,7 @@ import java.util.Map;
 import java.util.Objects;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
+import io.javaoperatorsdk.operator.api.Public;
 import io.javaoperatorsdk.operator.api.reconciler.RetryInfo;
 import io.javaoperatorsdk.operator.processing.Controller;
 import io.javaoperatorsdk.operator.processing.event.Event;
@@ -44,6 +45,7 @@ import io.javaoperatorsdk.operator.processing.event.ResourceID;
  *
  * @see Metrics
  */
+@Public
 public final class AggregatedMetrics implements Metrics {
 
   private final List<Metrics> metricsList;

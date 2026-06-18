@@ -17,8 +17,10 @@ package io.javaoperatorsdk.operator.processing.event.source.polling;
 
 import java.time.Duration;
 
+import io.javaoperatorsdk.operator.api.Public;
 import io.javaoperatorsdk.operator.processing.ResourceIDMapper;
 
+@Public
 public final class PollingConfigurationBuilder<R, ID> {
   private final Duration period;
   private final PollingEventSource.GenericResourceFetcher<R> genericResourceFetcher;

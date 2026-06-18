@@ -16,7 +16,9 @@
 package io.javaoperatorsdk.operator.junit;
 
 import io.fabric8.kubernetes.client.KubernetesClient;
+import io.javaoperatorsdk.operator.api.Public;
 
+@Public
 public interface HasKubernetesClient {
   /**
    * Returns the main Kubernetes client that is used to deploy the operator to the cluster.

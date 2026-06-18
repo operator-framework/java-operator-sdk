@@ -18,10 +18,12 @@ package io.javaoperatorsdk.operator.api.config;
 import java.time.Duration;
 
 import io.fabric8.kubernetes.client.extended.leaderelection.LeaderCallbacks;
+import io.javaoperatorsdk.operator.api.Public;
 
 import static io.javaoperatorsdk.operator.api.config.LeaderElectionConfiguration.*;
 
 @SuppressWarnings("unused")
+@Public
 public final class LeaderElectionConfigurationBuilder {
 
   private final String leaseName;

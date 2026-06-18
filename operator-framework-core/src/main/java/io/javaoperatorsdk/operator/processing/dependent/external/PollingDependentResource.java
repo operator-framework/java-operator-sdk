@@ -18,6 +18,7 @@ package io.javaoperatorsdk.operator.processing.dependent.external;
 import java.time.Duration;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
+import io.javaoperatorsdk.operator.api.Public;
 import io.javaoperatorsdk.operator.api.reconciler.EventSourceContext;
 import io.javaoperatorsdk.operator.api.reconciler.Ignore;
 import io.javaoperatorsdk.operator.processing.ResourceIDMapper;
@@ -26,6 +27,7 @@ import io.javaoperatorsdk.operator.processing.event.source.polling.PollingConfig
 import io.javaoperatorsdk.operator.processing.event.source.polling.PollingEventSource;
 
 @Ignore
+@Public
 public abstract class PollingDependentResource<R, P extends HasMetadata, ID>
     extends AbstractPollingDependentResource<R, P, ID>
     implements PollingEventSource.GenericResourceFetcher<R> {

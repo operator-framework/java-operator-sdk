@@ -21,11 +21,14 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
+import io.javaoperatorsdk.operator.api.Internal;
+import io.javaoperatorsdk.operator.api.Public;
 import io.javaoperatorsdk.operator.processing.ResourceIDMapper;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
 import io.javaoperatorsdk.operator.processing.event.source.ExternalResourceCachingEventSource;
 import io.javaoperatorsdk.operator.processing.event.source.ResourceEventAware;
 
+@Public
 public class CachingInboundEventSource<R, P extends HasMetadata, ID>
     extends ExternalResourceCachingEventSource<R, P, ID> implements ResourceEventAware<P> {
 
@@ -53,6 +56,7 @@ public class CachingInboundEventSource<R, P extends HasMetadata, ID>
   }
 
   @Override
+  @Internal
   public void onResourceDeleted(P resource) {
     var resourceID = ResourceID.fromResource(resource);
     fetchedForPrimaries.remove(resourceID);

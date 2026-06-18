@@ -13,22 +13,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.javaoperatorsdk.operator.api.config.dependent;
+package io.javaoperatorsdk.operator.api;
 
-import java.lang.annotation.Annotation;
+import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 
-import io.javaoperatorsdk.operator.api.Public;
-
-@Retention(RetentionPolicy.RUNTIME)
-@Public
-public @interface Configured {
-
-  Class<? extends Annotation> by();
-
-  Class<?> with();
-
-  @SuppressWarnings("rawtypes")
-  Class<? extends ConfigurationConverter> converter();
-}
+/**
+ * Marks API as internal. Such API should not be used by end users and/or are not subject of
+ * semantic versioning.
+ *
+ * <p>The intention with this annotation is not to mark all internal APIs, just make exceptions for
+ * classes that are marked as {@link Public}.
+ */
+@Retention(RetentionPolicy.SOURCE)
+@Target({ElementType.METHOD, ElementType.TYPE, ElementType.FIELD, ElementType.PACKAGE})
+public @interface Internal {}

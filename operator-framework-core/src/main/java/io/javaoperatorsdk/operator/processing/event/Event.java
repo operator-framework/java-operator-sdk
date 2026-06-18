@@ -17,6 +17,9 @@ package io.javaoperatorsdk.operator.processing.event;
 
 import java.util.Objects;
 
+import io.javaoperatorsdk.operator.api.Public;
+
+@Public
 public class Event {
 
   private final ResourceID relatedCustomResource;

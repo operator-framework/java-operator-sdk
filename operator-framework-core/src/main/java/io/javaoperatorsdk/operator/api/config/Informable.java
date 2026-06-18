@@ -16,8 +16,10 @@
 package io.javaoperatorsdk.operator.api.config;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
+import io.javaoperatorsdk.operator.api.Public;
 import io.javaoperatorsdk.operator.api.config.informer.InformerConfiguration;
 
+@Public
 public interface Informable<R extends HasMetadata> {
 
   default String getResourceTypeName() {

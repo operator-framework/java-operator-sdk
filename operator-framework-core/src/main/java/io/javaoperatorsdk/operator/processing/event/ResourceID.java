@@ -21,7 +21,9 @@ import java.util.Optional;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.OwnerReference;
+import io.javaoperatorsdk.operator.api.Public;
 
+@Public
 public class ResourceID implements Serializable {
 
   public static ResourceID fromResource(HasMetadata resource) {

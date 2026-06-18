@@ -22,11 +22,13 @@ import java.util.Map;
 import java.util.Set;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
+import io.javaoperatorsdk.operator.api.Public;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
 
 import static io.javaoperatorsdk.operator.processing.dependent.workflow.Workflow.THROW_EXCEPTION_AUTOMATICALLY_DEFAULT;
 
 @SuppressWarnings({"rawtypes", "unchecked"})
+@Public
 public class WorkflowBuilder<P extends HasMetadata> {
 
   private final Map<String, DependentResourceNode<?, P>> dependentResourceNodes = new HashMap<>();

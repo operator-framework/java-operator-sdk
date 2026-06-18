@@ -15,6 +15,9 @@
  */
 package io.javaoperatorsdk.operator.processing.event.source;
 
+import io.javaoperatorsdk.operator.api.Public;
+
+@Public
 public interface Configurable<C> {
   C configuration();
 }

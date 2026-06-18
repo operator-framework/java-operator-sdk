@@ -17,6 +17,9 @@ package io.javaoperatorsdk.operator.api.config;
 
 import java.lang.annotation.Annotation;
 
+import io.javaoperatorsdk.operator.api.Public;
+
+@Public
 public interface AnnotationConfigurable<A extends Annotation> {
   void initFrom(A configuration);
 }

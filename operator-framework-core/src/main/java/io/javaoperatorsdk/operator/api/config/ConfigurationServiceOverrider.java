@@ -27,10 +27,12 @@ import org.slf4j.LoggerFactory;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.javaoperatorsdk.operator.Operator;
+import io.javaoperatorsdk.operator.api.Public;
 import io.javaoperatorsdk.operator.api.monitoring.Metrics;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResourceFactory;
 
 @SuppressWarnings({"unused", "UnusedReturnValue"})
+@Public
 public class ConfigurationServiceOverrider {
 
   private static final Logger log = LoggerFactory.getLogger(ConfigurationServiceOverrider.class);

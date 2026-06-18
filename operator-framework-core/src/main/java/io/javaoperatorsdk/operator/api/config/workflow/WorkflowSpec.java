@@ -17,8 +17,10 @@ package io.javaoperatorsdk.operator.api.config.workflow;
 
 import java.util.List;
 
+import io.javaoperatorsdk.operator.api.Public;
 import io.javaoperatorsdk.operator.api.config.dependent.DependentResourceSpec;
 
+@Public
 public interface WorkflowSpec {
 
   @SuppressWarnings("rawtypes")

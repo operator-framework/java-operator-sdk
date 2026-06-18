@@ -32,6 +32,8 @@ import org.slf4j.LoggerFactory;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.OperatorException;
+import io.javaoperatorsdk.operator.api.Internal;
+import io.javaoperatorsdk.operator.api.Public;
 import io.javaoperatorsdk.operator.api.reconciler.EventSourceContext;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
 import io.javaoperatorsdk.operator.processing.event.source.Cache;
@@ -48,6 +50,7 @@ import io.javaoperatorsdk.operator.processing.event.source.ResourceEventAware;
  * @param <R> the resource polled by the event source
  * @param <P> related custom resource
  */
+@Public
 public class PerResourcePollingEventSource<R, P extends HasMetadata, ID>
     extends ExternalResourceCachingEventSource<R, P, ID> implements ResourceEventAware<P> {
 
@@ -95,16 +98,19 @@ public class PerResourcePollingEventSource<R, P extends HasMetadata, ID>
   }
 
   @Override
+  @Internal
   public void onResourceCreated(P resource) {
     checkAndRegisterTask(resource);
   }
 
   @Override
+  @Internal
   public void onResourceUpdated(P newResource, P oldResource) {
     checkAndRegisterTask(newResource);
   }
 
   @Override
+  @Internal
   public void onResourceDeleted(P resource) {
     var resourceID = ResourceID.fromResource(resource);
     var scheduledFuture = scheduledFutures.remove(resourceID);

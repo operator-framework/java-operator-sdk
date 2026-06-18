@@ -21,8 +21,11 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 import java.util.concurrent.TimeUnit;
 
+import io.javaoperatorsdk.operator.api.Public;
+
 @Retention(RetentionPolicy.RUNTIME)
 @Target({ElementType.TYPE})
+@Public
 public @interface MaxReconciliationInterval {
 
   long DEFAULT_INTERVAL = 10;

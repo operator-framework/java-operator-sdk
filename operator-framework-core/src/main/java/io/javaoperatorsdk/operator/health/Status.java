@@ -15,9 +15,12 @@
  */
 package io.javaoperatorsdk.operator.health;
 
+import io.javaoperatorsdk.operator.api.Public;
+
 /**
  * The health status of an {@link io.javaoperatorsdk.operator.processing.event.source.EventSource}
  */
+@Public
 public enum Status {
   HEALTHY,
   UNHEALTHY,

@@ -21,11 +21,13 @@ import java.util.List;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.zjsonpatch.JsonDiff;
+import io.javaoperatorsdk.operator.api.Public;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.processing.dependent.Matcher;
 
 import com.fasterxml.jackson.databind.JsonNode;
 
+@Public
 public class GenericKubernetesResourceMatcher<R extends HasMetadata, P extends HasMetadata> {
 
   private static final String SPEC = "/spec";

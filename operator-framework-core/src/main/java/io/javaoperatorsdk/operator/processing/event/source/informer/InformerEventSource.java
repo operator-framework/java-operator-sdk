@@ -26,6 +26,8 @@ import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.informers.ResourceEventHandler;
+import io.javaoperatorsdk.operator.api.Internal;
+import io.javaoperatorsdk.operator.api.Public;
 import io.javaoperatorsdk.operator.api.config.informer.InformerEventSourceConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.EventSourceContext;
 import io.javaoperatorsdk.operator.processing.event.Event;
@@ -43,6 +45,7 @@ import io.javaoperatorsdk.operator.processing.event.source.ResourceAction;
  * @param <R> resource type being watched
  * @param <P> type of the associated primary resource
  */
+@Public
 public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
     extends ManagedInformerEventSource<R, P, InformerEventSourceConfiguration<R>>
     implements ResourceEventHandler<R> {
@@ -85,6 +88,7 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
   }
 
   @Override
+  @Internal
   public void onAdd(R newResource) {
     withMDC(
         newResource,
@@ -98,6 +102,7 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
   }
 
   @Override
+  @Internal
   public void onUpdate(R oldObject, R newObject) {
     withMDC(
         newObject,
@@ -113,6 +118,7 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
   }
 
   @Override
+  @Internal
   public synchronized void onDelete(R resource, boolean deletedFinalStateUnknown) {
     withMDC(
         resource,
@@ -247,12 +253,14 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
   }
 
   @Override
+  @Internal
   public void handleRecentResourceUpdate(
       ResourceID resourceID, R resource, R previousVersionOfResource) {
     handleRecentCreateOrUpdate(resource);
   }
 
   @Override
+  @Internal
   public void handleRecentResourceCreate(ResourceID resourceID, R resource) {
     handleRecentCreateOrUpdate(resource);
   }
@@ -267,6 +275,7 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
   }
 
   @Override
+  @Internal
   public boolean allowsNamespaceChanges() {
     return configuration().followControllerNamespaceChanges();
   }

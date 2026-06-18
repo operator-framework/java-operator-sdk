@@ -18,6 +18,7 @@ package io.javaoperatorsdk.operator.processing.dependent;
 import java.util.Optional;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
+import io.javaoperatorsdk.operator.api.Public;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.Deleter;
 
 /**
@@ -31,6 +32,7 @@ import io.javaoperatorsdk.operator.api.reconciler.dependent.Deleter;
  * @param <P> the primary resource type
  * @param <S> the state type
  */
+@Public
 public interface DependentResourceWithExplicitState<R, P extends HasMetadata, S extends HasMetadata>
     extends Creator<R, P>, Deleter<P> {
 

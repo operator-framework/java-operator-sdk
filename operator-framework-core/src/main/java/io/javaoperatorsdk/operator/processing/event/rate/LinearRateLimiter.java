@@ -19,9 +19,11 @@ import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.Optional;
 
+import io.javaoperatorsdk.operator.api.Public;
 import io.javaoperatorsdk.operator.api.config.AnnotationConfigurable;
 
 /** A simple rate limiter that limits the number of permission for a time interval. */
+@Public
 public class LinearRateLimiter
     implements RateLimiter<RateState>, AnnotationConfigurable<RateLimited> {
 

@@ -15,7 +15,10 @@
  */
 package io.javaoperatorsdk.operator.processing.dependent.kubernetes;
 
+import io.javaoperatorsdk.operator.api.Public;
+
 /** A replacement for {@link Boolean}, which can't be used in annotations. */
+@Public
 public enum BooleanWithUndefined {
   TRUE,
   FALSE,

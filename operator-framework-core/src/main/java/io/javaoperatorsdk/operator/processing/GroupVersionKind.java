@@ -20,7 +20,9 @@ import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
+import io.javaoperatorsdk.operator.api.Public;
 
+@Public
 public class GroupVersionKind {
   private static final String SEPARATOR = "/";
   private final String group;
