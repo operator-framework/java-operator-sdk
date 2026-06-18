@@ -15,8 +15,6 @@
  */
 package io.javaoperatorsdk.operator.processing.event;
 
-import io.javaoperatorsdk.operator.api.Public;
-
 public interface EventHandler {
 
   void handleEvent(Event event);
