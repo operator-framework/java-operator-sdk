@@ -137,7 +137,7 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
   }
 
   @Override
-  protected void handleSyntEvent(
+  protected void handleEvent(
       ResourceAction action, R resource, R oldResource, Boolean deletedFinalStateUnknown) {
     // Called from ManagedInformerEventSource#eventFilteringUpdateAndCacheResource after the temp
     // cache decided to surface a (possibly synthesized) event. The user-level filters

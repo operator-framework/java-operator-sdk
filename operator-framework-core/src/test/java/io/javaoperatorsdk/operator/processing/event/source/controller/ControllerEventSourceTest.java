@@ -75,10 +75,10 @@ class ControllerEventSourceTest
     TestCustomResource oldCustomResource = TestUtils.testCustomResource();
     oldCustomResource.getMetadata().setFinalizers(List.of(FINALIZER));
 
-    source.handleSyntEvent(ResourceAction.UPDATED, customResource, oldCustomResource, null);
+    source.handleEvent(ResourceAction.UPDATED, customResource, oldCustomResource, null);
     verify(eventHandler, times(1)).handleEvent(any());
 
-    source.handleSyntEvent(ResourceAction.UPDATED, customResource, customResource, null);
+    source.handleEvent(ResourceAction.UPDATED, customResource, customResource, null);
     verify(eventHandler, times(1)).handleEvent(any());
   }
 
@@ -86,11 +86,11 @@ class ControllerEventSourceTest
   void dontSkipEventHandlingIfMarkedForDeletion() {
     TestCustomResource customResource1 = TestUtils.testCustomResource();
 
-    source.handleSyntEvent(ResourceAction.UPDATED, customResource1, customResource1, null);
+    source.handleEvent(ResourceAction.UPDATED, customResource1, customResource1, null);
     verify(eventHandler, times(1)).handleEvent(any());
 
     customResource1.getMetadata().setDeletionTimestamp(LocalDateTime.now().toString());
-    source.handleSyntEvent(ResourceAction.UPDATED, customResource1, customResource1, null);
+    source.handleEvent(ResourceAction.UPDATED, customResource1, customResource1, null);
     verify(eventHandler, times(2)).handleEvent(any());
   }
 
@@ -98,11 +98,11 @@ class ControllerEventSourceTest
   void normalExecutionIfGenerationChanges() {
     TestCustomResource customResource1 = TestUtils.testCustomResource();
 
-    source.handleSyntEvent(ResourceAction.UPDATED, customResource1, customResource1, null);
+    source.handleEvent(ResourceAction.UPDATED, customResource1, customResource1, null);
     verify(eventHandler, times(1)).handleEvent(any());
 
     customResource1.getMetadata().setGeneration(2L);
-    source.handleSyntEvent(ResourceAction.UPDATED, customResource1, customResource1, null);
+    source.handleEvent(ResourceAction.UPDATED, customResource1, customResource1, null);
     verify(eventHandler, times(2)).handleEvent(any());
   }
 
@@ -113,10 +113,10 @@ class ControllerEventSourceTest
 
     TestCustomResource customResource1 = TestUtils.testCustomResource();
 
-    source.handleSyntEvent(ResourceAction.UPDATED, customResource1, customResource1, null);
+    source.handleEvent(ResourceAction.UPDATED, customResource1, customResource1, null);
     verify(eventHandler, times(1)).handleEvent(any());
 
-    source.handleSyntEvent(ResourceAction.UPDATED, customResource1, customResource1, null);
+    source.handleEvent(ResourceAction.UPDATED, customResource1, customResource1, null);
     verify(eventHandler, times(2)).handleEvent(any());
   }
 
@@ -124,7 +124,7 @@ class ControllerEventSourceTest
   void eventWithNoGenerationProcessedIfNoFinalizer() {
     TestCustomResource customResource1 = TestUtils.testCustomResource();
 
-    source.handleSyntEvent(ResourceAction.UPDATED, customResource1, customResource1, null);
+    source.handleEvent(ResourceAction.UPDATED, customResource1, customResource1, null);
 
     verify(eventHandler, times(1)).handleEvent(any());
   }
@@ -133,7 +133,7 @@ class ControllerEventSourceTest
   void callsBroadcastsOnResourceEvents() {
     TestCustomResource customResource1 = TestUtils.testCustomResource();
 
-    source.handleSyntEvent(ResourceAction.UPDATED, customResource1, customResource1, null);
+    source.handleEvent(ResourceAction.UPDATED, customResource1, customResource1, null);
 
     verify(testController.getEventSourceManager(), times(1))
         .broadcastOnResourceEvent(
@@ -180,8 +180,8 @@ class ControllerEventSourceTest
         new ControllerEventSource<>(new TestController(onAddFilter, onUpdatePredicate, null, true));
     setUpSource(source, true, controllerConfig);
 
-    source.handleSyntEvent(ResourceAction.ADDED, cr, null, null);
-    source.handleSyntEvent(ResourceAction.UPDATED, cr, cr, null);
+    source.handleEvent(ResourceAction.ADDED, cr, null, null);
+    source.handleEvent(ResourceAction.UPDATED, cr, cr, null);
 
     verify(eventHandler, never()).handleEvent(any());
   }
@@ -193,9 +193,9 @@ class ControllerEventSourceTest
     source = new ControllerEventSource<>(new TestController(null, null, res -> false, true));
     setUpSource(source, true, controllerConfig);
 
-    source.handleSyntEvent(ResourceAction.ADDED, cr, null, null);
-    source.handleSyntEvent(ResourceAction.UPDATED, cr, cr, null);
-    source.handleSyntEvent(ResourceAction.DELETED, cr, cr, true);
+    source.handleEvent(ResourceAction.ADDED, cr, null, null);
+    source.handleEvent(ResourceAction.UPDATED, cr, cr, null);
+    source.handleEvent(ResourceAction.DELETED, cr, cr, true);
 
     verify(eventHandler, never()).handleEvent(any());
   }
@@ -227,7 +227,7 @@ class ControllerEventSourceTest
     source.onUpdate(testResourceWithVersion(2), testResourceWithVersion(3));
     latch.countDown();
 
-    await().untilAsserted(() -> expectHandleSyntEvent(3, 2));
+    await().untilAsserted(() -> expectHandleEvent(3, 2));
   }
 
   @Test
@@ -246,7 +246,7 @@ class ControllerEventSourceTest
             () -> {
               verify(eventHandler, atLeastOnce()).handleEvent(any());
               verify(source, atLeastOnce())
-                  .handleSyntEvent(eq(ResourceAction.DELETED), any(), any(), any());
+                  .handleEvent(eq(ResourceAction.DELETED), any(), any(), any());
             });
   }
 
@@ -262,13 +262,13 @@ class ControllerEventSourceTest
     source.onUpdate(testResourceWithVersion(3), testResourceWithVersion(4));
     latch.countDown();
 
-    await().untilAsserted(() -> expectHandleSyntEvent(4, 2));
+    await().untilAsserted(() -> expectHandleEvent(4, 2));
   }
 
-  private void expectHandleSyntEvent(int newResourceVersion, int oldResourceVersion) {
+  private void expectHandleEvent(int newResourceVersion, int oldResourceVersion) {
     verify(eventHandler, times(1)).handleEvent(any());
     verify(source, times(1))
-        .handleSyntEvent(
+        .handleEvent(
             eq(ResourceAction.UPDATED),
             argThat(r -> ("" + newResourceVersion).equals(r.getMetadata().getResourceVersion())),
             argThat(r -> ("" + oldResourceVersion).equals(r.getMetadata().getResourceVersion())),

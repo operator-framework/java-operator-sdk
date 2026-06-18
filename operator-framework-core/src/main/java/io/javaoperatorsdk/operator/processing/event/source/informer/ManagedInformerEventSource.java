@@ -117,7 +117,7 @@ public abstract class ManagedInformerEventSource<
                 r.getResource()
                     .map(rr -> rr.getMetadata().getResourceVersion())
                     .orElse("[not set]"));
-            handleSyntEvent(
+            handleEvent(
                 r.getAction(),
                 (R) r.getResource().orElseThrow(),
                 (R) r.getPreviousResource().orElse(null),
@@ -127,7 +127,7 @@ public abstract class ManagedInformerEventSource<
     }
   }
 
-  protected abstract void handleSyntEvent(
+  protected abstract void handleEvent(
       ResourceAction action, R resource, R oldResource, Boolean deletedFinalStateUnknown);
 
   @SuppressWarnings("unchecked")

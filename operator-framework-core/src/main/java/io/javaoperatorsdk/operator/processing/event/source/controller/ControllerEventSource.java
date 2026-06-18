@@ -85,7 +85,7 @@ public class ControllerEventSource<T extends HasMetadata>
   }
 
   @Override
-  protected synchronized void handleSyntEvent(
+  protected synchronized void handleEvent(
       ResourceAction action, T resource, T oldResource, Boolean deletedFinalStateUnknown) {
     try {
       if (log.isDebugEnabled()) {
@@ -158,7 +158,7 @@ public class ControllerEventSource<T extends HasMetadata>
 
   @SuppressWarnings("unchecked")
   private void handleEvent(ExtendedResourceEvent r) {
-    handleSyntEvent(
+    handleEvent(
         r.getAction(),
         (T) r.getResource().orElseThrow(),
         (T) r.getPreviousResource().orElse(null),
