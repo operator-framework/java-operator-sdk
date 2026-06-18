@@ -202,7 +202,7 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
     }
   }
 
-  void propagateEvent(R resource, R oldResource, Set<ResourceID> primaryResourceIdSet) {
+  protected void propagateEvent(R resource, R oldResource, Set<ResourceID> primaryResourceIdSet) {
     if (primaryResourceIdSet == null) {
       primaryResourceIdSet = new HashSet<>();
       primaryResourceIdSet.addAll(
