@@ -74,6 +74,19 @@ class InformerConfigurationTest {
   }
 
   @Test
+  void nullShardSelectorByDefault() {
+    final var informerConfig = InformerConfiguration.builder(ConfigMap.class).build();
+    assertNull(informerConfig.getShardSelector());
+  }
+
+  @Test
+  void shardSelectorIsSetOnBuilder() {
+    final var informerConfig =
+        InformerConfiguration.builder(ConfigMap.class).withShardSelector("shard=1").build();
+    assertEquals("shard=1", informerConfig.getShardSelector());
+  }
+
+  @Test
   void shouldWatchAllNamespacesByDefaultForControllers() {
     final var informerConfig = InformerConfiguration.builder(ConfigMap.class).buildForController();
     assertTrue(informerConfig.watchAllNamespaces());

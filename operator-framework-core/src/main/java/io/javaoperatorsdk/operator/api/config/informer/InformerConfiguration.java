@@ -47,6 +47,7 @@ public class InformerConfiguration<R extends HasMetadata> {
   private Set<String> namespaces;
   private Boolean followControllerNamespaceChanges;
   private String labelSelector;
+  private String shardSelector;
   private OnAddFilter<? super R> onAddFilter;
   private OnUpdateFilter<? super R> onUpdateFilter;
   private OnDeleteFilter<? super R> onDeleteFilter;
@@ -62,6 +63,7 @@ public class InformerConfiguration<R extends HasMetadata> {
       Set<String> namespaces,
       boolean followControllerNamespaceChanges,
       String labelSelector,
+      String shardSelector,
       OnAddFilter<? super R> onAddFilter,
       OnUpdateFilter<? super R> onUpdateFilter,
       OnDeleteFilter<? super R> onDeleteFilter,
@@ -77,6 +79,7 @@ public class InformerConfiguration<R extends HasMetadata> {
     this.namespaces = namespaces;
     this.followControllerNamespaceChanges = followControllerNamespaceChanges;
     this.labelSelector = labelSelector;
+    this.shardSelector = shardSelector;
     this.onAddFilter = onAddFilter;
     this.onUpdateFilter = onUpdateFilter;
     this.onDeleteFilter = onDeleteFilter;
@@ -113,6 +116,7 @@ public class InformerConfiguration<R extends HasMetadata> {
             original.namespaces,
             original.followControllerNamespaceChanges,
             original.labelSelector,
+            original.shardSelector,
             original.onAddFilter,
             original.onUpdateFilter,
             original.onDeleteFilter,
@@ -128,6 +132,11 @@ public class InformerConfiguration<R extends HasMetadata> {
   public static String ensureValidLabelSelector(String labelSelector) {
     // might want to implement validation here?
     return labelSelector;
+  }
+
+  public static String ensureValidShardSelector(String shardSelector) {
+    // might want to implement validation here?
+    return shardSelector;
   }
 
   public static boolean allNamespacesWatched(Set<String> namespaces) {
@@ -251,6 +260,20 @@ public class InformerConfiguration<R extends HasMetadata> {
     return labelSelector;
   }
 
+  /**
+   * Retrieves the shard selector that is used, in addition to the {@link #getLabelSelector() label
+   * selector}, to restrict which resources are actually watched by the associated informer.
+   * Typically used to assign a subset (shard) of the resources to a given operator instance. It is
+   * expressed using the same syntax as a label selector. See the official documentation on the <a
+   * href="https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/">topic</a> for
+   * more details on syntax.
+   *
+   * @return the shard selector filtering watched resources
+   */
+  public String getShardSelector() {
+    return shardSelector;
+  }
+
   public OnAddFilter<? super R> getOnAddFilter() {
     return onAddFilter;
   }
@@ -353,6 +376,11 @@ public class InformerConfiguration<R extends HasMetadata> {
         var labelSelector = Constants.NO_VALUE_SET.equals(fromAnnotation) ? null : fromAnnotation;
         withLabelSelector(labelSelector);
 
+        final var shardFromAnnotation = informerConfig.shardSelector();
+        var shardSelector =
+            Constants.NO_VALUE_SET.equals(shardFromAnnotation) ? null : shardFromAnnotation;
+        withShardSelector(shardSelector);
+
         withOnAddFilter(
             Utils.instantiate(informerConfig.onAddFilter(), OnAddFilter.class, context));
 
@@ -443,6 +471,11 @@ public class InformerConfiguration<R extends HasMetadata> {
 
     public Builder withLabelSelector(String labelSelector) {
       InformerConfiguration.this.labelSelector = ensureValidLabelSelector(labelSelector);
+      return this;
+    }
+
+    public Builder withShardSelector(String shardSelector) {
+      InformerConfiguration.this.shardSelector = ensureValidShardSelector(shardSelector);
       return this;
     }
 

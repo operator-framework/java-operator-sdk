@@ -135,7 +135,7 @@ class InformerManager<R extends HasMetadata, C extends Informable<R>>
 
   private InformerWrapper<R> createEventSourceForNamespace(String namespace) {
     final InformerWrapper<R> source;
-    final var labelSelector = configuration.getInformerConfig().getLabelSelector();
+    final var labelSelector = combinedLabelSelector();
     if (namespace.equals(WATCH_ALL_NAMESPACES)) {
       final var filteredBySelectorClient = client.inAnyNamespace().withLabelSelector(labelSelector);
       source = createEventSource(filteredBySelectorClient, eventHandler, WATCH_ALL_NAMESPACES);
@@ -148,6 +148,25 @@ class InformerManager<R extends HasMetadata, C extends Informable<R>>
     }
     source.addIndexers(indexers);
     return source;
+  }
+
+  /**
+   * Combines the configured label selector and shard selector into a single label selector applied
+   * to the informer. Both use the label selector syntax where comma separated requirements act as a
+   * logical AND, so when both are set they are simply joined with a comma. Returns {@code null}
+   * when neither is set.
+   */
+  private String combinedLabelSelector() {
+    final var informerConfig = configuration.getInformerConfig();
+    final var labelSelector = informerConfig.getLabelSelector();
+    final var shardSelector = informerConfig.getShardSelector();
+    if (labelSelector == null) {
+      return shardSelector;
+    }
+    if (shardSelector == null) {
+      return labelSelector;
+    }
+    return labelSelector + "," + shardSelector;
   }
 
   private InformerWrapper<R> createEventSource(
@@ -275,7 +294,7 @@ class InformerManager<R extends HasMetadata, C extends Informable<R>>
   @Override
   public String toString() {
     final var informerConfig = configuration.getInformerConfig();
-    final var selector = informerConfig.getLabelSelector();
+    final var selector = combinedLabelSelector();
     return "InformerManager ["
         + ReconcilerUtilsInternal.getResourceTypeNameWithVersion(configuration.getResourceClass())
         + "] watching: "

@@ -251,6 +251,11 @@ public interface InformerEventSourceConfiguration<R extends HasMetadata> extends
       return this;
     }
 
+    public Builder<R> withShardSelector(String shardSelector) {
+      config.withShardSelector(shardSelector);
+      return this;
+    }
+
     public Builder<R> withOnAddFilter(OnAddFilter<? super R> onAddFilter) {
       config.withOnAddFilter(onAddFilter);
       return this;
@@ -308,6 +313,7 @@ public interface InformerEventSourceConfiguration<R extends HasMetadata> extends
             .withFollowControllerNamespacesChanges(
                 informerConfig.getFollowControllerNamespaceChanges())
             .withLabelSelector(informerConfig.getLabelSelector())
+            .withShardSelector(informerConfig.getShardSelector())
             .withItemStore(informerConfig.getItemStore())
             .withOnAddFilter(informerConfig.getOnAddFilter())
             .withOnUpdateFilter(informerConfig.getOnUpdateFilter())
