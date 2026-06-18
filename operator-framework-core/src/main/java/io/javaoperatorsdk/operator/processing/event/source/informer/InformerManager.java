@@ -113,14 +113,28 @@ class InformerManager<R extends HasMetadata, C extends Informable<R>>
     log.debug("Stopped informer {} for namespaces: {}", this, sourcesToRemove);
     sourcesToRemove.forEach(k -> sources.remove(k).stop());
 
-    namespaces.forEach(
-        ns -> {
-          if (!sources.containsKey(ns)) {
-            final InformerWrapper<R> source = createEventSourceForNamespace(ns);
-            source.start();
-            log.debug("Registered new {} -> {} for namespace: {}", this, source, ns);
-          }
-        });
+    var newNamespaces =
+        namespaces.stream().filter(ns -> !sources.containsKey(ns)).collect(Collectors.toList());
+    if (newNamespaces.isEmpty()) {
+      return;
+    }
+
+    controllerConfiguration
+        .getConfigurationService()
+        .getExecutorServiceManager()
+        .boundedExecuteAndWaitForAllToComplete(
+            newNamespaces.stream(),
+            ns -> {
+              final InformerWrapper<R> source = createEventSourceForNamespace(ns);
+              source.start();
+              log.debug("Registered new {} -> {} for namespace: {}", this, source, ns);
+              return null;
+            },
+            ns ->
+                "InformerStarter-"
+                    + ns
+                    + "-"
+                    + configuration.getResourceClass().getSimpleName());
   }
 
   private InformerWrapper<R> createEventSourceForNamespace(String namespace) {
