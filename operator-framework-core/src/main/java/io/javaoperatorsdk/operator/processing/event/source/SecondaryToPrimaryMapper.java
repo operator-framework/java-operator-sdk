@@ -33,8 +33,8 @@ public interface SecondaryToPrimaryMapper<R> {
    *
    * @param resource the secondary resource for which an event was received
    * @return set of primary resource IDs to enqueue for reconciliation; an empty set means the event
-   *     is irrelevant and no reconciliation is triggered. This is called also the old and the new
-   *     resources, in case of an update.
+   *     is irrelevant and no reconciliation is triggered. On update events, this method is invoked
+   *     for both the old and the new versions of the resource.
    */
   Set<ResourceID> toPrimaryResourceIDs(R resource);
 }
