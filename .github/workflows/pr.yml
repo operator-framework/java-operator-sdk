@@ -17,7 +17,7 @@ jobs:
   check_format_and_unit_tests:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - name: Set up Java and Maven
         uses: actions/setup-java@v5
         with:
@@ -37,7 +37,7 @@ jobs:
   helm_unit_tests:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - name: Set up Helm
         uses: azure/setup-helm@v5
       - name: Run Helm unit tests
