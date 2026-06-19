@@ -125,16 +125,12 @@ class InformerManager<R extends HasMetadata, C extends Informable<R>>
         .boundedExecuteAndWaitForAllToComplete(
             newNamespaces.stream(),
             ns -> {
-              final InformerWrapper<R> source = createEventSourceForNamespace(ns);
+              final var source = createEventSourceForNamespace(ns);
               source.start();
               log.debug("Registered new {} -> {} for namespace: {}", this, source, ns);
               return null;
             },
-            ns ->
-                "InformerStarter-"
-                    + ns
-                    + "-"
-                    + configuration.getResourceClass().getSimpleName());
+            ns -> "InformerStarter-" + ns + "-" + configuration.getResourceClass().getSimpleName());
   }
 
   private InformerWrapper<R> createEventSourceForNamespace(String namespace) {
