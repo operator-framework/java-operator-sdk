@@ -130,6 +130,16 @@ public class TriggerReconcilerOnAllEventIT {
 
     extension.create(res);
 
+    // Wait until the operator has added its own finalizer before deleting. Right after create the
+    // resource already has exactly [ADDITIONAL_FINALIZER], so without this the assertion below could
+    // pass prematurely (before the add/mark-for-deletion/remove cycle), snapshotting a stale event
+    // count and making the phase-2 `eventCount + 1` assertion flaky.
+    await()
+        .untilAsserted(
+            () ->
+                assertThat(getResource().getMetadata().getFinalizers())
+                    .containsExactlyInAnyOrder(ADDITIONAL_FINALIZER, FINALIZER));
+
     extension.delete(getResource());
 
     await()
