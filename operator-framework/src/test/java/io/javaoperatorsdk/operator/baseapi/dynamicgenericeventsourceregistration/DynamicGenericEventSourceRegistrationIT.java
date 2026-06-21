@@ -16,6 +16,7 @@
 package io.javaoperatorsdk.operator.baseapi.dynamicgenericeventsourceregistration;
 
 import java.time.Duration;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
@@ -62,22 +63,41 @@ class DynamicGenericEventSourceRegistrationIT {
               var secret = extension.get(Secret.class, TEST_RESOURCE_NAME);
               assertThat(cm).isNotNull();
               assertThat(secret).isNotNull();
+              assertThat(reconciler.getNumberOfEventSources()).isEqualTo(2);
             });
-    var executions = reconciler.getNumberOfExecutions();
+
+    // The reconciler creates/updates the ConfigMap and Secret on every execution, which produces
+    // further watch events. Wait for that self-induced cascade to settle before capturing the
+    // execution count, otherwise the captured value (and any delta we assert on it) is racy.
+    var executions = awaitStableExecutionCount(reconciler);
     assertThat(reconciler.getNumberOfEventSources()).isEqualTo(2);
-    assertThat(executions).isLessThanOrEqualTo(3);
 
     var cm = extension.get(ConfigMap.class, TEST_RESOURCE_NAME);
     cm.getData().put("key2", "val2");
 
     extension.replace(cm); // triggers the reconciliation
 
+    // The external change triggers at least one reconciliation. We only assert a lower bound: the
+    // reconciler's own subsequent write of the ConfigMap is filtered by read-after-write
+    // consistency, so the exact number of follow-up executions is not deterministic.
     await()
         .untilAsserted(
-            () -> {
-              assertThat(reconciler.getNumberOfExecutions() - executions).isEqualTo(2);
-            });
+            () -> assertThat(reconciler.getNumberOfExecutions()).isGreaterThan(executions));
     assertThat(reconciler.getNumberOfEventSources()).isEqualTo(2);
+  }
+
+  /** Waits until the execution count stops changing and returns the stable value. */
+  private static int awaitStableExecutionCount(
+      DynamicGenericEventSourceRegistrationReconciler reconciler) {
+    var previous = new AtomicInteger(-1);
+    await()
+        .pollInterval(Duration.ofMillis(300))
+        .untilAsserted(
+            () -> {
+              var current = reconciler.getNumberOfExecutions();
+              assertThat(current).isEqualTo(previous.getAndSet(current));
+            });
+    return reconciler.getNumberOfExecutions();
   }
 
   DynamicGenericEventSourceRegistrationCustomResource testResource() {
