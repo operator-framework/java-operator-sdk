@@ -261,6 +261,11 @@ public interface InformerEventSourceConfiguration<R extends HasMetadata> extends
       return this;
     }
 
+    public Builder<R> withOnUpdateFilterOr(OnUpdateFilter<? super R> onUpdateFilterOr) {
+      config.withOnUpdateFilterOr(onUpdateFilterOr);
+      return this;
+    }
+
     public Builder<R> withOnDeleteFilter(OnDeleteFilter<? super R> onDeleteFilter) {
       config.withOnDeleteFilter(onDeleteFilter);
       return this;
@@ -311,6 +316,7 @@ public interface InformerEventSourceConfiguration<R extends HasMetadata> extends
             .withItemStore(informerConfig.getItemStore())
             .withOnAddFilter(informerConfig.getOnAddFilter())
             .withOnUpdateFilter(informerConfig.getOnUpdateFilter())
+            .withOnUpdateFilterOr(informerConfig.getOnUpdateFilterOr())
             .withOnDeleteFilter(informerConfig.getOnDeleteFilter())
             .withGenericFilter(informerConfig.getGenericFilter())
             .withInformerListLimit(informerConfig.getInformerListLimit())

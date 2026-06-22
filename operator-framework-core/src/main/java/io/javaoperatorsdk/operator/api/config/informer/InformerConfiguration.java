@@ -49,6 +49,7 @@ public class InformerConfiguration<R extends HasMetadata> {
   private String labelSelector;
   private OnAddFilter<? super R> onAddFilter;
   private OnUpdateFilter<? super R> onUpdateFilter;
+  private OnUpdateFilter<? super R> onUpdateFilterOr;
   private OnDeleteFilter<? super R> onDeleteFilter;
   private GenericFilter<? super R> genericFilter;
   private ItemStore<R> itemStore;
@@ -64,6 +65,7 @@ public class InformerConfiguration<R extends HasMetadata> {
       String labelSelector,
       OnAddFilter<? super R> onAddFilter,
       OnUpdateFilter<? super R> onUpdateFilter,
+      OnUpdateFilter<? super R> onUpdateFilterOr,
       OnDeleteFilter<? super R> onDeleteFilter,
       GenericFilter<? super R> genericFilter,
       ItemStore<R> itemStore,
@@ -79,6 +81,7 @@ public class InformerConfiguration<R extends HasMetadata> {
     this.labelSelector = labelSelector;
     this.onAddFilter = onAddFilter;
     this.onUpdateFilter = onUpdateFilter;
+    this.onUpdateFilterOr = onUpdateFilterOr;
     this.onDeleteFilter = onDeleteFilter;
     this.genericFilter = genericFilter;
     this.itemStore = itemStore;
@@ -115,6 +118,7 @@ public class InformerConfiguration<R extends HasMetadata> {
             original.labelSelector,
             original.onAddFilter,
             original.onUpdateFilter,
+            original.onUpdateFilterOr,
             original.onDeleteFilter,
             original.genericFilter,
             original.itemStore,
@@ -259,6 +263,10 @@ public class InformerConfiguration<R extends HasMetadata> {
     return onUpdateFilter;
   }
 
+  public OnUpdateFilter<? super R> getOnUpdateFilterOr() {
+    return onUpdateFilterOr;
+  }
+
   public OnDeleteFilter<? super R> getOnDeleteFilter() {
     return onDeleteFilter;
   }
@@ -359,6 +367,9 @@ public class InformerConfiguration<R extends HasMetadata> {
         withOnUpdateFilter(
             Utils.instantiate(informerConfig.onUpdateFilter(), OnUpdateFilter.class, context));
 
+        withOnUpdateFilterOr(
+            Utils.instantiate(informerConfig.onUpdateFilterOr(), OnUpdateFilter.class, context));
+
         withOnDeleteFilter(
             Utils.instantiate(informerConfig.onDeleteFilter(), OnDeleteFilter.class, context));
 
@@ -453,6 +464,11 @@ public class InformerConfiguration<R extends HasMetadata> {
 
     public Builder withOnUpdateFilter(OnUpdateFilter<? super R> onUpdateFilter) {
       InformerConfiguration.this.onUpdateFilter = onUpdateFilter;
+      return this;
+    }
+
+    public Builder withOnUpdateFilterOr(OnUpdateFilter<? super R> onUpdateFilterOr) {
+      InformerConfiguration.this.onUpdateFilterOr = onUpdateFilterOr;
       return this;
     }
 

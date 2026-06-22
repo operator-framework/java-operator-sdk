@@ -80,12 +80,26 @@ public @interface Informer {
   Class<? extends OnAddFilter> onAddFilter() default OnAddFilter.class;
 
   /**
-   * Optional {@link OnUpdateFilter} to filter update events sent to the associated informer
+   * Optional {@link OnUpdateFilter} to filter update events sent to the associated informer.
+   * Combined with JOSDK's internal filters using AND logic — the event is only accepted when both
+   * this filter and JOSDK's internal filters accept it.
    *
    * @return the {@link OnUpdateFilter} filter implementation to use, defaulting to the interface
    *     itself if no value is set
    */
   Class<? extends OnUpdateFilter> onUpdateFilter() default OnUpdateFilter.class;
+
+  /**
+   * Optional {@link OnUpdateFilter} combined with JOSDK's internal filters using OR logic — the
+   * event is accepted when either this filter or JOSDK's internal filters accept it. Use this to
+   * expand the set of events that trigger reconciliation beyond what JOSDK's internal filters (e.g.
+   * generation-aware filtering) would normally allow, for instance to also reconcile on specific
+   * status field updates.
+   *
+   * @return the {@link OnUpdateFilter} filter implementation to use, defaulting to the interface
+   *     itself if no value is set
+   */
+  Class<? extends OnUpdateFilter> onUpdateFilterOr() default OnUpdateFilter.class;
 
   /**
    * Optional {@link OnDeleteFilter} to filter delete events sent to the associated informer

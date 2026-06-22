@@ -60,10 +60,16 @@ public class ControllerEventSource<T extends HasMetadata>
     // by default the on add should be processed in all cases regarding internal filters
     final var informerConfig = config.getInformerConfig();
     Optional.ofNullable(informerConfig.getOnAddFilter()).ifPresent(this::setOnAddFilter);
-    Optional.ofNullable(informerConfig.getOnUpdateFilter())
+
+    var effectiveUpdateFilter =
+        Optional.ofNullable(informerConfig.getOnUpdateFilter())
+            .map(filter -> filter.and(internalOnUpdateFilter))
+            .orElse(internalOnUpdateFilter);
+    Optional.ofNullable(informerConfig.getOnUpdateFilterOr())
         .ifPresentOrElse(
-            filter -> setOnUpdateFilter(filter.and(internalOnUpdateFilter)),
-            () -> setOnUpdateFilter(internalOnUpdateFilter));
+            orFilter -> setOnUpdateFilter(effectiveUpdateFilter.or(orFilter)),
+            () -> setOnUpdateFilter(effectiveUpdateFilter));
+
     Optional.ofNullable(informerConfig.getGenericFilter()).ifPresent(this::setGenericFilter);
     setControllerConfiguration(config);
   }

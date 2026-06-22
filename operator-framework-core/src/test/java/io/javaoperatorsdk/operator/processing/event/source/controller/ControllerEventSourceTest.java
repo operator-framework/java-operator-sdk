@@ -141,12 +141,47 @@ class ControllerEventSourceTest
   }
 
   @Test
+  void orFilterTriggersEventWhenInternalFilterWouldReject() {
+    TestCustomResource cr = TestUtils.testCustomResource();
+    cr.getMetadata().setFinalizers(List.of(FINALIZER));
+    cr.getMetadata().setGeneration(1L);
+
+    // Internal generation-aware filter would reject same-generation update,
+    // but the OR filter accepts it unconditionally.
+    OnUpdateFilter<TestCustomResource> orFilter = (newRes, oldRes) -> true;
+    source = new ControllerEventSource<>(new TestController(null, null, orFilter, null));
+    setUpSource(source, true, controllerConfig);
+
+    source.handleEvent(ResourceAction.UPDATED, cr, cr, null);
+
+    verify(eventHandler, times(1)).handleEvent(any());
+  }
+
+  @Test
+  void orFilterDoesNotOverrideAndFilter() {
+    TestCustomResource cr = TestUtils.testCustomResource();
+    cr.getMetadata().setFinalizers(List.of(FINALIZER));
+    cr.getMetadata().setGeneration(1L);
+
+    // AND filter rejects, OR filter also rejects → event must be dropped.
+    OnUpdateFilter<TestCustomResource> andFilter = (newRes, oldRes) -> false;
+    OnUpdateFilter<TestCustomResource> orFilter = (newRes, oldRes) -> false;
+    source = new ControllerEventSource<>(new TestController(null, andFilter, orFilter, null));
+    setUpSource(source, true, controllerConfig);
+
+    source.handleEvent(ResourceAction.UPDATED, cr, cr, null);
+
+    verify(eventHandler, never()).handleEvent(any());
+  }
+
+  @Test
   void filtersOutEventsOnAddAndUpdate() {
     TestCustomResource cr = TestUtils.testCustomResource();
 
     OnAddFilter<TestCustomResource> onAddFilter = (res) -> false;
     OnUpdateFilter<TestCustomResource> onUpdatePredicate = (res, res2) -> false;
-    source = new ControllerEventSource<>(new TestController(onAddFilter, onUpdatePredicate, null));
+    source =
+        new ControllerEventSource<>(new TestController(onAddFilter, onUpdatePredicate, null, null));
     setUpSource(source, true, controllerConfig);
 
     source.handleEvent(ResourceAction.ADDED, cr, null, null);
@@ -159,7 +194,7 @@ class ControllerEventSourceTest
   void genericFilterFiltersOutAddUpdateAndDeleteEvents() {
     TestCustomResource cr = TestUtils.testCustomResource();
 
-    source = new ControllerEventSource<>(new TestController(null, null, res -> false));
+    source = new ControllerEventSource<>(new TestController(null, null, null, res -> false));
     setUpSource(source, true, controllerConfig);
 
     source.handleEvent(ResourceAction.ADDED, cr, null, null);
@@ -174,7 +209,7 @@ class ControllerEventSourceTest
     // End-to-end smoke for the event-filter wiring on the controller path: an event for our
     // own write must not propagate. Detail-level filter scenarios are covered in
     // EventingDetailTest / EventFilterSupportTest.
-    source = spy(new ControllerEventSource<>(new TestController(null, null, null)));
+    source = spy(new ControllerEventSource<>(new TestController(null, null, null, null)));
     setUpSource(source, true, controllerConfig);
     doReturn(Optional.empty()).when(source).get(any());
 
@@ -189,7 +224,7 @@ class ControllerEventSourceTest
   @Test
   void foreignUpdateDuringFilteringPropagatesAsUpdate() {
     // An external event during the filter window must surface (not be filtered as own).
-    source = spy(new ControllerEventSource<>(new TestController(null, null, null)));
+    source = spy(new ControllerEventSource<>(new TestController(null, null, null, null)));
     setUpSource(source, true, controllerConfig);
 
     var latch = sendForEventFilteringUpdate(2);
@@ -203,7 +238,7 @@ class ControllerEventSourceTest
   void deleteEventDuringFilteringPropagatesAsDelete() {
     // A DELETE arriving during the filter window must surface — the resource has gone,
     // so the filter must not silence it just because our own write is still tracking RVs.
-    source = spy(new ControllerEventSource<>(new TestController(null, null, null)));
+    source = spy(new ControllerEventSource<>(new TestController(null, null, null, null)));
     setUpSource(source, true, controllerConfig);
 
     var latch = sendForEventFilteringUpdate(2);
@@ -223,7 +258,7 @@ class ControllerEventSourceTest
   void multipleForeignEventsDuringFilteringMergeIntoSingleEvent() {
     // Several external events during one filter window collapse into a single
     // synthesized event spanning prev → latest seen.
-    source = spy(new ControllerEventSource<>(new TestController(null, null, null)));
+    source = spy(new ControllerEventSource<>(new TestController(null, null, null, null)));
     setUpSource(source, true, controllerConfig);
 
     var latch = sendForEventFilteringUpdate(2);
@@ -266,17 +301,18 @@ class ControllerEventSourceTest
     public TestController(
         OnAddFilter<TestCustomResource> onAddFilter,
         OnUpdateFilter<TestCustomResource> onUpdateFilter,
+        OnUpdateFilter<TestCustomResource> onUpdateFilterOr,
         GenericFilter<TestCustomResource> genericFilter) {
       super(
           reconciler,
-          new TestConfiguration(true, onAddFilter, onUpdateFilter, genericFilter),
+          new TestConfiguration(true, onAddFilter, onUpdateFilter, onUpdateFilterOr, genericFilter),
           MockKubernetesClient.client(TestCustomResource.class));
     }
 
     public TestController(boolean generationAware) {
       super(
           reconciler,
-          new TestConfiguration(generationAware, null, null, null),
+          new TestConfiguration(generationAware, null, null, null, null),
           MockKubernetesClient.client(TestCustomResource.class));
     }
 
@@ -298,6 +334,7 @@ class ControllerEventSourceTest
         boolean generationAware,
         OnAddFilter<TestCustomResource> onAddFilter,
         OnUpdateFilter<TestCustomResource> onUpdateFilter,
+        OnUpdateFilter<TestCustomResource> onUpdateFilterOr,
         GenericFilter<TestCustomResource> genericFilter) {
       super(
           "test",
@@ -313,6 +350,7 @@ class ControllerEventSourceTest
           InformerConfiguration.builder(TestCustomResource.class)
               .withOnAddFilter(onAddFilter)
               .withOnUpdateFilter(onUpdateFilter)
+              .withOnUpdateFilterOr(onUpdateFilterOr)
               .withGenericFilter(genericFilter)
               .withComparableResourceVersions(true)
               .buildForController(),
