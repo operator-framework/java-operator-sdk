@@ -321,6 +321,9 @@ public class BaseConfigurationService extends AbstractConfigurationService {
     var triggerReconcilerOnAllEvents =
         annotation != null && annotation.triggerReconcilerOnAllEvents();
 
+    var onUpdateFilterCombinedWithOr =
+        annotation != null && annotation.onUpdateFilterCombinedWithOr();
+
     InformerConfiguration<P> informerConfig =
         InformerConfiguration.builder(resourceClass)
             .initFromAnnotation(annotation != null ? annotation.informer() : null, context)
@@ -341,7 +344,8 @@ public class BaseConfigurationService extends AbstractConfigurationService {
         dependentFieldManager,
         this,
         informerConfig,
-        triggerReconcilerOnAllEvents);
+        triggerReconcilerOnAllEvents,
+        onUpdateFilterCombinedWithOr);
   }
 
   /**

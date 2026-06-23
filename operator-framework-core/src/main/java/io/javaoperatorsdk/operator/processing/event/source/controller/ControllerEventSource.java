@@ -62,7 +62,13 @@ public class ControllerEventSource<T extends HasMetadata>
     Optional.ofNullable(informerConfig.getOnAddFilter()).ifPresent(this::setOnAddFilter);
     Optional.ofNullable(informerConfig.getOnUpdateFilter())
         .ifPresentOrElse(
-            filter -> setOnUpdateFilter(filter.and(internalOnUpdateFilter)),
+            filter -> {
+              if (config.isOnUpdateFilterCombinedWithOr()) {
+                setOnUpdateFilter(filter.or(internalOnUpdateFilter));
+              } else {
+                setOnUpdateFilter(filter.and(internalOnUpdateFilter));
+              }
+            },
             () -> setOnUpdateFilter(internalOnUpdateFilter));
     Optional.ofNullable(informerConfig.getGenericFilter()).ifPresent(this::setGenericFilter);
     setControllerConfiguration(config);

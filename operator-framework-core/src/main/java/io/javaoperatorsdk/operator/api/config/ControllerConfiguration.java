@@ -121,4 +121,8 @@ public interface ControllerConfiguration<P extends HasMetadata> extends Informab
   default boolean triggerReconcilerOnAllEvents() {
     return false;
   }
+
+  default boolean isOnUpdateFilterCombinedWithOr() {
+    return false;
+  }
 }

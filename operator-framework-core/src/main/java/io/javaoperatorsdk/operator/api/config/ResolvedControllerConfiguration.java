@@ -45,6 +45,7 @@ public class ResolvedControllerConfiguration<P extends HasMetadata>
   private final ConfigurationService configurationService;
   private final String fieldManager;
   private final boolean triggerReconcilerOnAllEvents;
+  private final boolean onUpdateFilterCombinedWithOr;
   private WorkflowSpec workflowSpec;
 
   public ResolvedControllerConfiguration(ControllerConfiguration<P> other) {
@@ -61,6 +62,7 @@ public class ResolvedControllerConfiguration<P extends HasMetadata>
         other.getConfigurationService(),
         other.getInformerConfig(),
         other.triggerReconcilerOnAllEvents(),
+        other.isOnUpdateFilterCombinedWithOr(),
         other.getWorkflowSpec().orElse(null));
   }
 
@@ -77,6 +79,7 @@ public class ResolvedControllerConfiguration<P extends HasMetadata>
       ConfigurationService configurationService,
       InformerConfiguration<P> informerConfig,
       boolean triggerReconcilerOnAllEvents,
+      boolean onUpdateFilterCombinedWithOr,
       WorkflowSpec workflowSpec) {
     this(
         name,
@@ -90,7 +93,8 @@ public class ResolvedControllerConfiguration<P extends HasMetadata>
         fieldManager,
         configurationService,
         informerConfig,
-        triggerReconcilerOnAllEvents);
+        triggerReconcilerOnAllEvents,
+        onUpdateFilterCombinedWithOr);
     setWorkflowSpec(workflowSpec);
   }
 
@@ -106,7 +110,8 @@ public class ResolvedControllerConfiguration<P extends HasMetadata>
       String fieldManager,
       ConfigurationService configurationService,
       InformerConfiguration<P> informerConfig,
-      boolean triggerReconcilerOnAllEvents) {
+      boolean triggerReconcilerOnAllEvents,
+      boolean onUpdateFilterCombinedWithOr) {
     this.informerConfig = informerConfig;
     this.configurationService = configurationService;
     this.name = ControllerConfiguration.ensureValidName(name, associatedReconcilerClassName);
@@ -120,6 +125,7 @@ public class ResolvedControllerConfiguration<P extends HasMetadata>
         ControllerConfiguration.ensureValidFinalizerName(finalizer, getResourceTypeName());
     this.fieldManager = fieldManager;
     this.triggerReconcilerOnAllEvents = triggerReconcilerOnAllEvents;
+    this.onUpdateFilterCombinedWithOr = onUpdateFilterCombinedWithOr;
   }
 
   protected ResolvedControllerConfiguration(
@@ -139,6 +145,7 @@ public class ResolvedControllerConfiguration<P extends HasMetadata>
         null,
         configurationService,
         InformerConfiguration.builder(resourceClass).buildForController(),
+        false,
         false);
   }
 
@@ -233,5 +240,10 @@ public class ResolvedControllerConfiguration<P extends HasMetadata>
   @Override
   public boolean triggerReconcilerOnAllEvents() {
     return triggerReconcilerOnAllEvents;
+  }
+
+  @Override
+  public boolean isOnUpdateFilterCombinedWithOr() {
+    return onUpdateFilterCombinedWithOr;
   }
 }

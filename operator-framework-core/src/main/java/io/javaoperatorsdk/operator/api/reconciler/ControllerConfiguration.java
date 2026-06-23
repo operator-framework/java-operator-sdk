@@ -105,4 +105,16 @@ public @interface ControllerConfiguration {
    * documentation for further details.
    */
   boolean triggerReconcilerOnAllEvents() default false;
+
+  /**
+   * When set to {@code true}, the {@link
+   * io.javaoperatorsdk.operator.processing.event.source.filter.OnUpdateFilter} configured via
+   * {@link Informer#onUpdateFilter()} is combined with JOSDK's internal update filters using OR
+   * instead of the default AND logic. This allows the user filter to expand the set of events that
+   * trigger reconciliation — for example, to also reconcile on specific status field updates even
+   * when the resource generation has not changed.
+   *
+   * @return whether the user-provided update filter is combined with internal filters using OR
+   */
+  boolean onUpdateFilterCombinedWithOr() default false;
 }
