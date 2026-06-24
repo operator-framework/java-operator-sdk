@@ -84,9 +84,9 @@ class LatestDistinctIT {
               assertThat(reconciler.getNumberOfExecutions()).isGreaterThanOrEqualTo(2);
             });
 
-    // Stabilization check: with correct own-update filtering the reconciler's own ConfigMap update
-    // must not trigger a fresh reconciliation, so the execution count has to settle. A runaway
-    // reconcile loop (filtering broken) would keep incrementing it. We allow one in-flight
+    // Stabilization check: own-update filtering must prevent the reconciler's ConfigMap update from
+    // causing an unbounded reconciliation loop, so the execution count has to settle.
+    // A runaway loop (filtering broken) would keep incrementing it. We allow one in-flight
     // reconciliation past the baseline but require the count to stop growing over the window.
     int executionsBaseline = reconciler.getNumberOfExecutions();
     await()
