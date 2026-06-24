@@ -76,10 +76,28 @@ class LatestDistinctIT {
               // Should see 1 distinct ConfigMaps
               assertThat(updatedResource.getStatus().getConfigMapCount()).isEqualTo(1);
               assertThat(reconciler.isErrorOccurred()).isFalse();
-              // note that since there are two event source, and we do the update through one event
-              // source
-              // the other will still propagate an event
-              assertThat(reconciler.getNumberOfExecutions()).isEqualTo(2);
+              // Since there are two event sources and we do the update through one of them, the
+              // other source still propagates an event, triggering at least a second
+              // reconciliation. The exact count is not asserted: the initial ADDED event fires from
+              // both informers and only usually coalesces into a single reconciliation, so an
+              // occasional extra reconciliation is an expected, benign event-coalescing race.
+              assertThat(reconciler.getNumberOfExecutions()).isGreaterThanOrEqualTo(2);
+            });
+
+    // Stabilization check: with correct own-update filtering the reconciler's own ConfigMap update
+    // must not trigger a fresh reconciliation, so the execution count has to settle. A runaway
+    // reconcile loop (filtering broken) would keep incrementing it. We allow one in-flight
+    // reconciliation past the baseline but require the count to stop growing over the window.
+    int executionsBaseline = reconciler.getNumberOfExecutions();
+    await()
+        .during(Duration.ofSeconds(2))
+        .atMost(Duration.ofSeconds(3))
+        .untilAsserted(
+            () -> {
+              assertThat(reconciler.isErrorOccurred()).isFalse();
+              assertThat(reconciler.getNumberOfExecutions())
+                  .as("reconciliation count must stabilize, not loop")
+                  .isLessThanOrEqualTo(executionsBaseline + 1);
             });
   }
 
