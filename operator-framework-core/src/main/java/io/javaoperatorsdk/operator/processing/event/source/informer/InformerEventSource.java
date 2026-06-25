@@ -259,20 +259,26 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
   }
 
   @Override
-  public Optional<Set<ResourceID>> handleRecentResourceUpdate(
+  public void handleRecentResourceUpdate(
       ResourceID resourceID, R resource, R previousVersionOfResource) {
-    return handleRecentCreateOrUpdate(resource, previousVersionOfResource);
+    handleRecentCreateOrUpdate(resource, previousVersionOfResource);
   }
 
   @Override
-  public Optional<Set<ResourceID>> handleRecentResourceCreate(ResourceID resourceID, R resource) {
-    return handleRecentCreateOrUpdate(resource, null);
+  public void handleRecentResourceCreate(ResourceID resourceID, R resource) {
+    handleRecentCreateOrUpdate(resource, null);
   }
 
-  private Optional<Set<ResourceID>> handleRecentCreateOrUpdate(R newResource, R previousVersion) {
-    var res = primaryToSecondaryIndex.onAddOrUpdate(newResource, previousVersion);
+  @Override
+  protected Set<ResourceID> cacheUpdateAndGetRelatedPrimaryIDs(
+      R updatedResource, R previousResource) {
+    return handleRecentCreateOrUpdate(updatedResource, previousResource);
+  }
+
+  private Set<ResourceID> handleRecentCreateOrUpdate(R newResource, R previousVersion) {
+    var relatedPrimaryIds = primaryToSecondaryIndex.onAddOrUpdate(newResource, previousVersion);
     temporaryResourceCache.putResource(newResource);
-    return Optional.of(res);
+    return relatedPrimaryIds;
   }
 
   private boolean useSecondaryToPrimaryIndex() {

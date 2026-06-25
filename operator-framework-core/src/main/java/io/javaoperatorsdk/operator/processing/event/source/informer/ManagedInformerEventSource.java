@@ -102,9 +102,7 @@ public abstract class ManagedInformerEventSource<
     try {
       temporaryResourceCache.startEventFilteringModify(id);
       updatedResource = updateMethod.apply(resourceToUpdate);
-      relatedPrimaryIds =
-          handleRecentResourceUpdate(null, updatedResource, resourceToUpdate)
-              .orElse(Collections.emptySet());
+      relatedPrimaryIds = cacheUpdateAndGetRelatedPrimaryIDs(updatedResource, resourceToUpdate);
       log.debug(
           "Caching resource update successful. id={}, rv={}",
           id,
@@ -176,16 +174,28 @@ public abstract class ManagedInformerEventSource<
   }
 
   @Override
-  public Optional<Set<ResourceID>> handleRecentResourceUpdate(
+  public void handleRecentResourceUpdate(
       ResourceID resourceID, R resource, R previousVersionOfResource) {
     temporaryResourceCache.putResource(resource);
-    return Optional.empty();
   }
 
   @Override
-  public Optional<Set<ResourceID>> handleRecentResourceCreate(ResourceID resourceID, R resource) {
+  public void handleRecentResourceCreate(ResourceID resourceID, R resource) {
     temporaryResourceCache.putResource(resource);
-    return Optional.empty();
+  }
+
+  /**
+   * Caches the resource updated through {@link #eventFilteringUpdateAndCacheResource} and returns
+   * the primary resource IDs related to that update, so they can be propagated to {@link
+   * #handleEvent}. The base implementation just fills the temporary cache and reports no related
+   * primaries. Subclasses that maintain a primary-to-secondary index override this to surface the
+   * affected primaries even after the secondary's references have changed, keeping that concern
+   * internal to those event sources instead of leaking it into {@link RecentOperationCacheFiller}.
+   */
+  protected Set<ResourceID> cacheUpdateAndGetRelatedPrimaryIDs(
+      R updatedResource, R previousResource) {
+    handleRecentResourceUpdate(null, updatedResource, previousResource);
+    return Collections.emptySet();
   }
 
   @Override

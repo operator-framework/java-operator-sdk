@@ -15,15 +15,11 @@
  */
 package io.javaoperatorsdk.operator.api.reconciler.dependent;
 
-import java.util.Optional;
-import java.util.Set;
-
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
 
 public interface RecentOperationCacheFiller<R> {
 
-  Optional<Set<ResourceID>> handleRecentResourceCreate(ResourceID resourceID, R resource);
+  void handleRecentResourceCreate(ResourceID resourceID, R resource);
 
-  Optional<Set<ResourceID>> handleRecentResourceUpdate(
-      ResourceID resourceID, R resource, R previousVersionOfResource);
+  void handleRecentResourceUpdate(ResourceID resourceID, R resource, R previousVersionOfResource);
 }
