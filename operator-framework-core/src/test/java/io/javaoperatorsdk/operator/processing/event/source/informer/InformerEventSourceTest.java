@@ -78,11 +78,12 @@ class InformerEventSourceTest {
   private final EventHandler eventHandlerMock = mock(EventHandler.class);
   private final InformerEventSourceConfiguration<Deployment> informerEventSourceConfiguration =
       mock(InformerEventSourceConfiguration.class);
+  private SecondaryToPrimaryMapper secondaryToPrimaryMapper;
 
   @BeforeEach
   void setup() {
     final var informerConfig = mock(InformerConfiguration.class);
-    SecondaryToPrimaryMapper secondaryToPrimaryMapper = mock(SecondaryToPrimaryMapper.class);
+    secondaryToPrimaryMapper = mock(SecondaryToPrimaryMapper.class);
     when(informerEventSourceConfiguration.getSecondaryToPrimaryMapper())
         .thenReturn(secondaryToPrimaryMapper);
     when(secondaryToPrimaryMapper.toPrimaryResourceIDs(any()))
@@ -732,6 +733,23 @@ class InformerEventSourceTest {
 
     verify(indexMock, times(1)).onDelete(resource);
     verify(eventHandlerMock, never()).handleEvent(any());
+  }
+
+  @Test
+  void filteringUpdateMapsUpdatedResourceToPrimariesOnlyOnce() {
+    var resourceToUpdate = deploymentWithResourceVersion(2);
+    var updated = deploymentWithResourceVersion(3);
+
+    when(temporaryResourceCache.doneEventFilterModify(any()))
+        .thenReturn(
+            Optional.of(
+                new ExtendedResourceEvent(
+                    ResourceAction.UPDATED, updated, resourceToUpdate, false)));
+
+    informerEventSource.eventFilteringUpdateAndCacheResource(resourceToUpdate, r -> updated);
+
+    verify(secondaryToPrimaryMapper, times(1)).toPrimaryResourceIDs(updated);
+    verify(eventHandlerMock, times(1)).handleEvent(any());
   }
 
   private PrimaryToSecondaryIndex<Deployment> injectIndexMock() throws Exception {
