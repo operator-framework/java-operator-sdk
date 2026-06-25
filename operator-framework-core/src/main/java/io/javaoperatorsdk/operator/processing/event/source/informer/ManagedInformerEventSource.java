@@ -98,7 +98,7 @@ public abstract class ManagedInformerEventSource<
     ResourceID id = ResourceID.fromResource(resourceToUpdate);
     log.debug("Starting event filtering and caching update for id={}", id);
     R updatedResource = null;
-    Set<ResourceID> relatedPrimaryIds = Collections.emptySet();
+    Set<ResourceID> relatedPrimaryIds = null;
     try {
       temporaryResourceCache.startEventFilteringModify(id);
       updatedResource = updateMethod.apply(resourceToUpdate);
