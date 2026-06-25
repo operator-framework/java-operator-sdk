@@ -15,6 +15,7 @@
  */
 package io.javaoperatorsdk.operator.processing.event.source.informer;
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -97,10 +98,13 @@ public abstract class ManagedInformerEventSource<
     ResourceID id = ResourceID.fromResource(resourceToUpdate);
     log.debug("Starting event filtering and caching update for id={}", id);
     R updatedResource = null;
+    Set<ResourceID> relatedPrimaryIds = Collections.emptySet();
     try {
       temporaryResourceCache.startEventFilteringModify(id);
       updatedResource = updateMethod.apply(resourceToUpdate);
-      handleRecentResourceUpdate(id, updatedResource, resourceToUpdate);
+      relatedPrimaryIds =
+          handleRecentResourceUpdate(null, updatedResource, resourceToUpdate)
+              .orElse(Collections.emptySet());
       log.debug(
           "Caching resource update successful. id={}, rv={}",
           id,
@@ -108,27 +112,34 @@ public abstract class ManagedInformerEventSource<
       return updatedResource;
     } finally {
       var res = temporaryResourceCache.doneEventFilterModify(id);
-      res.ifPresentOrElse(
-          r -> {
-            log.debug(
-                "Propagating not own event after filtering update. id={}, action={}, rv={}",
-                id,
-                r.getAction(),
-                r.getResource()
-                    .map(rr -> rr.getMetadata().getResourceVersion())
-                    .orElse("[not set]"));
-            handleEvent(
-                r.getAction(),
-                (R) r.getResource().orElseThrow(),
-                (R) r.getPreviousResource().orElse(null),
-                r.isLastStateUnknown());
-          },
-          () -> log.debug("No new event present after the filtering update. id={}", id));
+      if (res.isPresent()) {
+        var event = res.orElseThrow();
+        log.debug(
+            "Propagating not own event after filtering update. id={}, action={}, rv={}",
+            id,
+            event.getAction(),
+            event
+                .getResource()
+                .map(rr -> rr.getMetadata().getResourceVersion())
+                .orElse("[not set]"));
+        handleEvent(
+            event.getAction(),
+            (R) event.getResource().orElseThrow(),
+            (R) event.getPreviousResource().orElse(null),
+            event.isLastStateUnknown(),
+            relatedPrimaryIds);
+      } else {
+        log.debug("No new event present after the filtering update. id={}", id);
+      }
     }
   }
 
   protected abstract void handleEvent(
-      ResourceAction action, R resource, R oldResource, Boolean deletedFinalStateUnknown);
+      ResourceAction action,
+      R resource,
+      R oldResource,
+      Boolean deletedFinalStateUnknown,
+      Set<ResourceID> relatedPrimaryIDs);
 
   @SuppressWarnings("unchecked")
   @Override
@@ -165,14 +176,16 @@ public abstract class ManagedInformerEventSource<
   }
 
   @Override
-  public void handleRecentResourceUpdate(
+  public Optional<Set<ResourceID>> handleRecentResourceUpdate(
       ResourceID resourceID, R resource, R previousVersionOfResource) {
     temporaryResourceCache.putResource(resource);
+    return Optional.empty();
   }
 
   @Override
-  public void handleRecentResourceCreate(ResourceID resourceID, R resource) {
+  public Optional<Set<ResourceID>> handleRecentResourceCreate(ResourceID resourceID, R resource) {
     temporaryResourceCache.putResource(resource);
+    return Optional.empty();
   }
 
   @Override

@@ -75,10 +75,10 @@ class ControllerEventSourceTest
     TestCustomResource oldCustomResource = TestUtils.testCustomResource();
     oldCustomResource.getMetadata().setFinalizers(List.of(FINALIZER));
 
-    source.handleEvent(ResourceAction.UPDATED, customResource, oldCustomResource, null);
+    source.handleEvent(ResourceAction.UPDATED, customResource, oldCustomResource, null, null);
     verify(eventHandler, times(1)).handleEvent(any());
 
-    source.handleEvent(ResourceAction.UPDATED, customResource, customResource, null);
+    source.handleEvent(ResourceAction.UPDATED, customResource, customResource, null, null);
     verify(eventHandler, times(1)).handleEvent(any());
   }
 
@@ -86,11 +86,11 @@ class ControllerEventSourceTest
   void dontSkipEventHandlingIfMarkedForDeletion() {
     TestCustomResource customResource1 = TestUtils.testCustomResource();
 
-    source.handleEvent(ResourceAction.UPDATED, customResource1, customResource1, null);
+    source.handleEvent(ResourceAction.UPDATED, customResource1, customResource1, null, null);
     verify(eventHandler, times(1)).handleEvent(any());
 
     customResource1.getMetadata().setDeletionTimestamp(LocalDateTime.now().toString());
-    source.handleEvent(ResourceAction.UPDATED, customResource1, customResource1, null);
+    source.handleEvent(ResourceAction.UPDATED, customResource1, customResource1, null, null);
     verify(eventHandler, times(2)).handleEvent(any());
   }
 
@@ -98,11 +98,11 @@ class ControllerEventSourceTest
   void normalExecutionIfGenerationChanges() {
     TestCustomResource customResource1 = TestUtils.testCustomResource();
 
-    source.handleEvent(ResourceAction.UPDATED, customResource1, customResource1, null);
+    source.handleEvent(ResourceAction.UPDATED, customResource1, customResource1, null, null);
     verify(eventHandler, times(1)).handleEvent(any());
 
     customResource1.getMetadata().setGeneration(2L);
-    source.handleEvent(ResourceAction.UPDATED, customResource1, customResource1, null);
+    source.handleEvent(ResourceAction.UPDATED, customResource1, customResource1, null, null);
     verify(eventHandler, times(2)).handleEvent(any());
   }
 
@@ -113,10 +113,10 @@ class ControllerEventSourceTest
 
     TestCustomResource customResource1 = TestUtils.testCustomResource();
 
-    source.handleEvent(ResourceAction.UPDATED, customResource1, customResource1, null);
+    source.handleEvent(ResourceAction.UPDATED, customResource1, customResource1, null, null);
     verify(eventHandler, times(1)).handleEvent(any());
 
-    source.handleEvent(ResourceAction.UPDATED, customResource1, customResource1, null);
+    source.handleEvent(ResourceAction.UPDATED, customResource1, customResource1, null, null);
     verify(eventHandler, times(2)).handleEvent(any());
   }
 
@@ -124,7 +124,7 @@ class ControllerEventSourceTest
   void eventWithNoGenerationProcessedIfNoFinalizer() {
     TestCustomResource customResource1 = TestUtils.testCustomResource();
 
-    source.handleEvent(ResourceAction.UPDATED, customResource1, customResource1, null);
+    source.handleEvent(ResourceAction.UPDATED, customResource1, customResource1, null, null);
 
     verify(eventHandler, times(1)).handleEvent(any());
   }
@@ -133,7 +133,7 @@ class ControllerEventSourceTest
   void callsBroadcastsOnResourceEvents() {
     TestCustomResource customResource1 = TestUtils.testCustomResource();
 
-    source.handleEvent(ResourceAction.UPDATED, customResource1, customResource1, null);
+    source.handleEvent(ResourceAction.UPDATED, customResource1, customResource1, null, null);
 
     verify(testController.getEventSourceManager(), times(1))
         .broadcastOnResourceEvent(
@@ -180,8 +180,8 @@ class ControllerEventSourceTest
         new ControllerEventSource<>(new TestController(onAddFilter, onUpdatePredicate, null, true));
     setUpSource(source, true, controllerConfig);
 
-    source.handleEvent(ResourceAction.ADDED, cr, null, null);
-    source.handleEvent(ResourceAction.UPDATED, cr, cr, null);
+    source.handleEvent(ResourceAction.ADDED, cr, null, null, null);
+    source.handleEvent(ResourceAction.UPDATED, cr, cr, null, null);
 
     verify(eventHandler, never()).handleEvent(any());
   }
@@ -193,9 +193,9 @@ class ControllerEventSourceTest
     source = new ControllerEventSource<>(new TestController(null, null, res -> false, true));
     setUpSource(source, true, controllerConfig);
 
-    source.handleEvent(ResourceAction.ADDED, cr, null, null);
-    source.handleEvent(ResourceAction.UPDATED, cr, cr, null);
-    source.handleEvent(ResourceAction.DELETED, cr, cr, true);
+    source.handleEvent(ResourceAction.ADDED, cr, null, null, null);
+    source.handleEvent(ResourceAction.UPDATED, cr, cr, null, null);
+    source.handleEvent(ResourceAction.DELETED, cr, cr, true, null);
 
     verify(eventHandler, never()).handleEvent(any());
   }
@@ -246,7 +246,7 @@ class ControllerEventSourceTest
             () -> {
               verify(eventHandler, atLeastOnce()).handleEvent(any());
               verify(source, atLeastOnce())
-                  .handleEvent(eq(ResourceAction.DELETED), any(), any(), any());
+                  .handleEvent(eq(ResourceAction.DELETED), any(), any(), any(), any());
             });
   }
 
@@ -272,6 +272,7 @@ class ControllerEventSourceTest
             eq(ResourceAction.UPDATED),
             argThat(r -> ("" + newResourceVersion).equals(r.getMetadata().getResourceVersion())),
             argThat(r -> ("" + oldResourceVersion).equals(r.getMetadata().getResourceVersion())),
+            any(),
             any());
   }
 

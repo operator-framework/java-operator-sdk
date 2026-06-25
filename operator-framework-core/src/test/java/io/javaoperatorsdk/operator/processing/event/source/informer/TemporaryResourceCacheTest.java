@@ -319,7 +319,7 @@ class TemporaryResourceCacheTest {
     temporaryResourceCache.checkGhostResources();
     assertThat(temporaryResourceCache.getResourceFromCache(ResourceID.fromResource(tr))).isEmpty();
     verify(managedInformerEventSource, times(1))
-        .handleEvent(eq(ResourceAction.DELETED), eq(tr), isNull(), eq(true));
+        .handleEvent(eq(ResourceAction.DELETED), eq(tr), isNull(), eq(true), any());
   }
 
   @Test
@@ -349,7 +349,7 @@ class TemporaryResourceCacheTest {
 
     // no delete event should be fired for resources removed due to namespace change
     verify(managedInformerEventSource, times(0))
-        .handleEvent(any(), any(), any(), any(Boolean.class));
+        .handleEvent(any(), any(), any(), any(Boolean.class), any());
   }
 
   @Test

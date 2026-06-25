@@ -658,7 +658,7 @@ class InformerEventSourceTest {
     // onDelete now returns the primaries to reconcile; propagateEvent uses that set directly
     when(indexMock.onDelete(resource)).thenReturn(Set.of(ResourceID.fromResource(resource)));
 
-    informerEventSource.handleEvent(ResourceAction.DELETED, resource, null, false);
+    informerEventSource.handleEvent(ResourceAction.DELETED, resource, null, false, null);
 
     verify(indexMock, times(1)).onDelete(resource);
     verify(indexMock, never()).onAddOrUpdate(any(), any());
@@ -672,7 +672,7 @@ class InformerEventSourceTest {
     var indexMock = injectIndexMock();
 
     informerEventSource.handleEvent(
-        ResourceAction.UPDATED, testDeployment(), testDeployment(), null);
+        ResourceAction.UPDATED, testDeployment(), testDeployment(), null, null);
 
     verify(indexMock, never()).onDelete(any());
     verify(indexMock, never()).onAddOrUpdate(any(), any());
@@ -688,7 +688,7 @@ class InformerEventSourceTest {
     informerEventSource.setOnDeleteFilter((r, b) -> false);
     var resource = testDeployment();
 
-    informerEventSource.handleEvent(ResourceAction.DELETED, resource, null, false);
+    informerEventSource.handleEvent(ResourceAction.DELETED, resource, null, false, null);
 
     verify(indexMock, times(1)).onDelete(resource);
     verify(eventHandlerMock, never()).handleEvent(any());
@@ -700,7 +700,7 @@ class InformerEventSourceTest {
     informerEventSource.setOnUpdateFilter((n, o) -> false);
 
     informerEventSource.handleEvent(
-        ResourceAction.UPDATED, testDeployment(), testDeployment(), null);
+        ResourceAction.UPDATED, testDeployment(), testDeployment(), null, null);
 
     verify(indexMock, never()).onDelete(any());
     verify(eventHandlerMock, never()).handleEvent(any());
@@ -711,7 +711,7 @@ class InformerEventSourceTest {
     var indexMock = injectIndexMock();
     informerEventSource.setOnAddFilter(r -> false);
 
-    informerEventSource.handleEvent(ResourceAction.ADDED, testDeployment(), null, null);
+    informerEventSource.handleEvent(ResourceAction.ADDED, testDeployment(), null, null, null);
 
     verify(indexMock, never()).onDelete(any());
     verify(eventHandlerMock, never()).handleEvent(any());
@@ -726,9 +726,9 @@ class InformerEventSourceTest {
     informerEventSource.setGenericFilter(r -> false);
     var resource = testDeployment();
 
-    informerEventSource.handleEvent(ResourceAction.DELETED, resource, null, true);
-    informerEventSource.handleEvent(ResourceAction.UPDATED, resource, resource, null);
-    informerEventSource.handleEvent(ResourceAction.ADDED, resource, null, null);
+    informerEventSource.handleEvent(ResourceAction.DELETED, resource, null, true, null);
+    informerEventSource.handleEvent(ResourceAction.UPDATED, resource, resource, null, null);
+    informerEventSource.handleEvent(ResourceAction.ADDED, resource, null, null, null);
 
     verify(indexMock, times(1)).onDelete(resource);
     verify(eventHandlerMock, never()).handleEvent(any());
@@ -776,6 +776,7 @@ class InformerEventSourceTest {
                             r ->
                                 ("" + oldResourceVersion)
                                     .equals(r.getMetadata().getResourceVersion())),
+                        any(),
                         any()));
   }
 

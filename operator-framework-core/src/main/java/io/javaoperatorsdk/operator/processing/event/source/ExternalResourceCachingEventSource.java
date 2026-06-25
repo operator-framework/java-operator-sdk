@@ -207,7 +207,8 @@ public abstract class ExternalResourceCachingEventSource<R, P extends HasMetadat
   }
 
   @Override
-  public synchronized void handleRecentResourceCreate(ResourceID primaryID, R resource) {
+  public synchronized Optional<Set<ResourceID>> handleRecentResourceCreate(
+      ResourceID primaryID, R resource) {
     var actualValues = cache.get(primaryID);
     var resourceId = resourceIDMapper.idFor(resource);
     if (actualValues == null) {
@@ -217,10 +218,11 @@ public abstract class ExternalResourceCachingEventSource<R, P extends HasMetadat
     } else {
       actualValues.computeIfAbsent(resourceId, r -> resource);
     }
+    return Optional.of(Set.of(primaryID));
   }
 
   @Override
-  public synchronized void handleRecentResourceUpdate(
+  public synchronized Optional<Set<ResourceID>> handleRecentResourceUpdate(
       ResourceID primaryID, R resource, R previousVersionOfResource) {
     var actualValues = cache.get(primaryID);
     if (actualValues != null) {
@@ -230,6 +232,7 @@ public abstract class ExternalResourceCachingEventSource<R, P extends HasMetadat
         actualValues.put(resourceId, resource);
       }
     }
+    return Optional.of(Set.of(primaryID));
   }
 
   @Override

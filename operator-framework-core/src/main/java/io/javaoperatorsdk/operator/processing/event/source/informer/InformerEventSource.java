@@ -138,19 +138,22 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
 
   @Override
   protected void handleEvent(
-      ResourceAction action, R resource, R oldResource, Boolean deletedFinalStateUnknown) {
+      ResourceAction action,
+      R resource,
+      R oldResource,
+      Boolean deletedFinalStateUnknown,
+      Set<ResourceID> relatedPrimaryIds) {
     // Called from ManagedInformerEventSource#eventFilteringUpdateAndCacheResource after the temp
     // cache decided to surface a (possibly synthesized) event. The user-level filters
     // (onAdd/onUpdate/onDelete/genericFilter) still apply, so this path mirrors the direct
     // onAdd/onUpdate/onDelete watch paths. The index is updated for DELETED regardless of the
     // filter outcome — the resource is really gone, so leaving a tombstone in the index would
     // make getSecondaryResources keep returning a stale entry.
-    Set<ResourceID> primaryIds = null;
     if (action == ResourceAction.DELETED) {
       log.debug(
           "handleEvent: removing from primaryToSecondaryIndex. id={}",
           ResourceID.fromResource(resource));
-      primaryIds = primaryToSecondaryIndex.onDelete(resource);
+      relatedPrimaryIds = primaryToSecondaryIndex.onDelete(resource);
     }
     if (!eventAcceptedByFilter(action, resource, oldResource, deletedFinalStateUnknown)) {
       if (log.isDebugEnabled()) {
@@ -168,7 +171,7 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
           action,
           resource.getMetadata().getResourceVersion());
     }
-    propagateEvent(resource, oldResource, primaryIds);
+    propagateEvent(resource, oldResource, relatedPrimaryIds);
   }
 
   @Override
@@ -256,19 +259,20 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
   }
 
   @Override
-  public void handleRecentResourceUpdate(
+  public Optional<Set<ResourceID>> handleRecentResourceUpdate(
       ResourceID resourceID, R resource, R previousVersionOfResource) {
-    handleRecentCreateOrUpdate(resource, previousVersionOfResource);
+    return handleRecentCreateOrUpdate(resource, previousVersionOfResource);
   }
 
   @Override
-  public void handleRecentResourceCreate(ResourceID resourceID, R resource) {
-    handleRecentCreateOrUpdate(resource, null);
+  public Optional<Set<ResourceID>> handleRecentResourceCreate(ResourceID resourceID, R resource) {
+    return handleRecentCreateOrUpdate(resource, null);
   }
 
-  private void handleRecentCreateOrUpdate(R newResource, R previousVersion) {
-    primaryToSecondaryIndex.onAddOrUpdate(newResource, previousVersion);
+  private Optional<Set<ResourceID>> handleRecentCreateOrUpdate(R newResource, R previousVersion) {
+    var res = primaryToSecondaryIndex.onAddOrUpdate(newResource, previousVersion);
     temporaryResourceCache.putResource(newResource);
+    return Optional.of(res);
   }
 
   private boolean useSecondaryToPrimaryIndex() {
