@@ -44,6 +44,7 @@ import io.javaoperatorsdk.operator.processing.event.EventHandler;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
 import io.javaoperatorsdk.operator.processing.event.source.Cache;
 import io.javaoperatorsdk.operator.processing.event.source.EventFilterTestUtils;
+import io.javaoperatorsdk.operator.processing.event.source.PrimaryToSecondaryMapper;
 import io.javaoperatorsdk.operator.processing.event.source.ResourceAction;
 import io.javaoperatorsdk.operator.processing.event.source.SecondaryToPrimaryMapper;
 import io.javaoperatorsdk.operator.sample.simple.TestCustomResource;
@@ -94,7 +95,11 @@ class InformerEventSourceTest {
     when(informerConfig.isComparableResourceVersions()).thenReturn(true);
     when(informerConfig.getEffectiveNamespaces(any())).thenReturn(DEFAULT_NAMESPACES_SET);
 
-    informerEventSource =
+    informerEventSource = buildInformerEventSource();
+  }
+
+  private InformerEventSource<Deployment, TestCustomResource> buildInformerEventSource() {
+    InformerEventSource<Deployment, TestCustomResource> eventSource =
         spy(
             new InformerEventSource<>(informerEventSourceConfiguration, clientMock) {
               // mocking start
@@ -105,10 +110,11 @@ class InformerEventSourceTest {
     var mockControllerConfig = mock(ControllerConfiguration.class);
     when(mockControllerConfig.getConfigurationService()).thenReturn(new BaseConfigurationService());
 
-    informerEventSource.setEventHandler(eventHandlerMock);
-    informerEventSource.setControllerConfiguration(mockControllerConfig);
-    informerEventSource.start();
-    informerEventSource.setTemporalResourceCache(temporaryResourceCache);
+    eventSource.setEventHandler(eventHandlerMock);
+    eventSource.setControllerConfiguration(mockControllerConfig);
+    eventSource.start();
+    eventSource.setTemporalResourceCache(temporaryResourceCache);
+    return eventSource;
   }
 
   @Test
@@ -749,6 +755,28 @@ class InformerEventSourceTest {
     informerEventSource.eventFilteringUpdateAndCacheResource(resourceToUpdate, r -> updated);
 
     verify(secondaryToPrimaryMapper, times(1)).toPrimaryResourceIDs(updated);
+    verify(eventHandlerMock, times(1)).handleEvent(any());
+  }
+
+  @Test
+  void filteringUpdateFallsBackToMapperWhenNoPrimaryToSecondaryIndex() {
+    when(informerEventSourceConfiguration.getPrimaryToSecondaryMapper())
+        .thenReturn(mock(PrimaryToSecondaryMapper.class));
+    informerEventSource = buildInformerEventSource();
+
+    var resourceToUpdate = deploymentWithResourceVersion(2);
+    var updated = deploymentWithResourceVersion(3);
+
+    when(temporaryResourceCache.doneEventFilterModify(any()))
+        .thenReturn(
+            Optional.of(
+                new ExtendedResourceEvent(
+                    ResourceAction.UPDATED, updated, resourceToUpdate, false)));
+
+    informerEventSource.eventFilteringUpdateAndCacheResource(resourceToUpdate, r -> updated);
+
+    verify(secondaryToPrimaryMapper, times(1)).toPrimaryResourceIDs(updated);
+    verify(secondaryToPrimaryMapper, times(1)).toPrimaryResourceIDs(resourceToUpdate);
     verify(eventHandlerMock, times(1)).handleEvent(any());
   }
 
