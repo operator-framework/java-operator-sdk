@@ -112,14 +112,16 @@ public abstract class ManagedInformerEventSource<
       var res = temporaryResourceCache.doneEventFilterModify(id);
       if (res.isPresent()) {
         var event = res.orElseThrow();
-        log.debug(
-            "Propagating not own event after filtering update. id={}, action={}, rv={}",
-            id,
-            event.getAction(),
-            event
-                .getResource()
-                .map(rr -> rr.getMetadata().getResourceVersion())
-                .orElse("[not set]"));
+        if (log.isDebugEnabled()) {
+          log.debug(
+              "Propagating not own event after filtering update. id={}, action={}, rv={}",
+              id,
+              event.getAction(),
+              event
+                  .getResource()
+                  .map(rr -> rr.getMetadata().getResourceVersion())
+                  .orElse("[not set]"));
+        }
         handleEvent(
             event.getAction(),
             (R) event.getResource().orElseThrow(),
