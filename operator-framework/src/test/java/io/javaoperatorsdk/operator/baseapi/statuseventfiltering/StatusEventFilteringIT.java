@@ -44,7 +44,7 @@ class StatusEventFilteringIT {
   @RegisterExtension
   LocallyRunOperatorExtension extension =
       LocallyRunOperatorExtension.builder()
-          .withReconciler(StatusEventSecondaryReconciler.class)
+          .withAdditionalCustomResourceDefinition(StatusEventSecondaryResource.class)
           .withReconciler(StatusEventPrimaryReconciler.class)
           .build();
 
