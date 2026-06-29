@@ -223,41 +223,15 @@ sequenceDiagram
 
 ## Filtering events for our own updates
 
-When we update a resource, eventually the informer will propagate an event that would trigger a reconciliation.
-However, this is mostly not desired. Since we already have the up-to-date resource at that point,
-we would like to be notified only if the resource is changed after our change.
+When we update a resource, the informer will eventually propagate an event that would trigger a reconciliation.
+In most cases, however, this is not desirable. Since we already have the up-to-date resource at that point,
+we want to be notified only when the change originates outside our reconciler.
+Therefore, in addition to caching the resource, we filter out events caused by our own updates.
 
-The framework runs a per-resource *event filter window* around each in-flight
-write: it records the resource version returned by our update, buffers any
-related events that arrive in the meantime, and at the end of the window
-decides what (if anything) to surface to the reconciler. The rules:
+Note that the implementation of this is relatively complex: while performing the update, we record all the
+events received in the meantime and decide whether to propagate them further once the update request completes.
 
-- **Pure own echo**: if the only events in the window are watch events whose
-  resource versions match our recorded own writes (and the action is `UPDATED`),
-  they are filtered out — the reconciler isn't bothered.
-- **Foreign change in the window**: if a resource version arrived that was *not*
-  one of our own writes — e.g. a third party modified the resource between two
-  of our updates — the framework synthesizes a single `UPDATED` event covering
-  the whole window (`previousResource` = the resource just before the window,
-  `resource` = the latest known state). The reconciler is notified once, with a
-  faithful before/after picture, instead of receiving each underlying watch
-  event individually.
-- **DELETE in the middle**: if the resource was deleted at some point during
-  the window, that DELETE participates in the synthesis. A trailing `DELETED`
-  is surfaced verbatim; a DELETE-then-recreate inside the window collapses to
-  an `UPDATED` from the deleted state to the recreated state.
-- **Held foreign events**: a foreign event that arrives *before* the matching
-  own write echo is buffered until the write completes. This avoids
-  surfacing it as foreign only to immediately overwrite it with a synthesized
-  echo.
-- **ReList**: events arriving while the informer is performing a relist are
-  tagged. Because a relist may have hidden events, the framework defaults to
-  surfacing such events to the reconciler rather than silently filtering
-  them — even when they would otherwise look like our own echoes.
-
-This way we significantly reduce the number of reconciliations, making the whole
-process much more efficient, while preserving the invariant that any
-foreign change reaches the reconciler.
+This way, we significantly reduce the number of reconciliations, making the whole process much more efficient.  
 
 ### The case for instant reschedule
 
