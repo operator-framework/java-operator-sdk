@@ -225,9 +225,8 @@ sequenceDiagram
 
 When we update a resource, the informer will eventually propagate an event that would trigger a reconciliation.
 In most cases, however, this is not desirable. Since we already have the up-to-date resource at that point,
-we want to be notified only when the change did not originate from our own reconciler.
-Therefore, in addition to caching the resource, we also do event filtering to filter out
-all events produced by our own updates.
+we want to be notified only when the change originates outside our reconciler.
+Therefore, in addition to caching the resource, we filter out events caused by our own updates.
 
 Note that the implementation of this is relatively complex: while performing the update, we record all the
 events received in the meantime and decide whether to propagate them further once the update request completes.
