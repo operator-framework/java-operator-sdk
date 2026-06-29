@@ -152,7 +152,7 @@ class ControllerEventSourceTest
     source = new ControllerEventSource<>(new TestController(null, userFilter, null, false));
     setUpSource(source, true, controllerConfig);
 
-    source.handleEvent(ResourceAction.UPDATED, cr, cr, null);
+    source.handleEvent(ResourceAction.UPDATED, cr, cr, null, null);
 
     verify(eventHandler, times(1)).handleEvent(any());
   }
@@ -165,7 +165,7 @@ class ControllerEventSourceTest
     source = new ControllerEventSource<>(new TestController(null, userFilter, null, false));
     setUpSource(source, true, controllerConfig);
 
-    source.handleEvent(ResourceAction.UPDATED, cr, cr, null);
+    source.handleEvent(ResourceAction.UPDATED, cr, cr, null, null);
 
     verify(eventHandler, never()).handleEvent(any());
   }
