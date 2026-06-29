@@ -52,18 +52,24 @@ public class ControllerEventSource<T extends HasMetadata>
     this.controller = controller;
 
     final var config = controller.getConfiguration();
-    OnUpdateFilter internalOnUpdateFilter =
-        onUpdateFinalizerNeededAndApplied(controller.useFinalizer(), config.getFinalizerName())
-            .or(onUpdateGenerationAware(config.isGenerationAware()))
-            .or(onUpdateMarkedForDeletion());
 
     // by default the on add should be processed in all cases regarding internal filters
     final var informerConfig = config.getInformerConfig();
     Optional.ofNullable(informerConfig.getOnAddFilter()).ifPresent(this::setOnAddFilter);
-    Optional.ofNullable(informerConfig.getOnUpdateFilter())
-        .ifPresentOrElse(
-            filter -> setOnUpdateFilter(filter.and(internalOnUpdateFilter)),
-            () -> setOnUpdateFilter(internalOnUpdateFilter));
+
+    if (config.isDefaultFilters()) {
+      OnUpdateFilter internalOnUpdateFilter =
+          defaultFilters(
+              controller.useFinalizer(), config.getFinalizerName(), config.isGenerationAware());
+      Optional.ofNullable(informerConfig.getOnUpdateFilter())
+          .ifPresentOrElse(
+              filter -> setOnUpdateFilter(filter.and(internalOnUpdateFilter)),
+              () -> setOnUpdateFilter(internalOnUpdateFilter));
+    } else {
+      var userFilter = informerConfig.getOnUpdateFilter();
+      setOnUpdateFilter(userFilter != null ? userFilter : (newResource, oldResource) -> true);
+    }
+
     Optional.ofNullable(informerConfig.getGenericFilter()).ifPresent(this::setGenericFilter);
     setControllerConfiguration(config);
   }
