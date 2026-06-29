@@ -28,6 +28,8 @@ import java.util.stream.Stream;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.javaoperatorsdk.operator.ReconcilerUtilsInternal;
+import io.javaoperatorsdk.operator.api.Internal;
+import io.javaoperatorsdk.operator.api.Public;
 import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.managed.DefaultManagedWorkflowAndDependentResourceContext;
@@ -38,6 +40,7 @@ import io.javaoperatorsdk.operator.processing.event.NoEventSourceForClassExcepti
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
 import io.javaoperatorsdk.operator.processing.event.source.Cache;
 
+@Public
 public class DefaultContext<P extends HasMetadata> implements Context<P> {
   private RetryInfo retryInfo;
   private final Controller<P> controller;
@@ -242,11 +245,13 @@ public class DefaultContext<P extends HasMetadata> implements Context<P> {
     return primaryResourceFinalStateUnknown;
   }
 
+  @Internal
   public DefaultContext<P> setRetryInfo(RetryInfo retryInfo) {
     this.retryInfo = retryInfo;
     return this;
   }
 
+  @Internal
   @SuppressWarnings("unchecked")
   public <R> R getOrComputeDesiredStateFor(
       DependentResource<R, P> dependentResource, Function<P, R> desiredStateComputer) {

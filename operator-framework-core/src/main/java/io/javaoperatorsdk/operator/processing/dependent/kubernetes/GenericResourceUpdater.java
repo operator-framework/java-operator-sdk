@@ -19,8 +19,10 @@ import java.util.Map;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.client.utils.KubernetesSerialization;
+import io.javaoperatorsdk.operator.api.Public;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 
+@Public
 public class GenericResourceUpdater {
 
   private static final String METADATA = "metadata";

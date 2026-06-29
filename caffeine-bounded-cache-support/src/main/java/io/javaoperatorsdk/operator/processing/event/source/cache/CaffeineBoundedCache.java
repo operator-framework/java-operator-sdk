@@ -15,9 +15,12 @@
  */
 package io.javaoperatorsdk.operator.processing.event.source.cache;
 
+import io.javaoperatorsdk.operator.api.Public;
+
 import com.github.benmanes.caffeine.cache.Cache;
 
 /** Caffeine cache wrapper to be used in a {@link BoundedItemStore} */
+@Public
 public class CaffeineBoundedCache<K, R> implements BoundedCache<K, R> {
 
   private final Cache<K, R> cache;

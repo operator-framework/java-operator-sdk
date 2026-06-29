@@ -18,10 +18,10 @@ package io.javaoperatorsdk.operator.processing.expectation;
 import java.util.function.BiPredicate;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
+import io.javaoperatorsdk.operator.api.Experimental;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
-import io.javaoperatorsdk.operator.api.reconciler.Experimental;
 
-import static io.javaoperatorsdk.operator.api.reconciler.Experimental.API_MIGHT_CHANGE;
+import static io.javaoperatorsdk.operator.api.Experimental.API_MIGHT_CHANGE;
 
 /**
  * Expectation is basically a named predicate, that has access to the reconciliation context.

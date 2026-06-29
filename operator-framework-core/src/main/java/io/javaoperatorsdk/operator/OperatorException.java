@@ -15,6 +15,9 @@
  */
 package io.javaoperatorsdk.operator;
 
+import io.javaoperatorsdk.operator.api.Public;
+
+@Public
 public class OperatorException extends RuntimeException {
 
   public OperatorException() {}

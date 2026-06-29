@@ -18,6 +18,7 @@ package io.javaoperatorsdk.operator.processing.dependent;
 import java.util.Optional;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
+import io.javaoperatorsdk.operator.api.Public;
 import io.javaoperatorsdk.operator.api.config.Utils;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.EventSourceContext;
@@ -30,6 +31,7 @@ import io.javaoperatorsdk.operator.processing.event.ResourceID;
 import io.javaoperatorsdk.operator.processing.event.source.EventSource;
 
 @Ignore
+@Public
 public abstract class AbstractEventSourceHolderDependentResource<
         R, P extends HasMetadata, T extends EventSource<R, P>>
     extends AbstractDependentResource<R, P> implements EventSourceReferencer<P> {

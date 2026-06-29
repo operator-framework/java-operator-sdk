@@ -17,6 +17,9 @@ package io.javaoperatorsdk.operator.config.loader;
 
 import java.util.Optional;
 
+import io.javaoperatorsdk.operator.api.Public;
+
+@Public
 public interface ConfigProvider {
 
   /**

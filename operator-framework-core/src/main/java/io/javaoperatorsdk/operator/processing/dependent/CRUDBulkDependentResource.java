@@ -16,7 +16,9 @@
 package io.javaoperatorsdk.operator.processing.dependent;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
+import io.javaoperatorsdk.operator.api.Public;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.Deleter;
 
+@Public
 public interface CRUDBulkDependentResource<R, P extends HasMetadata, ID>
     extends BulkDependentResource<R, P, ID>, Creator<R, P>, BulkUpdater<R, P>, Deleter<P> {}

@@ -15,8 +15,10 @@
  */
 package io.javaoperatorsdk.operator.processing.event.source;
 
+import io.javaoperatorsdk.operator.api.Public;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
 
+@Public
 public interface UpdatableCache<T> extends Cache<T> {
   T remove(ResourceID key);
 

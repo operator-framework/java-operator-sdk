@@ -21,10 +21,12 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
+import io.javaoperatorsdk.operator.api.Public;
 import io.javaoperatorsdk.operator.processing.event.Event;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
 import io.javaoperatorsdk.operator.processing.event.source.AbstractEventSource;
 
+@Public
 public class SimpleInboundEventSource<P extends HasMetadata> extends AbstractEventSource<Void, P> {
 
   private static final Logger log = LoggerFactory.getLogger(SimpleInboundEventSource.class);

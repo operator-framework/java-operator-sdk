@@ -16,11 +16,13 @@
 package io.javaoperatorsdk.operator.config.runtime;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
+import io.javaoperatorsdk.operator.api.Public;
 import io.javaoperatorsdk.operator.api.config.BaseConfigurationService;
 import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.config.ResolvedControllerConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 
+@Public
 public class DefaultConfigurationService extends BaseConfigurationService {
 
   @Override

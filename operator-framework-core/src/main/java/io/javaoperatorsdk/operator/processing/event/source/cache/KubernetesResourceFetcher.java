@@ -19,8 +19,10 @@ import java.util.function.Function;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.client.KubernetesClient;
+import io.javaoperatorsdk.operator.api.Public;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
 
+@Public
 public class KubernetesResourceFetcher<R extends HasMetadata>
     implements ResourceFetcher<String, R> {
 

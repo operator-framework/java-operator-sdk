@@ -24,6 +24,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
+import io.javaoperatorsdk.operator.api.Public;
 import io.javaoperatorsdk.operator.api.config.ConfigurationServiceOverrider;
 import io.javaoperatorsdk.operator.api.config.ControllerConfigurationOverrider;
 import io.javaoperatorsdk.operator.api.config.LeaderElectionConfigurationBuilder;
@@ -33,6 +34,7 @@ import io.javaoperatorsdk.operator.config.loader.provider.PropertiesConfigProvid
 import io.javaoperatorsdk.operator.processing.event.rate.LinearRateLimiter;
 import io.javaoperatorsdk.operator.processing.retry.GenericRetry;
 
+@Public
 public class ConfigLoader {
 
   private static final Logger log = LoggerFactory.getLogger(ConfigLoader.class);

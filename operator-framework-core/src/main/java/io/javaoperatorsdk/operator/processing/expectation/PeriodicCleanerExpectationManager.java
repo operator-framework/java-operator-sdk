@@ -21,11 +21,11 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
+import io.javaoperatorsdk.operator.api.Experimental;
 import io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration;
-import io.javaoperatorsdk.operator.api.reconciler.Experimental;
 import io.javaoperatorsdk.operator.api.reconciler.IndexedResourceCache;
 
-import static io.javaoperatorsdk.operator.api.reconciler.Experimental.API_MIGHT_CHANGE;
+import static io.javaoperatorsdk.operator.api.Experimental.API_MIGHT_CHANGE;
 
 /**
  * Expectation manager implementation that works without enabling {@link

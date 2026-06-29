@@ -15,6 +15,9 @@
  */
 package io.javaoperatorsdk.operator.api.reconciler;
 
+import io.javaoperatorsdk.operator.api.Public;
+
+@Public
 public class DeleteControl extends BaseControl<DeleteControl> {
 
   private final boolean removeFinalizer;

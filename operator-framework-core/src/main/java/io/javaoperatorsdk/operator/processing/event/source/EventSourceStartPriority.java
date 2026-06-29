@@ -15,10 +15,13 @@
  */
 package io.javaoperatorsdk.operator.processing.event.source;
 
+import io.javaoperatorsdk.operator.api.Public;
+
 /**
  * Defines priority levels for {@link EventSource} implementation to ensure that some sources are
  * started before others
  */
+@Public
 public enum EventSourceStartPriority {
 
   /**

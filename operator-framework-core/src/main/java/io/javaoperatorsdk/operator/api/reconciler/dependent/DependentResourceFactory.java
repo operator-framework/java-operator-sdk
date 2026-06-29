@@ -15,12 +15,14 @@
  */
 package io.javaoperatorsdk.operator.api.reconciler.dependent;
 
+import io.javaoperatorsdk.operator.api.Public;
 import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.config.Utils;
 import io.javaoperatorsdk.operator.api.config.dependent.DependentResourceSpec;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.managed.ConfiguredDependentResource;
 import io.javaoperatorsdk.operator.processing.dependent.workflow.DependentResourceNode;
 
+@Public
 @SuppressWarnings({"rawtypes", "unchecked"})
 public interface DependentResourceFactory<
     C extends ControllerConfiguration<?>, D extends DependentResourceSpec> {

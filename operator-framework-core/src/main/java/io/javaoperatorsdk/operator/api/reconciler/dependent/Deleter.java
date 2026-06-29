@@ -16,6 +16,7 @@
 package io.javaoperatorsdk.operator.api.reconciler.dependent;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
+import io.javaoperatorsdk.operator.api.Public;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 
 /**
@@ -25,6 +26,7 @@ import io.javaoperatorsdk.operator.api.reconciler.Context;
  * @param <P> primary resource type
  */
 @FunctionalInterface
+@Public
 public interface Deleter<P extends HasMetadata> {
   void delete(P primary, Context<P> context);
 }

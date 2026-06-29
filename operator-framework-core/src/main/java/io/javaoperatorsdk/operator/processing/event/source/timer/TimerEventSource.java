@@ -25,6 +25,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
+import io.javaoperatorsdk.operator.api.Internal;
 import io.javaoperatorsdk.operator.api.reconciler.BaseControl;
 import io.javaoperatorsdk.operator.health.Status;
 import io.javaoperatorsdk.operator.processing.event.Event;
@@ -72,6 +73,7 @@ public class TimerEventSource<R extends HasMetadata> extends AbstractEventSource
   }
 
   @Override
+  @Internal
   public void onResourceDeleted(R resource) {
     // for triggerReconcilerOnAllEvents the cancelOnceSchedule will be called on
     // successful delete event processing

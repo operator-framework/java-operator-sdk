@@ -26,6 +26,7 @@ import java.util.Optional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import io.javaoperatorsdk.operator.api.Public;
 import io.javaoperatorsdk.operator.config.loader.ConfigProvider;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -40,6 +41,7 @@ import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
  * types are: {@link String}, {@link Boolean}, {@link Integer}, {@link Long}, {@link Double}, and
  * {@link java.time.Duration} (ISO-8601 format, e.g. {@code PT30S}).
  */
+@Public
 public class YamlConfigProvider implements ConfigProvider {
 
   private static final Logger log = LoggerFactory.getLogger(YamlConfigProvider.class);

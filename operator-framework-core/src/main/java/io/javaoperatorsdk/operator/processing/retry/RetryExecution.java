@@ -18,8 +18,10 @@ package io.javaoperatorsdk.operator.processing.retry;
 import java.time.Duration;
 import java.util.Optional;
 
+import io.javaoperatorsdk.operator.api.Public;
 import io.javaoperatorsdk.operator.api.reconciler.RetryInfo;
 
+@Public
 public interface RetryExecution extends RetryInfo {
 
   /**

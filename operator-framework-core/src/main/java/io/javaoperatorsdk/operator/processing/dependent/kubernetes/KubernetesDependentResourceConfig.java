@@ -16,8 +16,10 @@
 package io.javaoperatorsdk.operator.processing.dependent.kubernetes;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
+import io.javaoperatorsdk.operator.api.Public;
 import io.javaoperatorsdk.operator.api.config.informer.InformerConfiguration;
 
+@Public
 public class KubernetesDependentResourceConfig<R extends HasMetadata> {
 
   public static final boolean DEFAULT_CREATE_RESOURCE_ONLY_IF_NOT_EXISTING_WITH_SSA = true;

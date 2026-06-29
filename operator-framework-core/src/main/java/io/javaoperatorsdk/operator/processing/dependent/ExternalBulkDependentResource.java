@@ -16,6 +16,7 @@
 package io.javaoperatorsdk.operator.processing.dependent;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
+import io.javaoperatorsdk.operator.api.Public;
 import io.javaoperatorsdk.operator.processing.ResourceIDMapper;
 import io.javaoperatorsdk.operator.processing.ResourceIDProvider;
 
@@ -23,6 +24,7 @@ import io.javaoperatorsdk.operator.processing.ResourceIDProvider;
  * Specialized interface for bulk dependent resources where resource implement {@link
  * ResourceIDProvider}.
  */
+@Public
 public interface ExternalBulkDependentResource<
         R extends ResourceIDProvider<ID>, P extends HasMetadata, ID>
     extends ResourceIDMapperBulkDependentResource<R, P, ID> {

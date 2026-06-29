@@ -20,9 +20,11 @@ import java.util.List;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.client.KubernetesClient;
+import io.javaoperatorsdk.operator.api.Public;
 import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.config.dependent.DependentResourceSpec;
 
+@Public
 public interface ManagedWorkflow<P extends HasMetadata> {
 
   @SuppressWarnings({"unused", "rawtypes"})

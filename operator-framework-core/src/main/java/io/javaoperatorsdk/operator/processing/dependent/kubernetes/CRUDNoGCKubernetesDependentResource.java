@@ -16,6 +16,7 @@
 package io.javaoperatorsdk.operator.processing.dependent.kubernetes;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
+import io.javaoperatorsdk.operator.api.Public;
 import io.javaoperatorsdk.operator.api.reconciler.Ignore;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.Deleter;
 import io.javaoperatorsdk.operator.processing.dependent.Creator;
@@ -32,6 +33,7 @@ import io.javaoperatorsdk.operator.processing.dependent.Updater;
  * @param <P> the type of the associated primary resource
  */
 @Ignore
+@Public
 public class CRUDNoGCKubernetesDependentResource<R extends HasMetadata, P extends HasMetadata>
     extends KubernetesDependentResource<R, P> implements Creator<R, P>, Updater<R, P>, Deleter<P> {
 

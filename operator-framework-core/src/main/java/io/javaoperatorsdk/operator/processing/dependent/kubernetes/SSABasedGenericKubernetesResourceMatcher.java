@@ -40,6 +40,7 @@ import io.fabric8.kubernetes.api.model.apps.ReplicaSet;
 import io.fabric8.kubernetes.api.model.apps.StatefulSet;
 import io.fabric8.kubernetes.client.utils.KubernetesSerialization;
 import io.javaoperatorsdk.operator.OperatorException;
+import io.javaoperatorsdk.operator.api.Public;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.processing.LoggingUtils;
 
@@ -65,6 +66,7 @@ import static io.javaoperatorsdk.operator.processing.dependent.kubernetes.PodTem
 // https://github.com/kubernetes-sigs/structured-merge-diff
 // https://docs.aws.amazon.com/eks/latest/userguide/kubernetes-field-management.html
 // see also: https://kubernetes.slack.com/archives/C0123CNN8F3/p1686141087220719
+@Public
 public class SSABasedGenericKubernetesResourceMatcher<R extends HasMetadata> {
 
   public static final String APPLY_OPERATION = "Apply";

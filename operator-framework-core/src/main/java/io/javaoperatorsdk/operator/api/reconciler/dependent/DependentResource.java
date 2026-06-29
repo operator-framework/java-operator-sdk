@@ -18,6 +18,7 @@ package io.javaoperatorsdk.operator.api.reconciler.dependent;
 import java.util.Optional;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
+import io.javaoperatorsdk.operator.api.Public;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.EventSourceContext;
 import io.javaoperatorsdk.operator.processing.event.source.EventSource;
@@ -28,6 +29,7 @@ import io.javaoperatorsdk.operator.processing.event.source.EventSource;
  * @param <R> the dependent resource type
  * @param <P> the associated primary resource type
  */
+@Public
 public interface DependentResource<R, P extends HasMetadata> {
 
   /**

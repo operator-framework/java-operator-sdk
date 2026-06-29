@@ -25,6 +25,7 @@ import org.slf4j.LoggerFactory;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.Namespaced;
+import io.javaoperatorsdk.operator.api.Public;
 import io.javaoperatorsdk.operator.api.config.dependent.Configured;
 import io.javaoperatorsdk.operator.api.config.informer.InformerEventSourceConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
@@ -45,6 +46,7 @@ import io.javaoperatorsdk.operator.processing.event.source.informer.Mappers;
     by = KubernetesDependent.class,
     with = KubernetesDependentResourceConfig.class,
     converter = KubernetesDependentConverter.class)
+@Public
 public abstract class KubernetesDependentResource<R extends HasMetadata, P extends HasMetadata>
     extends AbstractEventSourceHolderDependentResource<R, P, InformerEventSource<R, P>>
     implements ConfiguredDependentResource<KubernetesDependentResourceConfig<R>> {

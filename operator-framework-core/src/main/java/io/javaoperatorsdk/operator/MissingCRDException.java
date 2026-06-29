@@ -15,6 +15,9 @@
  */
 package io.javaoperatorsdk.operator;
 
+import io.javaoperatorsdk.operator.api.Public;
+
+@Public
 public class MissingCRDException extends OperatorException {
   private final String crdName;
   private final String specVersion;

@@ -18,12 +18,14 @@ package io.javaoperatorsdk.operator.config.loader.provider;
 import java.util.List;
 import java.util.Optional;
 
+import io.javaoperatorsdk.operator.api.Public;
 import io.javaoperatorsdk.operator.config.loader.ConfigProvider;
 
 /**
  * A {@link ConfigProvider} that delegates to an ordered list of providers. Providers are queried in
  * list order; the first non-empty result wins.
  */
+@Public
 public class AggregatePriorityListConfigProvider implements ConfigProvider {
 
   private final List<ConfigProvider> providers;

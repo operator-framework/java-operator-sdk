@@ -21,6 +21,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
+import io.javaoperatorsdk.operator.api.Public;
 import io.javaoperatorsdk.operator.health.EventSourceHealthIndicator;
 import io.javaoperatorsdk.operator.health.InformerWrappingEventSourceHealthIndicator;
 import io.javaoperatorsdk.operator.processing.event.source.controller.ControllerEventSource;
@@ -30,6 +31,7 @@ import io.javaoperatorsdk.operator.processing.event.source.controller.Controller
  * check that.
  */
 @SuppressWarnings("rawtypes")
+@Public
 public class RuntimeInfo {
 
   private static final Logger log = LoggerFactory.getLogger(RuntimeInfo.class);

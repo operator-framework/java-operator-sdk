@@ -19,6 +19,9 @@ import java.time.Duration;
 import java.util.Collections;
 import java.util.Set;
 
+import io.javaoperatorsdk.operator.api.Public;
+
+@Public
 public final class Constants {
 
   public static final String WATCH_CURRENT_NAMESPACE = "JOSDK_WATCH_CURRENT";

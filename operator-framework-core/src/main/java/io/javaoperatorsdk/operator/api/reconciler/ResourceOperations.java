@@ -27,6 +27,7 @@ import io.fabric8.kubernetes.client.KubernetesClientException;
 import io.fabric8.kubernetes.client.dsl.base.PatchContext;
 import io.fabric8.kubernetes.client.dsl.base.PatchType;
 import io.javaoperatorsdk.operator.OperatorException;
+import io.javaoperatorsdk.operator.api.Public;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
 import io.javaoperatorsdk.operator.processing.event.source.informer.InformerEventSource;
 import io.javaoperatorsdk.operator.processing.event.source.informer.ManagedInformerEventSource;
@@ -42,6 +43,7 @@ import static io.javaoperatorsdk.operator.processing.KubernetesResourceUtils.get
  *
  * @param <P> the resource type on which this object operates
  */
+@Public
 public class ResourceOperations<P extends HasMetadata> {
 
   public static final int DEFAULT_MAX_RETRY = 10;

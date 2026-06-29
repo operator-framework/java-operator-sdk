@@ -15,6 +15,9 @@
  */
 package io.javaoperatorsdk.operator.processing.event.source.cache;
 
+import io.javaoperatorsdk.operator.api.Public;
+
+@Public
 public interface ResourceFetcher<K, R> {
 
   R fetchResource(K key);

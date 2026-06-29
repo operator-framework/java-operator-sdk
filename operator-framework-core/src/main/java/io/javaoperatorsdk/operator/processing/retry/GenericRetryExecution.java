@@ -18,6 +18,9 @@ package io.javaoperatorsdk.operator.processing.retry;
 import java.time.Duration;
 import java.util.Optional;
 
+import io.javaoperatorsdk.operator.api.Public;
+
+@Public
 public class GenericRetryExecution implements RetryExecution {
 
   private final GenericRetry genericRetry;

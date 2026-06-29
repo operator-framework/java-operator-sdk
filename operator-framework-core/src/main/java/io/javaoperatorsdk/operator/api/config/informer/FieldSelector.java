@@ -18,6 +18,9 @@ package io.javaoperatorsdk.operator.api.config.informer;
 import java.util.Arrays;
 import java.util.List;
 
+import io.javaoperatorsdk.operator.api.Public;
+
+@Public
 public class FieldSelector {
   private final List<Field> fields;
 

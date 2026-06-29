@@ -16,6 +16,7 @@
 package io.javaoperatorsdk.operator.api.reconciler.dependent;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
+import io.javaoperatorsdk.operator.api.Public;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 
 /**
@@ -36,4 +37,5 @@ import io.javaoperatorsdk.operator.api.reconciler.Context;
  *
  * @param <P> primary resource type
  */
+@Public
 public interface GarbageCollected<P extends HasMetadata> extends Deleter<P> {}

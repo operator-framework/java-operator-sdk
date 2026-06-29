@@ -19,6 +19,7 @@ import java.time.Duration;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.client.KubernetesClient;
+import io.javaoperatorsdk.operator.api.Public;
 
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
@@ -41,6 +42,7 @@ import com.github.benmanes.caffeine.cache.Caffeine;
  * resources are usually reconciled too, they might need to be fetched and populated to the cache,
  * and will remain there for some time, for subsequent reconciliations.
  */
+@Public
 public class CaffeineBoundedItemStores {
 
   private CaffeineBoundedItemStores() {}

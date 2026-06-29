@@ -18,6 +18,7 @@ package io.javaoperatorsdk.operator.processing.event.source;
 import java.util.Set;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
+import io.javaoperatorsdk.operator.api.Public;
 import io.javaoperatorsdk.operator.api.config.informer.InformerEventSourceConfiguration;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
 
@@ -46,6 +47,7 @@ import io.javaoperatorsdk.operator.processing.event.ResourceID;
  *
  * @param <P> primary resource type
  */
+@Public
 public interface PrimaryToSecondaryMapper<P extends HasMetadata> {
 
   Set<ResourceID> toSecondaryResourceIDs(P primary);

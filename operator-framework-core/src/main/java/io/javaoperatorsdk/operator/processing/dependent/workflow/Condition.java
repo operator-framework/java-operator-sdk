@@ -16,9 +16,11 @@
 package io.javaoperatorsdk.operator.processing.dependent.workflow;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
+import io.javaoperatorsdk.operator.api.Public;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
 
+@Public
 public interface Condition<R, P extends HasMetadata> {
 
   enum Type {

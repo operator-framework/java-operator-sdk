@@ -19,6 +19,9 @@ import java.time.Duration;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 
+import io.javaoperatorsdk.operator.api.Public;
+
+@Public
 public abstract class BaseControl<T extends BaseControl<T>> {
 
   public static final Long INSTANT_RESCHEDULE = 0L;

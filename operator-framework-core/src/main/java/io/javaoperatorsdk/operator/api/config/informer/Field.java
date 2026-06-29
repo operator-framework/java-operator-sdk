@@ -15,6 +15,9 @@
  */
 package io.javaoperatorsdk.operator.api.config.informer;
 
+import io.javaoperatorsdk.operator.api.Public;
+
+@Public
 public @interface Field {
 
   String path();

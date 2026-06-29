@@ -16,7 +16,9 @@
 package io.javaoperatorsdk.operator.api.config;
 
 import io.fabric8.kubernetes.client.informers.SharedIndexInformer;
+import io.javaoperatorsdk.operator.api.Public;
 
+@Public
 public interface InformerStoppedHandler {
 
   @SuppressWarnings("rawtypes")

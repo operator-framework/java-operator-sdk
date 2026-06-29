@@ -19,7 +19,9 @@ import java.util.List;
 import java.util.stream.Stream;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
+import io.javaoperatorsdk.operator.api.Public;
 
+@Public
 public interface IndexedResourceCache<T extends HasMetadata> extends ResourceCache<T> {
 
   List<T> byIndex(String indexName, String indexKey);

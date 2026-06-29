@@ -29,6 +29,7 @@ import org.slf4j.LoggerFactory;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.javaoperatorsdk.operator.ReconcilerUtilsInternal;
+import io.javaoperatorsdk.operator.api.Public;
 import io.javaoperatorsdk.operator.api.config.Utils.Configurator;
 import io.javaoperatorsdk.operator.api.config.dependent.DependentResourceConfigurationResolver;
 import io.javaoperatorsdk.operator.api.config.dependent.DependentResourceSpec;
@@ -51,6 +52,7 @@ import static io.javaoperatorsdk.operator.api.config.ControllerConfiguration.CON
  * use {@link AbstractConfigurationService} instead as a base for your {@code ConfigurationService}
  * implementation.
  */
+@Public
 public class BaseConfigurationService extends AbstractConfigurationService {
 
   private static final Logger logger = LoggerFactory.getLogger(BaseConfigurationService.class);

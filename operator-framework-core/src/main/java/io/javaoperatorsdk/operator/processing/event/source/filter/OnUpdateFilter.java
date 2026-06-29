@@ -15,6 +15,9 @@
  */
 package io.javaoperatorsdk.operator.processing.event.source.filter;
 
+import io.javaoperatorsdk.operator.api.Public;
+
+@Public
 @FunctionalInterface
 public interface OnUpdateFilter<R> {
 

@@ -18,9 +18,11 @@ package io.javaoperatorsdk.operator.processing.dependent.workflow;
 import java.util.Map;
 import java.util.Optional;
 
+import io.javaoperatorsdk.operator.api.Public;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
 
 @SuppressWarnings("rawtypes")
+@Public
 public interface WorkflowResult {
   default Map<DependentResource, Exception> getErroredDependents() {
     return Map.of();

@@ -17,6 +17,9 @@ package io.javaoperatorsdk.operator.api.reconciler.dependent.managed;
 
 import java.util.Optional;
 
+import io.javaoperatorsdk.operator.api.Public;
+
+@Public
 public interface ConfiguredDependentResource<C> {
   void configureWith(C config);
 

@@ -19,7 +19,9 @@ import java.time.Duration;
 import java.util.Optional;
 
 import io.fabric8.kubernetes.client.extended.leaderelection.LeaderCallbacks;
+import io.javaoperatorsdk.operator.api.Public;
 
+@Public
 public class LeaderElectionConfiguration {
 
   public static final Duration LEASE_DURATION_DEFAULT_VALUE = Duration.ofSeconds(15);

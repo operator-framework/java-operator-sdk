@@ -18,8 +18,10 @@ package io.javaoperatorsdk.operator.api.reconciler;
 import java.util.*;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
+import io.javaoperatorsdk.operator.api.Public;
 import io.javaoperatorsdk.operator.processing.event.source.EventSource;
 
+@Public
 public interface Reconciler<P extends HasMetadata> {
 
   /**

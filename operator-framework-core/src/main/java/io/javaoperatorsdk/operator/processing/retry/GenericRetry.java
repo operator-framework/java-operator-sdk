@@ -17,8 +17,10 @@ package io.javaoperatorsdk.operator.processing.retry;
 
 import java.time.Duration;
 
+import io.javaoperatorsdk.operator.api.Public;
 import io.javaoperatorsdk.operator.api.config.AnnotationConfigurable;
 
+@Public
 public class GenericRetry implements Retry, AnnotationConfigurable<GradualRetry> {
   private int maxAttempts = GradualRetry.DEFAULT_MAX_ATTEMPTS;
   private long initialInterval = GradualRetry.DEFAULT_INITIAL_INTERVAL;

@@ -18,9 +18,11 @@ package io.javaoperatorsdk.operator.processing.dependent.workflow;
 import java.util.List;
 import java.util.Optional;
 
+import io.javaoperatorsdk.operator.api.Public;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
 
 @SuppressWarnings("rawtypes")
+@Public
 public interface WorkflowReconcileResult extends WorkflowResult {
   WorkflowReconcileResult EMPTY = new WorkflowReconcileResult() {};
 

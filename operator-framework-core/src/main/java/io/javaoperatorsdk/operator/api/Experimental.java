@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.javaoperatorsdk.operator.api.reconciler;
+package io.javaoperatorsdk.operator.api;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
@@ -21,10 +21,10 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * Marks experimental features.
+ * Marks experimental all API.
  *
- * <p>Experimental features are not yet stable and may change in future releases. Usually based on
- * the feedback of the users.
+ * <p>Experimental API are not yet stable and may change in future releases. Usually based on the
+ * feedback of the users.
  */
 @Retention(RetentionPolicy.SOURCE)
 @Target({ElementType.METHOD, ElementType.TYPE, ElementType.FIELD, ElementType.PACKAGE})

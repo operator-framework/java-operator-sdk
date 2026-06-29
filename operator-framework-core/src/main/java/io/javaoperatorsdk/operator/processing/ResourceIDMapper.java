@@ -16,6 +16,7 @@
 package io.javaoperatorsdk.operator.processing;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
+import io.javaoperatorsdk.operator.api.Public;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
 import io.javaoperatorsdk.operator.processing.event.source.ExternalResourceCachingEventSource;
 
@@ -31,6 +32,7 @@ import io.javaoperatorsdk.operator.processing.event.source.ExternalResourceCachi
  *
  * @see ResourceIDProvider<ID>
  */
+@Public
 public interface ResourceIDMapper<R, ID> {
 
   /**

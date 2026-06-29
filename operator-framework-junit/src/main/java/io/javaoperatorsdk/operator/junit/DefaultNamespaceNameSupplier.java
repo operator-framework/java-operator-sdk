@@ -22,9 +22,11 @@ import java.util.function.Function;
 import org.junit.jupiter.api.extension.ExtensionContext;
 
 import io.fabric8.kubernetes.client.utils.KubernetesResourceUtil;
+import io.javaoperatorsdk.operator.api.Public;
 
 import static io.javaoperatorsdk.operator.junit.AbstractOperatorExtension.MAX_NAMESPACE_NAME_LENGTH;
 
+@Public
 public class DefaultNamespaceNameSupplier implements Function<ExtensionContext, String> {
 
   public static final int RANDOM_SUFFIX_LENGTH = 5;

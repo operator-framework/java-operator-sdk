@@ -16,7 +16,9 @@
 package io.javaoperatorsdk.operator.processing.dependent;
 
 import io.javaoperatorsdk.operator.OperatorException;
+import io.javaoperatorsdk.operator.api.Public;
 
+@Public
 public class DependentResourceException extends OperatorException {
 
   public DependentResourceException() {}

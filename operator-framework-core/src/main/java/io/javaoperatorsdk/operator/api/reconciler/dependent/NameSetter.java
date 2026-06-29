@@ -15,6 +15,9 @@
  */
 package io.javaoperatorsdk.operator.api.reconciler.dependent;
 
+import io.javaoperatorsdk.operator.api.Public;
+
+@Public
 public interface NameSetter {
 
   void setName(String name);

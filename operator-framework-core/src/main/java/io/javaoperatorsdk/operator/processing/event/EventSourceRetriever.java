@@ -19,10 +19,12 @@ import java.util.List;
 import java.util.Optional;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
+import io.javaoperatorsdk.operator.api.Public;
 import io.javaoperatorsdk.operator.api.reconciler.EventSourceContext;
 import io.javaoperatorsdk.operator.processing.event.source.EventSource;
 import io.javaoperatorsdk.operator.processing.event.source.controller.ControllerEventSource;
 
+@Public
 public interface EventSourceRetriever<P extends HasMetadata> {
 
   default <R> EventSource<R, P> getEventSourceFor(Class<R> dependentType) {

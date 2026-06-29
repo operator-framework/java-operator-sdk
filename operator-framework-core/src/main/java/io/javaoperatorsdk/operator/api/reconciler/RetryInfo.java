@@ -15,6 +15,9 @@
  */
 package io.javaoperatorsdk.operator.api.reconciler;
 
+import io.javaoperatorsdk.operator.api.Public;
+
+@Public
 public interface RetryInfo {
   /**
    * @return current retry attempt count. 0 if the current execution is not a retry.

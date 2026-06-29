@@ -26,6 +26,7 @@ import java.util.Properties;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import io.javaoperatorsdk.operator.api.Public;
 import io.javaoperatorsdk.operator.config.loader.ConfigProvider;
 
 /**
@@ -35,6 +36,7 @@ import io.javaoperatorsdk.operator.config.loader.ConfigProvider;
  * String}, {@link Boolean}, {@link Integer}, {@link Long}, {@link Double}, and {@link
  * java.time.Duration} (ISO-8601 format, e.g. {@code PT30S}).
  */
+@Public
 public class PropertiesConfigProvider implements ConfigProvider {
 
   private static final Logger log = LoggerFactory.getLogger(PropertiesConfigProvider.class);

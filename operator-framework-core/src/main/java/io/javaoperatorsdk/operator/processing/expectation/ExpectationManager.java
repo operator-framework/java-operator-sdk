@@ -21,11 +21,11 @@ import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
+import io.javaoperatorsdk.operator.api.Experimental;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
-import io.javaoperatorsdk.operator.api.reconciler.Experimental;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
 
-import static io.javaoperatorsdk.operator.api.reconciler.Experimental.API_MIGHT_CHANGE;
+import static io.javaoperatorsdk.operator.api.Experimental.API_MIGHT_CHANGE;
 
 @Experimental(API_MIGHT_CHANGE)
 public class ExpectationManager<P extends HasMetadata> {

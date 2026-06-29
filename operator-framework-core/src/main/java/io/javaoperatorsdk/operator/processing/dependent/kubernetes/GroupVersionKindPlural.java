@@ -20,12 +20,14 @@ import java.util.Optional;
 
 import io.fabric8.kubernetes.api.Pluralize;
 import io.fabric8.kubernetes.api.model.HasMetadata;
+import io.javaoperatorsdk.operator.api.Public;
 import io.javaoperatorsdk.operator.processing.GroupVersionKind;
 
 /**
  * An extension of {@link GroupVersionKind} that also records the associated plural form which is
  * useful when dealing with Kubernetes RBACs. Downstream projects might leverage that information.
  */
+@Public
 public class GroupVersionKindPlural extends GroupVersionKind {
   private final String plural;
 

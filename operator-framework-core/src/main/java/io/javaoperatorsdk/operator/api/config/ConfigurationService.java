@@ -34,6 +34,7 @@ import io.fabric8.kubernetes.client.CustomResource;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClientBuilder;
 import io.fabric8.kubernetes.client.utils.KubernetesSerialization;
+import io.javaoperatorsdk.operator.api.Public;
 import io.javaoperatorsdk.operator.api.monitoring.Metrics;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
@@ -45,6 +46,7 @@ import io.javaoperatorsdk.operator.processing.dependent.workflow.ManagedWorkflow
 import io.javaoperatorsdk.operator.processing.event.source.controller.ControllerEventSource;
 
 /** An interface from which to retrieve configuration information. */
+@Public
 public interface ConfigurationService {
 
   Logger log = LoggerFactory.getLogger(ConfigurationService.class);

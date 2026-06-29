@@ -16,6 +16,7 @@
 package io.javaoperatorsdk.operator.processing.dependent;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
+import io.javaoperatorsdk.operator.api.Public;
 import io.javaoperatorsdk.operator.processing.ResourceIDMapper;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
 
@@ -25,6 +26,7 @@ import io.javaoperatorsdk.operator.processing.event.ResourceID;
  * resources you can still choose a different ID type and directly implement {@link
  * BulkDependentResource}.
  */
+@Public
 public interface KubernetesBulkDependentResource<R extends HasMetadata, P extends HasMetadata>
     extends ResourceIDMapperBulkDependentResource<R, P, ResourceID> {
 

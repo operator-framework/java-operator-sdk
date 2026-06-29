@@ -30,8 +30,10 @@ import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.informers.cache.Cache;
 import io.fabric8.kubernetes.client.informers.cache.ItemStore;
+import io.javaoperatorsdk.operator.api.Public;
 import io.javaoperatorsdk.operator.api.config.Utils;
 
+@Public
 public class BoundedItemStore<R extends HasMetadata> implements ItemStore<R> {
 
   private static final Logger log = LoggerFactory.getLogger(BoundedItemStore.class);

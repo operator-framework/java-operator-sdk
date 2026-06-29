@@ -27,6 +27,7 @@ import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.client.informers.cache.ItemStore;
 import io.javaoperatorsdk.operator.OperatorException;
 import io.javaoperatorsdk.operator.ReconcilerUtilsInternal;
+import io.javaoperatorsdk.operator.api.Public;
 import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.config.Utils;
 import io.javaoperatorsdk.operator.api.reconciler.Constants;
@@ -39,6 +40,7 @@ import io.javaoperatorsdk.operator.processing.event.source.filter.OnUpdateFilter
 import static io.javaoperatorsdk.operator.api.reconciler.Constants.*;
 
 @SuppressWarnings("unused")
+@Public
 public class InformerConfiguration<R extends HasMetadata> {
   private final Builder builder = new Builder();
   private final Class<R> resourceClass;

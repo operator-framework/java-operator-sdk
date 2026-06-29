@@ -17,9 +17,11 @@ package io.javaoperatorsdk.operator.processing.dependent.workflow;
 
 import java.util.Optional;
 
+import io.javaoperatorsdk.operator.api.Public;
 import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.config.workflow.WorkflowSpec;
 
+@Public
 public interface ManagedWorkflowFactory<C extends ControllerConfiguration<?>> {
 
   @SuppressWarnings({"rawtypes", "unchecked"})

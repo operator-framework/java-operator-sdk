@@ -15,6 +15,9 @@
  */
 package io.javaoperatorsdk.operator.processing.retry;
 
+import io.javaoperatorsdk.operator.api.Public;
+
+@Public
 @FunctionalInterface
 public interface Retry {
 

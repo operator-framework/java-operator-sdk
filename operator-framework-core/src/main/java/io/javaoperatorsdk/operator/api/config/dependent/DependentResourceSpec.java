@@ -20,9 +20,11 @@ import java.util.Optional;
 import java.util.Set;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
+import io.javaoperatorsdk.operator.api.Public;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
 import io.javaoperatorsdk.operator.processing.dependent.workflow.Condition;
 
+@Public
 public class DependentResourceSpec<R, P extends HasMetadata, C> {
 
   private final Class<? extends DependentResource<R, P>> dependentResourceClass;

@@ -24,6 +24,7 @@ import java.util.Set;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.client.informers.cache.ItemStore;
+import io.javaoperatorsdk.operator.api.Public;
 import io.javaoperatorsdk.operator.api.config.dependent.DependentResourceSpec;
 import io.javaoperatorsdk.operator.api.config.informer.InformerConfiguration;
 import io.javaoperatorsdk.operator.processing.event.rate.RateLimiter;
@@ -33,6 +34,7 @@ import io.javaoperatorsdk.operator.processing.event.source.filter.OnUpdateFilter
 import io.javaoperatorsdk.operator.processing.retry.Retry;
 
 @SuppressWarnings({"rawtypes", "unused", "UnusedReturnValue"})
+@Public
 public class ControllerConfigurationOverrider<R extends HasMetadata> {
 
   private final ControllerConfiguration<R> original;

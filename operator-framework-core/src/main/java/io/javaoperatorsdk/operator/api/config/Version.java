@@ -18,7 +18,10 @@ package io.javaoperatorsdk.operator.api.config;
 import java.time.Instant;
 import java.util.Date;
 
+import io.javaoperatorsdk.operator.api.Public;
+
 /** A class encapsulating the version information associated with this SDK instance. */
+@Public
 public class Version {
 
   public static final Version UNKNOWN = new Version("unknown", Date.from(Instant.EPOCH));

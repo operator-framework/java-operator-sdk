@@ -22,6 +22,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
+import io.javaoperatorsdk.operator.api.Public;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.DefaultContext;
 import io.javaoperatorsdk.operator.api.reconciler.Ignore;
@@ -41,6 +42,7 @@ import io.javaoperatorsdk.operator.processing.event.ResourceID;
  * @param <P> the associated primary resource type
  */
 @Ignore
+@Public
 public abstract class AbstractDependentResource<R, P extends HasMetadata>
     implements DependentResource<R, P>, NameSetter {
   private static final Logger log = LoggerFactory.getLogger(AbstractDependentResource.class);

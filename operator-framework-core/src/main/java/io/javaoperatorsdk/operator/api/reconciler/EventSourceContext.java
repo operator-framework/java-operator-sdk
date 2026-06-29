@@ -17,6 +17,7 @@ package io.javaoperatorsdk.operator.api.reconciler;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.client.KubernetesClient;
+import io.javaoperatorsdk.operator.api.Public;
 import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
 import io.javaoperatorsdk.operator.processing.event.source.EventSource;
 import io.javaoperatorsdk.operator.processing.event.source.IndexerResourceCache;
@@ -26,6 +27,7 @@ import io.javaoperatorsdk.operator.processing.event.source.IndexerResourceCache;
  *
  * @param <P> the type associated with the primary resource that is handled by your reconciler
  */
+@Public
 public class EventSourceContext<P extends HasMetadata> {
 
   private final IndexerResourceCache<P> primaryCache;

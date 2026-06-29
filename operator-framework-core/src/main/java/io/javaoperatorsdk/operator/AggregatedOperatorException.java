@@ -22,6 +22,9 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.stream.Collectors;
 
+import io.javaoperatorsdk.operator.api.Public;
+
+@Public
 public class AggregatedOperatorException extends OperatorException {
 
   private final Map<String, Exception> causes;

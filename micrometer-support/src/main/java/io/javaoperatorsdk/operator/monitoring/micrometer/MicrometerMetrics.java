@@ -24,6 +24,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.OperatorException;
+import io.javaoperatorsdk.operator.api.Public;
 import io.javaoperatorsdk.operator.api.monitoring.Metrics;
 import io.javaoperatorsdk.operator.api.reconciler.Constants;
 import io.javaoperatorsdk.operator.api.reconciler.RetryInfo;
@@ -43,6 +44,7 @@ import static io.javaoperatorsdk.operator.api.reconciler.Constants.CONTROLLER_NA
  * @deprecated Use {@link MicrometerMetricsV2} instead
  */
 @Deprecated(forRemoval = true)
+@Public
 public class MicrometerMetrics implements Metrics {
 
   private static final String PREFIX = "operator.sdk.";

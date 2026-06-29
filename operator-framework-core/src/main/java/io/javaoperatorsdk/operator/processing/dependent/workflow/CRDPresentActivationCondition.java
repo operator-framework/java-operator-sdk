@@ -23,6 +23,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.apiextensions.v1.CustomResourceDefinition;
 import io.fabric8.kubernetes.client.KubernetesClient;
+import io.javaoperatorsdk.operator.api.Public;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
 
@@ -36,6 +37,7 @@ import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
  * @param <P> the primary resource type associated with the reconciler processing dependents
  *     associated with this condition
  */
+@Public
 public class CRDPresentActivationCondition<R extends HasMetadata, P extends HasMetadata>
     implements Condition<R, P> {
 
