@@ -223,16 +223,16 @@ sequenceDiagram
 
 ## Filtering events for our own updates
 
-When we update a resource, eventually the informer will propagate an event that would trigger a reconciliation.
-However, this is mostly not desired. Since we already have the up-to-date resource at that point,
-we would like to be notified only if the resource change was done by our reconciler.
-Therefore, in addition to caching the resource, we also do event filering, that will filter out
-all events which are produced by our updates.
+When we update a resource, the informer will eventually propagate an event that would trigger a reconciliation.
+In most cases, however, this is not desirable. Since we already have the up-to-date resource at that point,
+we want to be notified only when the change did not originate from our own reconciler.
+Therefore, in addition to caching the resource, we also do event filtering to filter out
+all events produced by our own updates.
 
-Note that the implementation of this is relatively complex, since while performing the update we want to record all the
-events received in the meantime and decide whether to propagate them further once the update request is complete.
+Note that the implementation of this is relatively complex: while performing the update, we record all the
+events received in the meantime and decide whether to propagate them further once the update request completes.
 
-However, this way we significantly reduce the number of reconciliations, making the whole process much more efficient.  
+This way, we significantly reduce the number of reconciliations, making the whole process much more efficient.  
 
 ### The case for instant reschedule
 
