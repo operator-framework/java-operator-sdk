@@ -22,7 +22,7 @@ public class InternalEventFilters {
 
   private InternalEventFilters() {}
 
-  static <T extends HasMetadata> OnUpdateFilter<T> onUpdateMarkedForDeletion() {
+  public static <T extends HasMetadata> OnUpdateFilter<T> onUpdateMarkedForDeletion() {
     // the old resource is checked since in corner cases users might still want to update the status
     // for a resource that is marked for deletion
 
@@ -30,7 +30,7 @@ public class InternalEventFilters {
         !oldResource.isMarkedForDeletion() && newResource.isMarkedForDeletion();
   }
 
-  static <T extends HasMetadata> OnUpdateFilter<T> onUpdateGenerationAware(
+  public static <T extends HasMetadata> OnUpdateFilter<T> onUpdateGenerationAware(
       boolean generationAware) {
 
     return (newResource, oldResource) -> {
@@ -46,7 +46,7 @@ public class InternalEventFilters {
     };
   }
 
-  static <T extends HasMetadata> OnUpdateFilter<T> onUpdateFinalizerNeededAndApplied(
+  public static <T extends HasMetadata> OnUpdateFilter<T> onUpdateFinalizerNeededAndApplied(
       boolean useFinalizer, String finalizerName) {
     return (newResource, oldResource) -> {
       if (useFinalizer) {
@@ -60,5 +60,12 @@ public class InternalEventFilters {
         return false;
       }
     };
+  }
+
+  public static <T extends HasMetadata> OnUpdateFilter<T> defaultFilters(
+      boolean useFinalizer, String finalizerName, boolean generationAware) {
+    return InternalEventFilters.<T>onUpdateFinalizerNeededAndApplied(useFinalizer, finalizerName)
+        .or(onUpdateGenerationAware(generationAware))
+        .or(onUpdateMarkedForDeletion());
   }
 }
