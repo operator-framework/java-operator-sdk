@@ -105,4 +105,15 @@ public @interface ControllerConfiguration {
    * documentation for further details.
    */
   boolean triggerReconcilerOnAllEvents() default false;
+
+  /**
+   * When set to {@code false}, JOSDK will not apply its default internal update filters
+   * (generation- aware, finalizer-needed, marked-for-deletion) to the controller's event source.
+   * The user's {@link Informer#onUpdateFilter()} becomes the sole filter and has full control. To
+   * keep any of the default behavior, compose it explicitly using the static methods on {@link
+   * io.javaoperatorsdk.operator.processing.event.source.controller.InternalEventFilters}.
+   *
+   * @return whether JOSDK's internal update filters are applied
+   */
+  boolean defaultFilters() default true;
 }
