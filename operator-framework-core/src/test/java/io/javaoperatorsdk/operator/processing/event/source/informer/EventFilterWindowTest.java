@@ -15,7 +15,6 @@
  */
 package io.javaoperatorsdk.operator.processing.event.source.informer;
 
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import io.fabric8.kubernetes.api.model.ConfigMap;
@@ -382,25 +381,6 @@ class EventFilterWindowTest {
     eventFilterWindow.decreaseActiveUpdates();
     assertThat(eventFilterWindow.check())
         .hasValueSatisfying(e -> assertDeleteEvent(e, FIRST_OWN_VERSION + 2));
-    assertThat(eventFilterWindow.canBeRemoved()).isTrue();
-  }
-
-  @Test
-  @Disabled("should be part of event filter support")
-  void additionalEventAndDeleteEventNoUpdate() {
-    eventFilterWindow.increaseActiveUpdates();
-    eventFilterWindow.addToOwnUpdateVersions(s(FIRST_OWN_VERSION));
-    eventFilterWindow.addRelatedEvent(updateEvent(FIRST_OWN_VERSION));
-    eventFilterWindow.addRelatedEvent(updateEvent(FIRST_OWN_VERSION + 1));
-    eventFilterWindow.addRelatedEvent(deleteEvent(FIRST_OWN_VERSION + 2));
-
-    assertThat(eventFilterWindow.check())
-        .hasValueSatisfying(e -> assertDeleteEvent(e, FIRST_OWN_VERSION + 2));
-    assertThat(eventFilterWindow.check()).isEmpty();
-
-    assertEmptyState();
-    eventFilterWindow.decreaseActiveUpdates();
-
     assertThat(eventFilterWindow.canBeRemoved()).isTrue();
   }
 
