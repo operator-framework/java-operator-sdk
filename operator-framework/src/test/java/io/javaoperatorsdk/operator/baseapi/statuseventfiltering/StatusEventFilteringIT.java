@@ -49,7 +49,7 @@ class StatusEventFilteringIT {
           .build();
 
   @Test
-  @Disabled("https://github.com/operator-framework/java-operator-sdk/issues/XXXX")
+  @Disabled("https://github.com/operator-framework/java-operator-sdk/issues/3445")
   void mapperShouldFireAfterStatusPatchThroughSharedEventSource() {
     var primaryReconciler = extension.getReconcilerOfType(StatusEventPrimaryReconciler.class);
 
@@ -65,16 +65,20 @@ class StatusEventFilteringIT {
     secondary.getSpec().setValue("initial");
     extension.create(secondary);
 
-    // When: the primary resource is created, triggering reconciliation which patches
-    //       the secondary's observedGeneration=1 through the shared InformerEventSource
     var primary = new StatusEventPrimaryResource();
     primary.setMetadata(
         new ObjectMetaBuilder()
             .withName("test-primary")
             .withNamespace(extension.getNamespace())
             .build());
+
+    // When: the primary resource is created, triggering reconciliation which patches
+    //       the secondary's observedGeneration=1 through the shared InformerEventSource
     extension.create(primary);
 
+    // Then: the mapper should see gen==obsGen and trigger a second reconciliation.
+    //       With the bug, the EventFilterWindow suppresses the status-change event
+    //       so the mapper never fires — the controller is stuck at 1 execution.
     await()
         .atMost(Duration.ofSeconds(30))
         .untilAsserted(
@@ -85,9 +89,6 @@ class StatusEventFilteringIT {
                   .isEqualTo(sec.getMetadata().getGeneration());
             });
 
-    // Then: the mapper should see gen==obsGen and trigger a second reconciliation.
-    //       With the bug, the EventFilterWindow suppresses the status-change event
-    //       so the mapper never fires — the controller is stuck at 1 execution.
     await()
         .atMost(Duration.ofSeconds(15))
         .pollInterval(Duration.ofMillis(500))
