@@ -182,6 +182,20 @@ class ControllerConfigurationOverriderTest {
   }
 
   @Test
+  void shardSelectorShouldBePropagated() {
+    var configuration = createConfiguration(new WatchCurrentReconciler());
+    assertNull(configuration.getInformerConfig().getShardSelector());
+
+    final var shardSelector = "shard=1";
+    configuration =
+        ControllerConfigurationOverrider.override(configuration)
+            .withShardSelector(shardSelector)
+            .build();
+
+    assertEquals(shardSelector, configuration.getInformerConfig().getShardSelector());
+  }
+
+  @Test
   void configuredDependentShouldNotChangeOnParentOverrideEvenWhenInitialConfigIsSame() {
     var configuration = createConfiguration(new OverriddenNSOnDepReconciler());
     // retrieve the config for the first (and unique) dependent
