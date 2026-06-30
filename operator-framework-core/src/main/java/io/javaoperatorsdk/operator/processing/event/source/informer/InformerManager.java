@@ -136,13 +136,18 @@ class InformerManager<R extends HasMetadata, C extends Informable<R>>
   private InformerWrapper<R> createEventSourceForNamespace(String namespace) {
     final InformerWrapper<R> source;
     final var labelSelector = configuration.getInformerConfig().getLabelSelector();
+    final var shardSelector = configuration.getInformerConfig().getShardSelector();
     if (namespace.equals(WATCH_ALL_NAMESPACES)) {
-      final var filteredBySelectorClient = client.inAnyNamespace().withLabelSelector(labelSelector);
+      final var filteredBySelectorClient =
+          client.inAnyNamespace().withLabelSelector(labelSelector).withShardSelector(shardSelector);
       source = createEventSource(filteredBySelectorClient, eventHandler, WATCH_ALL_NAMESPACES);
     } else {
       source =
           createEventSource(
-              client.inNamespace(namespace).withLabelSelector(labelSelector),
+              client
+                  .inNamespace(namespace)
+                  .withLabelSelector(labelSelector)
+                  .withShardSelector(shardSelector),
               eventHandler,
               namespace);
     }
@@ -275,12 +280,14 @@ class InformerManager<R extends HasMetadata, C extends Informable<R>>
   @Override
   public String toString() {
     final var informerConfig = configuration.getInformerConfig();
-    final var selector = informerConfig.getLabelSelector();
+    final var labelSelector = informerConfig.getLabelSelector();
+    final var shardSelector = informerConfig.getShardSelector();
     return "InformerManager ["
         + ReconcilerUtilsInternal.getResourceTypeNameWithVersion(configuration.getResourceClass())
         + "] watching: "
         + informerConfig.getEffectiveNamespaces(controllerConfiguration)
-        + (selector != null ? " selector: " + selector : "");
+        + (labelSelector != null ? " label selector: " + labelSelector : "")
+        + (shardSelector != null ? " shard selector: " + shardSelector : "");
   }
 
   public Map<String, InformerHealthIndicator> informerHealthIndicators() {

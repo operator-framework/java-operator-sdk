@@ -324,6 +324,7 @@ All controller-level keys are prefixed with `josdk.controller.<controller-name>.
 | `josdk.controller.<name>.finalizer` | `String` | Finalizer string added to managed resources |
 | `josdk.controller.<name>.generation-aware` | `Boolean` | Skip reconciliation when the resource generation has not changed |
 | `josdk.controller.<name>.label-selector` | `String` | Label selector to filter watched resources |
+| `josdk.controller.<name>.shard-selector` | `String` | Shard selector to filter watched resources for sharding across operator replicas |
 | `josdk.controller.<name>.max-reconciliation-interval` | `Duration` | Maximum interval between reconciliations even without events |
 | `josdk.controller.<name>.field-manager` | `String` | Field manager name used for SSA operations |
 | `josdk.controller.<name>.trigger-reconciler-on-all-events` | `Boolean` | Trigger reconciliation on every event, not only meaningful changes |
@@ -333,6 +334,7 @@ All controller-level keys are prefixed with `josdk.controller.<controller-name>.
 | Key | Type | Description |
 |---|---|---|
 | `josdk.controller.<name>.informer.label-selector` | `String` | Label selector for the primary resource informer (alias for `label-selector`) |
+| `josdk.controller.<name>.informer.shard-selector` | `String` | Shard selector for the primary resource informer (alias for `shard-selector`) |
 | `josdk.controller.<name>.informer.list-limit` | `Long` | Page size for paginated informer list requests; omit for no pagination |
 
 #### Retry
