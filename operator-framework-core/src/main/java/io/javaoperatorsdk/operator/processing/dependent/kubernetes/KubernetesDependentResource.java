@@ -247,6 +247,48 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
     annotations.put(typeKey, GroupVersionKind.gvkFor(primary.getClass()).toGVKString());
   }
 
+  /**
+   * Returns the secondary resource using a direct O(1) lookup against the {@link
+   * InformerEventSource} cache when possible, bypassing the costlier {@link
+   * io.javaoperatorsdk.operator.api.reconciler.Context#getSecondaryResources} path.
+   *
+   * <p>The fast path is taken when the event source is present and {@link
+   * #targetSecondaryResourceID(HasMetadata, Context)} returns a non-null {@link ResourceID}. In
+   * that case {@code informerEventSource.get(resourceID)} is called directly — a single hash-map
+   * lookup — without building a {@code Set} of all secondary resources and filtering through it.
+   *
+   * <p>Falls back to the standard {@link
+   * AbstractDependentResource#getSecondaryResource(HasMetadata, Context)} path (which delegates to
+   * {@link #selectTargetSecondaryResource(Set, HasMetadata, Context)}) when the event source is not
+   * present or {@code targetSecondaryResourceID} returns {@code null}.
+   *
+   * @param primary the primary resource
+   * @param context the reconciliation context
+   * @return the secondary resource if found, or {@link Optional#empty()}
+   */
+  @Override
+  public Optional<R> getSecondaryResource(P primary, Context<P> context) {
+    return eventSource()
+        .flatMap(
+            es -> {
+              ResourceID targetID = targetSecondaryResourceID(primary, context);
+              if (targetID != null) {
+                return es.get(targetID);
+              }
+              return super.getSecondaryResource(primary, context);
+            });
+  }
+
+  /**
+   * Selects the target secondary resource from the full set of candidates. This is the fallback
+   * path taken when {@link #getSecondaryResource(HasMetadata, Context)} cannot use the direct cache
+   * lookup (e.g. when a shared event source is used and the event source reference is not directly
+   * available via {@link #eventSource()}).
+   *
+   * <p>Prefer overriding {@link #targetSecondaryResourceID(HasMetadata, Context)} for
+   * performance-critical paths to avoid both this filtering and the {@code getOrComputeDesired}
+   * call it triggers.
+   */
   @Override
   protected Optional<R> selectTargetSecondaryResource(
       Set<R> secondaryResources, P primary, Context<P> context) {
@@ -262,12 +304,19 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
   }
 
   /**
-   * Override this method in order to optimize and not compute the desired when selecting the target
-   * secondary resource. Simply, a static ResourceID can be returned.
+   * Returns the {@link ResourceID} of the target secondary resource. Used by both {@link
+   * #getSecondaryResource(HasMetadata, Context)} (fast cache-lookup path) and {@link
+   * #selectTargetSecondaryResource(Set, HasMetadata, Context)} (fallback filtering path).
    *
-   * @param primary resource
-   * @param context of current reconciliation
-   * @return id of the target managed resource
+   * <p>Override this method to return a cheap, statically-derivable {@link ResourceID} (e.g.
+   * derived directly from the primary's name and namespace) to avoid computing the full desired
+   * state during secondary resource lookup. The default implementation calls {@link
+   * #getOrComputeDesired(Context)}, which is correct but may be costlier when the desired state is
+   * non-trivial to compute.
+   *
+   * @param primary the primary resource
+   * @param context the current reconciliation context
+   * @return the {@link ResourceID} of the managed secondary resource
    */
   protected ResourceID targetSecondaryResourceID(P primary, Context<P> context) {
     return ResourceID.fromResource(getOrComputeDesired(context));
