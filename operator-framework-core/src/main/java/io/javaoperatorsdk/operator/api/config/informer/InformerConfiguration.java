@@ -129,16 +129,6 @@ public class InformerConfiguration<R extends HasMetadata> {
         .builder;
   }
 
-  public static String ensureValidLabelSelector(String labelSelector) {
-    // might want to implement validation here?
-    return labelSelector;
-  }
-
-  public static String ensureValidShardSelector(String shardSelector) {
-    // might want to implement validation here?
-    return shardSelector;
-  }
-
   public static boolean allNamespacesWatched(Set<String> namespaces) {
     failIfNotValid(namespaces);
     return DEFAULT_NAMESPACES_SET.equals(namespaces);
@@ -470,12 +460,12 @@ public class InformerConfiguration<R extends HasMetadata> {
     }
 
     public Builder withLabelSelector(String labelSelector) {
-      InformerConfiguration.this.labelSelector = ensureValidLabelSelector(labelSelector);
+      InformerConfiguration.this.labelSelector = labelSelector;
       return this;
     }
 
     public Builder withShardSelector(String shardSelector) {
-      InformerConfiguration.this.shardSelector = ensureValidShardSelector(shardSelector);
+      InformerConfiguration.this.shardSelector = shardSelector;
       return this;
     }
 
