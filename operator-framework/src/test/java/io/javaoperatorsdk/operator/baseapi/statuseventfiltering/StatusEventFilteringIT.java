@@ -17,8 +17,8 @@ package io.javaoperatorsdk.operator.baseapi.statuseventfiltering;
 
 import java.time.Duration;
 import java.util.Map;
+import java.util.Objects;
 
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
@@ -31,29 +31,36 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
 
 @Sample(
-    tldr = "Shared InformerEventSource status event filtering reproducer",
+    tldr = "Cross-controller status event filtering reproducer",
     description =
         """
-        Reproduces an issue where a controller patches a secondary resource's status \
-        through its own InformerEventSource. The EventFilterWindow suppresses the resulting \
-        event, so the mapper (which guards on generation == observedGeneration) never fires \
-        and the controller is never re-triggered by the secondary becoming ready.\
+        Reproduces an issue where two independent controllers run in the same operator. \
+        A secondary controller reconciles its primary resource and patches its status \
+        (observedGeneration = generation) while the primary controller patches its own \
+        status. The primary controller watches secondaries via InformerEventSource. \
+        The concurrent status patches may cause the secondary's status-change event to \
+        be lost — leaving the primary controller unaware the secondary is ready.\
         """)
 class StatusEventFilteringIT {
 
   @RegisterExtension
-  LocallyRunOperatorExtension extension =
+  static LocallyRunOperatorExtension extension =
       LocallyRunOperatorExtension.builder()
-          .withAdditionalCustomResourceDefinition(StatusEventSecondaryResource.class)
+          .withReconciler(StatusEventSecondaryReconciler.class)
           .withReconciler(StatusEventPrimaryReconciler.class)
           .build();
 
   @Test
-  @Disabled("https://github.com/operator-framework/java-operator-sdk/issues/3445")
-  void mapperShouldFireAfterStatusPatchThroughSharedEventSource() {
-    var primaryReconciler = extension.getReconcilerOfType(StatusEventPrimaryReconciler.class);
+  void mapperShouldFireAfterIndependentControllerPatchesStatus() {
+    // Given: primary exists, secondary created and reaches steady state
+    var primary = new StatusEventPrimaryResource();
+    primary.setMetadata(
+        new ObjectMetaBuilder()
+            .withName("test-primary")
+            .withNamespace(extension.getNamespace())
+            .build());
+    extension.create(primary);
 
-    // Given: a secondary resource exists with generation=1 and no observedGeneration
     var secondary = new StatusEventSecondaryResource();
     secondary.setMetadata(
         new ObjectMetaBuilder()
@@ -65,37 +72,50 @@ class StatusEventFilteringIT {
     secondary.getSpec().setValue("initial");
     extension.create(secondary);
 
-    var primary = new StatusEventPrimaryResource();
-    primary.setMetadata(
-        new ObjectMetaBuilder()
-            .withName("test-primary")
-            .withNamespace(extension.getNamespace())
-            .build());
-
-    // When: the primary resource is created, triggering reconciliation which patches
-    //       the secondary's observedGeneration=1 through the shared InformerEventSource
-    extension.create(primary);
-
-    // Then: the mapper should see gen==obsGen and trigger a second reconciliation.
-    //       With the bug, the EventFilterWindow suppresses the status-change event
-    //       so the mapper never fires — the controller is stuck at 1 execution.
     await()
         .atMost(Duration.ofSeconds(30))
-        .untilAsserted(
+        .until(
             () -> {
-              var sec = extension.get(StatusEventSecondaryResource.class, "test-secondary");
-              assertThat(sec.getStatus().getObservedGeneration())
-                  .as("reconciler should patch observedGeneration to match generation")
-                  .isEqualTo(sec.getMetadata().getGeneration());
+              var p = extension.get(StatusEventPrimaryResource.class, "test-primary");
+              return Boolean.TRUE.equals(p.getStatus().getSecondaryReady());
             });
 
+    // Arm the stall so the next primary reconciliation blocks before returning patchStatus
+    var primaryReconciler = extension.getReconcilerOfType(StatusEventPrimaryReconciler.class);
+    primaryReconciler.stallReconcile();
+
+    // When: secondary spec changes, triggering the secondary controller to reconcile
+    //       and patch its status via UpdateControl.patchStatus() (through
+    // eventFilteringUpdateAndCacheResource)
+    var current = extension.get(StatusEventSecondaryResource.class, "test-secondary");
+    current.getSpec().setValue("updated");
+    extension.replace(current);
+
+    // Then: wait for secondary controller to patch its status (pure status-only WATCH event),
+    //       then release the stalled primary.
+    await()
+        .atMost(Duration.ofSeconds(30))
+        .until(
+            () -> {
+              var sec = extension.get(StatusEventSecondaryResource.class, "test-secondary");
+              return Objects.equals(
+                  sec.getStatus().getObservedGeneration(), sec.getMetadata().getGeneration());
+            });
+    primaryReconciler.releaseReconcile();
+
+    // The primary was stalled during the spec-change event (secondaryReady=false).
+    // After release it patches secondaryReady=false. The status-change event from
+    // the secondary controller's patchStatus should trigger a re-reconciliation
+    // where the primary sees secondaryReady=true.
     await()
         .atMost(Duration.ofSeconds(15))
         .pollInterval(Duration.ofMillis(500))
         .untilAsserted(
-            () ->
-                assertThat(primaryReconciler.getNumberOfExecutions())
-                    .as("mapper should fire for gen==obsGen and trigger re-reconciliation")
-                    .isGreaterThanOrEqualTo(2));
+            () -> {
+              var p = extension.get(StatusEventPrimaryResource.class, "test-primary");
+              assertThat(p.getStatus().getSecondaryReady())
+                  .as("primary should see secondary as ready after controller status patch")
+                  .isTrue();
+            });
   }
 }

@@ -18,6 +18,8 @@ package io.javaoperatorsdk.operator.baseapi.statuseventfiltering;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.slf4j.Logger;
@@ -41,8 +43,19 @@ public class StatusEventPrimaryReconciler implements Reconciler<StatusEventPrima
   public static final String PRIMARY_NAME_LABEL = "primary-name";
 
   private final AtomicInteger numberOfExecutions = new AtomicInteger(0);
-  private InformerEventSource<StatusEventSecondaryResource, StatusEventPrimaryResource>
-      secondaryEventSource;
+  private volatile CountDownLatch stallLatch;
+
+  public void stallReconcile() {
+    stallLatch = new CountDownLatch(1);
+  }
+
+  public void releaseReconcile() {
+    var latch = stallLatch;
+    if (latch != null) {
+      latch.countDown();
+    }
+    stallLatch = null;
+  }
 
   @Override
   public UpdateControl<StatusEventPrimaryResource> reconcile(
@@ -62,28 +75,29 @@ public class StatusEventPrimaryReconciler implements Reconciler<StatusEventPrima
             .withLabel(PRIMARY_NAME_LABEL, resource.getMetadata().getName())
             .list()
             .getItems();
-
-    for (var secondary : secondaries) {
-      var generation = secondary.getMetadata().getGeneration();
-      var observedGeneration = secondary.getStatus().getObservedGeneration();
-
-      if (!Objects.equals(generation, observedGeneration)) {
-        log.info(
-            "Patching secondary '{}' status: obsGen {} -> {}",
-            secondary.getMetadata().getName(),
-            observedGeneration,
-            generation);
-
-        secondaryEventSource.eventFilteringUpdateAndCacheResource(
-            secondary,
-            s -> {
-              s.getStatus().setObservedGeneration(s.getMetadata().getGeneration());
-              return context.getClient().resource(s).patchStatus();
-            });
+    var latch = stallLatch;
+    if (latch != null) {
+      try {
+        log.info("PrimaryReconciler stalled before returning patchStatus...");
+        latch.await(60, TimeUnit.SECONDS);
+        log.info("PrimaryReconciler released, returning patchStatus");
+      } catch (InterruptedException e) {
+        Thread.currentThread().interrupt();
       }
     }
+    boolean allReady =
+        !secondaries.isEmpty()
+            && secondaries.stream()
+                .allMatch(
+                    s ->
+                        Objects.equals(
+                            s.getMetadata().getGeneration(),
+                            s.getStatus().getObservedGeneration()));
 
-    return UpdateControl.noUpdate();
+    log.info("PrimaryReconciler: secondaryReady={}, secondaries={}", allReady, secondaries.size());
+
+    resource.getStatus().setSecondaryReady(allReady);
+    return UpdateControl.patchStatus(resource);
   }
 
   @Override
@@ -95,21 +109,12 @@ public class StatusEventPrimaryReconciler implements Reconciler<StatusEventPrima
                 StatusEventSecondaryResource.class, StatusEventPrimaryResource.class)
             .withSecondaryToPrimaryMapper(
                 secondary -> {
-                  var generation = secondary.getMetadata().getGeneration();
-                  var observedGeneration = secondary.getStatus().getObservedGeneration();
-
-                  if (!Objects.equals(generation, observedGeneration)) {
-                    log.info(
-                        "Mapper: secondary '{}' gen {} != obsGen {} -> skipping",
-                        secondary.getMetadata().getName(),
-                        generation,
-                        observedGeneration);
+                  var primaryName = secondary.getMetadata().getLabels().get(PRIMARY_NAME_LABEL);
+                  if (primaryName == null) {
                     return Set.of();
                   }
-
-                  var primaryName = secondary.getMetadata().getLabels().get(PRIMARY_NAME_LABEL);
                   log.info(
-                      "Mapper: secondary '{}' gen matches -> mapping to primary '{}'",
+                      "Mapper: secondary '{}' -> primary '{}'",
                       secondary.getMetadata().getName(),
                       primaryName);
                   return Set.of(
@@ -117,8 +122,7 @@ public class StatusEventPrimaryReconciler implements Reconciler<StatusEventPrima
                 })
             .build();
 
-    secondaryEventSource = new InformerEventSource<>(config, context);
-    return List.of(secondaryEventSource);
+    return List.of(new InformerEventSource<>(config, context));
   }
 
   public int getNumberOfExecutions() {

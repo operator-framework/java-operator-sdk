@@ -17,6 +17,7 @@ package io.javaoperatorsdk.operator.baseapi.statuseventfiltering;
 
 public class StatusEventSecondaryResourceStatus {
   private Long observedGeneration;
+  private String message;
 
   public Long getObservedGeneration() {
     return observedGeneration;
@@ -24,5 +25,13 @@ public class StatusEventSecondaryResourceStatus {
 
   public void setObservedGeneration(Long observedGeneration) {
     this.observedGeneration = observedGeneration;
+  }
+
+  public String getMessage() {
+    return message;
+  }
+
+  public void setMessage(String message) {
+    this.message = message;
   }
 }
