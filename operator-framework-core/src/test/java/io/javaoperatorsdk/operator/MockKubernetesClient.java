@@ -84,6 +84,7 @@ public class MockKubernetesClient {
     when(nonNamespaceOperation.withLabelSelector(nullable(String.class))).thenReturn(filterable);
     when(resources.inAnyNamespace()).thenReturn(inAnyNamespace);
     when(inAnyNamespace.withLabelSelector(nullable(String.class))).thenReturn(filterable);
+    when(filterable.withShardSelector(nullable(String.class))).thenReturn(filterable);
     SharedIndexInformer<T> informer = mock(SharedIndexInformer.class);
     CompletableFuture<Void> informerStartRes = new CompletableFuture<>();
     informerStartRes.complete(null);

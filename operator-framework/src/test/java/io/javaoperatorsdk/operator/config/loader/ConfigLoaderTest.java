@@ -198,10 +198,12 @@ class ConfigLoaderTest {
             "josdk.controller.ctrl.finalizer",
             "josdk.controller.ctrl.generation-aware",
             "josdk.controller.ctrl.label-selector",
+            "josdk.controller.ctrl.shard-selector",
             "josdk.controller.ctrl.max-reconciliation-interval",
             "josdk.controller.ctrl.field-manager",
             "josdk.controller.ctrl.trigger-reconciler-on-all-events",
             "josdk.controller.ctrl.informer.label-selector",
+            "josdk.controller.ctrl.informer.shard-selector",
             "josdk.controller.ctrl.informer.list-limit",
             "josdk.controller.ctrl.rate-limiter.refresh-period",
             "josdk.controller.ctrl.rate-limiter.limit-for-period");

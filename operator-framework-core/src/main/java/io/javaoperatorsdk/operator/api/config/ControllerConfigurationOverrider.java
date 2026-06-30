@@ -136,6 +136,11 @@ public class ControllerConfigurationOverrider<R extends HasMetadata> {
     return this;
   }
 
+  public ControllerConfigurationOverrider<R> withShardSelector(String shardSelector) {
+    config.withShardSelector(shardSelector);
+    return this;
+  }
+
   public ControllerConfigurationOverrider<R> withReconciliationMaxInterval(
       Duration reconciliationMaxInterval) {
     this.reconciliationMaxInterval = reconciliationMaxInterval;
