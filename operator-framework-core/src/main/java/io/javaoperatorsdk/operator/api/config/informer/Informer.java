@@ -72,6 +72,18 @@ public @interface Informer {
   String labelSelector() default NO_VALUE_SET;
 
   /**
+   * Optional shard selector used to restrict the set of resources the associated informer will act
+   * upon to a single shard, typically when the same workload is split across several operator
+   * instances. Just like {@link #labelSelector()} it is expressed as a label selector and can be
+   * made of multiple comma separated requirements that act as a logical AND operator. When both a
+   * label selector and a shard selector are set, the resulting informer only watches resources
+   * matching both (the two selectors are combined with a logical AND).
+   *
+   * @return the shard selector
+   */
+  String shardSelector() default NO_VALUE_SET;
+
+  /**
    * Optional {@link OnAddFilter} to filter add events sent to the associated informer
    *
    * @return the {@link OnAddFilter} filter implementation to use, defaulting to the interface
