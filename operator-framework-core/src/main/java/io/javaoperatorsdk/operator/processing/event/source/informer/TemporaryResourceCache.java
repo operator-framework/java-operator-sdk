@@ -265,11 +265,11 @@ public class TemporaryResourceCache<T extends HasMetadata> {
     return eventFilteringSupport;
   }
 
-  public void setOngoingRelist(String lastKnownSyncVersion) {
+  public void setOngoingRelist() {
     eventFilteringSupport.setStartingReList();
   }
 
-  public void setRelistFinished(String syncResourceVersions) {
+  public void setRelistFinished() {
     eventFilteringSupport.setRelistFinished();
   }
 }

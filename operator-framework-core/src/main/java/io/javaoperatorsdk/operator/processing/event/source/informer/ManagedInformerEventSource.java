@@ -155,16 +155,14 @@ public abstract class ManagedInformerEventSource<
 
   @Override
   public void onList(String resourceVersion, boolean remainedEmpty) {
-    //  re-list supported by fabric8 client https://github.com/fabric8io/kubernetes-client/pull/7899
-    //    temporaryResourceCache.setRelistFinished(resourceVersion);
+    temporaryResourceCache.setRelistFinished();
     temporaryResourceCache.checkGhostResources();
   }
 
-  //  @Override (enable when
-  //  re-list supported by fabric8 client https://github.com/fabric8io/kubernetes-client/pull/7899
-  //  public void onBeforeList(String lastSyncResourceVersion) {
-  //    temporaryResourceCache.setOngoingRelist(lastSyncResourceVersion);
-  //  }
+  @Override
+  public void onBeforeList(String lastSyncResourceVersion) {
+    temporaryResourceCache.setOngoingRelist();
+  }
 
   @Override
   public void handleRecentResourceUpdate(
