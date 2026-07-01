@@ -124,7 +124,6 @@ does — including partial subset changes — are also reconciled and can revert
   (e.g. `.../v1`) still resolve correctly after the served/storage version changes (e.g. to `.../v2`).
 - **`GenericRetry#setMaxInterval(Duration)`**: a `Duration`-based overload alongside the existing
   millis-based one, e.g. `new GenericRetry().setMaxInterval(Duration.ofMinutes(5))`.
-- **Fabric8 client upgraded to 7.8.0**, which enables shard selectors and the re-list callback above.
 
 ## Migration Notes
 
