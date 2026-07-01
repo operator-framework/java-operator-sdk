@@ -44,6 +44,7 @@ import io.javaoperatorsdk.operator.processing.event.EventHandler;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
 import io.javaoperatorsdk.operator.processing.event.source.Cache;
 import io.javaoperatorsdk.operator.processing.event.source.EventFilterTestUtils;
+import io.javaoperatorsdk.operator.processing.event.source.PrimaryToSecondaryMapper;
 import io.javaoperatorsdk.operator.processing.event.source.ResourceAction;
 import io.javaoperatorsdk.operator.processing.event.source.SecondaryToPrimaryMapper;
 import io.javaoperatorsdk.operator.sample.simple.TestCustomResource;
@@ -78,11 +79,12 @@ class InformerEventSourceTest {
   private final EventHandler eventHandlerMock = mock(EventHandler.class);
   private final InformerEventSourceConfiguration<Deployment> informerEventSourceConfiguration =
       mock(InformerEventSourceConfiguration.class);
+  private SecondaryToPrimaryMapper secondaryToPrimaryMapper;
 
   @BeforeEach
   void setup() {
     final var informerConfig = mock(InformerConfiguration.class);
-    SecondaryToPrimaryMapper secondaryToPrimaryMapper = mock(SecondaryToPrimaryMapper.class);
+    secondaryToPrimaryMapper = mock(SecondaryToPrimaryMapper.class);
     when(informerEventSourceConfiguration.getSecondaryToPrimaryMapper())
         .thenReturn(secondaryToPrimaryMapper);
     when(secondaryToPrimaryMapper.toPrimaryResourceIDs(any()))
@@ -93,7 +95,11 @@ class InformerEventSourceTest {
     when(informerConfig.isComparableResourceVersions()).thenReturn(true);
     when(informerConfig.getEffectiveNamespaces(any())).thenReturn(DEFAULT_NAMESPACES_SET);
 
-    informerEventSource =
+    informerEventSource = buildInformerEventSource();
+  }
+
+  private InformerEventSource<Deployment, TestCustomResource> buildInformerEventSource() {
+    InformerEventSource<Deployment, TestCustomResource> eventSource =
         spy(
             new InformerEventSource<>(informerEventSourceConfiguration, clientMock) {
               // mocking start
@@ -104,10 +110,11 @@ class InformerEventSourceTest {
     var mockControllerConfig = mock(ControllerConfiguration.class);
     when(mockControllerConfig.getConfigurationService()).thenReturn(new BaseConfigurationService());
 
-    informerEventSource.setEventHandler(eventHandlerMock);
-    informerEventSource.setControllerConfiguration(mockControllerConfig);
-    informerEventSource.start();
-    informerEventSource.setTemporalResourceCache(temporaryResourceCache);
+    eventSource.setEventHandler(eventHandlerMock);
+    eventSource.setControllerConfiguration(mockControllerConfig);
+    eventSource.start();
+    eventSource.setTemporalResourceCache(temporaryResourceCache);
+    return eventSource;
   }
 
   @Test
@@ -655,11 +662,13 @@ class InformerEventSourceTest {
     // and getSecondaryResources keeps returning a tombstone.
     var indexMock = injectIndexMock();
     var resource = testDeployment();
+    // onDelete now returns the primaries to reconcile; propagateEvent uses that set directly
+    when(indexMock.onDelete(resource)).thenReturn(Set.of(ResourceID.fromResource(resource)));
 
-    informerEventSource.handleEvent(ResourceAction.DELETED, resource, null, false);
+    informerEventSource.handleEvent(ResourceAction.DELETED, resource, null, false, null);
 
     verify(indexMock, times(1)).onDelete(resource);
-    verify(indexMock, never()).onAddOrUpdate(any());
+    verify(indexMock, never()).onAddOrUpdate(any(), any());
     verify(eventHandlerMock, times(1)).handleEvent(any());
   }
 
@@ -670,10 +679,10 @@ class InformerEventSourceTest {
     var indexMock = injectIndexMock();
 
     informerEventSource.handleEvent(
-        ResourceAction.UPDATED, testDeployment(), testDeployment(), null);
+        ResourceAction.UPDATED, testDeployment(), testDeployment(), null, null);
 
     verify(indexMock, never()).onDelete(any());
-    verify(indexMock, never()).onAddOrUpdate(any());
+    verify(indexMock, never()).onAddOrUpdate(any(), any());
     verify(eventHandlerMock, times(1)).handleEvent(any());
   }
 
@@ -686,7 +695,7 @@ class InformerEventSourceTest {
     informerEventSource.setOnDeleteFilter((r, b) -> false);
     var resource = testDeployment();
 
-    informerEventSource.handleEvent(ResourceAction.DELETED, resource, null, false);
+    informerEventSource.handleEvent(ResourceAction.DELETED, resource, null, false, null);
 
     verify(indexMock, times(1)).onDelete(resource);
     verify(eventHandlerMock, never()).handleEvent(any());
@@ -698,7 +707,7 @@ class InformerEventSourceTest {
     informerEventSource.setOnUpdateFilter((n, o) -> false);
 
     informerEventSource.handleEvent(
-        ResourceAction.UPDATED, testDeployment(), testDeployment(), null);
+        ResourceAction.UPDATED, testDeployment(), testDeployment(), null, null);
 
     verify(indexMock, never()).onDelete(any());
     verify(eventHandlerMock, never()).handleEvent(any());
@@ -709,7 +718,7 @@ class InformerEventSourceTest {
     var indexMock = injectIndexMock();
     informerEventSource.setOnAddFilter(r -> false);
 
-    informerEventSource.handleEvent(ResourceAction.ADDED, testDeployment(), null, null);
+    informerEventSource.handleEvent(ResourceAction.ADDED, testDeployment(), null, null, null);
 
     verify(indexMock, never()).onDelete(any());
     verify(eventHandlerMock, never()).handleEvent(any());
@@ -724,12 +733,51 @@ class InformerEventSourceTest {
     informerEventSource.setGenericFilter(r -> false);
     var resource = testDeployment();
 
-    informerEventSource.handleEvent(ResourceAction.DELETED, resource, null, true);
-    informerEventSource.handleEvent(ResourceAction.UPDATED, resource, resource, null);
-    informerEventSource.handleEvent(ResourceAction.ADDED, resource, null, null);
+    informerEventSource.handleEvent(ResourceAction.DELETED, resource, null, true, null);
+    informerEventSource.handleEvent(ResourceAction.UPDATED, resource, resource, null, null);
+    informerEventSource.handleEvent(ResourceAction.ADDED, resource, null, null, null);
 
     verify(indexMock, times(1)).onDelete(resource);
     verify(eventHandlerMock, never()).handleEvent(any());
+  }
+
+  @Test
+  void filteringUpdateMapsUpdatedResourceToPrimariesOnlyOnce() {
+    var resourceToUpdate = deploymentWithResourceVersion(2);
+    var updated = deploymentWithResourceVersion(3);
+
+    when(temporaryResourceCache.doneEventFilterModify(any()))
+        .thenReturn(
+            Optional.of(
+                new ExtendedResourceEvent(
+                    ResourceAction.UPDATED, updated, resourceToUpdate, false)));
+
+    informerEventSource.eventFilteringUpdateAndCacheResource(resourceToUpdate, r -> updated);
+
+    verify(secondaryToPrimaryMapper, times(1)).toPrimaryResourceIDs(updated);
+    verify(eventHandlerMock, times(1)).handleEvent(any());
+  }
+
+  @Test
+  void filteringUpdateFallsBackToMapperWhenNoPrimaryToSecondaryIndex() {
+    when(informerEventSourceConfiguration.getPrimaryToSecondaryMapper())
+        .thenReturn(mock(PrimaryToSecondaryMapper.class));
+    informerEventSource = buildInformerEventSource();
+
+    var resourceToUpdate = deploymentWithResourceVersion(2);
+    var updated = deploymentWithResourceVersion(3);
+
+    when(temporaryResourceCache.doneEventFilterModify(any()))
+        .thenReturn(
+            Optional.of(
+                new ExtendedResourceEvent(
+                    ResourceAction.UPDATED, updated, resourceToUpdate, false)));
+
+    informerEventSource.eventFilteringUpdateAndCacheResource(resourceToUpdate, r -> updated);
+
+    verify(secondaryToPrimaryMapper, times(1)).toPrimaryResourceIDs(updated);
+    verify(secondaryToPrimaryMapper, times(1)).toPrimaryResourceIDs(resourceToUpdate);
+    verify(eventHandlerMock, times(1)).handleEvent(any());
   }
 
   private PrimaryToSecondaryIndex<Deployment> injectIndexMock() throws Exception {
@@ -745,14 +793,17 @@ class InformerEventSourceTest {
     await()
         .pollDelay(Duration.ofMillis(70))
         .timeout(Duration.ofMillis(150))
-        .untilAsserted(() -> verify(informerEventSource, never()).propagateEvent(any()));
+        .untilAsserted(
+            () -> verify(informerEventSource, never()).propagateEvent(any(), any(), any()));
   }
 
   private void expectPropagateEvent(Deployment newResourceVersion) {
     await()
         .atMost(Duration.ofSeconds(1))
         .untilAsserted(
-            () -> verify(informerEventSource, times(1)).propagateEvent(newResourceVersion));
+            () ->
+                verify(informerEventSource, times(1))
+                    .propagateEvent(eq(newResourceVersion), any(), any()));
   }
 
   private void expectHandleUpdateEvent(int newResourceVersion, int oldResourceVersion) {
@@ -771,6 +822,7 @@ class InformerEventSourceTest {
                             r ->
                                 ("" + oldResourceVersion)
                                     .equals(r.getMetadata().getResourceVersion())),
+                        any(),
                         any()));
   }
 

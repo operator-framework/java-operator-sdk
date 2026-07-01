@@ -139,6 +139,14 @@ rare corner cases. Returning an empty set means that the mapper considered the s
 resource event as irrelevant and the SDK will thus not trigger a reconciliation of the primary
 resource in that situation.
 
+On an update event, the SDK calls `toPrimaryResourceIDs` for **both the old and the new version**
+of the secondary resource. This way it can reconcile not only the primaries that the secondary
+currently maps to, but also those it previously mapped to and no longer does. So when a reference
+changes — including when only a subset of the referenced primaries changes — both the newly
+referenced and the dropped primaries are reconciled, and a dropped primary can revert to its
+default state. Because the mapper can be invoked for an older version of a resource, keep your
+implementation a pure function of the resource passed to it.
+
 Adding a `SecondaryToPrimaryMapper` is typically sufficient when there is a one-to-many relationship
 between primary and secondary resources. The secondary resources can be mapped to its primary
 owner, and this is enough information to also get these secondary resources from the `Context`

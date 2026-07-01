@@ -86,7 +86,12 @@ public class ControllerEventSource<T extends HasMetadata>
 
   @Override
   protected synchronized void handleEvent(
-      ResourceAction action, T resource, T oldResource, Boolean deletedFinalStateUnknown) {
+      ResourceAction action,
+      T resource,
+      T oldResource,
+      Boolean deletedFinalStateUnknown,
+      // not relevant for controller event source
+      Set<ResourceID> relatedPrimaryIDs) {
     try {
       if (log.isDebugEnabled()) {
         log.debug("Event received with action: {}", action);
@@ -162,7 +167,8 @@ public class ControllerEventSource<T extends HasMetadata>
         r.getAction(),
         (T) r.getResource().orElseThrow(),
         (T) r.getPreviousResource().orElse(null),
-        r.isLastStateUnknown());
+        r.isLastStateUnknown(),
+        null);
   }
 
   @Override
