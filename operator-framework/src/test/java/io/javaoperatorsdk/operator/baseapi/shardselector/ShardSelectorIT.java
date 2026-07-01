@@ -46,7 +46,7 @@ import static org.awaitility.Awaitility.await;
     kubeAPIVersion = "1.36.*",
     apiServerFlags = {"--feature-gates=ShardedListAndWatch=true"},
     updateKubeConfigFile = true)
-class ShardSelectorITS {
+class ShardSelectorIT {
 
   // The two selectors split the 64-bit UID hash space in half: [0x0, 0x8000000000000000) and
   // [0x8000000000000000, 0x10000000000000000). Together they cover the whole space with no overlap,
