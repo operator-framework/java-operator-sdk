@@ -538,6 +538,38 @@ class EventFilterWindowTest {
   }
 
   @Test
+  @Disabled("EventFilterWindow drops coalesced foreign spec changes — #3455")
+  void coalescedForeignSpecChangeShouldNotBeFilteredByOwnWriteRV() {
+    // Reproduces the scenario where a controller's SSA patch merges with a concurrent
+    // foreign spec change. The informer coalesces both events into one at the own-write RV.
+    //
+    // Real-world sequence (from Kroxylicious GHA failure):
+    //   1. Controller reconciles resource at gen=1
+    //   2. Foreign actor changes spec → gen=2 → new RV on API server
+    //   3. Controller's SSA patchResource merges on top → returns RV=5 (gen=2)
+    //   4. Informer coalesces both events (same resource key) into one at RV=5
+    //   5. EventFilterWindow sees relatedEvents={5} == ownResourceVersions={5} → drops
+    //   6. Controller never learns about gen=2 → stuck until maxReconciliationInterval
+    eventFilterWindow.increaseActiveUpdates();
+    eventFilterWindow.addToOwnUpdateVersions(s(FIRST_OWN_VERSION));
+
+    var resource = testResource(FIRST_OWN_VERSION);
+    resource.getMetadata().setGeneration(2L);
+    var previousResource = testResource(FIRST_OWN_VERSION - 1);
+    previousResource.getMetadata().setGeneration(1L);
+    eventFilterWindow.addRelatedEvent(
+        new ExtendedResourceEvent(UPDATED, resource, previousResource, null));
+
+    eventFilterWindow.decreaseActiveUpdates();
+
+    assertThat(eventFilterWindow.check())
+        .as(
+            "Event at own-write RV with generation change (1→2) should propagate:"
+                + " a foreign spec change was coalesced with the own-write echo")
+        .isPresent();
+  }
+
+  @Test
   void combinedCaseWithEarlyEvent() {
     // Scenario: an own write is in flight (RV recorded), a foreign event with a
     // lower RV arrives, then the write completes (active → 0) but no echo for
