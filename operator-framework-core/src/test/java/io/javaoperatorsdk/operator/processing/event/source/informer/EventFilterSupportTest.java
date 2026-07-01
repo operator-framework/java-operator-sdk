@@ -34,7 +34,6 @@ class EventFilterSupportTest {
 
   EventFilterSupport support = new EventFilterSupport();
 
-
   @Test
   void startEventFilteringCreatesEventingDetail() {
     support.startEventFilteringModify(RESOURCE_ID);
