@@ -35,6 +35,12 @@ class EventFilterSupportTest {
   EventFilterSupport support = new EventFilterSupport();
 
   @Test
+  void trivialCaseOnlyEvent() {
+    assertThat(support.processEvent(RESOURCE_ID, updateEvent(FIRST_OWN_VERSION)))
+        .hasValueSatisfying(e -> assertThat(e.getAction()).isEqualTo(UPDATED));
+  }
+
+  @Test
   void startEventFilteringCreatesEventingDetail() {
     support.startEventFilteringModify(RESOURCE_ID);
 
@@ -586,7 +592,69 @@ class EventFilterSupportTest {
     assertThat(support.isActiveUpdateFor(OTHER_RESOURCE_ID)).isTrue();
   }
 
-  // -------- end of replicated tests --------
+  @Test
+  void deleteWhileUpdateActiveButNoOwnVersionRecorded() {
+    // Update in flight (active > 0) but our own resourceVersion hasn't been recorded yet.
+    // The delete short-circuit (EventFilterWindow#doCheck, ownUpdateVersions empty && first
+    // is DELETED) emits the delete immediately while the window stays active.
+    support.startEventFilteringModify(RESOURCE_ID);
+
+    assertThat(support.processEvent(RESOURCE_ID, deleteEvent(FIRST_OWN_VERSION)))
+        .hasValueSatisfying(e -> assertThat(e.getAction()).isEqualTo(DELETED));
+    assertThat(support.isActiveUpdateFor(RESOURCE_ID)).isTrue();
+
+    assertThat(support.doneEventFilterModify(RESOURCE_ID)).isEmpty();
+    assertThat(support.isActiveUpdateFor(RESOURCE_ID)).isFalse();
+  }
+
+  @Test
+  void synthEventBuiltFromLeadingAddEvent() {
+    // Two buffered foreign events with no own version recorded; the first is an ADD (no previous
+    // resource). On done the synth event's "before" side falls back to the ADD's own resource
+    // (EventFilterWindow synth construction: getPreviousResource().isEmpty() branch).
+    support.startEventFilteringModify(RESOURCE_ID);
+
+    assertThat(support.processEvent(RESOURCE_ID, addEvent(FIRST_OWN_VERSION))).isEmpty();
+    assertThat(support.processEvent(RESOURCE_ID, updateEvent(FIRST_OWN_VERSION + 2))).isEmpty();
+
+    assertThat(support.doneEventFilterModify(RESOURCE_ID))
+        .hasValueSatisfying(e -> assertThat(e.getAction()).isEqualTo(UPDATED));
+    assertThat(support.isActiveUpdateFor(RESOURCE_ID)).isFalse();
+  }
+
+  @Test
+  void leadingDeleteRemovedThenSynthEmitted() {
+    // A leading DELETE followed by foreign, non-own updates: the leading delete is dropped
+    // (EventFilterWindow#eventForRangeAndClear, size > 1 && first is DELETED) and the remaining
+    // range still differs from the own versions, so a synth UPDATED event is produced.
+    support.startEventFilteringModify(RESOURCE_ID);
+    support.addToOwnResourceVersions(RESOURCE_ID, s(FIRST_OWN_VERSION + 2));
+
+    assertThat(support.processEvent(RESOURCE_ID, deleteEvent(FIRST_OWN_VERSION - 1))).isEmpty();
+    assertThat(support.processEvent(RESOURCE_ID, updateEvent(FIRST_OWN_VERSION))).isEmpty();
+    assertThat(support.processEvent(RESOURCE_ID, updateEvent(FIRST_OWN_VERSION + 2)))
+        .hasValueSatisfying(e -> assertThat(e.getAction()).isEqualTo(UPDATED));
+
+    assertThat(support.doneEventFilterModify(RESOURCE_ID)).isEmpty();
+    assertThat(support.isActiveUpdateFor(RESOURCE_ID)).isFalse();
+  }
+
+  @Test
+  void ghostRemovalOnLingeringWindowAfterDone() {
+    // After done the window lingers because an own version was recorded but its echo hasn't
+    // arrived (active = 0, own non-empty). A ghost removal in this state still drops the window.
+    support.startEventFilteringModify(RESOURCE_ID);
+    support.addToOwnResourceVersions(RESOURCE_ID, s(FIRST_OWN_VERSION));
+    assertThat(support.doneEventFilterModify(RESOURCE_ID)).isEmpty();
+    assertThat(support.isActiveUpdateFor(RESOURCE_ID)).isTrue();
+
+    support.handleGhostResourceRemoval(RESOURCE_ID);
+
+    assertThat(support.isActiveUpdateFor(RESOURCE_ID)).isFalse();
+    // No window left → a subsequent event is propagated verbatim.
+    var follow = updateEvent(FIRST_OWN_VERSION + 5);
+    assertThat(support.processEvent(RESOURCE_ID, follow)).contains(follow);
+  }
 
   ExtendedResourceEvent updateEvent(long version) {
     return new ExtendedResourceEvent(
