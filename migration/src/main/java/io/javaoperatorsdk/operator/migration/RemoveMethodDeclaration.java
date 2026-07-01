@@ -59,13 +59,13 @@ public class RemoveMethodDeclaration extends Recipe {
           J.ClassDeclaration classDecl, ExecutionContext ctx) {
         J.ClassDeclaration cd = super.visitClassDeclaration(classDecl, ctx);
 
-        if (cd.getType() == null || !typeMatchesOrImplements(cd.getType())) {
+        JavaType.FullyQualified type = cd.getType();
+        if (type == null || !typeMatchesOrImplements(type)) {
           return cd;
         }
 
         // Mutate the type info in place to remove the method from the declared methods list,
         // so all AST nodes sharing this type reference stay consistent.
-        var type = cd.getType();
         if (type instanceof JavaType.Class classType) {
           var updatedMethods =
               classType.getMethods().stream().filter(m -> !m.getName().equals(methodName)).toList();
@@ -90,11 +90,16 @@ public class RemoveMethodDeclaration extends Recipe {
         }
 
         J.ClassDeclaration classDecl = getCursor().firstEnclosing(J.ClassDeclaration.class);
-        if (classDecl == null || classDecl.getType() == null) {
+        if (classDecl == null) {
           return super.visitMethodDeclaration(method, ctx);
         }
 
-        if (typeMatchesOrImplements(classDecl.getType())) {
+        JavaType.FullyQualified type = classDecl.getType();
+        if (type == null) {
+          return super.visitMethodDeclaration(method, ctx);
+        }
+
+        if (typeMatchesOrImplements(type)) {
           //noinspection DataFlowIssue
           return null;
         }
