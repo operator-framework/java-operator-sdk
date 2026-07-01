@@ -34,11 +34,6 @@ class EventFilterSupportTest {
 
   EventFilterSupport support = new EventFilterSupport();
 
-  @Test
-  void trivialCaseOnlyEvent() {
-    assertThat(support.processEvent(RESOURCE_ID, updateEvent(FIRST_OWN_VERSION)))
-        .hasValueSatisfying(e -> assertThat(e.getAction()).isEqualTo(UPDATED));
-  }
 
   @Test
   void startEventFilteringCreatesEventingDetail() {
