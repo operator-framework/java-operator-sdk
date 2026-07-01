@@ -244,7 +244,8 @@ public class TemporaryResourceCache<T extends HasMetadata> {
         log.debug("Removing ghost resource with ID: {}", e.getKey());
         iterator.remove();
         eventFilteringSupport.handleGhostResourceRemoval(e.getKey());
-        managedInformerEventSource.handleEvent(ResourceAction.DELETED, e.getValue(), null, true);
+        managedInformerEventSource.handleEvent(
+            ResourceAction.DELETED, e.getValue(), null, true, null);
       }
     }
   }

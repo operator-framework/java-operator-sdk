@@ -15,6 +15,7 @@
  */
 package io.javaoperatorsdk.operator.processing.event.source.informer;
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -97,10 +98,11 @@ public abstract class ManagedInformerEventSource<
     ResourceID id = ResourceID.fromResource(resourceToUpdate);
     log.debug("Starting event filtering and caching update for id={}", id);
     R updatedResource = null;
+    Set<ResourceID> relatedPrimaryIds = null;
     try {
       temporaryResourceCache.startEventFilteringModify(id);
       updatedResource = updateMethod.apply(resourceToUpdate);
-      handleRecentResourceUpdate(id, updatedResource, resourceToUpdate);
+      relatedPrimaryIds = cacheUpdateAndGetRelatedPrimaryIDs(updatedResource, resourceToUpdate);
       log.debug(
           "Caching resource update successful. id={}, rv={}",
           id,
@@ -108,27 +110,36 @@ public abstract class ManagedInformerEventSource<
       return updatedResource;
     } finally {
       var res = temporaryResourceCache.doneEventFilterModify(id);
-      res.ifPresentOrElse(
-          r -> {
-            log.debug(
-                "Propagating not own event after filtering update. id={}, action={}, rv={}",
-                id,
-                r.getAction(),
-                r.getResource()
-                    .map(rr -> rr.getMetadata().getResourceVersion())
-                    .orElse("[not set]"));
-            handleEvent(
-                r.getAction(),
-                (R) r.getResource().orElseThrow(),
-                (R) r.getPreviousResource().orElse(null),
-                r.isLastStateUnknown());
-          },
-          () -> log.debug("No new event present after the filtering update. id={}", id));
+      if (res.isPresent()) {
+        var event = res.orElseThrow();
+        if (log.isDebugEnabled()) {
+          log.debug(
+              "Propagating not own event after filtering update. id={}, action={}, rv={}",
+              id,
+              event.getAction(),
+              event
+                  .getResource()
+                  .map(rr -> rr.getMetadata().getResourceVersion())
+                  .orElse("[not set]"));
+        }
+        handleEvent(
+            event.getAction(),
+            (R) event.getResource().orElseThrow(),
+            (R) event.getPreviousResource().orElse(null),
+            event.isLastStateUnknown(),
+            relatedPrimaryIds);
+      } else {
+        log.debug("No new event present after the filtering update. id={}", id);
+      }
     }
   }
 
   protected abstract void handleEvent(
-      ResourceAction action, R resource, R oldResource, Boolean deletedFinalStateUnknown);
+      ResourceAction action,
+      R resource,
+      R oldResource,
+      Boolean deletedFinalStateUnknown,
+      Set<ResourceID> relatedPrimaryIDs);
 
   @SuppressWarnings("unchecked")
   @Override
@@ -173,6 +184,20 @@ public abstract class ManagedInformerEventSource<
   @Override
   public void handleRecentResourceCreate(ResourceID resourceID, R resource) {
     temporaryResourceCache.putResource(resource);
+  }
+
+  /**
+   * Caches the resource updated through {@link #eventFilteringUpdateAndCacheResource} and returns
+   * the primary resource IDs related to that update, so they can be propagated to {@link
+   * #handleEvent}. The base implementation just fills the temporary cache and reports no related
+   * primaries. Subclasses that maintain a primary-to-secondary index override this to surface the
+   * affected primaries even after the secondary's references have changed, keeping that concern
+   * internal to those event sources instead of leaking it into {@link RecentOperationCacheFiller}.
+   */
+  protected Set<ResourceID> cacheUpdateAndGetRelatedPrimaryIDs(
+      R updatedResource, R previousResource) {
+    handleRecentResourceUpdate(null, updatedResource, previousResource);
+    return Collections.emptySet();
   }
 
   @Override

@@ -33,13 +33,14 @@ class NOOPPrimaryToSecondaryIndex<R extends HasMetadata> implements PrimaryToSec
   private NOOPPrimaryToSecondaryIndex() {}
 
   @Override
-  public void onAddOrUpdate(R resource) {
-    // empty method because of noop implementation
+  public Set<ResourceID> onAddOrUpdate(R resource, R oldResource) {
+    return null;
   }
 
   @Override
-  public void onDelete(R resource) {
+  public Set<ResourceID> onDelete(R resource) {
     // empty method because of noop implementation
+    return null;
   }
 
   @Override

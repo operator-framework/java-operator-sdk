@@ -13,18 +13,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.javaoperatorsdk.operator.processing.event.source.informer;
+package io.javaoperatorsdk.operator.baseapi.secondarytoprimaryreferencechange;
 
-import java.util.Set;
+public class TargetStatus {
 
-import io.fabric8.kubernetes.api.model.HasMetadata;
-import io.javaoperatorsdk.operator.processing.event.ResourceID;
+  private String value;
 
-public interface PrimaryToSecondaryIndex<R extends HasMetadata> {
+  public String getValue() {
+    return value;
+  }
 
-  Set<ResourceID> onAddOrUpdate(R resource, R oldResource);
-
-  Set<ResourceID> onDelete(R resource);
-
-  Set<ResourceID> getSecondaryResources(ResourceID primary);
+  public TargetStatus setValue(String value) {
+    this.value = value;
+    return this;
+  }
 }

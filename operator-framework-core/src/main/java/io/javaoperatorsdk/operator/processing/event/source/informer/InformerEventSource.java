@@ -15,6 +15,7 @@
  */
 package io.javaoperatorsdk.operator.processing.event.source.informer;
 
+import java.util.HashSet;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -127,17 +128,21 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
           if (resultEvent.isEmpty()) {
             return;
           }
-          primaryToSecondaryIndex.onDelete(resource);
+          var primaryIds = primaryToSecondaryIndex.onDelete(resource);
           if (eventAcceptedByFilter(
               ResourceAction.DELETED, resource, null, deletedFinalStateUnknown)) {
-            propagateEvent(resource);
+            propagateEvent(resource, null, primaryIds);
           }
         });
   }
 
   @Override
   protected void handleEvent(
-      ResourceAction action, R resource, R oldResource, Boolean deletedFinalStateUnknown) {
+      ResourceAction action,
+      R resource,
+      R oldResource,
+      Boolean deletedFinalStateUnknown,
+      Set<ResourceID> relatedPrimaryIds) {
     // Called from ManagedInformerEventSource#eventFilteringUpdateAndCacheResource after the temp
     // cache decided to surface a (possibly synthesized) event. The user-level filters
     // (onAdd/onUpdate/onDelete/genericFilter) still apply, so this path mirrors the direct
@@ -148,7 +153,7 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
       log.debug(
           "handleEvent: removing from primaryToSecondaryIndex. id={}",
           ResourceID.fromResource(resource));
-      primaryToSecondaryIndex.onDelete(resource);
+      relatedPrimaryIds = primaryToSecondaryIndex.onDelete(resource);
     }
     if (!eventAcceptedByFilter(action, resource, oldResource, deletedFinalStateUnknown)) {
       if (log.isDebugEnabled()) {
@@ -166,7 +171,7 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
           action,
           resource.getMetadata().getResourceVersion());
     }
-    propagateEvent(resource);
+    propagateEvent(resource, oldResource, relatedPrimaryIds);
   }
 
   @Override
@@ -177,12 +182,12 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
     super.start();
     // this makes sure that on first reconciliation all resources are
     // present on the index
-    manager().list().forEach(primaryToSecondaryIndex::onAddOrUpdate);
+    manager().list().forEach(r -> primaryToSecondaryIndex.onAddOrUpdate(r, null));
   }
 
   @SuppressWarnings("unchecked")
   private synchronized void onAddOrUpdate(ResourceAction action, R newObject, R oldObject) {
-    primaryToSecondaryIndex.onAddOrUpdate(newObject);
+    var primaryIds = primaryToSecondaryIndex.onAddOrUpdate(newObject, oldObject);
     var resourceID = ResourceID.fromResource(newObject);
 
     var resultEvent = temporaryResourceCache.onAddOrUpdateEvent(action, newObject, oldObject);
@@ -194,15 +199,22 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
           "Propagating event for {}, resource with same version not result of a our update.",
           action);
       var event = resultEvent.get();
-      propagateEvent((R) event.getResource().orElseThrow());
+      propagateEvent((R) event.getResource().orElseThrow(), oldObject, primaryIds);
     } else {
       log.debug("Event filtered out for operation: {}, resourceID: {}", action, resourceID);
     }
   }
 
-  protected void propagateEvent(R object) {
-    var primaryResourceIdSet =
-        configuration().getSecondaryToPrimaryMapper().toPrimaryResourceIDs(object);
+  protected void propagateEvent(R resource, R oldResource, Set<ResourceID> primaryResourceIdSet) {
+    if (primaryResourceIdSet == null) {
+      primaryResourceIdSet = new HashSet<>();
+      primaryResourceIdSet.addAll(
+          configuration().getSecondaryToPrimaryMapper().toPrimaryResourceIDs(resource));
+      if (oldResource != null) {
+        primaryResourceIdSet.addAll(
+            configuration().getSecondaryToPrimaryMapper().toPrimaryResourceIDs(oldResource));
+      }
+    }
     if (primaryResourceIdSet.isEmpty()) {
       return;
     }
@@ -249,17 +261,24 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
   @Override
   public void handleRecentResourceUpdate(
       ResourceID resourceID, R resource, R previousVersionOfResource) {
-    handleRecentCreateOrUpdate(resource);
+    handleRecentCreateOrUpdate(resource, previousVersionOfResource);
   }
 
   @Override
   public void handleRecentResourceCreate(ResourceID resourceID, R resource) {
-    handleRecentCreateOrUpdate(resource);
+    handleRecentCreateOrUpdate(resource, null);
   }
 
-  private void handleRecentCreateOrUpdate(R newResource) {
-    primaryToSecondaryIndex.onAddOrUpdate(newResource);
+  @Override
+  protected Set<ResourceID> cacheUpdateAndGetRelatedPrimaryIDs(
+      R updatedResource, R previousResource) {
+    return handleRecentCreateOrUpdate(updatedResource, previousResource);
+  }
+
+  private Set<ResourceID> handleRecentCreateOrUpdate(R newResource, R previousVersion) {
+    var relatedPrimaryIds = primaryToSecondaryIndex.onAddOrUpdate(newResource, previousVersion);
     temporaryResourceCache.putResource(newResource);
+    return relatedPrimaryIds;
   }
 
   private boolean useSecondaryToPrimaryIndex() {

@@ -32,18 +32,42 @@ class DefaultPrimaryToSecondaryIndex<R extends HasMetadata> implements PrimaryTo
   }
 
   @Override
-  public synchronized void onAddOrUpdate(R resource) {
+  public synchronized Set<ResourceID> onAddOrUpdate(R resource, R oldResource) {
+
     Set<ResourceID> primaryResources = secondaryToPrimaryMapper.toPrimaryResourceIDs(resource);
+
+    var secondaryId = ResourceID.fromResource(resource);
+
     primaryResources.forEach(
         primaryResource -> {
           var resourceSet =
               index.computeIfAbsent(primaryResource, pr -> ConcurrentHashMap.newKeySet());
-          resourceSet.add(ResourceID.fromResource(resource));
+          resourceSet.add(secondaryId);
         });
+
+    if (oldResource != null) {
+      var obsoletePrimaries =
+          new HashSet<>(secondaryToPrimaryMapper.toPrimaryResourceIDs(oldResource));
+      if (!primaryResources.containsAll(obsoletePrimaries)) {
+        var result = new HashSet<>(primaryResources);
+        obsoletePrimaries.removeAll(primaryResources);
+        obsoletePrimaries.forEach(
+            p ->
+                index.computeIfPresent(
+                    p,
+                    (id, currentSet) -> {
+                      currentSet.remove(secondaryId);
+                      return currentSet.isEmpty() ? null : currentSet;
+                    }));
+        result.addAll(obsoletePrimaries);
+        return result;
+      }
+    }
+    return primaryResources;
   }
 
   @Override
-  public synchronized void onDelete(R resource) {
+  public synchronized Set<ResourceID> onDelete(R resource) {
     Set<ResourceID> primaryResources = secondaryToPrimaryMapper.toPrimaryResourceIDs(resource);
     primaryResources.forEach(
         primaryResource -> {
@@ -58,6 +82,7 @@ class DefaultPrimaryToSecondaryIndex<R extends HasMetadata> implements PrimaryTo
             }
           }
         });
+    return primaryResources;
   }
 
   @Override
