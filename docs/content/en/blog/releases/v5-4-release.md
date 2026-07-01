@@ -20,7 +20,7 @@ Kubernetes-style label selector that is applied *in addition to* the normal labe
 are combined with logical AND).
 
 ```java
-@ControllerConfiguration(informer = @Informer(shardSelector = "shard=1"))
+@ControllerConfiguration(informer = @Informer(shardSelector = "shardRange(object.metadata.uid, '0x0000000000000000', '0x8000000000000000')"))
 public class MyReconciler implements Reconciler<MyCustomResource> { ... }
 ```
 
@@ -28,7 +28,7 @@ It can also be set programmatically or via configuration:
 
 ```java
 ControllerConfigurationOverrider.override(config)
-    .withShardSelector("shard=1")
+    .withShardSelector("shardRange(object.metadata.uid, '0x0000000000000000', '0x8000000000000000')")
     .build();
 ```
 
