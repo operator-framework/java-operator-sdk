@@ -42,11 +42,21 @@ jobs:
           driver: docker
 
       - name: Set up Java and Maven
+        if: matrix.sample != 'sample-operators/operations'
         uses: actions/setup-java@v5
         with:
           java-version: 25
           distribution: temurin
           cache: 'maven'
+
+      - name: Set up GraalVM
+        if: matrix.sample == 'sample-operators/operations'
+        uses: graalvm/setup-graalvm@v1
+        with:
+          java-version: '25'
+          distribution: 'graalvm-community'
+          cache: 'maven'
+          github-token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Build SDK
         run: ./mvnw install -DskipTests
@@ -58,4 +68,9 @@ jobs:
       - name: Run E2E tests as a deployment
         run: |
           eval $(minikube -p minikube docker-env)
-          ./mvnw jib:dockerBuild test -P end-to-end-tests -Dtest.deployment=remote -pl ${{ matrix.sample }}
+          if [ "${{ matrix.sample }}" = "sample-operators/operations" ]; then
+            ./mvnw -Pnative package -DskipTests -pl ${{ matrix.sample }}
+            ./mvnw jib:dockerBuild test -P end-to-end-tests,native -Dtest.deployment=remote -pl ${{ matrix.sample }}
+          else
+            ./mvnw jib:dockerBuild test -P end-to-end-tests -Dtest.deployment=remote -pl ${{ matrix.sample }}
+          fi
