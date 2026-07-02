@@ -173,7 +173,7 @@ Mappers.fromOwnerReferences(MyPrimary.class, clusterScoped);
 
 ## All Changes
 
-See the [comparison view](https://github.com/operator-framework/java-operator-sdk/compare/v5.3.0...v5.4.0)
+See the [comparison view](https://github.com/operator-framework/java-operator-sdk/compare/v5.3.5...v5.4.0)
 for the full list of changes.
 
 ## Feedback
