@@ -1,6 +1,6 @@
 ---
 title: Version 5.4 Released!
-date: 2026-07-03
+date: 2026-07-02
 author: >-
   [Attila Mészáros](https://github.com/csviri)
 ---
