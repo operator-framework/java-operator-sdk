@@ -23,6 +23,7 @@ This section contains detailed documentation for all Java Operator SDK features 
 ## Advanced Features
 
 - **[Eventing](eventing/)** - Understanding the event-driven model
+- **[Event filters](event-filters/)** - Filtering events and the default filter behavior
 - **[Accessing Resources in Caches](working-with-es-caches/)** - How to access resources in caches
 - **[Operations](operations/)** - Helm chart, metrics, logging, configurations, leader election 
 - **[Other Features](features/)** - Additional capabilities and integrations
