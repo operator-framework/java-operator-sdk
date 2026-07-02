@@ -612,8 +612,16 @@ class EventFilterSupportTest {
     assertThat(support.processEvent(RESOURCE_ID, updateEvent(FIRST_OWN_VERSION + 2))).isEmpty();
 
     assertThat(support.doneEventFilterModify(RESOURCE_ID))
-        .hasValueSatisfying(e -> assertThat(e.getAction()).isEqualTo(UPDATED));
-    assertThat(support.isActiveUpdateFor(RESOURCE_ID)).isFalse();
+        .hasValueSatisfying(
+            e -> {
+              assertThat(e.getAction()).isEqualTo(UPDATED);
+              assertThat(e.getResourceVersion()).isEqualTo(FIRST_OWN_VERSION + 2);
+              assertThat(e.getPreviousResource())
+                  .hasValueSatisfying(
+                      r ->
+                          assertThat(r.getMetadata().getResourceVersion())
+                              .isEqualTo(Long.toString(FIRST_OWN_VERSION)));
+            });
   }
 
   @Test
