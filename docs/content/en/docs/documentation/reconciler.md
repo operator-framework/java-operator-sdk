@@ -231,14 +231,6 @@ If your reconciler is built around the assumption that new reconciliations would
 `reschedule` method is provided on `UpdateControl` to immediately reschedule a new reconciliation, to mimic the previous
 behavior.
 
-### Caveats
-
-- This feature is implemented on top of the Fabric8 client informers, using additional caches in `InformerEventSource`,
-  so it is safe to use `context.getSecondaryResources(..)` or `InformerEventSource.get(ResourceID)`methods. Listing
-  resources directly via `InformerEventSource.list(..)`, however, won't work since this method directly reads from the
-  underlying informer cache, thus bypassing the additional caches that make the feature possible.
-
-
 ### Notes
 - This [talk](https://www.youtube.com/watch?v=HrwHh5Yh6AM&t=1387s) mentions this feature.
 - [Umbrella issue](https://github.com/operator-framework/java-operator-sdk/issues/2944) on GitHub.
