@@ -144,6 +144,8 @@ public class ConfigLoader {
           new ConfigBinding<>(
               "label-selector", String.class, ControllerConfigurationOverrider::withLabelSelector),
           new ConfigBinding<>(
+              "shard-selector", String.class, ControllerConfigurationOverrider::withShardSelector),
+          new ConfigBinding<>(
               "max-reconciliation-interval",
               Duration.class,
               ControllerConfigurationOverrider::withReconciliationMaxInterval),
@@ -157,6 +159,10 @@ public class ConfigLoader {
               "informer.label-selector",
               String.class,
               ControllerConfigurationOverrider::withLabelSelector),
+          new ConfigBinding<>(
+              "informer.shard-selector",
+              String.class,
+              ControllerConfigurationOverrider::withShardSelector),
           new ConfigBinding<>(
               "informer.list-limit",
               Long.class,

@@ -244,7 +244,8 @@ public class TemporaryResourceCache<T extends HasMetadata> {
         log.debug("Removing ghost resource with ID: {}", e.getKey());
         iterator.remove();
         eventFilteringSupport.handleGhostResourceRemoval(e.getKey());
-        managedInformerEventSource.handleEvent(ResourceAction.DELETED, e.getValue(), null, true);
+        managedInformerEventSource.handleEvent(
+            ResourceAction.DELETED, e.getValue(), null, true, null);
       }
     }
   }
@@ -265,11 +266,11 @@ public class TemporaryResourceCache<T extends HasMetadata> {
     return eventFilteringSupport;
   }
 
-  public void setOngoingRelist(String lastKnownSyncVersion) {
+  public void setOngoingRelist() {
     eventFilteringSupport.setStartingReList();
   }
 
-  public void setRelistFinished(String syncResourceVersions) {
+  public void setRelistFinished() {
     eventFilteringSupport.setRelistFinished();
   }
 }

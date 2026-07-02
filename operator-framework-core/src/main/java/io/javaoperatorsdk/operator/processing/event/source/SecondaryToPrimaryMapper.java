@@ -26,9 +26,15 @@ import io.javaoperatorsdk.operator.processing.event.ResourceID;
  */
 @FunctionalInterface
 public interface SecondaryToPrimaryMapper<R> {
+
   /**
-   * @param resource - secondary
-   * @return set of primary resource IDs
+   * Maps a secondary resource to the set of primary resources that should be reconciled in
+   * response.
+   *
+   * @param resource the secondary resource for which an event was received
+   * @return set of primary resource IDs to enqueue for reconciliation; an empty set means the event
+   *     is irrelevant and no reconciliation is triggered. On update events, this method is invoked
+   *     for both the old and the new versions of the resource.
    */
   Set<ResourceID> toPrimaryResourceIDs(R resource);
 }

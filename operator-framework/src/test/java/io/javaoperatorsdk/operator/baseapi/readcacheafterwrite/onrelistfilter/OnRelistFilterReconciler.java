@@ -15,8 +15,11 @@
  */
 package io.javaoperatorsdk.operator.baseapi.readcacheafterwrite.onrelistfilter;
 
+import java.time.Duration;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -32,6 +35,7 @@ import io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.EventSourceContext;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
+import io.javaoperatorsdk.operator.processing.event.ResourceID;
 import io.javaoperatorsdk.operator.processing.event.source.EventSource;
 import io.javaoperatorsdk.operator.processing.event.source.informer.InformerEventSource;
 
@@ -78,7 +82,13 @@ public class OnRelistFilterReconciler implements Reconciler<OnRelistFilterCustom
         case NO_RELIST -> context.resourceOperations().serverSideApply(cm, configMapEventSource);
         case RELIST_AROUND_UPDATE -> {
           configMapEventSource.simulateOnBeforeList();
-          context.resourceOperations().serverSideApply(cm, configMapEventSource);
+          var applied = context.resourceOperations().serverSideApply(cm, configMapEventSource);
+          // Make the simulation deterministic: the own-write watch event arrives asynchronously,
+          // so we must wait for it to be received (and buffered into the still-open re-list
+          // window, where it is tagged as part of the re-list) BEFORE the re-list finishes.
+          // Otherwise onList may clear the window's re-list flag before the event lands and the
+          // event would be filtered as an own write — the race this test originally flaked on.
+          configMapEventSource.awaitWatchEventReceived(applied);
           configMapEventSource.simulateOnList();
         }
         case RELIST_COMPLETES_BEFORE_UPDATE -> {
@@ -90,20 +100,24 @@ public class OnRelistFilterReconciler implements Reconciler<OnRelistFilterCustom
           // Drive the event-filtering update path manually so we can fire onBeforeList AFTER the
           // window has been opened by startEventFilteringModify but BEFORE the SSA hits the API.
           var fieldManager = context.getControllerConfiguration().fieldManager();
-          configMapEventSource.eventFilteringUpdateAndCacheResource(
-              cm,
-              r -> {
-                configMapEventSource.simulateOnBeforeList();
-                return context
-                    .getClient()
-                    .resource(r)
-                    .patch(
-                        new PatchContext.Builder()
-                            .withForce(true)
-                            .withFieldManager(fieldManager)
-                            .withPatchType(PatchType.SERVER_SIDE_APPLY)
-                            .build());
-              });
+          var applied =
+              configMapEventSource.eventFilteringUpdateAndCacheResource(
+                  cm,
+                  r -> {
+                    configMapEventSource.simulateOnBeforeList();
+                    return context
+                        .getClient()
+                        .resource(r)
+                        .patch(
+                            new PatchContext.Builder()
+                                .withForce(true)
+                                .withFieldManager(fieldManager)
+                                .withPatchType(PatchType.SERVER_SIDE_APPLY)
+                                .build());
+                  });
+          // See RELIST_AROUND_UPDATE: wait for the own-write event to be buffered while the
+          // re-list is still in progress, so it is tagged as part of the re-list and propagated.
+          configMapEventSource.awaitWatchEventReceived(applied);
           configMapEventSource.simulateOnList();
         }
       }
@@ -154,14 +168,60 @@ public class OnRelistFilterReconciler implements Reconciler<OnRelistFilterCustom
   static class RelistAwareInformerEventSource<R extends HasMetadata, P extends HasMetadata>
       extends InformerEventSource<R, P> {
 
+    // Highest resourceVersion the informer has actually delivered (as a watch event) per resource.
+    // Lets a test block until the event for its own write has been received and processed.
+    private final ConcurrentMap<ResourceID, Long> latestReceivedVersion = new ConcurrentHashMap<>();
+
     RelistAwareInformerEventSource(
         InformerEventSourceConfiguration<R> configuration, EventSourceContext<P> context) {
       super(configuration, context);
     }
 
+    @Override
+    public void onAdd(R newResource) {
+      super.onAdd(newResource);
+      recordReceived(newResource);
+    }
+
+    @Override
+    public void onUpdate(R oldResource, R newResource) {
+      super.onUpdate(oldResource, newResource);
+      recordReceived(newResource);
+    }
+
+    private void recordReceived(R resource) {
+      latestReceivedVersion.merge(
+          ResourceID.fromResource(resource),
+          Long.parseLong(resource.getMetadata().getResourceVersion()),
+          Math::max);
+    }
+
+    /**
+     * Blocks until the informer has delivered a watch event for the given resource at a
+     * resourceVersion at least as recent as the one supplied (i.e. our own write has come back
+     * through the watch). Calling {@code super.onAdd/onUpdate} before recording guarantees the
+     * event is already buffered in the event-filter window by the time this returns.
+     */
+    void awaitWatchEventReceived(R resource) {
+      var id = ResourceID.fromResource(resource);
+      var target = Long.parseLong(resource.getMetadata().getResourceVersion());
+      var deadline = System.nanoTime() + Duration.ofSeconds(10).toNanos();
+      while (latestReceivedVersion.getOrDefault(id, -1L) < target) {
+        if (System.nanoTime() > deadline) {
+          throw new IllegalStateException(
+              "Timed out waiting for watch event with rv>=" + target + " for " + id);
+        }
+        try {
+          Thread.sleep(20);
+        } catch (InterruptedException e) {
+          Thread.currentThread().interrupt();
+          throw new IllegalStateException(e);
+        }
+      }
+    }
+
     void simulateOnBeforeList() {
-      // uncomment when fabric8 supports re-list
-      //      onBeforeList(null);
+      onBeforeList(null);
     }
 
     void simulateOnList() {

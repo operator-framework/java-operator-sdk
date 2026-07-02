@@ -15,6 +15,7 @@
  */
 package io.javaoperatorsdk.operator.processing.event.source.informer;
 
+import java.util.Map;
 import java.util.Set;
 
 import org.junit.jupiter.api.BeforeEach;
@@ -27,6 +28,7 @@ import io.javaoperatorsdk.operator.processing.event.source.SecondaryToPrimaryMap
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -58,7 +60,7 @@ class PrimaryToSecondaryIndexTest {
 
   @Test
   void indexesNewResources() {
-    primaryToSecondaryIndex.onAddOrUpdate(secondary1);
+    primaryToSecondaryIndex.onAddOrUpdate(secondary1, null);
 
     var secondaryResources1 = primaryToSecondaryIndex.getSecondaryResources(primaryID1);
     var secondaryResources2 = primaryToSecondaryIndex.getSecondaryResources(primaryID2);
@@ -69,8 +71,8 @@ class PrimaryToSecondaryIndexTest {
 
   @Test
   void indexesAdditionalResources() {
-    primaryToSecondaryIndex.onAddOrUpdate(secondary1);
-    primaryToSecondaryIndex.onAddOrUpdate(secondary2);
+    primaryToSecondaryIndex.onAddOrUpdate(secondary1, null);
+    primaryToSecondaryIndex.onAddOrUpdate(secondary2, null);
 
     var secondaryResources1 = primaryToSecondaryIndex.getSecondaryResources(primaryID1);
     var secondaryResources2 = primaryToSecondaryIndex.getSecondaryResources(primaryID2);
@@ -83,8 +85,8 @@ class PrimaryToSecondaryIndexTest {
 
   @Test
   void removingResourceFromIndex() {
-    primaryToSecondaryIndex.onAddOrUpdate(secondary1);
-    primaryToSecondaryIndex.onAddOrUpdate(secondary2);
+    primaryToSecondaryIndex.onAddOrUpdate(secondary1, null);
+    primaryToSecondaryIndex.onAddOrUpdate(secondary2, null);
     primaryToSecondaryIndex.onDelete(secondary1);
 
     var secondaryResources1 = primaryToSecondaryIndex.getSecondaryResources(primaryID1);
@@ -102,11 +104,89 @@ class PrimaryToSecondaryIndexTest {
     assertThat(secondaryResources2).isEmpty();
   }
 
+  @Test
+  void updateRemovesObsoletePrimaryWhenReferenceNarrows() {
+    // initial version references both primaries (default stub)
+    primaryToSecondaryIndex.onAddOrUpdate(secondary1, null);
+
+    // updated version references only primaryID1
+    var updated = updatedVersionOf("secondary1");
+    when(secondaryToPrimaryMapperMock.toPrimaryResourceIDs(eq(updated)))
+        .thenReturn(Set.of(primaryID1));
+    primaryToSecondaryIndex.onAddOrUpdate(updated, secondary1);
+
+    assertThat(primaryToSecondaryIndex.getSecondaryResources(primaryID1))
+        .containsOnly(ResourceID.fromResource(secondary1));
+    // primaryID2 is no longer referenced, so its (now empty) entry is removed
+    assertThat(primaryToSecondaryIndex.getSecondaryResources(primaryID2)).isEmpty();
+  }
+
+  @Test
+  void updateMovesSecondaryBetweenPrimaries() {
+    // initial version references only primaryID1
+    when(secondaryToPrimaryMapperMock.toPrimaryResourceIDs(eq(secondary1)))
+        .thenReturn(Set.of(primaryID1));
+    primaryToSecondaryIndex.onAddOrUpdate(secondary1, null);
+
+    // updated version moves the reference to primaryID2
+    var updated = updatedVersionOf("secondary1");
+    when(secondaryToPrimaryMapperMock.toPrimaryResourceIDs(eq(updated)))
+        .thenReturn(Set.of(primaryID2));
+    primaryToSecondaryIndex.onAddOrUpdate(updated, secondary1);
+
+    assertThat(primaryToSecondaryIndex.getSecondaryResources(primaryID1)).isEmpty();
+    assertThat(primaryToSecondaryIndex.getSecondaryResources(primaryID2))
+        .containsOnly(ResourceID.fromResource(secondary1));
+  }
+
+  @Test
+  void updateOnlyRemovesUpdatedSecondaryFromObsoletePrimary() {
+    // two secondaries, each referencing both primaries (default stub)
+    primaryToSecondaryIndex.onAddOrUpdate(secondary1, null);
+    primaryToSecondaryIndex.onAddOrUpdate(secondary2, null);
+
+    // secondary1 stops referencing primaryID2
+    var updated = updatedVersionOf("secondary1");
+    when(secondaryToPrimaryMapperMock.toPrimaryResourceIDs(eq(updated)))
+        .thenReturn(Set.of(primaryID1));
+    primaryToSecondaryIndex.onAddOrUpdate(updated, secondary1);
+
+    assertThat(primaryToSecondaryIndex.getSecondaryResources(primaryID1))
+        .containsOnly(ResourceID.fromResource(secondary1), ResourceID.fromResource(secondary2));
+    // primaryID2 is still referenced by secondary2, so only secondary1 is removed from it
+    assertThat(primaryToSecondaryIndex.getSecondaryResources(primaryID2))
+        .containsOnly(ResourceID.fromResource(secondary2));
+  }
+
+  @Test
+  void updateKeepsIndexUnchangedWhenReferencedPrimariesDoNotChange() {
+    primaryToSecondaryIndex.onAddOrUpdate(secondary1, null);
+
+    // updated version still references both primaries (default stub applies to it as well)
+    var updated = updatedVersionOf("secondary1");
+    primaryToSecondaryIndex.onAddOrUpdate(updated, secondary1);
+
+    assertThat(primaryToSecondaryIndex.getSecondaryResources(primaryID1))
+        .containsOnly(ResourceID.fromResource(secondary1));
+    assertThat(primaryToSecondaryIndex.getSecondaryResources(primaryID2))
+        .containsOnly(ResourceID.fromResource(secondary1));
+  }
+
   ConfigMap secondary(String name) {
     ConfigMap configMap = new ConfigMap();
     configMap.setMetadata(new ObjectMeta());
     configMap.getMetadata().setName(name);
     configMap.getMetadata().setNamespace("default");
+    return configMap;
+  }
+
+  /**
+   * Returns a new version of a secondary with the same {@link ResourceID} but a different content,
+   * so it represents an updated resource that the mapper mock can be stubbed for independently.
+   */
+  ConfigMap updatedVersionOf(String name) {
+    ConfigMap configMap = secondary(name);
+    configMap.getMetadata().setLabels(Map.of("version", "updated"));
     return configMap;
   }
 }

@@ -49,6 +49,13 @@ public class EventProcessor<P extends HasMetadata> implements EventHandler, Life
   private static final Logger log = LoggerFactory.getLogger(EventProcessor.class);
   private static final long MINIMAL_RATE_LIMIT_RESCHEDULE_DURATION = 50;
 
+  /**
+   * Threshold below which an event-driven failed reconciliation that lands inside the current retry
+   * window is allowed to consume a retry attempt (i.e. advance the retry counter). Above this
+   * threshold the existing retry deadline is preserved instead.
+   */
+  private static final long RETRY_DEADLINE_PRESERVE_THRESHOLD_MILLIS = 5_000;
+
   private volatile boolean running;
   private final ControllerConfiguration<?> controllerConfiguration;
   private final ReconciliationDispatcher<P> reconciliationDispatcher;
@@ -375,6 +382,15 @@ public class EventProcessor<P extends HasMetadata> implements EventHandler, Life
     if (eventPresent) {
       log.debug("New events exist for resource id");
       submitReconciliationExecution(state);
+      return;
+    }
+    Optional<Duration> remaining = state.getRetry().remainingDurationUntilNextRetry();
+    if (remaining.isPresent()
+        && remaining.get().toMillis() > RETRY_DEADLINE_PRESERVE_THRESHOLD_MILLIS) {
+      log.debug(
+          "Preserving existing retry deadline; remaining: {} ms. Not consuming a retry attempt.",
+          remaining.get().toMillis());
+      retryEventSource().scheduleOnce(resourceID, remaining.get().toMillis());
       return;
     }
     Optional<Long> nextDelay = state.getRetry().nextDelay();

@@ -75,10 +75,10 @@ class ControllerEventSourceTest
     TestCustomResource oldCustomResource = TestUtils.testCustomResource();
     oldCustomResource.getMetadata().setFinalizers(List.of(FINALIZER));
 
-    source.handleEvent(ResourceAction.UPDATED, customResource, oldCustomResource, null);
+    source.handleEvent(ResourceAction.UPDATED, customResource, oldCustomResource, null, null);
     verify(eventHandler, times(1)).handleEvent(any());
 
-    source.handleEvent(ResourceAction.UPDATED, customResource, customResource, null);
+    source.handleEvent(ResourceAction.UPDATED, customResource, customResource, null, null);
     verify(eventHandler, times(1)).handleEvent(any());
   }
 
@@ -86,11 +86,11 @@ class ControllerEventSourceTest
   void dontSkipEventHandlingIfMarkedForDeletion() {
     TestCustomResource customResource1 = TestUtils.testCustomResource();
 
-    source.handleEvent(ResourceAction.UPDATED, customResource1, customResource1, null);
+    source.handleEvent(ResourceAction.UPDATED, customResource1, customResource1, null, null);
     verify(eventHandler, times(1)).handleEvent(any());
 
     customResource1.getMetadata().setDeletionTimestamp(LocalDateTime.now().toString());
-    source.handleEvent(ResourceAction.UPDATED, customResource1, customResource1, null);
+    source.handleEvent(ResourceAction.UPDATED, customResource1, customResource1, null, null);
     verify(eventHandler, times(2)).handleEvent(any());
   }
 
@@ -98,11 +98,11 @@ class ControllerEventSourceTest
   void normalExecutionIfGenerationChanges() {
     TestCustomResource customResource1 = TestUtils.testCustomResource();
 
-    source.handleEvent(ResourceAction.UPDATED, customResource1, customResource1, null);
+    source.handleEvent(ResourceAction.UPDATED, customResource1, customResource1, null, null);
     verify(eventHandler, times(1)).handleEvent(any());
 
     customResource1.getMetadata().setGeneration(2L);
-    source.handleEvent(ResourceAction.UPDATED, customResource1, customResource1, null);
+    source.handleEvent(ResourceAction.UPDATED, customResource1, customResource1, null, null);
     verify(eventHandler, times(2)).handleEvent(any());
   }
 
@@ -113,10 +113,10 @@ class ControllerEventSourceTest
 
     TestCustomResource customResource1 = TestUtils.testCustomResource();
 
-    source.handleEvent(ResourceAction.UPDATED, customResource1, customResource1, null);
+    source.handleEvent(ResourceAction.UPDATED, customResource1, customResource1, null, null);
     verify(eventHandler, times(1)).handleEvent(any());
 
-    source.handleEvent(ResourceAction.UPDATED, customResource1, customResource1, null);
+    source.handleEvent(ResourceAction.UPDATED, customResource1, customResource1, null, null);
     verify(eventHandler, times(2)).handleEvent(any());
   }
 
@@ -124,7 +124,7 @@ class ControllerEventSourceTest
   void eventWithNoGenerationProcessedIfNoFinalizer() {
     TestCustomResource customResource1 = TestUtils.testCustomResource();
 
-    source.handleEvent(ResourceAction.UPDATED, customResource1, customResource1, null);
+    source.handleEvent(ResourceAction.UPDATED, customResource1, customResource1, null, null);
 
     verify(eventHandler, times(1)).handleEvent(any());
   }
@@ -133,11 +133,41 @@ class ControllerEventSourceTest
   void callsBroadcastsOnResourceEvents() {
     TestCustomResource customResource1 = TestUtils.testCustomResource();
 
-    source.handleEvent(ResourceAction.UPDATED, customResource1, customResource1, null);
+    source.handleEvent(ResourceAction.UPDATED, customResource1, customResource1, null, null);
 
     verify(testController.getEventSourceManager(), times(1))
         .broadcastOnResourceEvent(
             eq(ResourceAction.UPDATED), eq(customResource1), eq(customResource1));
+  }
+
+  @Test
+  void withoutDefaultFiltersUserFilterIsAppliedDirectly() {
+    TestCustomResource cr = TestUtils.testCustomResource();
+    cr.getMetadata().setFinalizers(List.of(FINALIZER));
+    cr.getMetadata().setGeneration(1L);
+
+    // Without default filters, only the user filter runs — no internal generation/finalizer checks.
+    // User filter accepts unconditionally, so the event passes even with same generation.
+    OnUpdateFilter<TestCustomResource> userFilter = (newRes, oldRes) -> true;
+    source = new ControllerEventSource<>(new TestController(null, userFilter, null, false));
+    setUpSource(source, true, controllerConfig);
+
+    source.handleEvent(ResourceAction.UPDATED, cr, cr, null, null);
+
+    verify(eventHandler, times(1)).handleEvent(any());
+  }
+
+  @Test
+  void withoutDefaultFiltersUserFilterCanRejectEvents() {
+    TestCustomResource cr = TestUtils.testCustomResource();
+
+    OnUpdateFilter<TestCustomResource> userFilter = (newRes, oldRes) -> false;
+    source = new ControllerEventSource<>(new TestController(null, userFilter, null, false));
+    setUpSource(source, true, controllerConfig);
+
+    source.handleEvent(ResourceAction.UPDATED, cr, cr, null, null);
+
+    verify(eventHandler, never()).handleEvent(any());
   }
 
   @Test
@@ -146,11 +176,12 @@ class ControllerEventSourceTest
 
     OnAddFilter<TestCustomResource> onAddFilter = (res) -> false;
     OnUpdateFilter<TestCustomResource> onUpdatePredicate = (res, res2) -> false;
-    source = new ControllerEventSource<>(new TestController(onAddFilter, onUpdatePredicate, null));
+    source =
+        new ControllerEventSource<>(new TestController(onAddFilter, onUpdatePredicate, null, true));
     setUpSource(source, true, controllerConfig);
 
-    source.handleEvent(ResourceAction.ADDED, cr, null, null);
-    source.handleEvent(ResourceAction.UPDATED, cr, cr, null);
+    source.handleEvent(ResourceAction.ADDED, cr, null, null, null);
+    source.handleEvent(ResourceAction.UPDATED, cr, cr, null, null);
 
     verify(eventHandler, never()).handleEvent(any());
   }
@@ -159,12 +190,12 @@ class ControllerEventSourceTest
   void genericFilterFiltersOutAddUpdateAndDeleteEvents() {
     TestCustomResource cr = TestUtils.testCustomResource();
 
-    source = new ControllerEventSource<>(new TestController(null, null, res -> false));
+    source = new ControllerEventSource<>(new TestController(null, null, res -> false, true));
     setUpSource(source, true, controllerConfig);
 
-    source.handleEvent(ResourceAction.ADDED, cr, null, null);
-    source.handleEvent(ResourceAction.UPDATED, cr, cr, null);
-    source.handleEvent(ResourceAction.DELETED, cr, cr, true);
+    source.handleEvent(ResourceAction.ADDED, cr, null, null, null);
+    source.handleEvent(ResourceAction.UPDATED, cr, cr, null, null);
+    source.handleEvent(ResourceAction.DELETED, cr, cr, true, null);
 
     verify(eventHandler, never()).handleEvent(any());
   }
@@ -174,7 +205,7 @@ class ControllerEventSourceTest
     // End-to-end smoke for the event-filter wiring on the controller path: an event for our
     // own write must not propagate. Detail-level filter scenarios are covered in
     // EventingDetailTest / EventFilterSupportTest.
-    source = spy(new ControllerEventSource<>(new TestController(null, null, null)));
+    source = spy(new ControllerEventSource<>(new TestController(null, null, null, true)));
     setUpSource(source, true, controllerConfig);
     doReturn(Optional.empty()).when(source).get(any());
 
@@ -189,7 +220,7 @@ class ControllerEventSourceTest
   @Test
   void foreignUpdateDuringFilteringPropagatesAsUpdate() {
     // An external event during the filter window must surface (not be filtered as own).
-    source = spy(new ControllerEventSource<>(new TestController(null, null, null)));
+    source = spy(new ControllerEventSource<>(new TestController(null, null, null, true)));
     setUpSource(source, true, controllerConfig);
 
     var latch = sendForEventFilteringUpdate(2);
@@ -203,7 +234,7 @@ class ControllerEventSourceTest
   void deleteEventDuringFilteringPropagatesAsDelete() {
     // A DELETE arriving during the filter window must surface — the resource has gone,
     // so the filter must not silence it just because our own write is still tracking RVs.
-    source = spy(new ControllerEventSource<>(new TestController(null, null, null)));
+    source = spy(new ControllerEventSource<>(new TestController(null, null, null, true)));
     setUpSource(source, true, controllerConfig);
 
     var latch = sendForEventFilteringUpdate(2);
@@ -215,7 +246,7 @@ class ControllerEventSourceTest
             () -> {
               verify(eventHandler, atLeastOnce()).handleEvent(any());
               verify(source, atLeastOnce())
-                  .handleEvent(eq(ResourceAction.DELETED), any(), any(), any());
+                  .handleEvent(eq(ResourceAction.DELETED), any(), any(), any(), any());
             });
   }
 
@@ -223,7 +254,7 @@ class ControllerEventSourceTest
   void multipleForeignEventsDuringFilteringMergeIntoSingleEvent() {
     // Several external events during one filter window collapse into a single
     // synthesized event spanning prev → latest seen.
-    source = spy(new ControllerEventSource<>(new TestController(null, null, null)));
+    source = spy(new ControllerEventSource<>(new TestController(null, null, null, true)));
     setUpSource(source, true, controllerConfig);
 
     var latch = sendForEventFilteringUpdate(2);
@@ -241,6 +272,7 @@ class ControllerEventSourceTest
             eq(ResourceAction.UPDATED),
             argThat(r -> ("" + newResourceVersion).equals(r.getMetadata().getResourceVersion())),
             argThat(r -> ("" + oldResourceVersion).equals(r.getMetadata().getResourceVersion())),
+            any(),
             any());
   }
 
@@ -266,17 +298,18 @@ class ControllerEventSourceTest
     public TestController(
         OnAddFilter<TestCustomResource> onAddFilter,
         OnUpdateFilter<TestCustomResource> onUpdateFilter,
-        GenericFilter<TestCustomResource> genericFilter) {
+        GenericFilter<TestCustomResource> genericFilter,
+        boolean defaultFilters) {
       super(
           reconciler,
-          new TestConfiguration(true, onAddFilter, onUpdateFilter, genericFilter),
+          new TestConfiguration(true, onAddFilter, onUpdateFilter, genericFilter, defaultFilters),
           MockKubernetesClient.client(TestCustomResource.class));
     }
 
     public TestController(boolean generationAware) {
       super(
           reconciler,
-          new TestConfiguration(generationAware, null, null, null),
+          new TestConfiguration(generationAware, null, null, null, true),
           MockKubernetesClient.client(TestCustomResource.class));
     }
 
@@ -298,7 +331,8 @@ class ControllerEventSourceTest
         boolean generationAware,
         OnAddFilter<TestCustomResource> onAddFilter,
         OnUpdateFilter<TestCustomResource> onUpdateFilter,
-        GenericFilter<TestCustomResource> genericFilter) {
+        GenericFilter<TestCustomResource> genericFilter,
+        boolean defaultFilters) {
       super(
           "test",
           generationAware,
@@ -316,7 +350,8 @@ class ControllerEventSourceTest
               .withGenericFilter(genericFilter)
               .withComparableResourceVersions(true)
               .buildForController(),
-          false);
+          false,
+          defaultFilters);
     }
   }
 }

@@ -46,6 +46,7 @@ public class ControllerConfigurationOverrider<R extends HasMetadata> {
   private Map<DependentResourceSpec, Object> configurations;
   private final InformerConfiguration<R>.Builder config;
   private boolean triggerReconcilerOnAllEvents;
+  private boolean defaultFilters;
 
   private ControllerConfigurationOverrider(ControllerConfiguration<R> original) {
     this.finalizer = original.getFinalizerName();
@@ -59,6 +60,7 @@ public class ControllerConfigurationOverrider<R extends HasMetadata> {
     this.name = original.getName();
     this.fieldManager = original.fieldManager();
     this.triggerReconcilerOnAllEvents = original.triggerReconcilerOnAllEvents();
+    this.defaultFilters = original.isDefaultFilters();
   }
 
   public ControllerConfigurationOverrider<R> withFinalizer(String finalizer) {
@@ -134,6 +136,11 @@ public class ControllerConfigurationOverrider<R extends HasMetadata> {
     return this;
   }
 
+  public ControllerConfigurationOverrider<R> withShardSelector(String shardSelector) {
+    config.withShardSelector(shardSelector);
+    return this;
+  }
+
   public ControllerConfigurationOverrider<R> withReconciliationMaxInterval(
       Duration reconciliationMaxInterval) {
     this.reconciliationMaxInterval = reconciliationMaxInterval;
@@ -186,6 +193,11 @@ public class ControllerConfigurationOverrider<R extends HasMetadata> {
     return this;
   }
 
+  public ControllerConfigurationOverrider<R> withDefaultFilters(boolean defaultFilters) {
+    this.defaultFilters = defaultFilters;
+    return this;
+  }
+
   /**
    * Sets a max page size limit when starting the informer. This will result in pagination while
    * populating the cache. This means that longer lists will take multiple requests to fetch. See
@@ -231,6 +243,7 @@ public class ControllerConfigurationOverrider<R extends HasMetadata> {
         original.getConfigurationService(),
         config.buildForController(),
         triggerReconcilerOnAllEvents,
+        defaultFilters,
         original.getWorkflowSpec().orElse(null));
   }
 
