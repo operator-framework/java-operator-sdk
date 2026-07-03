@@ -21,7 +21,7 @@
 
   <groupId>io.javaoperatorsdk</groupId>
   <artifactId>java-operator-sdk</artifactId>
-  <version>5.5.2-SNAPSHOT</version>
+  <version>999-SNAPSHOT</version>
   <packaging>pom</packaging>
   <name>Operator SDK for Java</name>
   <description>Java SDK for implementing Kubernetes operators</description>
@@ -70,17 +70,18 @@
     <sonar.organization>java-operator-sdk</sonar.organization>
     <sonar.host.url>https://sonarcloud.io</sonar.host.url>
     <fabric8-httpclient-impl.name>jdk</fabric8-httpclient-impl.name>
-    <junit.version>6.1.3</junit.version>
+    <junit.version>6.1.2</junit.version>
     <fabric8-client.version>7.8.0</fabric8-client.version>
     <slf4j.version>2.0.18</slf4j.version>
     <log4j.version>2.26.1</log4j.version>
     <mokito.version>5.23.0</mokito.version>
     <commons-lang3.version>3.20.0</commons-lang3.version>
     <compile-testing.version>0.23.0</compile-testing.version>
+    <javapoet.version>1.13.0</javapoet.version>
     <assertj.version>3.27.7</assertj.version>
     <awaitility.version>4.3.0</awaitility.version>
     <spring-boot.version>2.7.3</spring-boot.version>
-    <micrometer-core.version>1.17.1</micrometer-core.version>
+    <micrometer-core.version>1.17.0</micrometer-core.version>
     <caffeine.version>3.2.4</caffeine.version>
     <mustache.version>0.9.14</mustache.version>
     <commons.io.version>2.22.0</commons.io.version>
@@ -93,7 +94,7 @@
     <maven-javadoc-plugin.version>3.12.0</maven-javadoc-plugin.version>
     <maven-resources-plugin.version>3.5.0</maven-resources-plugin.version>
     <maven-source-plugin.version>3.4.0</maven-source-plugin.version>
-    <maven-jar-plugin.version>3.5.1</maven-jar-plugin.version>
+    <maven-jar-plugin.version>3.5.0</maven-jar-plugin.version>
     <maven-clean-plugin.version>3.5.0</maven-clean-plugin.version>
     <maven-gpg-plugin.version>3.2.8</maven-gpg-plugin.version>
     <nexus-staging-maven-plugin.version>1.7.0</nexus-staging-maven-plugin.version>
@@ -101,8 +102,8 @@
     <maven-install-plugin.version>3.1.4</maven-install-plugin.version>
     <git-commit-id-maven-plugin.version>10.0.0</git-commit-id-maven-plugin.version>
     <jib-maven-plugin.version>3.5.2</jib-maven-plugin.version>
-    <spotless.version>3.9.0</spotless.version>
-    <spotbugs-maven-plugin.version>4.10.4.0</spotbugs-maven-plugin.version>
+    <spotless.version>3.8.0</spotless.version>
+    <spotbugs-maven-plugin.version>4.10.3.0</spotbugs-maven-plugin.version>
   </properties>
 
   <dependencyManagement>
@@ -146,6 +147,11 @@
         <groupId>io.micrometer</groupId>
         <artifactId>micrometer-core</artifactId>
         <version>${micrometer-core.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>com.squareup</groupId>
+        <artifactId>javapoet</artifactId>
+        <version>${javapoet.version}</version>
       </dependency>
       <dependency>
         <groupId>org.awaitility</groupId>
@@ -384,7 +390,7 @@
       <plugin>
         <groupId>com.mycila</groupId>
         <artifactId>license-maven-plugin</artifactId>
-        <version>5.1.2</version>
+        <version>5.1.1</version>
         <configuration>
           <aggregate>true</aggregate>
           <licenseSets>
@@ -636,20 +642,6 @@
               <tokenAuth>true</tokenAuth>
               <autoPublish>true</autoPublish>
               <waitUntil>published</waitUntil>
-              <!-- The samples are demos and end-to-end tests, not artifacts to depend on, so they
-                   are not published. The Kotlin one could not be published anyway: it has no Java
-                   sources, so no javadoc jar is attached to it and Central rejects the whole
-                   deployment with "Javadocs must be provided but not found in entries". -->
-              <excludeArtifacts>
-                <excludeArtifact>sample-operators</excludeArtifact>
-                <excludeArtifact>sample-controller-namespace-deletion</excludeArtifact>
-                <excludeArtifact>sample-kotlin-operator</excludeArtifact>
-                <excludeArtifact>sample-leader-election</excludeArtifact>
-                <excludeArtifact>sample-mysql-schema-operator</excludeArtifact>
-                <excludeArtifact>sample-operations</excludeArtifact>
-                <excludeArtifact>sample-tomcat-operator</excludeArtifact>
-                <excludeArtifact>sample-webpage-operator</excludeArtifact>
-              </excludeArtifacts>
             </configuration>
           </plugin>
         </plugins>
