@@ -85,7 +85,7 @@
     <caffeine.version>3.2.4</caffeine.version>
     <mustache.version>0.9.14</mustache.version>
     <commons.io.version>2.22.0</commons.io.version>
-    <java.diff.version>4.16</java.diff.version>
+    <java.diff.version>4.17</java.diff.version>
 
     <fmt-maven-plugin.version>2.11</fmt-maven-plugin.version>
     <maven-compiler-plugin.version>3.15.0</maven-compiler-plugin.version>
