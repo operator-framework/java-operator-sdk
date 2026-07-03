@@ -37,6 +37,10 @@ ControllerConfigurationOverrider.override(config)
 `josdk.controller.<name>.shard-selector` configuration key. This feature relies on Fabric8 client
 support and requires the 7.8.0 baseline shipped with this release.
 
+> **Note**: Shard selectors are an **alpha feature in Kubernetes 1.36** and are not available on a stock
+> cluster. They must be explicitly enabled on the API server (via the ShardedListAndWatch feature gate)
+> before they can be used. 
+
 ### Opting Out of Default Event Filters
 
 By default, JOSDK applies a set of internal update filters to a controller's own event source:
