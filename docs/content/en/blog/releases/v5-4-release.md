@@ -39,7 +39,7 @@ support and requires the 7.8.0 baseline shipped with this release.
 
 > **Note**: Shard selectors are an **alpha feature in Kubernetes 1.36** and are not available on a stock
 > cluster. They must be explicitly enabled on the API server (via the `ShardedListAndWatch` feature gate)
-> before they can be used. 
+> before they can be used.
 
 ### Opting Out of Default Event Filters
 
