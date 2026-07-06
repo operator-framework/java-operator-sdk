@@ -158,3 +158,13 @@ methods on
 [`InternalEventFilters`](https://github.com/operator-framework/java-operator-sdk/blob/main/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/processing/event/source/controller/InternalEventFilters.java)
 inside your own filter.
 {{% /alert %}}
+
+## Non-informer based event sources
+
+The filters described above apply only to informer-backed event sources, since they operate on the
+*add*, *update* and *delete* events an informer receives from the Kubernetes API. Event sources that
+are not backed by an informer — such as [`PollingEventSource`](https://github.com/operator-framework/java-operator-sdk/blob/main/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/processing/event/source/polling/PollingEventSource.java)
+and [`PerResourcePollingEventSource`](https://github.com/operator-framework/java-operator-sdk/blob/main/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/processing/event/source/polling/PerResourcePollingEventSource.java)
+— have no filters. For those, it is up to your implementation to emit only the events that are
+actually relevant, so that reconciliations are not triggered needlessly.
+
