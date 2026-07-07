@@ -57,7 +57,6 @@ For all features and their usage see the [related sections on the website](https
   allows to create operators by simply applying a custom resource, thus, is a language independent way. 
 * Kubernetes Webhooks Framework: https://github.com/java-operator-sdk/kubernetes-webooks-framework
   Framework to implement Admission Controllers and Conversion Hooks.
-* Operator SDK plugin: https://github.com/operator-framework/java-operator-plugins
 
 ## Projects using JOSDK
 
