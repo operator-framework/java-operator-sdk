@@ -248,8 +248,7 @@ class EventProcessorTest {
         .until(() -> !eventProcessor.isUnderProcessing(relatedCustomResourceID));
   }
 
-  @Disabled(
-      "Superseding events do not reset the retry counter — new events inherit exhausted budget")
+  @Disabled("https://github.com/operator-framework/java-operator-sdk/issues/3479")
   @Test
   void newEventShouldBeRetryableAfterPriorRetryExhaustion() {
     // Given
@@ -292,8 +291,7 @@ class EventProcessorTest {
     verify(retryTimerEventSourceMock, times(2)).scheduleOnce(eq(resourceID), anyLong());
   }
 
-  @Disabled(
-      "Superseding events do not reset the retry counter — new events inherit exhausted budget")
+  @Disabled("https://github.com/operator-framework/java-operator-sdk/issues/3479")
   @Test
   void supersedingEventConsumedDuringRetryShouldNotPermanentlyStallReconciliation()
       throws Exception {
