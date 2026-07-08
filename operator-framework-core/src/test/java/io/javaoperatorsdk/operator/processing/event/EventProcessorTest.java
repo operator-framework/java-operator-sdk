@@ -19,8 +19,12 @@ import java.time.Duration;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.internal.stubbing.answers.AnswersWithDelay;
@@ -242,6 +246,111 @@ class EventProcessorTest {
     await()
         .atMost(Duration.ofSeconds(3))
         .until(() -> !eventProcessor.isUnderProcessing(relatedCustomResourceID));
+  }
+
+  @Disabled(
+      "Superseding events do not reset the retry counter — new events inherit exhausted budget")
+  @Test
+  void newEventShouldBeRetryableAfterPriorRetryExhaustion() {
+    // Given
+    EventProcessor processor =
+        spy(
+            new EventProcessor(
+                controllerConfigurationNoMaxReconciliationInterval(
+                    new GenericRetry().setMaxAttempts(1).setInitialInterval(2000), rateLimiterMock),
+                reconciliationDispatcherMock,
+                eventSourceManagerMock,
+                null));
+    processor.start();
+    when(processor.retryEventSource()).thenReturn(retryTimerEventSourceMock);
+
+    TestCustomResource customResource = testCustomResource();
+    ResourceID resourceID = ResourceID.fromResource(customResource);
+    when(controllerEventSourceMock.get(eq(resourceID))).thenReturn(Optional.of(customResource));
+
+    ExecutionScope priorFailure = new ExecutionScope(customResource, null, false, false);
+    processor.eventProcessingFinished(
+        priorFailure, PostExecutionControl.exceptionDuringExecution(new RuntimeException("test")));
+
+    when(reconciliationDispatcherMock.handleExecution(any()))
+        .thenReturn(
+            PostExecutionControl.exceptionDuringExecution(
+                new RuntimeException("informer cache stale")));
+
+    // When
+    processor.handleEvent(new ResourceEvent(ResourceAction.UPDATED, resourceID, customResource));
+
+    // Then
+    verify(reconciliationDispatcherMock, timeout(SEPARATE_EXECUTION_TIMEOUT).times(1))
+        .handleExecution(any());
+    waitUntilProcessingFinished(processor, resourceID);
+
+    // The new event's failed execution should still be retryable. Without
+    // maxReconciliationInterval there is no fallback — if the retry budget from the prior
+    // cycle is inherited and already exhausted, no retry is scheduled and the resource
+    // is permanently stuck.
+    verify(retryTimerEventSourceMock, times(2)).scheduleOnce(eq(resourceID), anyLong());
+  }
+
+  @Disabled(
+      "Superseding events do not reset the retry counter — new events inherit exhausted budget")
+  @Test
+  void supersedingEventConsumedDuringRetryShouldNotPermanentlyStallReconciliation()
+      throws Exception {
+    // Given
+    TimerEventSource<TestCustomResource> realTimerSource = new TimerEventSource<>();
+
+    EventProcessor<TestCustomResource> processor =
+        spy(
+            new EventProcessor<>(
+                controllerConfigurationNoMaxReconciliationInterval(
+                    new GenericRetry().setMaxAttempts(1).setInitialInterval(100), rateLimiterMock),
+                reconciliationDispatcherMock,
+                eventSourceManagerMock,
+                null));
+
+    when(processor.retryEventSource()).thenReturn(realTimerSource);
+    realTimerSource.setEventHandler(processor);
+    realTimerSource.start();
+    processor.start();
+
+    try {
+      TestCustomResource customResource = testCustomResource();
+      ResourceID resourceID = ResourceID.fromResource(customResource);
+      when(controllerEventSourceMock.get(eq(resourceID))).thenReturn(Optional.of(customResource));
+
+      CountDownLatch retryExecutionStarted = new CountDownLatch(1);
+      CountDownLatch proceedWithRetry = new CountDownLatch(1);
+      AtomicInteger executionCount = new AtomicInteger(0);
+
+      when(reconciliationDispatcherMock.handleExecution(any()))
+          .thenAnswer(
+              invocation -> {
+                int count = executionCount.incrementAndGet();
+                if (count == 2) {
+                  retryExecutionStarted.countDown();
+                  proceedWithRetry.await(5, TimeUnit.SECONDS);
+                }
+                if (count <= 3) {
+                  return PostExecutionControl.exceptionDuringExecution(
+                      new RuntimeException("informer cache stale"));
+                }
+                return PostExecutionControl.defaultDispatch();
+              });
+
+      processor.handleEvent(new ResourceEvent(ResourceAction.UPDATED, resourceID, customResource));
+      retryExecutionStarted.await(5, TimeUnit.SECONDS);
+
+      // When
+      processor.handleEvent(new ResourceEvent(ResourceAction.UPDATED, resourceID, customResource));
+
+      // Then
+      proceedWithRetry.countDown();
+      verify(reconciliationDispatcherMock, timeout(5000).times(4)).handleExecution(any());
+    } finally {
+      processor.stop();
+      realTimerSource.stop();
+    }
   }
 
   @Test
@@ -898,6 +1007,18 @@ class EventProcessorTest {
 
   ControllerConfiguration controllerConfigTriggerAllEvent(Retry retry, RateLimiter rateLimiter) {
     return controllerConfiguration(retry, rateLimiter, new BaseConfigurationService(), true);
+  }
+
+  ControllerConfiguration controllerConfigurationNoMaxReconciliationInterval(
+      Retry retry, RateLimiter rateLimiter) {
+    ControllerConfiguration res = mock(ControllerConfiguration.class);
+    when(res.getName()).thenReturn("Test");
+    when(res.getRetry()).thenReturn(retry);
+    when(res.getRateLimiter()).thenReturn(rateLimiter);
+    when(res.maxReconciliationInterval()).thenReturn(Optional.empty());
+    when(res.getConfigurationService()).thenReturn(new BaseConfigurationService());
+    when(res.triggerReconcilerOnAllEvents()).thenReturn(false);
+    return res;
   }
 
   ControllerConfiguration controllerConfiguration(
