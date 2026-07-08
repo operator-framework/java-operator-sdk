@@ -327,7 +327,7 @@ class EventProcessorTest {
                 int count = executionCount.incrementAndGet();
                 if (count == 2) {
                   retryExecutionStarted.countDown();
-                  proceedWithRetry.await(5, TimeUnit.SECONDS);
+                  assertThat(proceedWithRetry.await(5, TimeUnit.SECONDS)).isTrue();
                 }
                 if (count <= 3) {
                   return PostExecutionControl.exceptionDuringExecution(
@@ -337,7 +337,7 @@ class EventProcessorTest {
               });
 
       processor.handleEvent(new ResourceEvent(ResourceAction.UPDATED, resourceID, customResource));
-      retryExecutionStarted.await(5, TimeUnit.SECONDS);
+      assertThat(retryExecutionStarted.await(5, TimeUnit.SECONDS)).isTrue();
 
       // When
       processor.handleEvent(new ResourceEvent(ResourceAction.UPDATED, resourceID, customResource));
