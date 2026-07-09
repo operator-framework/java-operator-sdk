@@ -15,6 +15,7 @@
  */
 package io.javaoperatorsdk.operator.monitoring.micrometer;
 
+import java.lang.management.ManagementFactory;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executors;
@@ -54,6 +55,7 @@ public class MicrometerMetrics implements Metrics {
   private static final String RECONCILIATIONS_STARTED = RECONCILIATIONS + "started";
   private static final String RECONCILIATIONS_EXECUTIONS = PREFIX + RECONCILIATIONS + "executions.";
   private static final String RECONCILIATIONS_QUEUE_SIZE = PREFIX + RECONCILIATIONS + "queue.size.";
+  private static final String PROCESSING_STARTED_LATENCY = PREFIX + "processing.started.latency.";
   private static final String NAME = "name";
   private static final String NAMESPACE = "namespace";
   private static final String GROUP = "group";
@@ -145,6 +147,16 @@ public class MicrometerMetrics implements Metrics {
     AtomicInteger controllerQueueSize =
         registry.gauge(controllerQueueName, tags, new AtomicInteger(0));
     gauges.put(controllerQueueName, controllerQueueSize);
+  }
+
+  @Override
+  public void eventProcessingStarted(Controller<? extends HasMetadata> controller) {
+    final var configuration = controller.getConfiguration();
+    final var name = configuration.getName();
+    final var tags = new ArrayList<Tag>(3);
+    addGVKTags(GroupVersionKind.gvkFor(configuration.getResourceClass()), tags, false);
+    registry.gauge(
+        PROCESSING_STARTED_LATENCY + name, tags, ManagementFactory.getRuntimeMXBean().getUptime());
   }
 
   @Override

@@ -71,6 +71,11 @@ public final class AggregatedMetrics implements Metrics {
   }
 
   @Override
+  public void eventProcessingStarted(Controller<? extends HasMetadata> controller) {
+    metricsList.forEach(metrics -> metrics.eventProcessingStarted(controller));
+  }
+
+  @Override
   public void eventReceived(Event event, Map<String, Object> metadata) {
     metricsList.forEach(metrics -> metrics.eventReceived(event, metadata));
   }

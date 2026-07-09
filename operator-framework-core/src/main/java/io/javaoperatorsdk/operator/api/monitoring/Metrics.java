@@ -42,6 +42,17 @@ public interface Metrics {
   default void controllerRegistered(Controller<? extends HasMetadata> controller) {}
 
   /**
+   * Called when the event processor of the specified controller has started and begins processing
+   * events. Until this point, events received from the event sources are deferred rather than
+   * reconciled (see the {@code EventProcessor}); in leader-election setups this is only called once
+   * leadership has been acquired. This callback can be used to measure how long the operator takes
+   * to start accepting events.
+   *
+   * @param controller the controller whose event processor has started
+   */
+  default void eventProcessingStarted(Controller<? extends HasMetadata> controller) {}
+
+  /**
    * Called when an event has been accepted by the SDK from an event source, which would potentially
    * trigger the Reconciler.
    *

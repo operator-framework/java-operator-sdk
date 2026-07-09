@@ -15,6 +15,7 @@
  */
 package io.javaoperatorsdk.operator.monitoring.micrometer;
 
+import java.lang.management.ManagementFactory;
 import java.time.Duration;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -59,6 +60,7 @@ public class MicrometerMetricsV2 implements Metrics {
   public static final String RECONCILIATIONS_EXECUTIONS_GAUGE = RECONCILIATIONS + "active";
   public static final String RECONCILIATIONS_QUEUE_SIZE_GAUGE = RECONCILIATIONS + "queue";
   public static final String NUMBER_OF_RESOURCE_GAUGE = "custom_resources";
+  public static final String PROCESSING_STARTED_LATENCY_GAUGE = "processing.started.latency";
 
   public static final String RECONCILIATION_EXECUTION_DURATION =
       RECONCILIATIONS + "execution.duration";
@@ -143,6 +145,15 @@ public class MicrometerMetricsV2 implements Metrics {
     timerBuilder = timerConfig.apply(timerBuilder);
     var timer = timerBuilder.register(registry);
     executionTimers.put(name, timer);
+  }
+
+  @Override
+  public void eventProcessingStarted(Controller<? extends HasMetadata> controller) {
+    final var name = controller.getConfiguration().getName();
+    final var tags = new ArrayList<Tag>();
+    addControllerNameTag(name, tags);
+    registry.gauge(
+        PROCESSING_STARTED_LATENCY_GAUGE, tags, ManagementFactory.getRuntimeMXBean().getUptime());
   }
 
   private String numberOfResourcesRefName(String name) {

@@ -383,6 +383,7 @@ public class Controller<P extends HasMetadata>
       eventSourceManager.start();
       if (startEventProcessor) {
         eventProcessor.start();
+        metrics.eventProcessingStarted(this);
       }
       log.info("'{}' controller started", controllerName);
     } catch (MissingCRDException e) {
@@ -429,6 +430,7 @@ public class Controller<P extends HasMetadata>
 
   public synchronized void startEventProcessing() {
     eventProcessor.start();
+    metrics.eventProcessingStarted(this);
     log.info("Started event processing for controller: {}", configuration.getName());
   }
 

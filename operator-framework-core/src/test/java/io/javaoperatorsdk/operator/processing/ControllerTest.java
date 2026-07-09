@@ -28,6 +28,7 @@ import io.javaoperatorsdk.operator.api.config.BaseConfigurationService;
 import io.javaoperatorsdk.operator.api.config.ConfigurationService;
 import io.javaoperatorsdk.operator.api.config.MockControllerConfiguration;
 import io.javaoperatorsdk.operator.api.config.workflow.WorkflowSpec;
+import io.javaoperatorsdk.operator.api.monitoring.Metrics;
 import io.javaoperatorsdk.operator.api.reconciler.Cleaner;
 import io.javaoperatorsdk.operator.api.reconciler.DefaultContext;
 import io.javaoperatorsdk.operator.api.reconciler.DeleteControl;
@@ -66,6 +67,42 @@ class ControllerTest {
     final var controller = new Controller<Secret>(reconciler, configuration, client);
     controller.start();
     verify(client, never()).apiextensions();
+  }
+
+  @Test
+  void notifiesMetricsWhenEventProcessorStarts() {
+    final var client = MockKubernetesClient.client(Secret.class);
+    final var metrics = mock(Metrics.class);
+    final var configurationService =
+        ConfigurationService.newOverriddenConfigurationService(
+            new BaseConfigurationService(), o -> o.withMetrics(metrics));
+    final var configuration =
+        MockControllerConfiguration.forResource(Secret.class, configurationService);
+    final var controller = new Controller<Secret>(reconciler, configuration, client);
+
+    // Inline start (event processing started synchronously, e.g. no leader election).
+    controller.start(true);
+    verify(metrics, times(1)).eventProcessingStarted(controller);
+
+    // Deferred start (event processing started later, e.g. after acquiring leadership).
+    controller.startEventProcessing();
+    verify(metrics, times(2)).eventProcessingStarted(controller);
+  }
+
+  @Test
+  void doesNotNotifyMetricsWhenEventProcessorNotStarted() {
+    final var client = MockKubernetesClient.client(Secret.class);
+    final var metrics = mock(Metrics.class);
+    final var configurationService =
+        ConfigurationService.newOverriddenConfigurationService(
+            new BaseConfigurationService(), o -> o.withMetrics(metrics));
+    final var configuration =
+        MockControllerConfiguration.forResource(Secret.class, configurationService);
+    final var controller = new Controller<Secret>(reconciler, configuration, client);
+
+    // e.g. leader election enabled: event sources start but event processing is deferred.
+    controller.start(false);
+    verify(metrics, never()).eventProcessingStarted(controller);
   }
 
   @Test
