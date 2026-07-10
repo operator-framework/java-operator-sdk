@@ -138,8 +138,7 @@ class ReconciliationDispatcher<P extends HasMetadata> {
       } else {
         updatedResource = context.resourceOperations().addFinalizer();
       }
-      return PostExecutionControl.onlyFinalizerAdded(updatedResource)
-          .withReSchedule(BaseControl.INSTANT_RESCHEDULE);
+      return PostExecutionControl.onlyFinalizerAdded(updatedResource);
     } else {
       try {
         return reconcileExecution(executionScope, resourceForExecution, originalResource, context);
