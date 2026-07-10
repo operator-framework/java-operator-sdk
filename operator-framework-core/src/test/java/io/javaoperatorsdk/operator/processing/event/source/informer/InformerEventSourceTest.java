@@ -780,6 +780,25 @@ class InformerEventSourceTest {
     verify(eventHandlerMock, times(1)).handleEvent(any());
   }
 
+  @Test
+  void skipsEventFilteringWhenResourceVersionIsNull() {
+    // Without a resourceVersion there is nothing to correlate own-write echoes against, so
+    // event filtering is bypassed: the update is applied and cached directly, no filter window
+    // is opened and no event is propagated through handleEvent.
+    var resourceToUpdate = testDeployment();
+    resourceToUpdate.getMetadata().setResourceVersion(null);
+    var updated = deploymentWithResourceVersion(3);
+
+    var result =
+        informerEventSource.eventFilteringUpdateAndCacheResource(resourceToUpdate, r -> updated);
+
+    assertThat(result).isSameAs(updated);
+    verify(temporaryResourceCache, times(1)).putResource(updated);
+    verify(temporaryResourceCache, never()).startEventFilteringModify(any());
+    verify(temporaryResourceCache, never()).doneEventFilterModify(any());
+    verify(eventHandlerMock, never()).handleEvent(any());
+  }
+
   private PrimaryToSecondaryIndex<Deployment> injectIndexMock() throws Exception {
     @SuppressWarnings("unchecked")
     PrimaryToSecondaryIndex<Deployment> indexMock = mock(PrimaryToSecondaryIndex.class);
