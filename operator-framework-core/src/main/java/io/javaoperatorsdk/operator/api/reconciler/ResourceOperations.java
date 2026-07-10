@@ -68,6 +68,10 @@ public class ResourceOperations<P extends HasMetadata> {
    * @param <R> resource type
    */
   public <R extends HasMetadata> R serverSideApply(R resource) {
+    return serverSideApply(resource, (Options) null);
+  }
+
+  public <R extends HasMetadata> R serverSideApply(R resource, Options options) {
     return resourcePatch(
         resource,
         r ->
@@ -79,7 +83,13 @@ public class ResourceOperations<P extends HasMetadata> {
                         .withForce(true)
                         .withFieldManager(context.getControllerConfiguration().fieldManager())
                         .withPatchType(PatchType.SERVER_SIDE_APPLY)
-                        .build()));
+                        .build()),
+        options);
+  }
+
+  public <R extends HasMetadata> R serverSideApply(
+      R resource, InformerEventSource<R, P> informerEventSource) {
+    return serverSideApply(resource, informerEventSource, null);
   }
 
   /**
@@ -97,7 +107,7 @@ public class ResourceOperations<P extends HasMetadata> {
    * @param <R> resource type
    */
   public <R extends HasMetadata> R serverSideApply(
-      R resource, InformerEventSource<R, P> informerEventSource) {
+      R resource, InformerEventSource<R, P> informerEventSource, Options options) {
     if (informerEventSource == null) {
       return serverSideApply(resource);
     }
@@ -208,6 +218,10 @@ public class ResourceOperations<P extends HasMetadata> {
         context.eventSourceRetriever().getControllerEventSource());
   }
 
+  public <R extends HasMetadata> R update(R resource) {
+    return update(resource, (Options) null);
+  }
+
   /**
    * Updates the resource and caches the response if needed, thus making sure that next
    * reconciliation will see to updated resource - or more recent one if additional update happened
@@ -221,8 +235,13 @@ public class ResourceOperations<P extends HasMetadata> {
    * @return updated resource
    * @param <R> resource type
    */
-  public <R extends HasMetadata> R update(R resource) {
-    return resourcePatch(resource, r -> context.getClient().resource(r).update());
+  public <R extends HasMetadata> R update(R resource, Options options) {
+    return resourcePatch(resource, r -> context.getClient().resource(r).update(), options);
+  }
+
+  public <R extends HasMetadata> R update(
+      R resource, InformerEventSource<R, P> informerEventSource) {
+    return update(resource, informerEventSource, null);
   }
 
   /**
@@ -240,12 +259,12 @@ public class ResourceOperations<P extends HasMetadata> {
    * @param <R> resource type
    */
   public <R extends HasMetadata> R update(
-      R resource, InformerEventSource<R, P> informerEventSource) {
+      R resource, InformerEventSource<R, P> informerEventSource, Options options) {
     if (informerEventSource == null) {
       return update(resource);
     }
     return resourcePatch(
-        resource, r -> context.getClient().resource(r).update(), informerEventSource);
+        resource, r -> context.getClient().resource(r).update(), informerEventSource, options);
   }
 
   /**
@@ -262,7 +281,8 @@ public class ResourceOperations<P extends HasMetadata> {
    * @param <R> resource type
    */
   public <R extends HasMetadata> R create(R resource) {
-    return resourcePatch(resource, r -> context.getClient().resource(r).create());
+    return resourcePatch(
+        resource, r -> context.getClient().resource(r).create(), new Options(true));
   }
 
   /**
@@ -284,8 +304,12 @@ public class ResourceOperations<P extends HasMetadata> {
     if (informerEventSource == null) {
       return create(resource);
     }
+    // it is safe to do event filtering for create since check if the resource already exists.
     return resourcePatch(
-        resource, r -> context.getClient().resource(r).create(), informerEventSource);
+        resource,
+        r -> context.getClient().resource(r).create(),
+        informerEventSource,
+        new Options(true));
   }
 
   /**
@@ -518,6 +542,10 @@ public class ResourceOperations<P extends HasMetadata> {
         context.eventSourceRetriever().getControllerEventSource());
   }
 
+  public <R extends HasMetadata> R resourcePatch(R resource, UnaryOperator<R> updateOperation) {
+    return resourcePatch(resource, updateOperation, (Options) null);
+  }
+
   /**
    * Utility method to patch a resource and cache the result. Automatically discovers the event
    * source for the resource type and delegates to {@link #resourcePatch(HasMetadata, UnaryOperator,
@@ -530,7 +558,8 @@ public class ResourceOperations<P extends HasMetadata> {
    * @throws IllegalStateException if no event source or multiple event sources are found
    */
   @SuppressWarnings({"rawtypes", "unchecked"})
-  public <R extends HasMetadata> R resourcePatch(R resource, UnaryOperator<R> updateOperation) {
+  public <R extends HasMetadata> R resourcePatch(
+      R resource, UnaryOperator<R> updateOperation, Options options) {
 
     var esList = context.eventSourceRetriever().getEventSourcesFor(resource.getClass());
     if (esList.isEmpty()) {
@@ -544,7 +573,8 @@ public class ResourceOperations<P extends HasMetadata> {
           es.name());
     }
     if (es instanceof ManagedInformerEventSource mes) {
-      return resourcePatch(resource, updateOperation, (ManagedInformerEventSource<R, P, ?>) mes);
+      return resourcePatch(
+          resource, updateOperation, (ManagedInformerEventSource<R, P, ?>) mes, options);
     } else {
       throw new IllegalStateException(
           "Target event source must be a subclass off "
@@ -565,7 +595,16 @@ public class ResourceOperations<P extends HasMetadata> {
    */
   public <R extends HasMetadata> R resourcePatch(
       R resource, UnaryOperator<R> updateOperation, ManagedInformerEventSource<R, P, ?> ies) {
-    return ies.eventFilteringUpdateAndCacheResource(resource, updateOperation);
+    return resourcePatch(resource, updateOperation, ies, (Options) null);
+  }
+
+  public <R extends HasMetadata> R resourcePatch(
+      R resource,
+      UnaryOperator<R> updateOperation,
+      ManagedInformerEventSource<R, P, ?> ies,
+      Options options) {
+    return ies.eventFilteringUpdateAndCacheResource(
+        resource, updateOperation, options != null && options.forceEventFiltering());
   }
 
   /**
@@ -754,4 +793,11 @@ public class ResourceOperations<P extends HasMetadata> {
           e);
     }
   }
+
+  @Experimental("This API might change")
+  /**
+   * Force filtering only if it is made sure that the update not results on a no-op change. See
+   * details here: https://github.com/operator-framework/java-operator-sdk/pull/3484
+   */
+  public record Options(boolean forceEventFiltering) {}
 }

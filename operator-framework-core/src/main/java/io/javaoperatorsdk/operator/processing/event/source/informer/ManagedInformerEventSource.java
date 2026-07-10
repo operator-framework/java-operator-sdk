@@ -39,6 +39,7 @@ import io.javaoperatorsdk.operator.ReconcilerUtilsInternal;
 import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.config.Informable;
 import io.javaoperatorsdk.operator.api.config.NamespaceChangeable;
+import io.javaoperatorsdk.operator.api.reconciler.Experimental;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.RecentOperationCacheFiller;
 import io.javaoperatorsdk.operator.health.InformerHealthIndicator;
 import io.javaoperatorsdk.operator.health.InformerWrappingEventSourceHealthIndicator;
@@ -88,14 +89,23 @@ public abstract class ManagedInformerEventSource<
     }
   }
 
+  @Experimental(
+      "Internal API. Use ResourceOperation not this directly, this API might change in the future")
+  public R eventFilteringUpdateAndCacheResource(R resourceToUpdate, UnaryOperator<R> updateMethod) {
+    return eventFilteringUpdateAndCacheResource(resourceToUpdate, updateMethod, false);
+  }
+
   /**
    * Updates the resource and makes sure that the response is available for the next reconciliation.
    * Also makes sure that the even produced by this update is filtered, thus does not trigger the
    * reconciliation.
    */
+  @Experimental(
+      "Internal API. Use ResourceOperation not this directly, this API might change in the future")
   @SuppressWarnings("unchecked")
-  public R eventFilteringUpdateAndCacheResource(R resourceToUpdate, UnaryOperator<R> updateMethod) {
-    if (resourceToUpdate.getMetadata().getResourceVersion() == null) {
+  public R eventFilteringUpdateAndCacheResource(
+      R resourceToUpdate, UnaryOperator<R> updateMethod, boolean forceUpdateFilter) {
+    if (resourceToUpdate.getMetadata().getResourceVersion() == null && !forceUpdateFilter) {
       log.debug("No resourceVersion set. Skipping event filtering.");
       return updateAndCacheResource(resourceToUpdate, updateMethod);
     }
