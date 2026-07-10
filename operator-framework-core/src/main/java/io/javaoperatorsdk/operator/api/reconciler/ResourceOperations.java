@@ -145,7 +145,7 @@ public class ResourceOperations<P extends HasMetadata> {
    * @return updated resource
    * @param <R> resource type
    */
-  public <R extends HasMetadata> R serverSideApplyStatus(R resource) {
+  public <R extends HasMetadata> R serverSideApplyStatus(R resource, Options options) {
     return resourcePatch(
         resource,
         r ->
@@ -158,7 +158,12 @@ public class ResourceOperations<P extends HasMetadata> {
                         .withForce(true)
                         .withFieldManager(context.getControllerConfiguration().fieldManager())
                         .withPatchType(PatchType.SERVER_SIDE_APPLY)
-                        .build()));
+                        .build()),
+        options);
+  }
+
+  public <R extends HasMetadata> R serverSideApplyStatus(R resource) {
+    return serverSideApplyStatus(resource, null);
   }
 
   /**
@@ -246,7 +251,7 @@ public class ResourceOperations<P extends HasMetadata> {
 
   public <R extends HasMetadata> R update(
       R resource, InformerEventSource<R, P> informerEventSource) {
-    return update(resource, informerEventSource, null);
+    return update(resource, informerEventSource, new Options(true));
   }
 
   /**
@@ -334,7 +339,8 @@ public class ResourceOperations<P extends HasMetadata> {
    * @param <R> resource type
    */
   public <R extends HasMetadata> R updateStatus(R resource) {
-    return resourcePatch(resource, r -> context.getClient().resource(r).updateStatus());
+    return resourcePatch(
+        resource, r -> context.getClient().resource(r).updateStatus(), new Options(true));
   }
 
   /**
@@ -397,7 +403,13 @@ public class ResourceOperations<P extends HasMetadata> {
    * @param <R> resource type
    */
   public <R extends HasMetadata> R jsonPatch(R resource, UnaryOperator<R> unaryOperator) {
-    return resourcePatch(resource, r -> context.getClient().resource(r).edit(unaryOperator));
+    return jsonPatch(resource, unaryOperator, null);
+  }
+
+  public <R extends HasMetadata> R jsonPatch(
+      R resource, UnaryOperator<R> unaryOperator, Options options) {
+    return resourcePatch(
+        resource, r -> context.getClient().resource(r).edit(unaryOperator), options);
   }
 
   /**
@@ -417,8 +429,14 @@ public class ResourceOperations<P extends HasMetadata> {
    * @return updated resource
    * @param <R> resource type
    */
+  public <R extends HasMetadata> R jsonPatchStatus(
+      R resource, UnaryOperator<R> unaryOperator, Options options) {
+    return resourcePatch(
+        resource, r -> context.getClient().resource(r).editStatus(unaryOperator), options);
+  }
+
   public <R extends HasMetadata> R jsonPatchStatus(R resource, UnaryOperator<R> unaryOperator) {
-    return resourcePatch(resource, r -> context.getClient().resource(r).editStatus(unaryOperator));
+    return jsonPatchStatus(resource, unaryOperator, null);
   }
 
   /**
@@ -482,7 +500,11 @@ public class ResourceOperations<P extends HasMetadata> {
    * @param <R> resource type
    */
   public <R extends HasMetadata> R jsonMergePatch(R resource) {
-    return resourcePatch(resource, r -> context.getClient().resource(r).patch());
+    return jsonMergePatch(resource, null);
+  }
+
+  public <R extends HasMetadata> R jsonMergePatch(R resource, Options options) {
+    return resourcePatch(resource, r -> context.getClient().resource(r).patch(), options);
   }
 
   /**
@@ -501,7 +523,11 @@ public class ResourceOperations<P extends HasMetadata> {
    * @param <R> resource type
    */
   public <R extends HasMetadata> R jsonMergePatchStatus(R resource) {
-    return resourcePatch(resource, r -> context.getClient().resource(r).patchStatus());
+    return jsonMergePatchStatus(resource, null);
+  }
+
+  public <R extends HasMetadata> R jsonMergePatchStatus(R resource, Options options) {
+    return resourcePatch(resource, r -> context.getClient().resource(r).patchStatus(), options);
   }
 
   /**
