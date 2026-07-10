@@ -799,6 +799,28 @@ class InformerEventSourceTest {
     verify(eventHandlerMock, never()).handleEvent(any());
   }
 
+  @Test
+  void forceUpdateFilterOpensFilterWindowEvenWhenResourceVersionIsNull() {
+    // A write without a resourceVersion (e.g. an SSA finalizer add, which uses no optimistic
+    // locking) would normally skip event filtering. forceUpdateFilter=true forces filtering
+    // anyway so the resulting own event is correlated and does not trigger a spurious
+    // reconciliation.
+    var resourceToUpdate = testDeployment();
+    resourceToUpdate.getMetadata().setResourceVersion(null);
+    var updated = deploymentWithResourceVersion(3);
+    when(temporaryResourceCache.doneEventFilterModify(any())).thenReturn(Optional.empty());
+
+    var result =
+        informerEventSource.eventFilteringUpdateAndCacheResource(
+            resourceToUpdate, r -> updated, true);
+
+    assertThat(result).isSameAs(updated);
+    verify(temporaryResourceCache, times(1)).startEventFilteringModify(any());
+    verify(temporaryResourceCache, times(1)).doneEventFilterModify(any());
+    verify(temporaryResourceCache, times(1)).putResource(updated);
+    verify(eventHandlerMock, never()).handleEvent(any());
+  }
+
   private PrimaryToSecondaryIndex<Deployment> injectIndexMock() throws Exception {
     @SuppressWarnings("unchecked")
     PrimaryToSecondaryIndex<Deployment> indexMock = mock(PrimaryToSecondaryIndex.class);
