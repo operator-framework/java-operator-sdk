@@ -94,14 +94,20 @@ public abstract class ManagedInformerEventSource<
    * reconciliation.
    */
   @SuppressWarnings("unchecked")
-  public R eventFilteringUpdateAndCacheResource(R resourceToUpdate, UnaryOperator<R> updateMethod) {
+  public R eventFilteringUpdateAndCacheResource(
+      R resourceToUpdate, UnaryOperator<R> updateOperation) {
+    if (resourceToUpdate.getMetadata().getResourceVersion() == null) {
+      log.debug("No resourceVersion set. Skipping event filtering.");
+      return updateAndCacheResource(resourceToUpdate, updateOperation);
+    }
+
     ResourceID id = ResourceID.fromResource(resourceToUpdate);
     log.debug("Starting event filtering and caching update for id={}", id);
     R updatedResource = null;
     Set<ResourceID> relatedPrimaryIds = null;
     try {
       temporaryResourceCache.startEventFilteringModify(id);
-      updatedResource = updateMethod.apply(resourceToUpdate);
+      updatedResource = updateOperation.apply(resourceToUpdate);
       relatedPrimaryIds = cacheUpdateAndGetRelatedPrimaryIDs(updatedResource, resourceToUpdate);
       log.debug(
           "Caching resource update successful. id={}, rv={}",
@@ -132,6 +138,12 @@ public abstract class ManagedInformerEventSource<
         log.debug("No new event present after the filtering update. id={}", id);
       }
     }
+  }
+
+  private R updateAndCacheResource(R resourceToUpdate, UnaryOperator<R> updateOperation) {
+    var result = updateOperation.apply(resourceToUpdate);
+    handleRecentResourceUpdate(ResourceID.fromResource(resourceToUpdate), result, resourceToUpdate);
+    return result;
   }
 
   protected abstract void handleEvent(
