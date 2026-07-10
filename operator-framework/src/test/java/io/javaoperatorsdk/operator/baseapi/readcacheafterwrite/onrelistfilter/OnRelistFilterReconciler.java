@@ -34,6 +34,7 @@ import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.EventSourceContext;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
+import io.javaoperatorsdk.operator.api.reconciler.ResourceOperations;
 import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
 import io.javaoperatorsdk.operator.processing.event.source.EventSource;
@@ -79,7 +80,10 @@ public class OnRelistFilterReconciler implements Reconciler<OnRelistFilterCustom
     if (execution == 1) {
       var cm = prepareConfigMap(resource);
       switch (mode.get()) {
-        case NO_RELIST -> context.resourceOperations().serverSideApply(cm, configMapEventSource);
+        case NO_RELIST ->
+            context
+                .resourceOperations()
+                .serverSideApply(cm, configMapEventSource, new ResourceOperations.Options(true));
         case RELIST_AROUND_UPDATE -> {
           configMapEventSource.simulateOnBeforeList();
           var applied = context.resourceOperations().serverSideApply(cm, configMapEventSource);
@@ -94,7 +98,9 @@ public class OnRelistFilterReconciler implements Reconciler<OnRelistFilterCustom
         case RELIST_COMPLETES_BEFORE_UPDATE -> {
           configMapEventSource.simulateOnBeforeList();
           configMapEventSource.simulateOnList();
-          context.resourceOperations().serverSideApply(cm, configMapEventSource);
+          context
+              .resourceOperations()
+              .serverSideApply(cm, configMapEventSource, new ResourceOperations.Options(true));
         }
         case RELIST_STARTS_DURING_UPDATE -> {
           // Drive the event-filtering update path manually so we can fire onBeforeList AFTER the
@@ -114,7 +120,8 @@ public class OnRelistFilterReconciler implements Reconciler<OnRelistFilterCustom
                                 .withFieldManager(fieldManager)
                                 .withPatchType(PatchType.SERVER_SIDE_APPLY)
                                 .build());
-                  });
+                  },
+                  true);
           // See RELIST_AROUND_UPDATE: wait for the own-write event to be buffered while the
           // re-list is still in progress, so it is tagged as part of the re-list and propagated.
           configMapEventSource.awaitWatchEventReceived(applied);

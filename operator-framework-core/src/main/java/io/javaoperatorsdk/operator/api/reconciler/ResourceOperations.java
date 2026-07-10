@@ -31,6 +31,7 @@ import io.javaoperatorsdk.operator.processing.event.ResourceID;
 import io.javaoperatorsdk.operator.processing.event.source.informer.InformerEventSource;
 import io.javaoperatorsdk.operator.processing.event.source.informer.ManagedInformerEventSource;
 
+import static io.javaoperatorsdk.operator.api.reconciler.Experimental.API_MIGHT_CHANGE;
 import static io.javaoperatorsdk.operator.processing.KubernetesResourceUtils.getUID;
 import static io.javaoperatorsdk.operator.processing.KubernetesResourceUtils.getVersion;
 
@@ -71,6 +72,7 @@ public class ResourceOperations<P extends HasMetadata> {
     return serverSideApply(resource, (Options) null);
   }
 
+  @Experimental(API_MIGHT_CHANGE)
   public <R extends HasMetadata> R serverSideApply(R resource, Options options) {
     return resourcePatch(
         resource,
@@ -106,6 +108,7 @@ public class ResourceOperations<P extends HasMetadata> {
    * @param informerEventSource InformerEventSource to use for resource caching and filtering
    * @param <R> resource type
    */
+  @Experimental(API_MIGHT_CHANGE)
   public <R extends HasMetadata> R serverSideApply(
       R resource, InformerEventSource<R, P> informerEventSource, Options options) {
     if (informerEventSource == null) {
@@ -123,7 +126,8 @@ public class ResourceOperations<P extends HasMetadata> {
                         .withFieldManager(context.getControllerConfiguration().fieldManager())
                         .withPatchType(PatchType.SERVER_SIDE_APPLY)
                         .build()),
-        informerEventSource);
+        informerEventSource,
+        options);
   }
 
   /**
@@ -235,6 +239,7 @@ public class ResourceOperations<P extends HasMetadata> {
    * @return updated resource
    * @param <R> resource type
    */
+  @Experimental(API_MIGHT_CHANGE)
   public <R extends HasMetadata> R update(R resource, Options options) {
     return resourcePatch(resource, r -> context.getClient().resource(r).update(), options);
   }
@@ -258,6 +263,7 @@ public class ResourceOperations<P extends HasMetadata> {
    * @param informerEventSource InformerEventSource to use for resource caching and filtering
    * @param <R> resource type
    */
+  @Experimental(API_MIGHT_CHANGE)
   public <R extends HasMetadata> R update(
       R resource, InformerEventSource<R, P> informerEventSource, Options options) {
     if (informerEventSource == null) {
@@ -557,6 +563,7 @@ public class ResourceOperations<P extends HasMetadata> {
    * @param <R> resource type
    * @throws IllegalStateException if no event source or multiple event sources are found
    */
+  @Experimental(API_MIGHT_CHANGE)
   @SuppressWarnings({"rawtypes", "unchecked"})
   public <R extends HasMetadata> R resourcePatch(
       R resource, UnaryOperator<R> updateOperation, Options options) {
@@ -794,10 +801,11 @@ public class ResourceOperations<P extends HasMetadata> {
     }
   }
 
-  @Experimental("This API might change")
   /**
    * Force filtering only if it is made sure that the update not results on a no-op change. See
-   * details here: https://github.com/operator-framework/java-operator-sdk/pull/3484
+   * details here: <a href="https://github.com/operator-framework/java-operator-sdk/pull/3484">PR
+   * 3484</a>
    */
+  @Experimental("This API might change")
   public record Options(boolean forceEventFiltering) {}
 }
