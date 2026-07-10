@@ -84,7 +84,7 @@ class ResourceOperationsTest {
 
     // Mock successful finalizer addition
     when(controllerEventSource.eventFilteringUpdateAndCacheResource(
-            any(), any(UnaryOperator.class)))
+            any(), any(UnaryOperator.class), anyBoolean()))
         .thenAnswer(
             invocation -> {
               var res = TestUtils.testCustomResource1();
@@ -99,7 +99,7 @@ class ResourceOperationsTest {
     assertThat(result.hasFinalizer(FINALIZER_NAME)).isTrue();
     assertThat(result.getMetadata().getResourceVersion()).isEqualTo("2");
     verify(controllerEventSource, times(1))
-        .eventFilteringUpdateAndCacheResource(any(), any(UnaryOperator.class));
+        .eventFilteringUpdateAndCacheResource(any(), any(UnaryOperator.class), anyBoolean());
   }
 
   @Test
@@ -111,7 +111,7 @@ class ResourceOperationsTest {
 
     // Mock successful SSA finalizer addition
     when(controllerEventSource.eventFilteringUpdateAndCacheResource(
-            any(), any(UnaryOperator.class)))
+            any(), any(UnaryOperator.class), anyBoolean()))
         .thenAnswer(
             invocation -> {
               var res = TestUtils.testCustomResource1();
@@ -126,7 +126,7 @@ class ResourceOperationsTest {
     assertThat(result.hasFinalizer(FINALIZER_NAME)).isTrue();
     assertThat(result.getMetadata().getResourceVersion()).isEqualTo("2");
     verify(controllerEventSource, times(1))
-        .eventFilteringUpdateAndCacheResource(any(), any(UnaryOperator.class));
+        .eventFilteringUpdateAndCacheResource(any(), any(UnaryOperator.class), anyBoolean());
   }
 
   @Test
@@ -139,7 +139,7 @@ class ResourceOperationsTest {
 
     // Mock successful finalizer removal
     when(controllerEventSource.eventFilteringUpdateAndCacheResource(
-            any(), any(UnaryOperator.class)))
+            any(), any(UnaryOperator.class), anyBoolean()))
         .thenAnswer(
             invocation -> {
               var res = TestUtils.testCustomResource1();
@@ -154,7 +154,7 @@ class ResourceOperationsTest {
     assertThat(result.hasFinalizer(FINALIZER_NAME)).isFalse();
     assertThat(result.getMetadata().getResourceVersion()).isEqualTo("2");
     verify(controllerEventSource, times(1))
-        .eventFilteringUpdateAndCacheResource(any(), any(UnaryOperator.class));
+        .eventFilteringUpdateAndCacheResource(any(), any(UnaryOperator.class), anyBoolean());
   }
 
   @Test
@@ -166,7 +166,7 @@ class ResourceOperationsTest {
 
     // First call throws conflict, second succeeds
     when(controllerEventSource.eventFilteringUpdateAndCacheResource(
-            any(), any(UnaryOperator.class)))
+            any(), any(UnaryOperator.class), anyBoolean()))
         .thenThrow(new KubernetesClientException("Conflict", 409, null))
         .thenAnswer(
             invocation -> {
@@ -184,7 +184,7 @@ class ResourceOperationsTest {
     assertThat(result).isNotNull();
     assertThat(result.hasFinalizer(FINALIZER_NAME)).isTrue();
     verify(controllerEventSource, times(2))
-        .eventFilteringUpdateAndCacheResource(any(), any(UnaryOperator.class));
+        .eventFilteringUpdateAndCacheResource(any(), any(UnaryOperator.class), anyBoolean());
     verify(resourceOp, times(1)).get();
   }
 
@@ -198,7 +198,7 @@ class ResourceOperationsTest {
 
     // First call throws conflict
     when(controllerEventSource.eventFilteringUpdateAndCacheResource(
-            any(), any(UnaryOperator.class)))
+            any(), any(UnaryOperator.class), anyBoolean()))
         .thenThrow(new KubernetesClientException("Conflict", 409, null));
 
     // Return null on retry (resource was deleted)
@@ -207,7 +207,7 @@ class ResourceOperationsTest {
     resourceOperations.removeFinalizer(FINALIZER_NAME);
 
     verify(controllerEventSource, times(1))
-        .eventFilteringUpdateAndCacheResource(any(), any(UnaryOperator.class));
+        .eventFilteringUpdateAndCacheResource(any(), any(UnaryOperator.class), anyBoolean());
     verify(resourceOp, times(1)).get();
   }
 
@@ -221,7 +221,7 @@ class ResourceOperationsTest {
 
     // First call throws unprocessable (422), second succeeds
     when(controllerEventSource.eventFilteringUpdateAndCacheResource(
-            any(), any(UnaryOperator.class)))
+            any(), any(UnaryOperator.class), anyBoolean()))
         .thenThrow(new KubernetesClientException("Unprocessable", 422, null))
         .thenAnswer(
             invocation -> {
@@ -243,7 +243,7 @@ class ResourceOperationsTest {
     assertThat(result.getMetadata().getResourceVersion()).isEqualTo("3");
     assertThat(result.hasFinalizer(FINALIZER_NAME)).isFalse();
     verify(controllerEventSource, times(2))
-        .eventFilteringUpdateAndCacheResource(any(), any(UnaryOperator.class));
+        .eventFilteringUpdateAndCacheResource(any(), any(UnaryOperator.class), anyBoolean());
     verify(resourceOp, times(1)).get();
   }
 
@@ -261,7 +261,8 @@ class ResourceOperationsTest {
     when(context.eventSourceRetriever()).thenReturn(eventSourceRetriever);
     when(eventSourceRetriever.getEventSourcesFor(TestCustomResource.class))
         .thenReturn(List.of(managedEventSource));
-    when(managedEventSource.eventFilteringUpdateAndCacheResource(any(), any(UnaryOperator.class)))
+    when(managedEventSource.eventFilteringUpdateAndCacheResource(
+            any(), any(UnaryOperator.class), anyBoolean()))
         .thenReturn(updatedResource);
 
     var result = resourceOperations.resourcePatch(resource, UnaryOperator.identity());
@@ -269,7 +270,7 @@ class ResourceOperationsTest {
     assertThat(result).isNotNull();
     assertThat(result.getMetadata().getResourceVersion()).isEqualTo("2");
     verify(managedEventSource, times(1))
-        .eventFilteringUpdateAndCacheResource(any(), any(UnaryOperator.class));
+        .eventFilteringUpdateAndCacheResource(any(), any(UnaryOperator.class), anyBoolean());
   }
 
   @Test
@@ -303,7 +304,7 @@ class ResourceOperationsTest {
     resourceOperations.resourcePatch(resource, UnaryOperator.identity());
 
     verify(eventSource1, times(1))
-        .eventFilteringUpdateAndCacheResource(any(), any(UnaryOperator.class));
+        .eventFilteringUpdateAndCacheResource(any(), any(UnaryOperator.class), anyBoolean());
   }
 
   @Test

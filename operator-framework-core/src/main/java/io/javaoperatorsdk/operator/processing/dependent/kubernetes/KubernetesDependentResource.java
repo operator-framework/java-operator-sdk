@@ -30,6 +30,7 @@ import io.javaoperatorsdk.operator.api.config.informer.InformerEventSourceConfig
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.EventSourceContext;
 import io.javaoperatorsdk.operator.api.reconciler.Ignore;
+import io.javaoperatorsdk.operator.api.reconciler.ResourceOperations;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.GarbageCollected;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.managed.ConfiguredDependentResource;
 import io.javaoperatorsdk.operator.processing.GroupVersionKind;
@@ -90,7 +91,6 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
         desired.getClass(),
         ResourceID.fromResource(desired),
         ssa);
-
     return ssa
         ? context.resourceOperations().serverSideApply(desired, eventSource().orElse(null))
         : context.resourceOperations().create(desired, eventSource().orElse(null));
@@ -114,7 +114,10 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
         ssa);
     if (ssa) {
       updatedResource =
-          context.resourceOperations().serverSideApply(desired, eventSource().orElse(null));
+          context
+              .resourceOperations()
+              .serverSideApply(
+                  desired, eventSource().orElse(null), new ResourceOperations.Options(true));
     } else {
       var updatedActual = GenericResourceUpdater.updateResource(actual, desired, context);
       updatedResource =
