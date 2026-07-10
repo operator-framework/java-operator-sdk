@@ -27,6 +27,7 @@ import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.EventSourceContext;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
+import io.javaoperatorsdk.operator.api.reconciler.ResourceOperations;
 import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
 import io.javaoperatorsdk.operator.processing.event.source.EventSource;
 import io.javaoperatorsdk.operator.processing.event.source.informer.InformerEventSource;
@@ -50,7 +51,10 @@ public class OwnSecondaryUpdateReconciler implements Reconciler<OwnSecondaryUpda
     // version actually advances. With the read-cache-after-write filter in place, none of the
     // resulting watch events should trigger a fresh reconciliation.
     for (int i = 1; i <= OWN_SSA_COUNT; i++) {
-      context.resourceOperations().serverSideApply(prepareCM(resource, i), configMapEventSource);
+      context
+          .resourceOperations()
+          .serverSideApply(
+              prepareCM(resource, i), configMapEventSource, new ResourceOperations.Options(true));
     }
     return UpdateControl.noUpdate();
   }
