@@ -936,9 +936,8 @@ public class ResourceOperations<P extends HasMetadata> {
       return mode;
     }
 
-    public boolean isForcedFiltering() {
-      return mode != Mode.ONLY_CACHE;
-    }
+  public boolean isForcedFiltering() {
+    return mode == Mode.FORCED_FILTERING;
   }
 
   @Experimental(API_MIGHT_CHANGE)
