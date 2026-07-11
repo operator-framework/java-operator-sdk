@@ -54,7 +54,9 @@ public class OwnSecondaryUpdateReconciler implements Reconciler<OwnSecondaryUpda
       context
           .resourceOperations()
           .serverSideApply(
-              prepareCM(resource, i), configMapEventSource, new ResourceOperations.Options(true));
+              prepareCM(resource, i),
+              configMapEventSource,
+              ResourceOperations.Options.forcedFiltering());
     }
     return UpdateControl.noUpdate();
   }

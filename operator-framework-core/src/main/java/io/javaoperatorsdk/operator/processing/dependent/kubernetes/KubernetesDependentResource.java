@@ -93,7 +93,10 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
         ssa);
     return ssa
         ? context.resourceOperations().serverSideApply(desired, eventSource().orElse(null))
-        : context.resourceOperations().create(desired, eventSource().orElse(null));
+        : context
+            .resourceOperations()
+            .create(
+                desired, eventSource().orElse(null), ResourceOperations.Options.forcedFiltering());
   }
 
   public R update(R actual, R desired, P primary, Context<P> context) {
@@ -117,7 +120,9 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
           context
               .resourceOperations()
               .serverSideApply(
-                  desired, eventSource().orElse(null), new ResourceOperations.Options(true));
+                  desired,
+                  eventSource().orElse(null),
+                  ResourceOperations.Options.forcedFiltering());
     } else {
       var updatedActual = GenericResourceUpdater.updateResource(actual, desired, context);
       updatedResource =
