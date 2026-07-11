@@ -166,6 +166,10 @@ public class ResourceOperations<P extends HasMetadata> {
     return serverSideApplyStatus(resource, null);
   }
 
+  public P serverSideApplyPrimary(P resource) {
+    return serverSideApplyPrimary(resource, Options.defaultMode());
+  }
+
   /**
    * Server-Side Apply the primary resource.
    *
@@ -180,7 +184,7 @@ public class ResourceOperations<P extends HasMetadata> {
    * @param resource primary resource for server side apply
    * @return updated resource
    */
-  public P serverSideApplyPrimary(P resource) {
+  public P serverSideApplyPrimary(P resource, Options options) {
     return resourcePatch(
         resource,
         r ->
@@ -193,7 +197,8 @@ public class ResourceOperations<P extends HasMetadata> {
                         .withFieldManager(context.getControllerConfiguration().fieldManager())
                         .withPatchType(PatchType.SERVER_SIDE_APPLY)
                         .build()),
-        context.eventSourceRetriever().getControllerEventSource());
+        context.eventSourceRetriever().getControllerEventSource(),
+        options);
   }
 
   /**
@@ -211,6 +216,10 @@ public class ResourceOperations<P extends HasMetadata> {
    * @return updated resource
    */
   public P serverSideApplyPrimaryStatus(P resource) {
+    return serverSideApplyPrimaryStatus(resource, Options.defaultMode());
+  }
+
+  public P serverSideApplyPrimaryStatus(P resource, Options options) {
     return resourcePatch(
         resource,
         r ->
@@ -224,11 +233,12 @@ public class ResourceOperations<P extends HasMetadata> {
                         .withFieldManager(context.getControllerConfiguration().fieldManager())
                         .withPatchType(PatchType.SERVER_SIDE_APPLY)
                         .build()),
-        context.eventSourceRetriever().getControllerEventSource());
+        context.eventSourceRetriever().getControllerEventSource(),
+        options);
   }
 
   public <R extends HasMetadata> R update(R resource) {
-    return update(resource, (Options) null);
+    return update(resource, Options.defaultMode());
   }
 
   /**
@@ -251,7 +261,7 @@ public class ResourceOperations<P extends HasMetadata> {
 
   public <R extends HasMetadata> R update(
       R resource, InformerEventSource<R, P> informerEventSource) {
-    return update(resource, informerEventSource, new Options(true));
+    return update(resource, informerEventSource, Options.defaultMode());
   }
 
   /**
@@ -292,8 +302,12 @@ public class ResourceOperations<P extends HasMetadata> {
    * @param <R> resource type
    */
   public <R extends HasMetadata> R create(R resource) {
-    return resourcePatch(
-        resource, r -> context.getClient().resource(r).create(), new Options(true));
+    // it is safe to do event filtering for create since check if the resource already exists.
+    return create(resource, Options.forcedFiltering());
+  }
+
+  public <R extends HasMetadata> R create(R resource, Options options) {
+    return resourcePatch(resource, r -> context.getClient().resource(r).create(), options);
   }
 
   /**
@@ -311,16 +325,13 @@ public class ResourceOperations<P extends HasMetadata> {
    * @param <R> resource type
    */
   public <R extends HasMetadata> R create(
-      R resource, InformerEventSource<R, P> informerEventSource) {
+      R resource, InformerEventSource<R, P> informerEventSource, Options options) {
     if (informerEventSource == null) {
       return create(resource);
     }
     // it is safe to do event filtering for create since check if the resource already exists.
     return resourcePatch(
-        resource,
-        r -> context.getClient().resource(r).create(),
-        informerEventSource,
-        new Options(true));
+        resource, r -> context.getClient().resource(r).create(), informerEventSource, options);
   }
 
   /**
@@ -339,8 +350,11 @@ public class ResourceOperations<P extends HasMetadata> {
    * @param <R> resource type
    */
   public <R extends HasMetadata> R updateStatus(R resource) {
-    return resourcePatch(
-        resource, r -> context.getClient().resource(r).updateStatus(), new Options(true));
+    return updateStatus(resource, Options.defaultMode());
+  }
+
+  public <R extends HasMetadata> R updateStatus(R resource, Options options) {
+    return resourcePatch(resource, r -> context.getClient().resource(r).updateStatus(), options);
   }
 
   /**
@@ -358,10 +372,15 @@ public class ResourceOperations<P extends HasMetadata> {
    * @return updated resource
    */
   public P updatePrimary(P resource) {
+    return updatePrimary(resource, Options.defaultMode());
+  }
+
+  public P updatePrimary(P resource, Options options) {
     return resourcePatch(
         resource,
         r -> context.getClient().resource(r).update(),
-        context.eventSourceRetriever().getControllerEventSource());
+        context.eventSourceRetriever().getControllerEventSource(),
+        options);
   }
 
   /**
@@ -412,6 +431,18 @@ public class ResourceOperations<P extends HasMetadata> {
         resource, r -> context.getClient().resource(r).edit(unaryOperator), options);
   }
 
+  public <R extends HasMetadata> R jsonPatch(
+      R resource,
+      UnaryOperator<R> unaryOperator,
+      InformerEventSource<R, P> informerEventSource,
+      Options options) {
+    return resourcePatch(
+        resource,
+        r -> context.getClient().resource(r).edit(unaryOperator),
+        informerEventSource,
+        options);
+  }
+
   /**
    * Applies a JSON Patch to the resource status subresource. The unaryOperator function is used to
    * modify the resource status, and the differences are sent as a JSON Patch.
@@ -436,7 +467,19 @@ public class ResourceOperations<P extends HasMetadata> {
   }
 
   public <R extends HasMetadata> R jsonPatchStatus(R resource, UnaryOperator<R> unaryOperator) {
-    return jsonPatchStatus(resource, unaryOperator, null);
+    return jsonPatchStatus(resource, unaryOperator, Options.defaultMode());
+  }
+
+  public <R extends HasMetadata> R jsonPatchStatus(
+      R resource,
+      UnaryOperator<R> unaryOperator,
+      InformerEventSource<R, P> informerEventSource,
+      Options options) {
+    return resourcePatch(
+        resource,
+        r -> context.getClient().resource(r).editStatus(unaryOperator),
+        informerEventSource,
+        options);
   }
 
   /**
@@ -455,10 +498,15 @@ public class ResourceOperations<P extends HasMetadata> {
    * @return updated resource
    */
   public P jsonPatchPrimary(P resource, UnaryOperator<P> unaryOperator) {
+    return jsonPatchPrimary(resource, unaryOperator, Options.defaultMode());
+  }
+
+  public P jsonPatchPrimary(P resource, UnaryOperator<P> unaryOperator, Options options) {
     return resourcePatch(
         resource,
         r -> context.getClient().resource(r).edit(unaryOperator),
-        context.eventSourceRetriever().getControllerEventSource());
+        context.eventSourceRetriever().getControllerEventSource(),
+        options);
   }
 
   /**
@@ -477,10 +525,15 @@ public class ResourceOperations<P extends HasMetadata> {
    * @return updated resource
    */
   public P jsonPatchPrimaryStatus(P resource, UnaryOperator<P> unaryOperator) {
+    return jsonPatchPrimaryStatus(resource, unaryOperator, Options.defaultMode());
+  }
+
+  public P jsonPatchPrimaryStatus(P resource, UnaryOperator<P> unaryOperator, Options options) {
     return resourcePatch(
         resource,
         r -> context.getClient().resource(r).editStatus(unaryOperator),
-        context.eventSourceRetriever().getControllerEventSource());
+        context.eventSourceRetriever().getControllerEventSource(),
+        options);
   }
 
   /**
@@ -500,11 +553,17 @@ public class ResourceOperations<P extends HasMetadata> {
    * @param <R> resource type
    */
   public <R extends HasMetadata> R jsonMergePatch(R resource) {
-    return jsonMergePatch(resource, null);
+    return jsonMergePatch(resource, Options.defaultMode());
   }
 
   public <R extends HasMetadata> R jsonMergePatch(R resource, Options options) {
     return resourcePatch(resource, r -> context.getClient().resource(r).patch(), options);
+  }
+
+  public <R extends HasMetadata> R jsonMergePatch(
+      R resource, InformerEventSource<R, P> informerEventSource, Options options) {
+    return resourcePatch(
+        resource, r -> context.getClient().resource(r).patch(), informerEventSource, options);
   }
 
   /**
@@ -530,6 +589,12 @@ public class ResourceOperations<P extends HasMetadata> {
     return resourcePatch(resource, r -> context.getClient().resource(r).patchStatus(), options);
   }
 
+  public <R extends HasMetadata> R jsonMergePatchStatus(
+      R resource, InformerEventSource<R, P> informerEventSource, Options options) {
+    return resourcePatch(
+        resource, r -> context.getClient().resource(r).patchStatus(), informerEventSource, options);
+  }
+
   /**
    * Applies a JSON Merge Patch to the primary resource. Caches the response using the controller's
    * event source.
@@ -546,10 +611,15 @@ public class ResourceOperations<P extends HasMetadata> {
    * @return updated resource
    */
   public P jsonMergePatchPrimary(P resource) {
+    return jsonMergePatchPrimary(resource, Options.defaultMode());
+  }
+
+  public P jsonMergePatchPrimary(P resource, Options options) {
     return resourcePatch(
         resource,
         r -> context.getClient().resource(r).patch(),
-        context.eventSourceRetriever().getControllerEventSource());
+        context.eventSourceRetriever().getControllerEventSource(),
+        options);
   }
 
   /**
@@ -568,14 +638,19 @@ public class ResourceOperations<P extends HasMetadata> {
    * @see #jsonMergePatchPrimaryStatus(HasMetadata)
    */
   public P jsonMergePatchPrimaryStatus(P resource) {
+    return jsonMergePatchPrimaryStatus(resource, Options.defaultMode());
+  }
+
+  public P jsonMergePatchPrimaryStatus(P resource, Options options) {
     return resourcePatch(
         resource,
         r -> context.getClient().resource(r).patchStatus(),
-        context.eventSourceRetriever().getControllerEventSource());
+        context.eventSourceRetriever().getControllerEventSource(),
+        options);
   }
 
   public <R extends HasMetadata> R resourcePatch(R resource, UnaryOperator<R> updateOperation) {
-    return resourcePatch(resource, updateOperation, (Options) null);
+    return resourcePatch(resource, updateOperation, Options.defaultMode());
   }
 
   /**
@@ -636,8 +711,12 @@ public class ResourceOperations<P extends HasMetadata> {
       UnaryOperator<R> updateOperation,
       ManagedInformerEventSource<R, P, ?> ies,
       Options options) {
-    return ies.eventFilteringUpdateAndCacheResource(
-        resource, updateOperation, options != null && options.forceEventFiltering());
+    if (options != null && options.getMode() == Mode.ONLY_CACHE) {
+      return ies.updateAndCacheResource(resource, updateOperation);
+    } else {
+      return ies.eventFilteringUpdateAndCacheResource(
+          resource, updateOperation, options != null && options.isForcedFiltering());
+    }
   }
 
   /**
@@ -827,11 +906,45 @@ public class ResourceOperations<P extends HasMetadata> {
     }
   }
 
-  /**
-   * Force filtering only if it is made sure that the update not results on a no-op change. See
-   * details here: <a href="https://github.com/operator-framework/java-operator-sdk/pull/3484">PR
-   * 3484</a>
-   */
-  @Experimental("This API might change")
-  public record Options(boolean forceEventFiltering) {}
+  // this is designed with forward compatibility in mynd
+  @Experimental(API_MIGHT_CHANGE)
+  public static class Options {
+
+    private static final Options FORCED_FILTERING = new Options(Mode.FORCED_FILTERING);
+    private static final Options ONLY_CACHE = new Options(Mode.ONLY_CACHE);
+    private static final Options DEFAULT = new Options(Mode.FILTERING_IF_OPTIMISTIC_LOCKING);
+
+    private final Mode mode;
+
+    public static Options forcedFiltering() {
+      return FORCED_FILTERING;
+    }
+
+    public static Options onlyCache() {
+      return ONLY_CACHE;
+    }
+
+    public static Options defaultMode() {
+      return DEFAULT;
+    }
+
+    private Options(Mode mode) {
+      this.mode = mode;
+    }
+
+    public Mode getMode() {
+      return mode;
+    }
+
+    public boolean isForcedFiltering() {
+      return mode != Mode.ONLY_CACHE;
+    }
+  }
+
+  @Experimental(API_MIGHT_CHANGE)
+  public enum Mode {
+    FILTERING_IF_OPTIMISTIC_LOCKING,
+    FORCED_FILTERING,
+    ONLY_CACHE,
+  }
 }

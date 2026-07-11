@@ -49,6 +49,8 @@ import io.javaoperatorsdk.operator.processing.event.ResourceID;
 import io.javaoperatorsdk.operator.processing.event.source.*;
 import io.javaoperatorsdk.operator.processing.event.source.ResourceAction;
 
+import static io.javaoperatorsdk.operator.api.reconciler.Experimental.API_MIGHT_CHANGE;
+
 @SuppressWarnings("rawtypes")
 public abstract class ManagedInformerEventSource<
         R extends HasMetadata, P extends HasMetadata, C extends Informable<R>>
@@ -89,8 +91,7 @@ public abstract class ManagedInformerEventSource<
     }
   }
 
-  @Experimental(
-      "Internal API. Use ResourceOperation not this directly, this API might change in the future")
+  @Experimental(API_MIGHT_CHANGE)
   public R eventFilteringUpdateAndCacheResource(R resourceToUpdate, UnaryOperator<R> updateMethod) {
     return eventFilteringUpdateAndCacheResource(resourceToUpdate, updateMethod, false);
   }
@@ -100,8 +101,7 @@ public abstract class ManagedInformerEventSource<
    * Also makes sure that the even produced by this update is filtered, thus does not trigger the
    * reconciliation.
    */
-  @Experimental(
-      "Internal API. Use ResourceOperation not this directly, this API might change in the future")
+  @Experimental(API_MIGHT_CHANGE)
   @SuppressWarnings("unchecked")
   public R eventFilteringUpdateAndCacheResource(
       R resourceToUpdate, UnaryOperator<R> updateMethod, boolean forceUpdateFilter) {
@@ -149,7 +149,8 @@ public abstract class ManagedInformerEventSource<
     }
   }
 
-  private R updateAndCacheResource(R resourceToUpdate, UnaryOperator<R> updateOperation) {
+  @Experimental(API_MIGHT_CHANGE)
+  public R updateAndCacheResource(R resourceToUpdate, UnaryOperator<R> updateOperation) {
     var result = updateOperation.apply(resourceToUpdate);
     handleRecentResourceUpdate(ResourceID.fromResource(resourceToUpdate), result, resourceToUpdate);
     return result;
