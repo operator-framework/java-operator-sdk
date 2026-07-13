@@ -16,6 +16,7 @@
 package io.javaoperatorsdk.operator.api.reconciler;
 
 import java.lang.reflect.InvocationTargetException;
+import java.util.Optional;
 import java.util.function.Predicate;
 import java.util.function.UnaryOperator;
 
@@ -27,6 +28,8 @@ import io.fabric8.kubernetes.client.KubernetesClientException;
 import io.fabric8.kubernetes.client.dsl.base.PatchContext;
 import io.fabric8.kubernetes.client.dsl.base.PatchType;
 import io.javaoperatorsdk.operator.OperatorException;
+import io.javaoperatorsdk.operator.api.reconciler.matcher.Matcher;
+import io.javaoperatorsdk.operator.api.reconciler.matcher.UpdateType;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
 import io.javaoperatorsdk.operator.processing.event.source.informer.InformerEventSource;
 import io.javaoperatorsdk.operator.processing.event.source.informer.ManagedInformerEventSource;
@@ -69,7 +72,7 @@ public class ResourceOperations<P extends HasMetadata> {
    * @param <R> resource type
    */
   public <R extends HasMetadata> R serverSideApply(R resource) {
-    return serverSideApply(resource, (Options) null);
+    return serverSideApply(resource, Options.matchAndFilterWithDefaultMatcher(UpdateType.SSA));
   }
 
   @Experimental(API_MIGHT_CHANGE)
@@ -163,11 +166,13 @@ public class ResourceOperations<P extends HasMetadata> {
   }
 
   public <R extends HasMetadata> R serverSideApplyStatus(R resource) {
-    return serverSideApplyStatus(resource, null);
+    return serverSideApplyStatus(
+        resource, Options.matchAndFilterWithDefaultMatcher(UpdateType.SSA_STATUS));
   }
 
   public P serverSideApplyPrimary(P resource) {
-    return serverSideApplyPrimary(resource, Options.defaultMode());
+    return serverSideApplyPrimary(
+        resource, Options.matchAndFilterWithDefaultMatcher(UpdateType.SSA));
   }
 
   /**
@@ -216,7 +221,8 @@ public class ResourceOperations<P extends HasMetadata> {
    * @return updated resource
    */
   public P serverSideApplyPrimaryStatus(P resource) {
-    return serverSideApplyPrimaryStatus(resource, Options.defaultMode());
+    return serverSideApplyPrimaryStatus(
+        resource, Options.matchAndFilterWithDefaultMatcher(UpdateType.SSA_STATUS));
   }
 
   public P serverSideApplyPrimaryStatus(P resource, Options options) {
@@ -238,7 +244,7 @@ public class ResourceOperations<P extends HasMetadata> {
   }
 
   public <R extends HasMetadata> R update(R resource) {
-    return update(resource, Options.defaultMode());
+    return update(resource, Options.matchAndFilterWithDefaultMatcher(UpdateType.UPDATE));
   }
 
   /**
@@ -261,7 +267,8 @@ public class ResourceOperations<P extends HasMetadata> {
 
   public <R extends HasMetadata> R update(
       R resource, InformerEventSource<R, P> informerEventSource) {
-    return update(resource, informerEventSource, Options.defaultMode());
+    return update(
+        resource, informerEventSource, Options.matchAndFilterWithDefaultMatcher(UpdateType.UPDATE));
   }
 
   /**
@@ -303,10 +310,14 @@ public class ResourceOperations<P extends HasMetadata> {
    */
   public <R extends HasMetadata> R create(R resource) {
     // it is safe to do event filtering for create since check if the resource already exists.
-    return create(resource, Options.forcedFiltering());
+    return create(resource, Options.alwaysFilter());
   }
 
   public <R extends HasMetadata> R create(R resource, Options options) {
+    if (options.getMatcher().isPresent()) {
+      throw new IllegalArgumentException(
+          "Create operation does not support matcher. There is nothing to match.");
+    }
     return resourcePatch(resource, r -> context.getClient().resource(r).create(), options);
   }
 
@@ -350,7 +361,8 @@ public class ResourceOperations<P extends HasMetadata> {
    * @param <R> resource type
    */
   public <R extends HasMetadata> R updateStatus(R resource) {
-    return updateStatus(resource, Options.defaultMode());
+    return updateStatus(
+        resource, Options.matchAndFilterWithDefaultMatcher(UpdateType.UPDATE_STATUS));
   }
 
   public <R extends HasMetadata> R updateStatus(R resource, Options options) {
@@ -372,7 +384,7 @@ public class ResourceOperations<P extends HasMetadata> {
    * @return updated resource
    */
   public P updatePrimary(P resource) {
-    return updatePrimary(resource, Options.defaultMode());
+    return updatePrimary(resource, Options.matchAndFilterWithDefaultMatcher(UpdateType.UPDATE));
   }
 
   public P updatePrimary(P resource, Options options) {
@@ -401,7 +413,8 @@ public class ResourceOperations<P extends HasMetadata> {
     return resourcePatch(
         resource,
         r -> context.getClient().resource(r).updateStatus(),
-        context.eventSourceRetriever().getControllerEventSource());
+        context.eventSourceRetriever().getControllerEventSource(),
+        Options.matchAndFilterWithDefaultMatcher(UpdateType.UPDATE_STATUS));
   }
 
   /**
@@ -416,31 +429,32 @@ public class ResourceOperations<P extends HasMetadata> {
    * <p>You are free to control the optimistic locking by setting the resource version in resource
    * metadata.
    *
-   * @param resource resource to patch
-   * @param unaryOperator function to modify the resource
    * @return updated resource
    * @param <R> resource type
    */
-  public <R extends HasMetadata> R jsonPatch(R resource, UnaryOperator<R> unaryOperator) {
-    return jsonPatch(resource, unaryOperator, null);
+  public <R extends HasMetadata> R jsonPatch(R actual, R desired) {
+    return jsonPatch(
+        actual, desired, Options.matchAndFilterWithDefaultMatcher(UpdateType.JSON_PATCH));
+  }
+
+  public <R extends HasMetadata> R jsonPatch(R actual, R desired, Options options) {
+    return resourcePatch(
+        desired,
+        actual,
+        r -> context.getClient().resource(actual).edit(res -> desired),
+        options,
+        null);
   }
 
   public <R extends HasMetadata> R jsonPatch(
-      R resource, UnaryOperator<R> unaryOperator, Options options) {
+      R desired, R actual, InformerEventSource<R, P> informerEventSource, Options options) {
     return resourcePatch(
-        resource, r -> context.getClient().resource(r).edit(unaryOperator), options);
-  }
-
-  public <R extends HasMetadata> R jsonPatch(
-      R resource,
-      UnaryOperator<R> unaryOperator,
-      InformerEventSource<R, P> informerEventSource,
-      Options options) {
-    return resourcePatch(
-        resource,
-        r -> context.getClient().resource(r).edit(unaryOperator),
+        desired,
+        actual,
+        r -> context.getClient().resource(actual).edit(res -> desired),
         informerEventSource,
-        options);
+        options,
+        null);
   }
 
   /**
@@ -455,29 +469,29 @@ public class ResourceOperations<P extends HasMetadata> {
    * <p>You are free to control the optimistic locking by setting the resource version in resource
    * metadata.
    *
-   * @param resource resource to patch
-   * @param unaryOperator function to modify the resource
+   * @param desired resource to patch
    * @return updated resource
    * @param <R> resource type
    */
-  public <R extends HasMetadata> R jsonPatchStatus(
-      R resource, UnaryOperator<R> unaryOperator, Options options) {
-    return resourcePatch(
-        resource, r -> context.getClient().resource(r).editStatus(unaryOperator), options);
+  public <R extends HasMetadata> R jsonPatchStatus(R desired, R actual) {
+    return jsonPatchStatus(
+        desired, actual, Options.matchAndFilterWithDefaultMatcher(UpdateType.JSON_PATCH_STATUS));
   }
 
-  public <R extends HasMetadata> R jsonPatchStatus(R resource, UnaryOperator<R> unaryOperator) {
-    return jsonPatchStatus(resource, unaryOperator, Options.defaultMode());
+  public <R extends HasMetadata> R jsonPatchStatus(R desired, R actual, Options options) {
+    return resourcePatch(
+        desired,
+        actual,
+        r -> context.getClient().resource(actual).editStatus(res -> desired),
+        options,
+        null);
   }
 
   public <R extends HasMetadata> R jsonPatchStatus(
-      R resource,
-      UnaryOperator<R> unaryOperator,
-      InformerEventSource<R, P> informerEventSource,
-      Options options) {
+      R desired, R actual, InformerEventSource<R, P> informerEventSource, Options options) {
     return resourcePatch(
-        resource,
-        r -> context.getClient().resource(r).editStatus(unaryOperator),
+        desired,
+        r -> context.getClient().resource(actual).editStatus(res -> desired),
         informerEventSource,
         options);
   }
@@ -498,7 +512,7 @@ public class ResourceOperations<P extends HasMetadata> {
    * @return updated resource
    */
   public P jsonPatchPrimary(P resource, UnaryOperator<P> unaryOperator) {
-    return jsonPatchPrimary(resource, unaryOperator, Options.defaultMode());
+    return jsonPatchPrimary(resource, unaryOperator, Options.filterIfOptimisticLocking());
   }
 
   public P jsonPatchPrimary(P resource, UnaryOperator<P> unaryOperator, Options options) {
@@ -525,7 +539,7 @@ public class ResourceOperations<P extends HasMetadata> {
    * @return updated resource
    */
   public P jsonPatchPrimaryStatus(P resource, UnaryOperator<P> unaryOperator) {
-    return jsonPatchPrimaryStatus(resource, unaryOperator, Options.defaultMode());
+    return jsonPatchPrimaryStatus(resource, unaryOperator, Options.filterIfOptimisticLocking());
   }
 
   public P jsonPatchPrimaryStatus(P resource, UnaryOperator<P> unaryOperator, Options options) {
@@ -548,22 +562,23 @@ public class ResourceOperations<P extends HasMetadata> {
    * <p>You are free to control the optimistic locking by setting the resource version in resource
    * metadata.
    *
-   * @param resource resource to patch
+   * @param desired resource to patch
    * @return updated resource
    * @param <R> resource type
    */
-  public <R extends HasMetadata> R jsonMergePatch(R resource) {
-    return jsonMergePatch(resource, Options.defaultMode());
+  public <R extends HasMetadata> R jsonMergePatch(R desired) {
+    return jsonMergePatch(
+        desired, Options.matchAndFilterWithDefaultMatcher(UpdateType.JSON_MERGE_PATCH));
   }
 
-  public <R extends HasMetadata> R jsonMergePatch(R resource, Options options) {
-    return resourcePatch(resource, r -> context.getClient().resource(r).patch(), options);
+  public <R extends HasMetadata> R jsonMergePatch(R desired, Options options) {
+    return resourcePatch(desired, r -> context.getClient().resource(r).patch(), options);
   }
 
   public <R extends HasMetadata> R jsonMergePatch(
-      R resource, InformerEventSource<R, P> informerEventSource, Options options) {
+      R desired, InformerEventSource<R, P> informerEventSource, Options options) {
     return resourcePatch(
-        resource, r -> context.getClient().resource(r).patch(), informerEventSource, options);
+        desired, r -> context.getClient().resource(r).patch(), informerEventSource, options);
   }
 
   /**
@@ -582,7 +597,8 @@ public class ResourceOperations<P extends HasMetadata> {
    * @param <R> resource type
    */
   public <R extends HasMetadata> R jsonMergePatchStatus(R resource) {
-    return jsonMergePatchStatus(resource, null);
+    return jsonMergePatchStatus(
+        resource, Options.matchAndFilterWithDefaultMatcher(UpdateType.JSON_MERGE_PATCH_STATUS));
   }
 
   public <R extends HasMetadata> R jsonMergePatchStatus(R resource, Options options) {
@@ -611,7 +627,8 @@ public class ResourceOperations<P extends HasMetadata> {
    * @return updated resource
    */
   public P jsonMergePatchPrimary(P resource) {
-    return jsonMergePatchPrimary(resource, Options.defaultMode());
+    return jsonMergePatchPrimary(
+        resource, Options.matchAndFilterWithDefaultMatcher(UpdateType.JSON_MERGE_PATCH));
   }
 
   public P jsonMergePatchPrimary(P resource, Options options) {
@@ -638,7 +655,8 @@ public class ResourceOperations<P extends HasMetadata> {
    * @see #jsonMergePatchPrimaryStatus(HasMetadata)
    */
   public P jsonMergePatchPrimaryStatus(P resource) {
-    return jsonMergePatchPrimaryStatus(resource, Options.defaultMode());
+    return jsonMergePatchPrimaryStatus(
+        resource, Options.matchAndFilterWithDefaultMatcher(UpdateType.JSON_MERGE_PATCH_STATUS));
   }
 
   public P jsonMergePatchPrimaryStatus(P resource, Options options) {
@@ -650,15 +668,11 @@ public class ResourceOperations<P extends HasMetadata> {
   }
 
   public <R extends HasMetadata> R resourcePatch(R resource, UnaryOperator<R> updateOperation) {
-    return resourcePatch(resource, updateOperation, Options.defaultMode());
+    return resourcePatch(resource, updateOperation, Options.filterIfOptimisticLocking());
   }
 
   /**
-   * Utility method to patch a resource and cache the result. Automatically discovers the event
-   * source for the resource type and delegates to {@link #resourcePatch(HasMetadata, UnaryOperator,
-   * ManagedInformerEventSource)}.
-   *
-   * @param resource resource to patch
+   * @param desired resource to patch
    * @param updateOperation operation to perform (update, patch, edit, etc.)
    * @return updated resource
    * @param <R> resource type
@@ -666,23 +680,42 @@ public class ResourceOperations<P extends HasMetadata> {
    */
   @Experimental(API_MIGHT_CHANGE)
   @SuppressWarnings({"rawtypes", "unchecked"})
-  public <R extends HasMetadata> R resourcePatch(
-      R resource, UnaryOperator<R> updateOperation, Options options) {
+  private <R extends HasMetadata> R resourcePatch(
+      R desired, UnaryOperator<R> updateOperation, Options options) {
+    return resourcePatch(desired, updateOperation, options, null);
+  }
 
-    var esList = context.eventSourceRetriever().getEventSourcesFor(resource.getClass());
+  @Experimental(API_MIGHT_CHANGE)
+  @SuppressWarnings({"rawtypes", "unchecked"})
+  private <R extends HasMetadata> R resourcePatch(
+      R desired, UnaryOperator<R> updateOperation, Options options, Matcher matcher) {
+    return resourcePatch(desired, null, updateOperation, options, matcher);
+  }
+
+  @Experimental(API_MIGHT_CHANGE)
+  @SuppressWarnings({"rawtypes", "unchecked"})
+  private <R extends HasMetadata> R resourcePatch(
+      R desired, R actual, UnaryOperator<R> updateOperation, Options options, Matcher matcher) {
+
+    var esList = context.eventSourceRetriever().getEventSourcesFor(desired.getClass());
     if (esList.isEmpty()) {
-      throw new IllegalStateException("No event source found for type: " + resource.getClass());
+      throw new IllegalStateException("No event source found for type: " + desired.getClass());
     }
     var es = esList.get(0);
     if (esList.size() > 1) {
       log.warn(
           "Multiple event sources found for type: {}, selecting first with name {}",
-          resource.getClass(),
+          desired.getClass(),
           es.name());
     }
     if (es instanceof ManagedInformerEventSource mes) {
       return resourcePatch(
-          resource, updateOperation, (ManagedInformerEventSource<R, P, ?>) mes, options);
+          desired,
+          actual,
+          updateOperation,
+          (ManagedInformerEventSource<R, P, ?>) mes,
+          options,
+          matcher);
     } else {
       throw new IllegalStateException(
           "Target event source must be a subclass off "
@@ -690,32 +723,52 @@ public class ResourceOperations<P extends HasMetadata> {
     }
   }
 
-  /**
-   * Utility method to patch a resource and cache the result using the specified event source. This
-   * method either filters out the resulting event or allows it to trigger reconciliation based on
-   * the filterEvent parameter.
-   *
-   * @param resource resource to patch
-   * @param updateOperation operation to perform (update, patch, edit, etc.)
-   * @param ies the managed informer event source to use for caching
-   * @return updated resource
-   * @param <R> resource type
-   */
   public <R extends HasMetadata> R resourcePatch(
-      R resource, UnaryOperator<R> updateOperation, ManagedInformerEventSource<R, P, ?> ies) {
-    return resourcePatch(resource, updateOperation, ies, (Options) null);
+      R desired, UnaryOperator<R> updateOperation, ManagedInformerEventSource<R, P, ?> ies) {
+    return resourcePatch(desired, updateOperation, Options.filterIfOptimisticLocking());
   }
 
   public <R extends HasMetadata> R resourcePatch(
-      R resource,
+      R desired,
       UnaryOperator<R> updateOperation,
       ManagedInformerEventSource<R, P, ?> ies,
       Options options) {
-    if (options != null && options.getMode() == Mode.ONLY_CACHE) {
-      return ies.updateAndCacheResource(resource, updateOperation);
+    R originalResource = null;
+    if (options.getMatcher().isPresent()) {
+      originalResource = ies.get(ResourceID.fromResource(desired)).orElse(null);
+    }
+    return resourcePatch(desired, originalResource, updateOperation, ies, options, null);
+  }
+
+  public <R extends HasMetadata> R resourcePatch(
+      R desiredResource,
+      R actualResource,
+      UnaryOperator<R> updateOperation,
+      ManagedInformerEventSource<R, P, ?> ies,
+      Options options,
+      Matcher matcherToUse) {
+
+    var matcher = matcherToUse == null ? options.getMatcher().orElse(null) : matcherToUse;
+    boolean matches = false;
+    if (matcher != null) {
+      if (actualResource == null) {
+        throw new IllegalArgumentException("Actual most be present for matching update/patch.");
+      }
+      matches = matcher.matches(desiredResource, actualResource, context);
+    }
+    if (options.requiresMatcher() && matcher == null) {
+      throw new IllegalArgumentException("Mode : " + options.mode + " requires matcher");
+    }
+    if (matches) {
+      return actualResource;
+    }
+    boolean optimisticLocking = desiredResource.getMetadata().getResourceVersion() != null;
+
+    if (options.getMode() == Mode.ONLY_CACHE
+        || (options.getMode() == Mode.FILTER_IF_OPTIMISTIC_LOCKING && !optimisticLocking)) {
+      return ies.updateAndCacheResource(desiredResource, updateOperation);
     } else {
-      return ies.eventFilteringUpdateAndCacheResource(
-          resource, updateOperation, options != null && options.isForcedFiltering());
+      return ies.eventFilteringUpdateAndCacheResource(desiredResource, updateOperation);
     }
   }
 
@@ -893,7 +946,7 @@ public class ResourceOperations<P extends HasMetadata> {
       resource.initNameAndNamespaceFrom(originalResource);
       resource.addFinalizer(finalizerName);
 
-      return serverSideApplyPrimary(resource);
+      return serverSideApplyPrimary(resource, Options.onlyCache());
     } catch (InstantiationException
         | IllegalAccessException
         | InvocationTargetException
@@ -906,45 +959,77 @@ public class ResourceOperations<P extends HasMetadata> {
     }
   }
 
-  // this is designed with forward compatibility in mynd
   @Experimental(API_MIGHT_CHANGE)
   public static class Options {
 
-    private static final Options FORCED_FILTERING = new Options(Mode.FORCED_FILTERING);
-    private static final Options ONLY_CACHE = new Options(Mode.ONLY_CACHE);
-    private static final Options DEFAULT = new Options(Mode.FILTERING_IF_OPTIMISTIC_LOCKING);
+    private static final Options ALWAYS_FILTER = new Options(Mode.ALWAYS_FILTER, null);
+    private static final Options ONLY_CACHE = new Options(Mode.ONLY_CACHE, null);
+    private static final Options FILTER_IF_OPTIMISTIC_LOCKING =
+        new Options(Mode.FILTER_IF_OPTIMISTIC_LOCKING, null);
 
     private final Mode mode;
+    private Matcher matcher;
 
-    public static Options forcedFiltering() {
-      return FORCED_FILTERING;
+    private Options(Mode mode, Matcher matcher) {
+      this.mode = mode;
+      this.matcher = matcher;
+    }
+
+    public static Options alwaysFilter() {
+      return ALWAYS_FILTER;
     }
 
     public static Options onlyCache() {
       return ONLY_CACHE;
     }
 
-    public static Options defaultMode() {
-      return DEFAULT;
+    public static Options onlyCache(Matcher matcher) {
+      return new Options(Mode.ONLY_CACHE, matcher);
     }
 
-    private Options(Mode mode) {
-      this.mode = mode;
+    public static Options filterIfOptimisticLocking() {
+      return FILTER_IF_OPTIMISTIC_LOCKING;
+    }
+
+    /**
+     * Filters own updates and, before doing so, checks whether the actual resource already matches
+     * the desired state using the given {@link Matcher}.
+     *
+     * @param matcher the matcher used to decide whether actual already matches desired
+     */
+    public static Options matchAndFilter(Matcher matcher) {
+      if (matcher == null) {
+        throw new IllegalArgumentException("Matcher cannot be null for matchAndFilterOperation");
+      }
+      return new Options(Mode.FILTER_IF_NOT_MATCHING, matcher);
+    }
+
+    public static Options matchAndFilterWithDefaultMatcher(UpdateType updateType) {
+      return new Options(Mode.FILTER_IF_NOT_MATCHING, updateType.getMatcher());
     }
 
     public Mode getMode() {
       return mode;
     }
 
-    public boolean isForcedFiltering() {
-      return mode == Mode.FORCED_FILTERING;
+    public Optional<Matcher> getMatcher() {
+      return Optional.ofNullable(matcher);
+    }
+
+    public boolean isAlwaysFilter() {
+      return mode == Mode.ALWAYS_FILTER;
+    }
+
+    public boolean requiresMatcher() {
+      return mode == Mode.FILTER_IF_NOT_MATCHING;
     }
   }
 
   @Experimental(API_MIGHT_CHANGE)
   public enum Mode {
-    FILTERING_IF_OPTIMISTIC_LOCKING,
-    FORCED_FILTERING,
+    FILTER_IF_OPTIMISTIC_LOCKING,
+    FILTER_IF_NOT_MATCHING,
     ONLY_CACHE,
+    ALWAYS_FILTER,
   }
 }

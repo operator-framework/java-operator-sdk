@@ -781,25 +781,6 @@ class InformerEventSourceTest {
   }
 
   @Test
-  void skipsEventFilteringWhenResourceVersionIsNull() {
-    // Without a resourceVersion there is nothing to correlate own-write echoes against, so
-    // event filtering is bypassed: the update is applied and cached directly, no filter window
-    // is opened and no event is propagated through handleEvent.
-    var resourceToUpdate = testDeployment();
-    resourceToUpdate.getMetadata().setResourceVersion(null);
-    var updated = deploymentWithResourceVersion(3);
-
-    var result =
-        informerEventSource.eventFilteringUpdateAndCacheResource(resourceToUpdate, r -> updated);
-
-    assertThat(result).isSameAs(updated);
-    verify(temporaryResourceCache, times(1)).putResource(updated);
-    verify(temporaryResourceCache, never()).startEventFilteringModify(any());
-    verify(temporaryResourceCache, never()).doneEventFilterModify(any());
-    verify(eventHandlerMock, never()).handleEvent(any());
-  }
-
-  @Test
   void forceUpdateFilterOpensFilterWindowEvenWhenResourceVersionIsNull() {
     // A write without a resourceVersion (e.g. an SSA finalizer add, which uses no optimistic
     // locking) would normally skip event filtering. forceUpdateFilter=true forces filtering
@@ -811,8 +792,7 @@ class InformerEventSourceTest {
     when(temporaryResourceCache.doneEventFilterModify(any())).thenReturn(Optional.empty());
 
     var result =
-        informerEventSource.eventFilteringUpdateAndCacheResource(
-            resourceToUpdate, r -> updated, true);
+        informerEventSource.eventFilteringUpdateAndCacheResource(resourceToUpdate, r -> updated);
 
     assertThat(result).isSameAs(updated);
     verify(temporaryResourceCache, times(1)).startEventFilteringModify(any());

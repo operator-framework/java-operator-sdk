@@ -28,6 +28,7 @@ import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.javaoperatorsdk.operator.TestUtils;
 import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
+import io.javaoperatorsdk.operator.api.reconciler.matcher.Matcher;
 import io.javaoperatorsdk.operator.processing.event.EventSourceRetriever;
 import io.javaoperatorsdk.operator.processing.event.source.EventSource;
 import io.javaoperatorsdk.operator.processing.event.source.controller.ControllerEventSource;
@@ -84,7 +85,7 @@ class ResourceOperationsTest {
 
     // Mock successful finalizer addition
     when(controllerEventSource.eventFilteringUpdateAndCacheResource(
-            any(), any(UnaryOperator.class), anyBoolean()))
+            any(), any(UnaryOperator.class)))
         .thenAnswer(
             invocation -> {
               var res = TestUtils.testCustomResource1();
@@ -99,7 +100,7 @@ class ResourceOperationsTest {
     assertThat(result.hasFinalizer(FINALIZER_NAME)).isTrue();
     assertThat(result.getMetadata().getResourceVersion()).isEqualTo("2");
     verify(controllerEventSource, times(1))
-        .eventFilteringUpdateAndCacheResource(any(), any(UnaryOperator.class), anyBoolean());
+        .eventFilteringUpdateAndCacheResource(any(), any(UnaryOperator.class));
   }
 
   @Test
@@ -110,8 +111,7 @@ class ResourceOperationsTest {
     when(context.getPrimaryResource()).thenReturn(resource);
 
     // Mock successful SSA finalizer addition
-    when(controllerEventSource.eventFilteringUpdateAndCacheResource(
-            any(), any(UnaryOperator.class), anyBoolean()))
+    when(controllerEventSource.updateAndCacheResource(any(), any(UnaryOperator.class)))
         .thenAnswer(
             invocation -> {
               var res = TestUtils.testCustomResource1();
@@ -125,8 +125,7 @@ class ResourceOperationsTest {
     assertThat(result).isNotNull();
     assertThat(result.hasFinalizer(FINALIZER_NAME)).isTrue();
     assertThat(result.getMetadata().getResourceVersion()).isEqualTo("2");
-    verify(controllerEventSource, times(1))
-        .eventFilteringUpdateAndCacheResource(any(), any(UnaryOperator.class), anyBoolean());
+    verify(controllerEventSource, times(1)).updateAndCacheResource(any(), any(UnaryOperator.class));
   }
 
   @Test
@@ -139,7 +138,7 @@ class ResourceOperationsTest {
 
     // Mock successful finalizer removal
     when(controllerEventSource.eventFilteringUpdateAndCacheResource(
-            any(), any(UnaryOperator.class), anyBoolean()))
+            any(), any(UnaryOperator.class)))
         .thenAnswer(
             invocation -> {
               var res = TestUtils.testCustomResource1();
@@ -154,7 +153,7 @@ class ResourceOperationsTest {
     assertThat(result.hasFinalizer(FINALIZER_NAME)).isFalse();
     assertThat(result.getMetadata().getResourceVersion()).isEqualTo("2");
     verify(controllerEventSource, times(1))
-        .eventFilteringUpdateAndCacheResource(any(), any(UnaryOperator.class), anyBoolean());
+        .eventFilteringUpdateAndCacheResource(any(), any(UnaryOperator.class));
   }
 
   @Test
@@ -166,7 +165,7 @@ class ResourceOperationsTest {
 
     // First call throws conflict, second succeeds
     when(controllerEventSource.eventFilteringUpdateAndCacheResource(
-            any(), any(UnaryOperator.class), anyBoolean()))
+            any(), any(UnaryOperator.class)))
         .thenThrow(new KubernetesClientException("Conflict", 409, null))
         .thenAnswer(
             invocation -> {
@@ -184,7 +183,7 @@ class ResourceOperationsTest {
     assertThat(result).isNotNull();
     assertThat(result.hasFinalizer(FINALIZER_NAME)).isTrue();
     verify(controllerEventSource, times(2))
-        .eventFilteringUpdateAndCacheResource(any(), any(UnaryOperator.class), anyBoolean());
+        .eventFilteringUpdateAndCacheResource(any(), any(UnaryOperator.class));
     verify(resourceOp, times(1)).get();
   }
 
@@ -198,7 +197,7 @@ class ResourceOperationsTest {
 
     // First call throws conflict
     when(controllerEventSource.eventFilteringUpdateAndCacheResource(
-            any(), any(UnaryOperator.class), anyBoolean()))
+            any(), any(UnaryOperator.class)))
         .thenThrow(new KubernetesClientException("Conflict", 409, null));
 
     // Return null on retry (resource was deleted)
@@ -207,7 +206,7 @@ class ResourceOperationsTest {
     resourceOperations.removeFinalizer(FINALIZER_NAME);
 
     verify(controllerEventSource, times(1))
-        .eventFilteringUpdateAndCacheResource(any(), any(UnaryOperator.class), anyBoolean());
+        .eventFilteringUpdateAndCacheResource(any(), any(UnaryOperator.class));
     verify(resourceOp, times(1)).get();
   }
 
@@ -221,7 +220,7 @@ class ResourceOperationsTest {
 
     // First call throws unprocessable (422), second succeeds
     when(controllerEventSource.eventFilteringUpdateAndCacheResource(
-            any(), any(UnaryOperator.class), anyBoolean()))
+            any(), any(UnaryOperator.class)))
         .thenThrow(new KubernetesClientException("Unprocessable", 422, null))
         .thenAnswer(
             invocation -> {
@@ -243,7 +242,7 @@ class ResourceOperationsTest {
     assertThat(result.getMetadata().getResourceVersion()).isEqualTo("3");
     assertThat(result.hasFinalizer(FINALIZER_NAME)).isFalse();
     verify(controllerEventSource, times(2))
-        .eventFilteringUpdateAndCacheResource(any(), any(UnaryOperator.class), anyBoolean());
+        .eventFilteringUpdateAndCacheResource(any(), any(UnaryOperator.class));
     verify(resourceOp, times(1)).get();
   }
 
@@ -261,8 +260,7 @@ class ResourceOperationsTest {
     when(context.eventSourceRetriever()).thenReturn(eventSourceRetriever);
     when(eventSourceRetriever.getEventSourcesFor(TestCustomResource.class))
         .thenReturn(List.of(managedEventSource));
-    when(managedEventSource.eventFilteringUpdateAndCacheResource(
-            any(), any(UnaryOperator.class), anyBoolean()))
+    when(managedEventSource.eventFilteringUpdateAndCacheResource(any(), any(UnaryOperator.class)))
         .thenReturn(updatedResource);
 
     var result = resourceOperations.resourcePatch(resource, UnaryOperator.identity());
@@ -270,7 +268,7 @@ class ResourceOperationsTest {
     assertThat(result).isNotNull();
     assertThat(result.getMetadata().getResourceVersion()).isEqualTo("2");
     verify(managedEventSource, times(1))
-        .eventFilteringUpdateAndCacheResource(any(), any(UnaryOperator.class), anyBoolean());
+        .eventFilteringUpdateAndCacheResource(any(), any(UnaryOperator.class));
   }
 
   @Test
@@ -304,7 +302,7 @@ class ResourceOperationsTest {
     resourceOperations.resourcePatch(resource, UnaryOperator.identity());
 
     verify(eventSource1, times(1))
-        .eventFilteringUpdateAndCacheResource(any(), any(UnaryOperator.class), anyBoolean());
+        .eventFilteringUpdateAndCacheResource(any(), any(UnaryOperator.class));
   }
 
   @Test
@@ -324,5 +322,137 @@ class ResourceOperationsTest {
 
     assertThat(exception.getMessage()).contains("Target event source must be a subclass off");
     assertThat(exception.getMessage()).contains("ManagedInformerEventSource");
+  }
+
+  @Test
+  void matcherMatchingSkipsUpdateAndReturnsActual() {
+    var desired = TestUtils.testCustomResource1();
+    var actual = TestUtils.testCustomResource1();
+    var ies = mock(ManagedInformerEventSource.class);
+    var matcher = mock(Matcher.class);
+    when(matcher.matches(desired, actual, context)).thenReturn(true);
+
+    var result =
+        resourceOperations.resourcePatch(
+            desired,
+            actual,
+            UnaryOperator.identity(),
+            ies,
+            ResourceOperations.Options.alwaysFilter(),
+            matcher);
+
+    assertThat(result).isSameAs(actual);
+    verify(ies, never()).eventFilteringUpdateAndCacheResource(any(), any(UnaryOperator.class));
+    verify(ies, never()).updateAndCacheResource(any(), any(UnaryOperator.class));
+  }
+
+  @Test
+  void matcherNotMatchingProceedsToEventFilteringUpdate() {
+    var desired = TestUtils.testCustomResource1();
+    var actual = TestUtils.testCustomResource1();
+    var updated = TestUtils.testCustomResource1();
+    var ies = mock(ManagedInformerEventSource.class);
+    var matcher = mock(Matcher.class);
+    when(matcher.matches(desired, actual, context)).thenReturn(false);
+    when(ies.eventFilteringUpdateAndCacheResource(any(), any(UnaryOperator.class)))
+        .thenReturn(updated);
+
+    var result =
+        resourceOperations.resourcePatch(
+            desired,
+            actual,
+            UnaryOperator.identity(),
+            ies,
+            ResourceOperations.Options.alwaysFilter(),
+            matcher);
+
+    assertThat(result).isSameAs(updated);
+    verify(ies, times(1))
+        .eventFilteringUpdateAndCacheResource(eq(desired), any(UnaryOperator.class));
+  }
+
+  @Test
+  void matcherRequiresActualToBePresent() {
+    var desired = TestUtils.testCustomResource1();
+    var ies = mock(ManagedInformerEventSource.class);
+    var matcher = mock(Matcher.class);
+
+    assertThrows(
+        IllegalArgumentException.class,
+        () ->
+            resourceOperations.resourcePatch(
+                desired,
+                null,
+                UnaryOperator.identity(),
+                ies,
+                ResourceOperations.Options.alwaysFilter(),
+                matcher));
+  }
+
+  @Test
+  void onlyCacheModeSkipsEventFiltering() {
+    var desired = TestUtils.testCustomResource1();
+    var ies = mock(ManagedInformerEventSource.class);
+    when(ies.updateAndCacheResource(any(), any(UnaryOperator.class))).thenReturn(desired);
+
+    resourceOperations.resourcePatch(
+        desired, null, UnaryOperator.identity(), ies, ResourceOperations.Options.onlyCache(), null);
+
+    verify(ies, times(1)).updateAndCacheResource(eq(desired), any(UnaryOperator.class));
+    verify(ies, never()).eventFilteringUpdateAndCacheResource(any(), any(UnaryOperator.class));
+  }
+
+  @Test
+  void filterIfOptimisticLockingCachesWithoutFilteringWhenNoResourceVersion() {
+    var desired = TestUtils.testCustomResource1();
+    desired.getMetadata().setResourceVersion(null);
+    var ies = mock(ManagedInformerEventSource.class);
+    when(ies.updateAndCacheResource(any(), any(UnaryOperator.class))).thenReturn(desired);
+
+    resourceOperations.resourcePatch(
+        desired,
+        null,
+        UnaryOperator.identity(),
+        ies,
+        ResourceOperations.Options.filterIfOptimisticLocking(),
+        null);
+
+    verify(ies, times(1)).updateAndCacheResource(eq(desired), any(UnaryOperator.class));
+    verify(ies, never()).eventFilteringUpdateAndCacheResource(any(), any(UnaryOperator.class));
+  }
+
+  @Test
+  void filterIfOptimisticLockingFiltersWhenResourceVersionPresent() {
+    var desired = TestUtils.testCustomResource1();
+    desired.getMetadata().setResourceVersion("1");
+    var ies = mock(ManagedInformerEventSource.class);
+    when(ies.eventFilteringUpdateAndCacheResource(any(), any(UnaryOperator.class)))
+        .thenReturn(desired);
+
+    resourceOperations.resourcePatch(
+        desired,
+        null,
+        UnaryOperator.identity(),
+        ies,
+        ResourceOperations.Options.filterIfOptimisticLocking(),
+        null);
+
+    verify(ies, times(1))
+        .eventFilteringUpdateAndCacheResource(eq(desired), any(UnaryOperator.class));
+    verify(ies, never()).updateAndCacheResource(any(), any(UnaryOperator.class));
+  }
+
+  @Test
+  void createRejectsMatcher() {
+    var resource = TestUtils.testCustomResource1();
+    var matcher = mock(Matcher.class);
+
+    var exception =
+        assertThrows(
+            IllegalArgumentException.class,
+            () ->
+                resourceOperations.create(resource, ResourceOperations.Options.onlyCache(matcher)));
+
+    assertThat(exception.getMessage()).contains("does not support matcher");
   }
 }

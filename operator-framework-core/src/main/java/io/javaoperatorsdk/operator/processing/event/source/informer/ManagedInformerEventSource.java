@@ -91,11 +91,6 @@ public abstract class ManagedInformerEventSource<
     }
   }
 
-  @Experimental(API_MIGHT_CHANGE)
-  public R eventFilteringUpdateAndCacheResource(R resourceToUpdate, UnaryOperator<R> updateMethod) {
-    return eventFilteringUpdateAndCacheResource(resourceToUpdate, updateMethod, false);
-  }
-
   /**
    * Updates the resource and makes sure that the response is available for the next reconciliation.
    * Also makes sure that the even produced by this update is filtered, thus does not trigger the
@@ -103,12 +98,7 @@ public abstract class ManagedInformerEventSource<
    */
   @Experimental(API_MIGHT_CHANGE)
   @SuppressWarnings("unchecked")
-  public R eventFilteringUpdateAndCacheResource(
-      R resourceToUpdate, UnaryOperator<R> updateMethod, boolean forceUpdateFilter) {
-    if (resourceToUpdate.getMetadata().getResourceVersion() == null && !forceUpdateFilter) {
-      log.debug("No resourceVersion set. Skipping event filtering.");
-      return updateAndCacheResource(resourceToUpdate, updateMethod);
-    }
+  public R eventFilteringUpdateAndCacheResource(R resourceToUpdate, UnaryOperator<R> updateMethod) {
 
     ResourceID id = ResourceID.fromResource(resourceToUpdate);
     log.debug("Starting event filtering and caching update for id={}", id);

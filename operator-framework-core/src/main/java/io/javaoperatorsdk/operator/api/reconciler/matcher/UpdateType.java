@@ -15,22 +15,23 @@
  */
 package io.javaoperatorsdk.operator.api.reconciler.matcher;
 
-import io.fabric8.kubernetes.api.model.HasMetadata;
-import io.javaoperatorsdk.operator.api.reconciler.Context;
+public enum UpdateType {
+  UPDATE(UpdateMatcher.getInstance()),
+  UPDATE_STATUS(UpdateStatusMatcher.getInstance()),
+  SSA(SSAMatcher.getInstance()),
+  SSA_STATUS(SSAStatusMatcher.getInstance()),
+  JSON_PATCH(JsonPatchMacher.getInstance()),
+  JSON_PATCH_STATUS(JsonPatchStatusMacher.getInstance()),
+  JSON_MERGE_PATCH(JsonMergePatchMatcher.getInstance()),
+  JSON_MERGE_PATCH_STATUS(JsonMergePatchStatusMatcher.getInstance());
 
-public class JsonMergePatchMatcher implements Matcher {
+  private final Matcher defaultMatcher;
 
-  private static final JsonMergePatchMatcher INSTANCE = new JsonMergePatchMatcher();
-
-  public static JsonMergePatchMatcher getInstance() {
-    return INSTANCE;
+  UpdateType(Matcher defaultMatcher) {
+    this.defaultMatcher = defaultMatcher;
   }
 
-  private JsonMergePatchMatcher() {}
-
-  @Override
-  public boolean matches(HasMetadata desired, HasMetadata actual, Context<?> context) {
-    return MatcherUtils.mergePatchMatches(
-        MatcherUtils.toNode(actual, context), MatcherUtils.toNode(desired, context));
+  public Matcher getMatcher() {
+    return defaultMatcher;
   }
 }

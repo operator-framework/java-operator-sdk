@@ -21,6 +21,14 @@ import io.javaoperatorsdk.operator.processing.dependent.kubernetes.SSABasedGener
 
 public class SSAMatcher implements Matcher {
 
+  private static final SSAMatcher INSTANCE = new SSAMatcher();
+
+  public static SSAMatcher getInstance() {
+    return INSTANCE;
+  }
+
+  private SSAMatcher() {}
+
   @Override
   public boolean matches(HasMetadata desired, HasMetadata actual, Context<?> context) {
     return SSABasedGenericKubernetesResourceMatcher.getInstance().matches(actual, desired, context);

@@ -21,6 +21,14 @@ import io.javaoperatorsdk.operator.processing.dependent.kubernetes.GenericKubern
 
 public class SSAStatusMatcher implements Matcher {
 
+  private static final SSAStatusMatcher INSTANCE = new SSAStatusMatcher();
+
+  public static SSAStatusMatcher getInstance() {
+    return INSTANCE;
+  }
+
+  private SSAStatusMatcher() {}
+
   @Override
   public boolean matches(HasMetadata desired, HasMetadata actual, Context<?> context) {
     return GenericKubernetesResourceMatcher.matchStatus(desired, actual, context).matched();

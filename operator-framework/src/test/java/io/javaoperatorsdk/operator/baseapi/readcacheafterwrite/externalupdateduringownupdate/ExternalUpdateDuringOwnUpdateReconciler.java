@@ -16,7 +16,6 @@
 package io.javaoperatorsdk.operator.baseapi.readcacheafterwrite.externalupdateduringownupdate;
 
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -47,28 +46,10 @@ public class ExternalUpdateDuringOwnUpdateReconciler
     if (execution == 1) {
       var status = new ExternalUpdateDuringOwnUpdateStatus().setValue(STATUS_VALUE);
       resource.setStatus(status);
-
       // wrap our own status update in resourcePatch with a hook that lets the test
       // perform an external metadata update WHILE our filter window is still open.
-      context
-          .resourceOperations()
-          .resourcePatch(
-              resource,
-              r -> {
-                updateStartedLatch.countDown();
-                try {
-                  if (!externalUpdateDoneLatch.await(30, TimeUnit.SECONDS)) {
-                    throw new RuntimeException("timed out waiting for external update");
-                  }
-                } catch (InterruptedException e) {
-                  Thread.currentThread().interrupt();
-                  throw new RuntimeException(e);
-                }
-                // server-side state moved due to the external label change; drop our stale rv
-                r.getMetadata().setResourceVersion(null);
-                return context.getClient().resource(r).patchStatus();
-              },
-              context.eventSourceRetriever().getControllerEventSource());
+      resource.getMetadata().setResourceVersion(null);
+      context.resourceOperations().jsonMergePatchPrimary(resource);
     } else {
       var labels = resource.getMetadata().getLabels();
       if (labels != null && EXTERNAL_LABEL_VALUE.equals(labels.get(EXTERNAL_LABEL_KEY))) {

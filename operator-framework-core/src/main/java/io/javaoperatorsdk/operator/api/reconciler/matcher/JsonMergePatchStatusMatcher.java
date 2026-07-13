@@ -20,6 +20,14 @@ import io.javaoperatorsdk.operator.api.reconciler.Context;
 
 public class JsonMergePatchStatusMatcher implements Matcher {
 
+  private static final JsonMergePatchStatusMatcher INSTANCE = new JsonMergePatchStatusMatcher();
+
+  public static JsonMergePatchStatusMatcher getInstance() {
+    return INSTANCE;
+  }
+
+  private JsonMergePatchStatusMatcher() {}
+
   @Override
   public boolean matches(HasMetadata desired, HasMetadata actual, Context<?> context) {
     return MatcherUtils.mergePatchMatches(

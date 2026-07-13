@@ -20,6 +20,14 @@ import io.javaoperatorsdk.operator.api.reconciler.Context;
 
 public class JsonPatchMacher implements Matcher {
 
+  private static final JsonPatchMacher INSTANCE = new JsonPatchMacher();
+
+  public static JsonPatchMacher getInstance() {
+    return INSTANCE;
+  }
+
+  private JsonPatchMacher() {}
+
   @Override
   public boolean matches(HasMetadata desired, HasMetadata actual, Context<?> context) {
     return MatcherUtils.jsonPatchMatches(
