@@ -84,7 +84,7 @@ public class OnRelistFilterReconciler implements Reconciler<OnRelistFilterCustom
             context
                 .resourceOperations()
                 .serverSideApply(
-                    cm, configMapEventSource, ResourceOperations.Options.alwaysFilter());
+                    cm, configMapEventSource, ResourceOperations.Options.forceFilterEvents());
         case RELIST_AROUND_UPDATE -> {
           configMapEventSource.simulateOnBeforeList();
           var applied = context.resourceOperations().serverSideApply(cm, configMapEventSource);
@@ -101,7 +101,8 @@ public class OnRelistFilterReconciler implements Reconciler<OnRelistFilterCustom
           configMapEventSource.simulateOnList();
           context
               .resourceOperations()
-              .serverSideApply(cm, configMapEventSource, ResourceOperations.Options.alwaysFilter());
+              .serverSideApply(
+                  cm, configMapEventSource, ResourceOperations.Options.forceFilterEvents());
         }
         case RELIST_STARTS_DURING_UPDATE -> {
           // Drive the event-filtering update path manually so we can fire onBeforeList AFTER the

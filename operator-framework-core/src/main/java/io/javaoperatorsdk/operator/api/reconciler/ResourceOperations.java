@@ -217,17 +217,17 @@ public class ResourceOperations<P extends HasMetadata> {
    * <p>You are free to control the optimistic locking by setting the resource version in resource
    * metadata. In case of SSA we advise not to do updates with optimistic locking.
    *
-   * @param resource primary resource for server side apply
+   * @param desired primary resource for server side apply
    * @return updated resource
    */
-  public P serverSideApplyPrimaryStatus(P resource) {
+  public P serverSideApplyPrimaryStatus(P desired) {
     return serverSideApplyPrimaryStatus(
-        resource, Options.matchAndFilterWithDefaultMatcher(UpdateType.SSA_STATUS));
+        desired, Options.matchAndFilterWithDefaultMatcher(UpdateType.SSA_STATUS));
   }
 
-  public P serverSideApplyPrimaryStatus(P resource, Options options) {
+  public P serverSideApplyPrimaryStatus(P desired, Options options) {
     return resourcePatch(
-        resource,
+        desired,
         r ->
             context
                 .getClient()
@@ -256,13 +256,13 @@ public class ResourceOperations<P extends HasMetadata> {
    * <p>You are free to control the optimistic locking by setting the resource version in resource
    * metadata.
    *
-   * @param resource resource to update
+   * @param desired resource to update
    * @return updated resource
    * @param <R> resource type
    */
   @Experimental(API_MIGHT_CHANGE)
-  public <R extends HasMetadata> R update(R resource, Options options) {
-    return resourcePatch(resource, r -> context.getClient().resource(r).update(), options);
+  public <R extends HasMetadata> R update(R desired, Options options) {
+    return resourcePatch(desired, r -> context.getClient().resource(r).update(), options);
   }
 
   public <R extends HasMetadata> R update(
@@ -310,7 +310,7 @@ public class ResourceOperations<P extends HasMetadata> {
    */
   public <R extends HasMetadata> R create(R resource) {
     // it is safe to do event filtering for create since check if the resource already exists.
-    return create(resource, Options.alwaysFilter());
+    return create(resource, Options.forceFilterEvents());
   }
 
   public <R extends HasMetadata> R create(R resource, Options options) {
@@ -380,16 +380,16 @@ public class ResourceOperations<P extends HasMetadata> {
    * <p>You are free to control the optimistic locking by setting the resource version in resource
    * metadata.
    *
-   * @param resource primary resource to update
+   * @param desired primary resource to update
    * @return updated resource
    */
-  public P updatePrimary(P resource) {
-    return updatePrimary(resource, Options.matchAndFilterWithDefaultMatcher(UpdateType.UPDATE));
+  public P updatePrimary(P desired) {
+    return updatePrimary(desired, Options.matchAndFilterWithDefaultMatcher(UpdateType.UPDATE));
   }
 
-  public P updatePrimary(P resource, Options options) {
+  public P updatePrimary(P desired, Options options) {
     return resourcePatch(
-        resource,
+        desired,
         r -> context.getClient().resource(r).update(),
         context.eventSourceRetriever().getControllerEventSource(),
         options);
@@ -406,12 +406,12 @@ public class ResourceOperations<P extends HasMetadata> {
    * <p>You are free to control the optimistic locking by setting the resource version in resource
    * metadata.
    *
-   * @param resource primary resource to update
+   * @param desired primary resource to update
    * @return updated resource
    */
-  public P updatePrimaryStatus(P resource) {
+  public P updatePrimaryStatus(P desired) {
     return resourcePatch(
-        resource,
+        desired,
         r -> context.getClient().resource(r).updateStatus(),
         context.eventSourceRetriever().getControllerEventSource(),
         Options.matchAndFilterWithDefaultMatcher(UpdateType.UPDATE_STATUS));
@@ -432,29 +432,32 @@ public class ResourceOperations<P extends HasMetadata> {
    * @return updated resource
    * @param <R> resource type
    */
-  public <R extends HasMetadata> R jsonPatch(R actual, R desired) {
+  public <R extends HasMetadata> R jsonPatch(R actualResource, UnaryOperator<R> unaryOperator) {
     return jsonPatch(
-        actual, desired, Options.matchAndFilterWithDefaultMatcher(UpdateType.JSON_PATCH));
-  }
-
-  public <R extends HasMetadata> R jsonPatch(R actual, R desired, Options options) {
-    return resourcePatch(
-        desired,
-        actual,
-        r -> context.getClient().resource(actual).edit(res -> desired),
-        options,
-        null);
+        actualResource,
+        unaryOperator,
+        Options.matchAndFilterWithDefaultMatcher(UpdateType.JSON_PATCH));
   }
 
   public <R extends HasMetadata> R jsonPatch(
-      R desired, R actual, InformerEventSource<R, P> informerEventSource, Options options) {
+      R actualResource, UnaryOperator<R> unaryOperator, Options options) {
     return resourcePatch(
-        desired,
-        actual,
-        r -> context.getClient().resource(actual).edit(res -> desired),
+        actualResource,
+        r -> context.getClient().resource(actualResource).edit(unaryOperator),
+        options);
+  }
+
+  public <R extends HasMetadata> R jsonPatch(
+      R actualResource,
+      UnaryOperator<R> unaryOperator,
+      InformerEventSource<R, P> informerEventSource,
+      Options options) {
+
+    return resourcePatch(
+        actualResource,
+        r -> context.getClient().resource(actualResource).edit(unaryOperator),
         informerEventSource,
-        options,
-        null);
+        options);
   }
 
   /**
@@ -469,29 +472,39 @@ public class ResourceOperations<P extends HasMetadata> {
    * <p>You are free to control the optimistic locking by setting the resource version in resource
    * metadata.
    *
-   * @param desired resource to patch
+   * @param actualResource resource to patch
+   * @param unaryOperator function to modify the resource status
    * @return updated resource
    * @param <R> resource type
    */
-  public <R extends HasMetadata> R jsonPatchStatus(R desired, R actual) {
+  public <R extends HasMetadata> R jsonPatchStatus(
+      R actualResource, UnaryOperator<R> unaryOperator) {
     return jsonPatchStatus(
-        desired, actual, Options.matchAndFilterWithDefaultMatcher(UpdateType.JSON_PATCH_STATUS));
-  }
-
-  public <R extends HasMetadata> R jsonPatchStatus(R desired, R actual, Options options) {
-    return resourcePatch(
-        desired,
-        actual,
-        r -> context.getClient().resource(actual).editStatus(res -> desired),
-        options,
-        null);
+        actualResource,
+        unaryOperator,
+        Options.matchAndFilterWithDefaultMatcher(UpdateType.JSON_PATCH_STATUS));
   }
 
   public <R extends HasMetadata> R jsonPatchStatus(
-      R desired, R actual, InformerEventSource<R, P> informerEventSource, Options options) {
+      R actualResource, UnaryOperator<R> unaryOperator, Options options) {
+    R desired = desiredForJsonPatch(actualResource, unaryOperator, options);
     return resourcePatch(
         desired,
-        r -> context.getClient().resource(actual).editStatus(res -> desired),
+        actualResource,
+        r -> context.getClient().resource(r).editStatus(unaryOperator),
+        options);
+  }
+
+  public <R extends HasMetadata> R jsonPatchStatus(
+      R actualResource,
+      UnaryOperator<R> unaryOperator,
+      InformerEventSource<R, P> informerEventSource,
+      Options options) {
+    R desired = desiredForJsonPatch(actualResource, unaryOperator, options);
+    return resourcePatch(
+        desired,
+        actualResource,
+        r -> context.getClient().resource(r).editStatus(unaryOperator),
         informerEventSource,
         options);
   }
@@ -507,18 +520,23 @@ public class ResourceOperations<P extends HasMetadata> {
    * <p>You are free to control the optimistic locking by setting the resource version in resource
    * metadata.
    *
-   * @param resource primary resource to patch
+   * @param actualResource primary resource to patch
    * @param unaryOperator function to modify the resource
    * @return updated resource
    */
-  public P jsonPatchPrimary(P resource, UnaryOperator<P> unaryOperator) {
-    return jsonPatchPrimary(resource, unaryOperator, Options.filterIfOptimisticLocking());
+  public P jsonPatchPrimary(P actualResource, UnaryOperator<P> unaryOperator) {
+    return jsonPatchPrimary(
+        actualResource,
+        unaryOperator,
+        Options.matchAndFilterWithDefaultMatcher(UpdateType.JSON_PATCH));
   }
 
-  public P jsonPatchPrimary(P resource, UnaryOperator<P> unaryOperator, Options options) {
+  public P jsonPatchPrimary(P actualResource, UnaryOperator<P> unaryOperator, Options options) {
+    P desired = desiredForJsonPatch(actualResource, unaryOperator, options);
     return resourcePatch(
-        resource,
-        r -> context.getClient().resource(r).edit(unaryOperator),
+        desired,
+        actualResource,
+        r -> context.getClient().resource(actualResource).edit(unaryOperator),
         context.eventSourceRetriever().getControllerEventSource(),
         options);
   }
@@ -534,18 +552,24 @@ public class ResourceOperations<P extends HasMetadata> {
    * <p>You are free to control the optimistic locking by setting the resource version in resource
    * metadata.
    *
-   * @param resource primary resource to patch
+   * @param actualResource primary resource to patch
    * @param unaryOperator function to modify the resource
    * @return updated resource
    */
-  public P jsonPatchPrimaryStatus(P resource, UnaryOperator<P> unaryOperator) {
-    return jsonPatchPrimaryStatus(resource, unaryOperator, Options.filterIfOptimisticLocking());
+  public P jsonPatchPrimaryStatus(P actualResource, UnaryOperator<P> unaryOperator) {
+    return jsonPatchPrimaryStatus(
+        actualResource,
+        unaryOperator,
+        Options.matchAndFilterWithDefaultMatcher(UpdateType.JSON_PATCH_STATUS));
   }
 
-  public P jsonPatchPrimaryStatus(P resource, UnaryOperator<P> unaryOperator, Options options) {
+  public P jsonPatchPrimaryStatus(
+      P actualResource, UnaryOperator<P> unaryOperator, Options options) {
+    P desired = desiredForJsonPatch(actualResource, unaryOperator, options);
     return resourcePatch(
-        resource,
-        r -> context.getClient().resource(r).editStatus(unaryOperator),
+        desired,
+        actualResource,
+        r -> context.getClient().resource(actualResource).editStatus(unaryOperator),
         context.eventSourceRetriever().getControllerEventSource(),
         options);
   }
@@ -682,40 +706,30 @@ public class ResourceOperations<P extends HasMetadata> {
   @SuppressWarnings({"rawtypes", "unchecked"})
   private <R extends HasMetadata> R resourcePatch(
       R desired, UnaryOperator<R> updateOperation, Options options) {
-    return resourcePatch(desired, updateOperation, options, null);
+    return resourcePatch(desired, null, updateOperation, options);
   }
 
   @Experimental(API_MIGHT_CHANGE)
   @SuppressWarnings({"rawtypes", "unchecked"})
   private <R extends HasMetadata> R resourcePatch(
-      R desired, UnaryOperator<R> updateOperation, Options options, Matcher matcher) {
-    return resourcePatch(desired, null, updateOperation, options, matcher);
-  }
+      R desired, R actual, UnaryOperator<R> updateOperation, Options options) {
 
-  @Experimental(API_MIGHT_CHANGE)
-  @SuppressWarnings({"rawtypes", "unchecked"})
-  private <R extends HasMetadata> R resourcePatch(
-      R desired, R actual, UnaryOperator<R> updateOperation, Options options, Matcher matcher) {
+    Class<?> targetClass = desired == null ? actual.getClass() : desired.getClass();
 
-    var esList = context.eventSourceRetriever().getEventSourcesFor(desired.getClass());
+    var esList = context.eventSourceRetriever().getEventSourcesFor(targetClass);
     if (esList.isEmpty()) {
-      throw new IllegalStateException("No event source found for type: " + desired.getClass());
+      throw new IllegalStateException("No event source found for type: " + targetClass);
     }
     var es = esList.get(0);
     if (esList.size() > 1) {
       log.warn(
           "Multiple event sources found for type: {}, selecting first with name {}",
-          desired.getClass(),
+          targetClass,
           es.name());
     }
     if (es instanceof ManagedInformerEventSource mes) {
       return resourcePatch(
-          desired,
-          actual,
-          updateOperation,
-          (ManagedInformerEventSource<R, P, ?>) mes,
-          options,
-          matcher);
+          desired, actual, updateOperation, (ManagedInformerEventSource<R, P, ?>) mes, options);
     } else {
       throw new IllegalStateException(
           "Target event source must be a subclass off "
@@ -737,7 +751,7 @@ public class ResourceOperations<P extends HasMetadata> {
     if (options.getMatcher().isPresent()) {
       originalResource = ies.get(ResourceID.fromResource(desired)).orElse(null);
     }
-    return resourcePatch(desired, originalResource, updateOperation, ies, options, null);
+    return resourcePatch(desired, originalResource, updateOperation, ies, options);
   }
 
   public <R extends HasMetadata> R resourcePatch(
@@ -745,10 +759,9 @@ public class ResourceOperations<P extends HasMetadata> {
       R actualResource,
       UnaryOperator<R> updateOperation,
       ManagedInformerEventSource<R, P, ?> ies,
-      Options options,
-      Matcher matcherToUse) {
+      Options options) {
 
-    var matcher = matcherToUse == null ? options.getMatcher().orElse(null) : matcherToUse;
+    var matcher = options.getMatcher().orElse(null);
     boolean matches = false;
     if (matcher != null) {
       if (actualResource == null) {
@@ -764,7 +777,7 @@ public class ResourceOperations<P extends HasMetadata> {
     }
     boolean optimisticLocking = desiredResource.getMetadata().getResourceVersion() != null;
 
-    if (options.getMode() == Mode.ONLY_CACHE
+    if (options.getMode() == Mode.CACHE_ONLY
         || (options.getMode() == Mode.FILTER_IF_OPTIMISTIC_LOCKING && !optimisticLocking)) {
       return ies.updateAndCacheResource(desiredResource, updateOperation);
     } else {
@@ -946,7 +959,7 @@ public class ResourceOperations<P extends HasMetadata> {
       resource.initNameAndNamespaceFrom(originalResource);
       resource.addFinalizer(finalizerName);
 
-      return serverSideApplyPrimary(resource, Options.onlyCache());
+      return serverSideApplyPrimary(resource, Options.cacheOnly());
     } catch (InstantiationException
         | IllegalAccessException
         | InvocationTargetException
@@ -962,8 +975,8 @@ public class ResourceOperations<P extends HasMetadata> {
   @Experimental(API_MIGHT_CHANGE)
   public static class Options {
 
-    private static final Options ALWAYS_FILTER = new Options(Mode.ALWAYS_FILTER, null);
-    private static final Options ONLY_CACHE = new Options(Mode.ONLY_CACHE, null);
+    private static final Options ALWAYS_FILTER = new Options(Mode.FORCE_FILTER, null);
+    private static final Options ONLY_CACHE = new Options(Mode.CACHE_ONLY, null);
     private static final Options FILTER_IF_OPTIMISTIC_LOCKING =
         new Options(Mode.FILTER_IF_OPTIMISTIC_LOCKING, null);
 
@@ -975,16 +988,16 @@ public class ResourceOperations<P extends HasMetadata> {
       this.matcher = matcher;
     }
 
-    public static Options alwaysFilter() {
+    public static Options forceFilterEvents() {
       return ALWAYS_FILTER;
     }
 
-    public static Options onlyCache() {
+    public static Options cacheOnly() {
       return ONLY_CACHE;
     }
 
-    public static Options onlyCache(Matcher matcher) {
-      return new Options(Mode.ONLY_CACHE, matcher);
+    public static Options cacheOnly(Matcher matcher) {
+      return new Options(Mode.CACHE_ONLY, matcher);
     }
 
     public static Options filterIfOptimisticLocking() {
@@ -1016,10 +1029,6 @@ public class ResourceOperations<P extends HasMetadata> {
       return Optional.ofNullable(matcher);
     }
 
-    public boolean isAlwaysFilter() {
-      return mode == Mode.ALWAYS_FILTER;
-    }
-
     public boolean requiresMatcher() {
       return mode == Mode.FILTER_IF_NOT_MATCHING;
     }
@@ -1029,7 +1038,21 @@ public class ResourceOperations<P extends HasMetadata> {
   public enum Mode {
     FILTER_IF_OPTIMISTIC_LOCKING,
     FILTER_IF_NOT_MATCHING,
-    ONLY_CACHE,
-    ALWAYS_FILTER,
+    CACHE_ONLY,
+    FORCE_FILTER,
+  }
+
+  private <T extends HasMetadata> T desiredForJsonPatch(
+      T actualResource, UnaryOperator<T> unaryOperator, Options options) {
+    if (options.getMatcher().isPresent()) {
+      var cloned =
+          context
+              .getControllerConfiguration()
+              .getConfigurationService()
+              .getResourceCloner()
+              .clone(actualResource);
+      return unaryOperator.apply(cloned);
+    }
+    return null;
   }
 }

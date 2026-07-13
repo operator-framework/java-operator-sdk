@@ -22,11 +22,15 @@ import java.util.function.UnaryOperator;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClientException;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
+import io.fabric8.kubernetes.client.utils.KubernetesSerialization;
 import io.javaoperatorsdk.operator.TestUtils;
+import io.javaoperatorsdk.operator.api.config.Cloner;
+import io.javaoperatorsdk.operator.api.config.ConfigurationService;
 import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.matcher.Matcher;
 import io.javaoperatorsdk.operator.processing.event.EventSourceRetriever;
@@ -64,9 +68,20 @@ class ResourceOperationsTest {
     var eventSourceRetriever = mock(EventSourceRetriever.class);
 
     when(context.getClient()).thenReturn(client);
+    when(client.getKubernetesSerialization()).thenReturn(new KubernetesSerialization());
     when(context.eventSourceRetriever()).thenReturn(eventSourceRetriever);
     when(context.getControllerConfiguration()).thenReturn(controllerConfiguration);
     when(controllerConfiguration.getFinalizerName()).thenReturn(FINALIZER_NAME);
+    var configService = mock(ConfigurationService.class);
+    when(controllerConfiguration.getConfigurationService()).thenReturn(configService);
+    when(configService.getResourceCloner())
+        .thenReturn(
+            new Cloner() {
+              @Override
+              public <R extends HasMetadata> R clone(R object) {
+                return new KubernetesSerialization().clone(object);
+              }
+            });
     when(eventSourceRetriever.getControllerEventSource()).thenReturn(controllerEventSource);
 
     when(client.resources(TestCustomResource.class)).thenReturn(mixedOperation);
@@ -338,8 +353,7 @@ class ResourceOperationsTest {
             actual,
             UnaryOperator.identity(),
             ies,
-            ResourceOperations.Options.alwaysFilter(),
-            matcher);
+            ResourceOperations.Options.matchAndFilter(matcher));
 
     assertThat(result).isSameAs(actual);
     verify(ies, never()).eventFilteringUpdateAndCacheResource(any(), any(UnaryOperator.class));
@@ -363,8 +377,7 @@ class ResourceOperationsTest {
             actual,
             UnaryOperator.identity(),
             ies,
-            ResourceOperations.Options.alwaysFilter(),
-            matcher);
+            ResourceOperations.Options.matchAndFilter(matcher));
 
     assertThat(result).isSameAs(updated);
     verify(ies, times(1))
@@ -385,8 +398,7 @@ class ResourceOperationsTest {
                 null,
                 UnaryOperator.identity(),
                 ies,
-                ResourceOperations.Options.alwaysFilter(),
-                matcher));
+                ResourceOperations.Options.matchAndFilter(matcher)));
   }
 
   @Test
@@ -396,7 +408,7 @@ class ResourceOperationsTest {
     when(ies.updateAndCacheResource(any(), any(UnaryOperator.class))).thenReturn(desired);
 
     resourceOperations.resourcePatch(
-        desired, null, UnaryOperator.identity(), ies, ResourceOperations.Options.onlyCache(), null);
+        desired, null, UnaryOperator.identity(), ies, ResourceOperations.Options.cacheOnly());
 
     verify(ies, times(1)).updateAndCacheResource(eq(desired), any(UnaryOperator.class));
     verify(ies, never()).eventFilteringUpdateAndCacheResource(any(), any(UnaryOperator.class));
@@ -414,8 +426,7 @@ class ResourceOperationsTest {
         null,
         UnaryOperator.identity(),
         ies,
-        ResourceOperations.Options.filterIfOptimisticLocking(),
-        null);
+        ResourceOperations.Options.filterIfOptimisticLocking());
 
     verify(ies, times(1)).updateAndCacheResource(eq(desired), any(UnaryOperator.class));
     verify(ies, never()).eventFilteringUpdateAndCacheResource(any(), any(UnaryOperator.class));
@@ -434,8 +445,7 @@ class ResourceOperationsTest {
         null,
         UnaryOperator.identity(),
         ies,
-        ResourceOperations.Options.filterIfOptimisticLocking(),
-        null);
+        ResourceOperations.Options.filterIfOptimisticLocking());
 
     verify(ies, times(1))
         .eventFilteringUpdateAndCacheResource(eq(desired), any(UnaryOperator.class));
@@ -451,7 +461,7 @@ class ResourceOperationsTest {
         assertThrows(
             IllegalArgumentException.class,
             () ->
-                resourceOperations.create(resource, ResourceOperations.Options.onlyCache(matcher)));
+                resourceOperations.create(resource, ResourceOperations.Options.cacheOnly(matcher)));
 
     assertThat(exception.getMessage()).contains("does not support matcher");
   }
