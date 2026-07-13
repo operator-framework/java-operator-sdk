@@ -190,6 +190,69 @@ class GenericKubernetesResourceMatcherTest {
     assertThat(match.matched()).isTrue();
   }
 
+  @Test
+  void matchStatusMatchesEqualStatus() {
+    var desiredWithStatus = createDeployment();
+    desiredWithStatus.setStatus(new DeploymentStatusBuilder().withReplicas(1).build());
+    var actualWithStatus = createDeployment();
+    actualWithStatus.setStatus(new DeploymentStatusBuilder().withReplicas(1).build());
+    assertThat(
+            GenericKubernetesResourceMatcher.matchStatus(
+                    desiredWithStatus, actualWithStatus, context)
+                .matched())
+        .isTrue();
+  }
+
+  @Test
+  void matchStatusIgnoresNonStatusChanges() {
+    var desiredWithStatus = createDeployment();
+    desiredWithStatus.getSpec().setReplicas(5);
+    desiredWithStatus.setStatus(new DeploymentStatusBuilder().withReplicas(1).build());
+    var actualWithStatus = createDeployment();
+    actualWithStatus.setStatus(new DeploymentStatusBuilder().withReplicas(1).build());
+    assertThat(
+            GenericKubernetesResourceMatcher.matchStatus(
+                    desiredWithStatus, actualWithStatus, context)
+                .matched())
+        .withFailMessage("Only the status subresource should be considered")
+        .isTrue();
+  }
+
+  @Test
+  void matchStatusDoesNotMatchDifferentStatus() {
+    var desiredWithStatus = createDeployment();
+    desiredWithStatus.setStatus(new DeploymentStatusBuilder().withReplicas(1).build());
+    var actualWithStatus = createDeployment();
+    actualWithStatus.setStatus(new DeploymentStatusBuilder().withReplicas(2).build());
+    assertThat(
+            GenericKubernetesResourceMatcher.matchStatus(
+                    desiredWithStatus, actualWithStatus, context)
+                .matched())
+        .isFalse();
+  }
+
+  @Test
+  void matchStatusAllowsAdditionalActualStatusValuesByDefault() {
+    var desiredWithStatus = createDeployment();
+    desiredWithStatus.setStatus(new DeploymentStatusBuilder().withReplicas(1).build());
+    var actualWithStatus = createDeployment();
+    actualWithStatus.setStatus(
+        new DeploymentStatusBuilder().withReplicas(1).withAvailableReplicas(1).build());
+    assertThat(
+            GenericKubernetesResourceMatcher.matchStatus(
+                    desiredWithStatus, actualWithStatus, context)
+                .matched())
+        .withFailMessage(
+            "Additional status values in the actual state should be allowed by default")
+        .isTrue();
+    assertThat(
+            GenericKubernetesResourceMatcher.matchStatus(
+                    desiredWithStatus, actualWithStatus, true, context)
+                .matched())
+        .withFailMessage("Additional status values should fail when strong equality is required")
+        .isFalse();
+  }
+
   ConfigMap createConfigMap() {
     return new ConfigMapBuilder()
         .withMetadata(new ObjectMetaBuilder().withName("tes1").withNamespace("default").build())

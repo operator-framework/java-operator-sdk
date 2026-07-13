@@ -20,6 +20,7 @@ import java.util.Collections;
 import java.util.List;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
+import io.fabric8.zjsonpatch.DiffFlags;
 import io.fabric8.zjsonpatch.JsonDiff;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.processing.dependent.Matcher;
@@ -29,6 +30,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 public class GenericKubernetesResourceMatcher<R extends HasMetadata, P extends HasMetadata> {
 
   private static final String SPEC = "/spec";
+  private static final String STATUS = "/status";
   private static final String METADATA = "/metadata";
   private static final String ADD = "add";
   private static final String OP = "op";
@@ -189,6 +191,58 @@ public class GenericKubernetesResourceMatcher<R extends HasMetadata, P extends H
         }
       } else if (!nodeIsChildOf(node, IGNORED_FIELDS)) {
         matched = match(valuesEquality, node, ignoreList);
+      }
+    }
+
+    return Matcher.Result.computed(matched, desired);
+  }
+
+  /**
+   * Determines whether the {@code status} subresource of the specified actual resource matches the
+   * {@code status} of the specified desired resource. Unlike {@link #match(HasMetadata,
+   * HasMetadata, Context)}, which ignores the status, this method considers <em>only</em> the
+   * {@code /status} subtree; all other differences (spec, metadata, ...) are ignored.
+   *
+   * @param desired the desired resource
+   * @param actualResource the actual resource
+   * @param context the {@link Context} instance within which this method is called
+   * @param <R> resource
+   * @return results of matching
+   */
+  public static <R extends HasMetadata, P extends HasMetadata> Matcher.Result<R> matchStatus(
+      R desired, R actualResource, Context<P> context) {
+    return matchStatus(desired, actualResource, false, context);
+  }
+
+  /**
+   * Determines whether the {@code status} subresource of the specified actual resource matches the
+   * {@code status} of the specified desired resource. Unlike {@link #match(HasMetadata,
+   * HasMetadata, Context)}, which ignores the status, this method considers <em>only</em> the
+   * {@code /status} subtree; all other differences (spec, metadata, ...) are ignored.
+   *
+   * @param desired the desired resource
+   * @param actualResource the actual resource
+   * @param valuesEquality if {@code false}, the algorithm only checks that the values present in
+   *     the desired status are the same in the actual status, allowing the actual status to contain
+   *     additional values (for example defaults added by the server). If {@code true}, the statuses
+   *     match only if they are fully equal.
+   * @param context the {@link Context} instance within which this method is called
+   * @param <R> resource
+   * @return results of matching
+   */
+  public static <R extends HasMetadata, P extends HasMetadata> Matcher.Result<R> matchStatus(
+      R desired, R actualResource, boolean valuesEquality, Context<P> context) {
+    final var kubernetesSerialization = context.getClient().getKubernetesSerialization();
+    var desiredNode = kubernetesSerialization.convertValue(desired, JsonNode.class);
+    var actualNode = kubernetesSerialization.convertValue(actualResource, JsonNode.class);
+    var wholeDiffJsonPatch =
+        JsonDiff.asJson(desiredNode, actualNode, DiffFlags.dontNormalizeOpIntoMoveAndCopy());
+
+    boolean matched = true;
+    for (int i = 0; i < wholeDiffJsonPatch.size() && matched; i++) {
+      var node = wholeDiffJsonPatch.get(i);
+      if (nodeIsChildOf(node, List.of(STATUS))) {
+        matched = match(valuesEquality, node, Collections.emptyList());
       }
     }
 
