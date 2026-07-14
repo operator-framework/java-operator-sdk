@@ -192,6 +192,37 @@ supports stronger guarantees, both for primary and secondary resources. If this 
      they would otherwise look like own echoes, since the relist may have
      hidden events.
 
+#### Requesting event filtering and its correctness requirements
+
+Own-event filtering is only safe if the framework can tell an own write apart from a concurrent
+third-party write. This requires **either**:
+
+- a *matcher* to be provided (so a filtered event can be confirmed to reflect the desired state we
+  just wrote), **or**
+- the update to be done using *optimistic locking* (a resource version set on the written resource),
+  so a conflicting concurrent change is rejected by the API server rather than silently swallowed.
+
+`ResourceOperations` methods accept an `Options` argument to select the behavior; each maps to a
+`Mode`:
+
+- `Options.matchAndFilter(matcher)` / `Options.matchAndFilterWithDefaultMatcher(updateType)` — compare
+  the desired state to the actual (cached) state; if they already match, skip the write entirely,
+  otherwise write and filter the own event. This is the **default** for the `ResourceOperations`
+  update/patch methods, and generally the most efficient option: it filters the own event *and*
+  avoids a request to the API server when nothing changed. Default matchers are provided for every
+  operation type, but they are heuristics — a workflow relying on them should be tested against the
+  concrete resources it manages, or a custom matcher supplied.
+- `Options.filterIfOptimisticLocking()` — filter the own event only when the write uses optimistic
+  locking, otherwise just cache the response.
+- `Options.cacheOnly()` — only cache the response (read-cache-after-write consistency), no own-event
+  filtering.
+- `Options.forceFilterEvents()` — always filter, regardless of optimistic locking. Only safe when
+  correctness is otherwise guaranteed (mostly for internal usage); a concurrent external update in
+  the filter window may otherwise be missed until the next resync.
+
+See the [`ResourceOperations`](https://github.com/operator-framework/java-operator-sdk/blob/main/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/api/reconciler/ResourceOperations.java)
+and `ResourceOperations.Options` documentation for details.
+
 
 In order to benefit from these stronger guarantees, use [`ResourceOperations`](https://github.com/operator-framework/java-operator-sdk/blob/main/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/api/reconciler/ResourceOperations.java)
 from the context of the reconciliation:   
@@ -208,20 +239,26 @@ public UpdateControl<WebPage> reconcile(WebPage webPage, Context<WebPage> contex
     var upToDateResource = context.getSecondaryResource(ConfigMap.class);
     
     makeStatusChanges(webPage);
-    
-    // built in update methods by default use this feature
+    // patches the status and caches the response (does not filter the own event by default, see below)
     return UpdateControl.patchStatus(webPage);
 }
 ```
 
-`UpdateControl` and `ErrorStatusUpdateControl` by default use this functionality, but you can also update your primary resource at any time during the reconciliation using `ResourceOperations`:
+{{% alert title="UpdateControl and event filtering" %}}
+Since v5.5, returning an `UpdateControl` (or `ErrorStatusUpdateControl`) updates the resource and
+keeps the cache read-after-write consistent, but by default it **no longer filters the own event** —
+the resulting update may cause an additional (idempotent) reconciliation. To also filter the own
+event, perform the update through `ResourceOperations` instead and return `UpdateControl.noUpdate()`.
+{{% /alert %}}
+
+You can update your primary resource at any time during the reconciliation using `ResourceOperations`:
 
 ```java 
 
 public UpdateControl<WebPage> reconcile(WebPage webPage, Context<WebPage> context) {
 
     makeStatusChanges(webPage);
-    // this is equivalent to UpdateControl.patchStatus(webpage)
+    // updates the status, filters the own event and skips the write if nothing changed
     context.resourceOperations().serverSideApplyPrimaryStatus(webPage);
     return UpdateControl.noUpdate();
 }

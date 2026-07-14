@@ -13,7 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.javaoperatorsdk.operator.api.reconciler.matcher;
+package io.javaoperatorsdk.operator.processing.matcher;
+
+import io.javaoperatorsdk.operator.api.reconciler.matcher.Matcher;
 
 public enum UpdateType {
   UPDATE(UpdateMatcher.getInstance()),

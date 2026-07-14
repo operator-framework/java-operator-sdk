@@ -13,24 +13,25 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.javaoperatorsdk.operator.api.reconciler.matcher;
+package io.javaoperatorsdk.operator.processing.matcher;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
+import io.javaoperatorsdk.operator.api.reconciler.matcher.Matcher;
+import io.javaoperatorsdk.operator.processing.dependent.kubernetes.GenericKubernetesResourceMatcher;
 
-public class JsonPatchStatusMacher implements Matcher {
+public class UpdateStatusMatcher implements Matcher {
 
-  private static final JsonPatchStatusMacher INSTANCE = new JsonPatchStatusMacher();
+  private static final UpdateStatusMatcher INSTANCE = new UpdateStatusMatcher();
 
-  public static JsonPatchStatusMacher getInstance() {
+  public static UpdateStatusMatcher getInstance() {
     return INSTANCE;
   }
 
-  private JsonPatchStatusMacher() {}
+  private UpdateStatusMatcher() {}
 
   @Override
   public boolean matches(HasMetadata desired, HasMetadata actual, Context<?> context) {
-    return MatcherUtils.jsonPatchMatches(
-        MatcherUtils.statusNode(actual, context), MatcherUtils.statusNode(desired, context));
+    return GenericKubernetesResourceMatcher.matchStatus(desired, actual, context).matched();
   }
 }

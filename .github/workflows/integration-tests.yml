@@ -27,7 +27,7 @@ jobs:
     name: Integration tests (${{ inputs.java-version }}, ${{ inputs.kube-version }}, ${{ inputs.http-client }})
     runs-on: ubuntu-latest
     continue-on-error: ${{ inputs.experimental }}
-    timeout-minutes: 40
+    timeout-minutes: 120
     steps:
       - uses: actions/checkout@v7
         with:

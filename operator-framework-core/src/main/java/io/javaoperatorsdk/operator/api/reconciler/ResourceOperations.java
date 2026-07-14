@@ -29,10 +29,10 @@ import io.fabric8.kubernetes.client.dsl.base.PatchContext;
 import io.fabric8.kubernetes.client.dsl.base.PatchType;
 import io.javaoperatorsdk.operator.OperatorException;
 import io.javaoperatorsdk.operator.api.reconciler.matcher.Matcher;
-import io.javaoperatorsdk.operator.api.reconciler.matcher.UpdateType;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
 import io.javaoperatorsdk.operator.processing.event.source.informer.InformerEventSource;
 import io.javaoperatorsdk.operator.processing.event.source.informer.ManagedInformerEventSource;
+import io.javaoperatorsdk.operator.processing.matcher.UpdateType;
 
 import static io.javaoperatorsdk.operator.api.reconciler.Experimental.API_MIGHT_CHANGE;
 import static io.javaoperatorsdk.operator.processing.KubernetesResourceUtils.getUID;
@@ -55,7 +55,7 @@ import static io.javaoperatorsdk.operator.processing.KubernetesResourceUtils.get
  *       version is set on the resource being written); otherwise the response is only cached. This
  *       is the safe default for plain update/patch operations.
  *   <li>{@link Options#matchAndFilter(Matcher)} / {@link
- *       Options#matchAndFilterWithDefaultMatcher(io.javaoperatorsdk.operator.api.reconciler.matcher.UpdateType)}
+ *       Options#matchAndFilterWithDefaultMatcher(io.javaoperatorsdk.operator.processing.matcher.UpdateType)}
  *       ({@link Mode#FILTER_IF_NOT_MATCHING}) - before writing, the desired state is compared to
  *       the actual (cached) state using the provided {@link Matcher}; if they already match the
  *       write is skipped, otherwise it is performed and the own event is filtered.
@@ -86,9 +86,8 @@ import static io.javaoperatorsdk.operator.processing.KubernetesResourceUtils.get
  * matcher or using optimistic locking whenever own-event filtering is desired.
  *
  * <p><strong>Default matchers.</strong> For the matching modes a default {@link Matcher} is
- * provided for every {@link io.javaoperatorsdk.operator.api.reconciler.matcher.UpdateType} (see
- * {@link
- * Options#matchAndFilterWithDefaultMatcher(io.javaoperatorsdk.operator.api.reconciler.matcher.UpdateType)}),
+ * provided for every {@link io.javaoperatorsdk.operator.processing.matcher.UpdateType} (see {@link
+ * Options#matchAndFilterWithDefaultMatcher(io.javaoperatorsdk.operator.processing.matcher.UpdateType)}),
  * so matching works out of the box. Note however that these default matchers are heuristics and may
  * have issues in some edge cases, so a workflow relying on them should be tested against the
  * concrete resources it manages. When a default matcher does not fit, provide your own via {@link
@@ -114,22 +113,33 @@ public class ResourceOperations<P extends HasMetadata> {
   }
 
   /**
-   * Updates the resource and caches the response if needed, thus making sure that next
-   * reconciliation will see to updated resource - or more recent one if additional update happened
-   * after this update; In addition to that it filters out the event from the update, so
-   * reconciliation is not triggered by own update.
+   * Server-Side Applies the resource, then caches the response so the next reconciliation observes
+   * it (read-cache-after-write consistency).
    *
-   * <p>You are free to control the optimistic locking by setting the resource version in resource
-   * metadata. In case of SSA we advise not to do updates with optimistic locking.
+   * <p>Uses the {@link UpdateType#SSA} default {@link Matcher}: the apply is skipped when the
+   * actual (cached) state already matches the desired one, otherwise it is performed and the
+   * resulting own event is filtered so it does not trigger a reconciliation. Use {@link
+   * #serverSideApply( HasMetadata, Options)} to change this behavior. SSA does not require
+   * optimistic locking.
    *
-   * @param resource fresh resource for server side apply
-   * @return updated resource
-   * @param <R> resource type
+   * @param resource the desired resource to server-side apply
+   * @param <R> the resource type
+   * @return the applied resource as returned by the API server
    */
   public <R extends HasMetadata> R serverSideApply(R resource) {
     return serverSideApply(resource, Options.matchAndFilterWithDefaultMatcher(UpdateType.SSA));
   }
 
+  /**
+   * Server-Side Applies the resource, controlling caching and own-event handling through the given
+   * {@link Options}.
+   *
+   * @param resource the desired resource to server-side apply
+   * @param options controls caching and own-event filtering; see {@link Options} and the class
+   *     documentation
+   * @param <R> the resource type
+   * @return the applied resource as returned by the API server
+   */
   @Experimental(API_MIGHT_CHANGE)
   public <R extends HasMetadata> R serverSideApply(R resource, Options options) {
     return resourcePatch(
@@ -147,6 +157,16 @@ public class ResourceOperations<P extends HasMetadata> {
         options);
   }
 
+  /**
+   * Server-Side Applies the resource, caching and filtering the own event through the given {@link
+   * InformerEventSource} (instead of the controller's own event source). Uses the {@link
+   * UpdateType#SSA} default {@link Matcher}.
+   *
+   * @param resource the desired resource to server-side apply
+   * @param informerEventSource the event source used for caching and own-event filtering
+   * @param <R> the resource type
+   * @return the applied resource as returned by the API server
+   */
   public <R extends HasMetadata> R serverSideApply(
       R resource, InformerEventSource<R, P> informerEventSource) {
     return serverSideApply(
@@ -154,18 +174,15 @@ public class ResourceOperations<P extends HasMetadata> {
   }
 
   /**
-   * Updates the resource and caches the response if needed, thus making sure that next
-   * reconciliation will see to updated resource - or more recent one if additional update happened
-   * after this update; In addition to that it filters out the event from the update, so
-   * reconciliation is not triggered by own update.
+   * Server-Side Applies the resource, caching and filtering the own event through the given {@link
+   * InformerEventSource} and using the given {@link Options}. When {@code informerEventSource} is
+   * {@code null} this falls back to {@link #serverSideApply(HasMetadata)}.
    *
-   * <p>You are free to control the optimistic locking by setting the resource version in resource
-   * metadata. In case of SSA we advise not to do updates with optimistic locking.
-   *
-   * @param resource fresh resource for server side apply
-   * @return updated resource
-   * @param informerEventSource InformerEventSource to use for resource caching and filtering
-   * @param <R> resource type
+   * @param resource the desired resource to server-side apply
+   * @param informerEventSource the event source used for caching and own-event filtering
+   * @param options controls caching and own-event filtering; see {@link Options}
+   * @param <R> the resource type
+   * @return the applied resource as returned by the API server
    */
   @Experimental(API_MIGHT_CHANGE)
   public <R extends HasMetadata> R serverSideApply(
@@ -190,19 +207,13 @@ public class ResourceOperations<P extends HasMetadata> {
   }
 
   /**
-   * Server-Side Apply the resource status subresource.
+   * Server-Side Applies the {@code status} subresource, controlling caching and own-event handling
+   * through the given {@link Options}.
    *
-   * <p>Updates the resource and caches the response if needed, thus making sure that next
-   * reconciliation will see to updated resource - or more recent one if additional update happened
-   * after this update; In addition to that it filters out the event from this update, so
-   * reconciliation is not triggered by own update.
-   *
-   * <p>You are free to control the optimistic locking by setting the resource version in resource
-   * metadata. In case of SSA we advise not to do updates with optimistic locking.
-   *
-   * @param resource fresh resource for server side apply
-   * @return updated resource
-   * @param <R> resource type
+   * @param resource the desired resource (with the status to apply)
+   * @param options controls caching and own-event filtering; see {@link Options}
+   * @param <R> the resource type
+   * @return the applied resource as returned by the API server
    */
   public <R extends HasMetadata> R serverSideApplyStatus(R resource, Options options) {
     return resourcePatch(
@@ -221,29 +232,38 @@ public class ResourceOperations<P extends HasMetadata> {
         options);
   }
 
+  /**
+   * Server-Side Applies the {@code status} subresource, caching the response and filtering the own
+   * event. Uses the {@link UpdateType#SSA_STATUS} default {@link Matcher}.
+   *
+   * @param resource the desired resource (with the status to apply)
+   * @param <R> the resource type
+   * @return the applied resource as returned by the API server
+   */
   public <R extends HasMetadata> R serverSideApplyStatus(R resource) {
     return serverSideApplyStatus(
         resource, Options.matchAndFilterWithDefaultMatcher(UpdateType.SSA_STATUS));
   }
 
+  /**
+   * Server-Side Applies the primary resource, caching and filtering the own event through the
+   * controller's own event source. Uses the {@link UpdateType#SSA} default {@link Matcher}.
+   *
+   * @param resource the desired primary resource to server-side apply
+   * @return the applied resource as returned by the API server
+   */
   public P serverSideApplyPrimary(P resource) {
     return serverSideApplyPrimary(
         resource, Options.matchAndFilterWithDefaultMatcher(UpdateType.SSA));
   }
 
   /**
-   * Server-Side Apply the primary resource.
+   * Server-Side Applies the primary resource, caching and filtering the own event through the
+   * controller's own event source and using the given {@link Options}.
    *
-   * <p>Updates the resource and caches the response if needed, thus making sure that next
-   * reconciliation will see to updated resource - or more recent one if additional update happened
-   * after this update; In addition to that it filters out the event from this update, so
-   * reconciliation is not triggered by own update.
-   *
-   * <p>You are free to control the optimistic locking by setting the resource version in resource
-   * metadata. In case of SSA we advise not to do updates with optimistic locking.
-   *
-   * @param resource primary resource for server side apply
-   * @return updated resource
+   * @param resource the desired primary resource to server-side apply
+   * @param options controls caching and own-event filtering; see {@link Options}
+   * @return the applied resource as returned by the API server
    */
   public P serverSideApplyPrimary(P resource, Options options) {
     return resourcePatch(
@@ -263,24 +283,26 @@ public class ResourceOperations<P extends HasMetadata> {
   }
 
   /**
-   * Server-Side Apply the primary resource status subresource.
+   * Server-Side Applies the primary resource {@code status} subresource, caching and filtering the
+   * own event through the controller's own event source. Uses the {@link UpdateType#SSA_STATUS}
+   * default {@link Matcher}.
    *
-   * <p>Updates the resource and caches the response if needed, thus making sure that next
-   * reconciliation will see to updated resource - or more recent one if additional update happened
-   * after this update; In addition to that it filters out the event from this update, so
-   * reconciliation is not triggered by own update.
-   *
-   * <p>You are free to control the optimistic locking by setting the resource version in resource
-   * metadata. In case of SSA we advise not to do updates with optimistic locking.
-   *
-   * @param desired primary resource for server side apply
-   * @return updated resource
+   * @param desired the desired primary resource (with the status to apply)
+   * @return the applied resource as returned by the API server
    */
   public P serverSideApplyPrimaryStatus(P desired) {
     return serverSideApplyPrimaryStatus(
         desired, Options.matchAndFilterWithDefaultMatcher(UpdateType.SSA_STATUS));
   }
 
+  /**
+   * Server-Side Applies the primary resource {@code status} subresource, caching and filtering the
+   * own event through the controller's own event source and using the given {@link Options}.
+   *
+   * @param desired the desired primary resource (with the status to apply)
+   * @param options controls caching and own-event filtering; see {@link Options}
+   * @return the applied resource as returned by the API server
+   */
   public P serverSideApplyPrimaryStatus(P desired, Options options) {
     return resourcePatch(
         desired,
@@ -299,28 +321,45 @@ public class ResourceOperations<P extends HasMetadata> {
         options);
   }
 
+  /**
+   * Updates (HTTP PUT) the resource, then caches the response so the next reconciliation observes
+   * it (read-cache-after-write consistency).
+   *
+   * <p>Uses the {@link UpdateType#UPDATE} default {@link Matcher}: the update is skipped when the
+   * actual (cached) state already matches the desired one, otherwise it is performed and the
+   * resulting own event is filtered. Use {@link #update(HasMetadata, Options)} to change this.
+   *
+   * @param resource the desired resource to update
+   * @param <R> the resource type
+   * @return the updated resource as returned by the API server
+   */
   public <R extends HasMetadata> R update(R resource) {
     return update(resource, Options.matchAndFilterWithDefaultMatcher(UpdateType.UPDATE));
   }
 
   /**
-   * Updates the resource and caches the response if needed, thus making sure that next
-   * reconciliation will see to updated resource - or more recent one if additional update happened
-   * after this update; In addition to that it filters out the event from this update, so
-   * reconciliation is not triggered by own update.
+   * Updates (HTTP PUT) the resource, controlling caching and own-event handling through the given
+   * {@link Options}.
    *
-   * <p>You are free to control the optimistic locking by setting the resource version in resource
-   * metadata.
-   *
-   * @param desired resource to update
-   * @return updated resource
-   * @param <R> resource type
+   * @param desired the desired resource to update
+   * @param options controls caching and own-event filtering; see {@link Options}
+   * @param <R> the resource type
+   * @return the updated resource as returned by the API server
    */
   @Experimental(API_MIGHT_CHANGE)
   public <R extends HasMetadata> R update(R desired, Options options) {
     return resourcePatch(desired, r -> context.getClient().resource(r).update(), options);
   }
 
+  /**
+   * Updates (HTTP PUT) the resource, caching and filtering the own event through the given {@link
+   * InformerEventSource}. Uses the {@link UpdateType#UPDATE} default {@link Matcher}.
+   *
+   * @param resource the desired resource to update
+   * @param informerEventSource the event source used for caching and own-event filtering
+   * @param <R> the resource type
+   * @return the updated resource as returned by the API server
+   */
   public <R extends HasMetadata> R update(
       R resource, InformerEventSource<R, P> informerEventSource) {
     return update(
@@ -328,18 +367,15 @@ public class ResourceOperations<P extends HasMetadata> {
   }
 
   /**
-   * Updates the resource and caches the response if needed, thus making sure that next
-   * reconciliation will see to updated resource - or more recent one if additional update happened
-   * after this update; In addition to that it filters out the event from this update, so
-   * reconciliation is not triggered by own update.
+   * Updates (HTTP PUT) the resource, caching and filtering the own event through the given {@link
+   * InformerEventSource} and using the given {@link Options}. When {@code informerEventSource} is
+   * {@code null} this falls back to {@link #update(HasMetadata)}.
    *
-   * <p>You are free to control the optimistic locking by setting the resource version in resource
-   * metadata.
-   *
-   * @param resource resource to update
-   * @return updated resource
-   * @param informerEventSource InformerEventSource to use for resource caching and filtering
-   * @param <R> resource type
+   * @param resource the desired resource to update
+   * @param informerEventSource the event source used for caching and own-event filtering
+   * @param options controls caching and own-event filtering; see {@link Options}
+   * @param <R> the resource type
+   * @return the updated resource as returned by the API server
    */
   @Experimental(API_MIGHT_CHANGE)
   public <R extends HasMetadata> R update(
@@ -352,23 +388,29 @@ public class ResourceOperations<P extends HasMetadata> {
   }
 
   /**
-   * Creates the resource and caches the response if needed, thus making sure that next
-   * reconciliation will see to updated resource - or more recent one if additional update happened
-   * after this update; In addition to that it filters out the event from this update, so
-   * reconciliation is not triggered by own update.
+   * Creates the resource, then caches the response so the next reconciliation observes it
+   * (read-cache-after-write consistency). The resulting own event is filtered.
    *
-   * <p>You are free to control the optimistic locking by setting the resource version in resource
-   * metadata.
-   *
-   * @param resource resource to update
-   * @return updated resource
-   * @param <R> resource type
+   * @param resource the resource to create
+   * @param <R> the resource type
+   * @return the created resource as returned by the API server
    */
   public <R extends HasMetadata> R create(R resource) {
     // it is safe to do event filtering for create since check if the resource already exists.
     return create(resource, Options.forceFilterEvents());
   }
 
+  /**
+   * Creates the resource, controlling caching and own-event handling through the given {@link
+   * Options}. A matcher is not supported for create (there is nothing to match against) and passing
+   * one throws {@link IllegalArgumentException}.
+   *
+   * @param resource the resource to create
+   * @param options controls caching and own-event filtering; see {@link Options}
+   * @param <R> the resource type
+   * @return the created resource as returned by the API server
+   * @throws IllegalArgumentException if the options carry a {@link Matcher}
+   */
   public <R extends HasMetadata> R create(R resource, Options options) {
     if (options.getMatcher().isPresent()) {
       throw new IllegalArgumentException(
@@ -378,18 +420,15 @@ public class ResourceOperations<P extends HasMetadata> {
   }
 
   /**
-   * Creates the resource and caches the response if needed, thus making sure that next
-   * reconciliation will see to updated resource - or more recent one if additional update happened
-   * after this update; In addition to that it filters out the event from this update, so
-   * reconciliation is not triggered by own update.
+   * Creates the resource, caching and filtering the own event through the given {@link
+   * InformerEventSource} and using the given {@link Options}. When {@code informerEventSource} is
+   * {@code null} this falls back to {@link #create(HasMetadata)}.
    *
-   * <p>You are free to control the optimistic locking by setting the resource version in resource
-   * metadata.
-   *
-   * @param resource resource to update
-   * @return updated resource
-   * @param informerEventSource InformerEventSource to use for resource caching and filtering
-   * @param <R> resource type
+   * @param resource the resource to create
+   * @param informerEventSource the event source used for caching and own-event filtering
+   * @param options controls caching and own-event filtering; see {@link Options}
+   * @param <R> the resource type
+   * @return the created resource as returned by the API server
    */
   public <R extends HasMetadata> R create(
       R resource, InformerEventSource<R, P> informerEventSource, Options options) {
@@ -402,47 +441,50 @@ public class ResourceOperations<P extends HasMetadata> {
   }
 
   /**
-   * Updates the resource status subresource.
+   * Updates (HTTP PUT) the resource {@code status} subresource, caching the response and filtering
+   * the own event. Uses the {@link UpdateType#UPDATE_STATUS} default {@link Matcher}.
    *
-   * <p>Updates the resource and caches the response if needed, thus making sure that next
-   * reconciliation will see to updated resource - or more recent one if additional update happened
-   * after this update; In addition to that it filters out the event from this update, so
-   * reconciliation is not triggered by own update.
-   *
-   * <p>You are free to control the optimistic locking by setting the resource version in resource
-   * metadata.
-   *
-   * @param resource resource to update
-   * @return updated resource
-   * @param <R> resource type
+   * @param resource the desired resource (with the status to update)
+   * @param <R> the resource type
+   * @return the updated resource as returned by the API server
    */
   public <R extends HasMetadata> R updateStatus(R resource) {
     return updateStatus(
         resource, Options.matchAndFilterWithDefaultMatcher(UpdateType.UPDATE_STATUS));
   }
 
+  /**
+   * Updates (HTTP PUT) the resource {@code status} subresource, controlling caching and own-event
+   * handling through the given {@link Options}.
+   *
+   * @param resource the desired resource (with the status to update)
+   * @param options controls caching and own-event filtering; see {@link Options}
+   * @param <R> the resource type
+   * @return the updated resource as returned by the API server
+   */
   public <R extends HasMetadata> R updateStatus(R resource, Options options) {
     return resourcePatch(resource, r -> context.getClient().resource(r).updateStatus(), options);
   }
 
   /**
-   * Updates the primary resource.
+   * Updates (HTTP PUT) the primary resource, caching and filtering the own event through the
+   * controller's own event source. Uses the {@link UpdateType#UPDATE} default {@link Matcher}.
    *
-   * <p>Updates the resource and caches the response if needed, thus making sure that next
-   * reconciliation will see to updated resource - or more recent one if additional update happened
-   * after this update; In addition to that it filters out the event from this update, so
-   * reconciliation is not triggered by own update.
-   *
-   * <p>You are free to control the optimistic locking by setting the resource version in resource
-   * metadata.
-   *
-   * @param desired primary resource to update
-   * @return updated resource
+   * @param desired the desired primary resource to update
+   * @return the updated resource as returned by the API server
    */
   public P updatePrimary(P desired) {
     return updatePrimary(desired, Options.matchAndFilterWithDefaultMatcher(UpdateType.UPDATE));
   }
 
+  /**
+   * Updates (HTTP PUT) the primary resource, caching and filtering the own event through the
+   * controller's own event source and using the given {@link Options}.
+   *
+   * @param desired the desired primary resource to update
+   * @param options controls caching and own-event filtering; see {@link Options}
+   * @return the updated resource as returned by the API server
+   */
   public P updatePrimary(P desired, Options options) {
     return resourcePatch(
         desired,
@@ -452,18 +494,12 @@ public class ResourceOperations<P extends HasMetadata> {
   }
 
   /**
-   * Updates the primary resource status subresource.
+   * Updates (HTTP PUT) the primary resource {@code status} subresource, caching and filtering the
+   * own event through the controller's own event source. Uses the {@link UpdateType#UPDATE_STATUS}
+   * default {@link Matcher}.
    *
-   * <p>Updates the resource and caches the response if needed, thus making sure that next
-   * reconciliation will see to updated resource - or more recent one if additional update happened
-   * after this update; In addition to that it filters out the event from this update, so
-   * reconciliation is not triggered by own update.
-   *
-   * <p>You are free to control the optimistic locking by setting the resource version in resource
-   * metadata.
-   *
-   * @param desired primary resource to update
-   * @return updated resource
+   * @param desired the desired primary resource (with the status to update)
+   * @return the updated resource as returned by the API server
    */
   public P updatePrimaryStatus(P desired) {
     return resourcePatch(
@@ -474,19 +510,15 @@ public class ResourceOperations<P extends HasMetadata> {
   }
 
   /**
-   * Applies a JSON Patch to the resource. The unaryOperator function is used to modify the
-   * resource, and the differences are sent as a JSON Patch to the Kubernetes API server.
+   * Applies a JSON Patch (RFC 6902) to the resource: the {@code unaryOperator} mutates the resource
+   * and the diff is sent as a patch. Caches the response and filters the own event using the {@link
+   * UpdateType#JSON_PATCH} default {@link Matcher}. Use {@link #jsonPatch(HasMetadata,
+   * UnaryOperator, Options)} to change this behavior.
    *
-   * <p>Updates the resource and caches the response if needed, thus making sure that next
-   * reconciliation will see to updated resource - or more recent one if additional update happened
-   * after this update; In addition to that it filters out the event from this update, so
-   * reconciliation is not triggered by own update.
-   *
-   * <p>You are free to control the optimistic locking by setting the resource version in resource
-   * metadata.
-   *
-   * @return updated resource
-   * @param <R> resource type
+   * @param actualResource the current resource used as the base of the patch
+   * @param unaryOperator function that mutates the resource into its desired state
+   * @param <R> the resource type
+   * @return the patched resource as returned by the API server
    */
   public <R extends HasMetadata> R jsonPatch(R actualResource, UnaryOperator<R> unaryOperator) {
     return jsonPatch(
@@ -495,6 +527,16 @@ public class ResourceOperations<P extends HasMetadata> {
         Options.matchAndFilterWithDefaultMatcher(UpdateType.JSON_PATCH));
   }
 
+  /**
+   * Applies a JSON Patch (RFC 6902) to the resource, controlling caching and own-event handling
+   * through the given {@link Options}.
+   *
+   * @param actualResource the current resource used as the base of the patch
+   * @param unaryOperator function that mutates the resource into its desired state
+   * @param options controls caching and own-event filtering; see {@link Options}
+   * @param <R> the resource type
+   * @return the patched resource as returned by the API server
+   */
   public <R extends HasMetadata> R jsonPatch(
       R actualResource, UnaryOperator<R> unaryOperator, Options options) {
     return resourcePatch(
@@ -503,6 +545,17 @@ public class ResourceOperations<P extends HasMetadata> {
         options);
   }
 
+  /**
+   * Applies a JSON Patch (RFC 6902) to the resource, caching and filtering the own event through
+   * the given {@link InformerEventSource} and using the given {@link Options}.
+   *
+   * @param actualResource the current resource used as the base of the patch
+   * @param unaryOperator function that mutates the resource into its desired state
+   * @param informerEventSource the event source used for caching and own-event filtering
+   * @param options controls caching and own-event filtering; see {@link Options}
+   * @param <R> the resource type
+   * @return the patched resource as returned by the API server
+   */
   public <R extends HasMetadata> R jsonPatch(
       R actualResource,
       UnaryOperator<R> unaryOperator,
@@ -517,21 +570,15 @@ public class ResourceOperations<P extends HasMetadata> {
   }
 
   /**
-   * Applies a JSON Patch to the resource status subresource. The unaryOperator function is used to
-   * modify the resource status, and the differences are sent as a JSON Patch.
+   * Applies a JSON Patch (RFC 6902) to the resource {@code status} subresource: the {@code
+   * unaryOperator} mutates the resource status and the diff is sent as a patch. Caches the response
+   * and filters the own event using the {@link UpdateType#JSON_PATCH_STATUS} default {@link
+   * Matcher}.
    *
-   * <p>Updates the resource and caches the response if needed, thus making sure that next
-   * reconciliation will see to updated resource - or more recent one if additional update happened
-   * after this update; In addition to that it filters out the event from this update, so
-   * reconciliation is not triggered by own update.
-   *
-   * <p>You are free to control the optimistic locking by setting the resource version in resource
-   * metadata.
-   *
-   * @param actualResource resource to patch
-   * @param unaryOperator function to modify the resource status
-   * @return updated resource
-   * @param <R> resource type
+   * @param actualResource the current resource used as the base of the patch
+   * @param unaryOperator function that mutates the resource status into its desired state
+   * @param <R> the resource type
+   * @return the patched resource as returned by the API server
    */
   public <R extends HasMetadata> R jsonPatchStatus(
       R actualResource, UnaryOperator<R> unaryOperator) {
@@ -541,6 +588,16 @@ public class ResourceOperations<P extends HasMetadata> {
         Options.matchAndFilterWithDefaultMatcher(UpdateType.JSON_PATCH_STATUS));
   }
 
+  /**
+   * Applies a JSON Patch (RFC 6902) to the resource {@code status} subresource, controlling caching
+   * and own-event handling through the given {@link Options}.
+   *
+   * @param actualResource the current resource used as the base of the patch
+   * @param unaryOperator function that mutates the resource status into its desired state
+   * @param options controls caching and own-event filtering; see {@link Options}
+   * @param <R> the resource type
+   * @return the patched resource as returned by the API server
+   */
   public <R extends HasMetadata> R jsonPatchStatus(
       R actualResource, UnaryOperator<R> unaryOperator, Options options) {
     R desired = desiredForJsonPatch(actualResource, unaryOperator, options);
@@ -551,6 +608,18 @@ public class ResourceOperations<P extends HasMetadata> {
         options);
   }
 
+  /**
+   * Applies a JSON Patch (RFC 6902) to the resource {@code status} subresource, caching and
+   * filtering the own event through the given {@link InformerEventSource} and using the given
+   * {@link Options}.
+   *
+   * @param actualResource the current resource used as the base of the patch
+   * @param unaryOperator function that mutates the resource status into its desired state
+   * @param informerEventSource the event source used for caching and own-event filtering
+   * @param options controls caching and own-event filtering; see {@link Options}
+   * @param <R> the resource type
+   * @return the patched resource as returned by the API server
+   */
   public <R extends HasMetadata> R jsonPatchStatus(
       R actualResource,
       UnaryOperator<R> unaryOperator,
@@ -566,19 +635,13 @@ public class ResourceOperations<P extends HasMetadata> {
   }
 
   /**
-   * Applies a JSON Patch to the primary resource.
+   * Applies a JSON Patch (RFC 6902) to the primary resource, caching and filtering the own event
+   * through the controller's own event source. Uses the {@link UpdateType#JSON_PATCH} default
+   * {@link Matcher}.
    *
-   * <p>Updates the resource and caches the response if needed, thus making sure that next
-   * reconciliation will see to updated resource - or more recent one if additional update happened
-   * after this update; In addition to that it filters out the event from this update, so
-   * reconciliation is not triggered by own update.
-   *
-   * <p>You are free to control the optimistic locking by setting the resource version in resource
-   * metadata.
-   *
-   * @param actualResource primary resource to patch
-   * @param unaryOperator function to modify the resource
-   * @return updated resource
+   * @param actualResource the current primary resource used as the base of the patch
+   * @param unaryOperator function that mutates the resource into its desired state
+   * @return the patched resource as returned by the API server
    */
   public P jsonPatchPrimary(P actualResource, UnaryOperator<P> unaryOperator) {
     return jsonPatchPrimary(
@@ -587,6 +650,15 @@ public class ResourceOperations<P extends HasMetadata> {
         Options.matchAndFilterWithDefaultMatcher(UpdateType.JSON_PATCH));
   }
 
+  /**
+   * Applies a JSON Patch (RFC 6902) to the primary resource, caching and filtering the own event
+   * through the controller's own event source and using the given {@link Options}.
+   *
+   * @param actualResource the current primary resource used as the base of the patch
+   * @param unaryOperator function that mutates the resource into its desired state
+   * @param options controls caching and own-event filtering; see {@link Options}
+   * @return the patched resource as returned by the API server
+   */
   public P jsonPatchPrimary(P actualResource, UnaryOperator<P> unaryOperator, Options options) {
     P desired = desiredForJsonPatch(actualResource, unaryOperator, options);
     return resourcePatch(
@@ -598,19 +670,13 @@ public class ResourceOperations<P extends HasMetadata> {
   }
 
   /**
-   * Applies a JSON Patch to the primary resource status subresource.
+   * Applies a JSON Patch (RFC 6902) to the primary resource {@code status} subresource, caching and
+   * filtering the own event through the controller's own event source. Uses the {@link
+   * UpdateType#JSON_PATCH_STATUS} default {@link Matcher}.
    *
-   * <p>Updates the resource and caches the response if needed, thus making sure that next
-   * reconciliation will see to updated resource - or more recent one if additional update happened
-   * after this update; In addition to that it filters out the event from this update, so
-   * reconciliation is not triggered by own update.
-   *
-   * <p>You are free to control the optimistic locking by setting the resource version in resource
-   * metadata.
-   *
-   * @param actualResource primary resource to patch
-   * @param unaryOperator function to modify the resource
-   * @return updated resource
+   * @param actualResource the current primary resource used as the base of the patch
+   * @param unaryOperator function that mutates the resource status into its desired state
+   * @return the patched resource as returned by the API server
    */
   public P jsonPatchPrimaryStatus(P actualResource, UnaryOperator<P> unaryOperator) {
     return jsonPatchPrimaryStatus(
@@ -619,6 +685,16 @@ public class ResourceOperations<P extends HasMetadata> {
         Options.matchAndFilterWithDefaultMatcher(UpdateType.JSON_PATCH_STATUS));
   }
 
+  /**
+   * Applies a JSON Patch (RFC 6902) to the primary resource {@code status} subresource, caching and
+   * filtering the own event through the controller's own event source and using the given {@link
+   * Options}.
+   *
+   * @param actualResource the current primary resource used as the base of the patch
+   * @param unaryOperator function that mutates the resource status into its desired state
+   * @param options controls caching and own-event filtering; see {@link Options}
+   * @return the patched resource as returned by the API server
+   */
   public P jsonPatchPrimaryStatus(
       P actualResource, UnaryOperator<P> unaryOperator, Options options) {
     P desired = desiredForJsonPatch(actualResource, unaryOperator, options);
@@ -631,30 +707,43 @@ public class ResourceOperations<P extends HasMetadata> {
   }
 
   /**
-   * Applies a JSON Merge Patch to the resource. JSON Merge Patch (RFC 7386) is a simpler patching
-   * strategy that merges the provided resource with the existing resource on the server.
+   * Applies a JSON Merge Patch (RFC 7386) to the resource, merging the provided resource with the
+   * one on the server. Caches the response and filters the own event using the {@link
+   * UpdateType#JSON_MERGE_PATCH} default {@link Matcher}. Use {@link #jsonMergePatch(HasMetadata,
+   * Options)} to change this behavior.
    *
-   * <p>Updates the resource and caches the response if needed, thus making sure that next
-   * reconciliation will see to updated resource - or more recent one if additional update happened
-   * after this update; In addition to that it filters out the event from this update, so
-   * reconciliation is not triggered by own update.
-   *
-   * <p>You are free to control the optimistic locking by setting the resource version in resource
-   * metadata.
-   *
-   * @param desired resource to patch
-   * @return updated resource
-   * @param <R> resource type
+   * @param desired the desired resource to merge-patch
+   * @param <R> the resource type
+   * @return the patched resource as returned by the API server
    */
   public <R extends HasMetadata> R jsonMergePatch(R desired) {
     return jsonMergePatch(
         desired, Options.matchAndFilterWithDefaultMatcher(UpdateType.JSON_MERGE_PATCH));
   }
 
+  /**
+   * Applies a JSON Merge Patch (RFC 7386) to the resource, controlling caching and own-event
+   * handling through the given {@link Options}.
+   *
+   * @param desired the desired resource to merge-patch
+   * @param options controls caching and own-event filtering; see {@link Options}
+   * @param <R> the resource type
+   * @return the patched resource as returned by the API server
+   */
   public <R extends HasMetadata> R jsonMergePatch(R desired, Options options) {
     return resourcePatch(desired, r -> context.getClient().resource(r).patch(), options);
   }
 
+  /**
+   * Applies a JSON Merge Patch (RFC 7386) to the resource, caching and filtering the own event
+   * through the given {@link InformerEventSource} and using the given {@link Options}.
+   *
+   * @param desired the desired resource to merge-patch
+   * @param informerEventSource the event source used for caching and own-event filtering
+   * @param options controls caching and own-event filtering; see {@link Options}
+   * @param <R> the resource type
+   * @return the patched resource as returned by the API server
+   */
   public <R extends HasMetadata> R jsonMergePatch(
       R desired, InformerEventSource<R, P> informerEventSource, Options options) {
     return resourcePatch(
@@ -662,29 +751,43 @@ public class ResourceOperations<P extends HasMetadata> {
   }
 
   /**
-   * Applies a JSON Merge Patch to the resource status subresource.
+   * Applies a JSON Merge Patch (RFC 7386) to the resource {@code status} subresource, caching the
+   * response and filtering the own event. Uses the {@link UpdateType#JSON_MERGE_PATCH_STATUS}
+   * default {@link Matcher}.
    *
-   * <p>Updates the resource and caches the response if needed, thus making sure that next
-   * reconciliation will see to updated resource - or more recent one if additional update happened
-   * after this update; In addition to that it filters out the event from this update, so
-   * reconciliation is not triggered by own update.
-   *
-   * <p>You are free to control the optimistic locking by setting the resource version in resource
-   * metadata.
-   *
-   * @param resource resource to patch
-   * @return updated resource
-   * @param <R> resource type
+   * @param resource the desired resource (with the status to merge-patch)
+   * @param <R> the resource type
+   * @return the patched resource as returned by the API server
    */
   public <R extends HasMetadata> R jsonMergePatchStatus(R resource) {
     return jsonMergePatchStatus(
         resource, Options.matchAndFilterWithDefaultMatcher(UpdateType.JSON_MERGE_PATCH_STATUS));
   }
 
+  /**
+   * Applies a JSON Merge Patch (RFC 7386) to the resource {@code status} subresource, controlling
+   * caching and own-event handling through the given {@link Options}.
+   *
+   * @param resource the desired resource (with the status to merge-patch)
+   * @param options controls caching and own-event filtering; see {@link Options}
+   * @param <R> the resource type
+   * @return the patched resource as returned by the API server
+   */
   public <R extends HasMetadata> R jsonMergePatchStatus(R resource, Options options) {
     return resourcePatch(resource, r -> context.getClient().resource(r).patchStatus(), options);
   }
 
+  /**
+   * Applies a JSON Merge Patch (RFC 7386) to the resource {@code status} subresource, caching and
+   * filtering the own event through the given {@link InformerEventSource} and using the given
+   * {@link Options}.
+   *
+   * @param resource the desired resource (with the status to merge-patch)
+   * @param informerEventSource the event source used for caching and own-event filtering
+   * @param options controls caching and own-event filtering; see {@link Options}
+   * @param <R> the resource type
+   * @return the patched resource as returned by the API server
+   */
   public <R extends HasMetadata> R jsonMergePatchStatus(
       R resource, InformerEventSource<R, P> informerEventSource, Options options) {
     return resourcePatch(
@@ -692,25 +795,26 @@ public class ResourceOperations<P extends HasMetadata> {
   }
 
   /**
-   * Applies a JSON Merge Patch to the primary resource. Caches the response using the controller's
-   * event source.
+   * Applies a JSON Merge Patch (RFC 7386) to the primary resource, caching and filtering the own
+   * event through the controller's own event source. Uses the {@link UpdateType#JSON_MERGE_PATCH}
+   * default {@link Matcher}.
    *
-   * <p>Updates the resource and caches the response if needed, thus making sure that next
-   * reconciliation will see to updated resource - or more recent one if additional update happened
-   * after this update; In addition to that it filters out the event from this update, so
-   * reconciliation is not triggered by own update.
-   *
-   * <p>You are free to control the optimistic locking by setting the resource version in resource
-   * metadata.
-   *
-   * @param resource primary resource to patch reconciliation
-   * @return updated resource
+   * @param resource the desired primary resource to merge-patch
+   * @return the patched resource as returned by the API server
    */
   public P jsonMergePatchPrimary(P resource) {
     return jsonMergePatchPrimary(
         resource, Options.matchAndFilterWithDefaultMatcher(UpdateType.JSON_MERGE_PATCH));
   }
 
+  /**
+   * Applies a JSON Merge Patch (RFC 7386) to the primary resource, caching and filtering the own
+   * event through the controller's own event source and using the given {@link Options}.
+   *
+   * @param resource the desired primary resource to merge-patch
+   * @param options controls caching and own-event filtering; see {@link Options}
+   * @return the patched resource as returned by the API server
+   */
   public P jsonMergePatchPrimary(P resource, Options options) {
     return resourcePatch(
         resource,
@@ -720,25 +824,27 @@ public class ResourceOperations<P extends HasMetadata> {
   }
 
   /**
-   * Applies a JSON Merge Patch to the primary resource.
+   * Applies a JSON Merge Patch (RFC 7386) to the primary resource {@code status} subresource,
+   * caching and filtering the own event through the controller's own event source. Uses the {@link
+   * UpdateType#JSON_MERGE_PATCH_STATUS} default {@link Matcher}.
    *
-   * <p>Updates the resource and caches the response if needed, thus making sure that next
-   * reconciliation will see to updated resource - or more recent one if additional update happened
-   * after this update; In addition to that it filters out the event from this update, so
-   * reconciliation is not triggered by own update.
-   *
-   * <p>You are free to control the optimistic locking by setting the resource version in resource
-   * metadata.
-   *
-   * @param resource primary resource to patch
-   * @return updated resource
-   * @see #jsonMergePatchPrimaryStatus(HasMetadata)
+   * @param resource the desired primary resource (with the status to merge-patch)
+   * @return the patched resource as returned by the API server
    */
   public P jsonMergePatchPrimaryStatus(P resource) {
     return jsonMergePatchPrimaryStatus(
         resource, Options.matchAndFilterWithDefaultMatcher(UpdateType.JSON_MERGE_PATCH_STATUS));
   }
 
+  /**
+   * Applies a JSON Merge Patch (RFC 7386) to the primary resource {@code status} subresource,
+   * caching and filtering the own event through the controller's own event source and using the
+   * given {@link Options}.
+   *
+   * @param resource the desired primary resource (with the status to merge-patch)
+   * @param options controls caching and own-event filtering; see {@link Options}
+   * @return the patched resource as returned by the API server
+   */
   public P jsonMergePatchPrimaryStatus(P resource, Options options) {
     return resourcePatch(
         resource,
@@ -747,6 +853,20 @@ public class ResourceOperations<P extends HasMetadata> {
         options);
   }
 
+  /**
+   * Low-level building block behind all the update/patch operations above: runs the given {@code
+   * updateOperation} against the API server, then caches the response and (depending on the {@link
+   * Options}) filters the resulting own event. The target event source is resolved automatically
+   * from the desired resource's type. Uses {@link Options#filterIfOptimisticLocking()}.
+   *
+   * @param resource the desired resource being written
+   * @param updateOperation the actual write to perform (update, patch, edit, ...) returning the
+   *     server response
+   * @param <R> the resource type
+   * @return the resource as returned by {@code updateOperation}
+   * @throws IllegalStateException if no (or no matching) event source is found for the resource
+   *     type
+   */
   public <R extends HasMetadata> R resourcePatch(R resource, UnaryOperator<R> updateOperation) {
     return resourcePatch(resource, updateOperation, Options.filterIfOptimisticLocking());
   }
@@ -787,6 +907,9 @@ public class ResourceOperations<P extends HasMetadata> {
   /**
    * This method is public to ensure backward compatibility, we will make it private in next major
    * release.
+   *
+   * @deprecated use one of the higher-level update/patch methods, or {@link #resourcePatch(
+   *     HasMetadata, HasMetadata, UnaryOperator, ManagedInformerEventSource, Options)}
    */
   @Deprecated(forRemoval = true)
   public <R extends HasMetadata> R resourcePatch(
@@ -803,6 +926,26 @@ public class ResourceOperations<P extends HasMetadata> {
     return resourcePatch(desired, null, updateOperation, ies, options);
   }
 
+  /**
+   * The core update/patch routine used by all operations. Optionally matches the desired against
+   * the actual (cached) state, performs the write through {@code updateOperation}, and caches the
+   * response while filtering the own event according to the {@link Options}/{@link Mode}.
+   *
+   * <p>When a {@link Matcher} is present but {@code actualResource} is {@code null}, the actual
+   * state is looked up from the given event source's cache. If the states already match, the write
+   * is skipped and the actual resource is returned unchanged.
+   *
+   * @param desiredResource the desired resource; may be {@code null} for JSON Patch operations,
+   *     where {@code actualResource} is used as the base instead
+   * @param actualResource the actual (current) resource used for matching; may be {@code null}
+   * @param updateOperation the actual write to perform, returning the server response
+   * @param ies the event source used for caching and own-event filtering
+   * @param options controls matching, caching and own-event filtering; see {@link Options}
+   * @param <R> the resource type
+   * @return the resource as returned by {@code updateOperation}, or {@code actualResource} when the
+   *     desired state already matches
+   * @throws IllegalArgumentException if the mode requires a matcher but none is provided
+   */
   // visible for testing
   <R extends HasMetadata> R resourcePatch(
       R desiredResource,
@@ -858,6 +1001,7 @@ public class ResourceOperations<P extends HasMetadata> {
    * marked for deletion. Note that explicitly adding/removing finalizer is required only if
    * "Trigger reconciliation on all event" mode is on.
    *
+   * @param finalizerName name of the finalizer to add
    * @return updated resource from the server response
    */
   public P addFinalizer(String finalizerName) {
@@ -892,6 +1036,7 @@ public class ResourceOperations<P extends HasMetadata> {
    * explicitly adding/removing finalizer is required only if "Trigger reconciliation on all event"
    * mode is on.
    *
+   * @param finalizerName name of the finalizer to remove
    * @return updated resource from the server response
    */
   public P removeFinalizer(String finalizerName) {
@@ -914,14 +1059,17 @@ public class ResourceOperations<P extends HasMetadata> {
   }
 
   /**
-   * Patches the resource using JSON Patch. In case the server responds with conflict (HTTP 409) or
-   * unprocessable content (HTTP 422) it retries the operation up to the maximum number defined in
-   * {@link ResourceOperations#DEFAULT_MAX_RETRY}.
+   * Patches the primary resource using JSON Patch, retrying on conflict. The {@code
+   * resourceChangesOperator} is applied to the current resource before each attempt; if the server
+   * responds with conflict (HTTP 409) or unprocessable content (HTTP 422) the latest version is
+   * re-fetched and the operation is retried, up to {@link ResourceOperations#DEFAULT_MAX_RETRY}
+   * times.
    *
    * @param resourceChangesOperator changes to be done on the resource before update
    * @param preCondition condition to check if the patch operation still needs to be performed or
-   *     not.
-   * @return updated resource from the server or unchanged if the precondition does not hold.
+   *     not; evaluated against the (possibly re-fetched) resource before each attempt
+   * @return updated resource from the server or unchanged if the precondition does not hold
+   * @throws OperatorException if the maximum number of retry attempts is exceeded
    */
   @SuppressWarnings("unchecked")
   public P conflictRetryingPatchPrimary(
@@ -1045,7 +1193,6 @@ public class ResourceOperations<P extends HasMetadata> {
    *   <li>{@link #cacheOnly()} / {@link #cacheOnly(Matcher)} - only cache the response, no
    *       own-event filtering.
    *   <li>{@link #forceFilterEvents()} - always filter the own event (mostly for internal usage).
-   *       Mostly for internal usage, if we are sure that the resource is matched before.
    * </ul>
    */
   @Experimental(API_MIGHT_CHANGE)
@@ -1113,6 +1260,7 @@ public class ResourceOperations<P extends HasMetadata> {
      * the desired state using the given {@link Matcher}.
      *
      * @param matcher the matcher used to decide whether actual already matches desired
+     * @return options that match using the given matcher and filter the own event
      */
     public static Options matchAndFilter(Matcher matcher) {
       if (matcher == null) {
