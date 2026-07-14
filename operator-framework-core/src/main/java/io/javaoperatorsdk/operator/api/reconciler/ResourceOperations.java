@@ -975,7 +975,7 @@ public class ResourceOperations<P extends HasMetadata> {
     if (matches) {
       if (log.isDebugEnabled()) {
         log.debug(
-            "Resource match resource id: {}, type: {},  version: {}",
+            "Resource match resource id: {}, type: {}, version: {}",
             ResourceID.fromResource(targetBaseResource),
             targetBaseResource.getClass().getSimpleName(),
             targetBaseResource.getMetadata().getResourceVersion());
