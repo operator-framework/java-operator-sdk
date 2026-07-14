@@ -16,6 +16,7 @@
 package io.javaoperatorsdk.operator.workflow.workflowmultipleactivation;
 
 import java.time.Duration;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
@@ -115,10 +116,7 @@ public class WorkflowMultipleActivationIT {
               assertThat(cm.getData()).containsEntry(DATA_KEY, CHANGED_VALUE);
             });
 
-    var numOfReconciliation =
-        extension
-            .getReconcilerOfType(WorkflowMultipleActivationReconciler.class)
-            .getNumberOfReconciliationExecution();
+    var numOfReconciliation = awaitStableReconciliationCount();
     var actualCM = extension.get(ConfigMap.class, TEST_RESOURCE1);
     actualCM.getData().put("data2", "additionaldata");
     extension.replace(actualCM);
@@ -144,6 +142,27 @@ public class WorkflowMultipleActivationIT {
               var cm = extension.get(ConfigMap.class, TEST_RESOURCE1);
               assertThat(cm).isNotNull();
             });
+  }
+
+  /**
+   * Snapshots the reconciliation count only once it has stopped changing. The framework adds the
+   * finalizer with a cache-only (non event-filtered) write, so each (re)creation of the resource
+   * emits a finalizer-add event that drives a follow-up reconciliation. A few of these may still be
+   * trailing from the preceding create/delete/recreate and spec changes; capturing the count before
+   * they settle would race with them and inflate the later assertion.
+   */
+  private int awaitStableReconciliationCount() {
+    var reconciler = extension.getReconcilerOfType(WorkflowMultipleActivationReconciler.class);
+    var lastSeen = new AtomicInteger(-1);
+    await()
+        .pollInterval(Duration.ofMillis(POLL_DELAY))
+        .atMost(Duration.ofSeconds(10))
+        .until(
+            () -> {
+              int current = reconciler.getNumberOfReconciliationExecution();
+              return current == lastSeen.getAndSet(current);
+            });
+    return lastSeen.get();
   }
 
   WorkflowMultipleActivationCustomResource testResource(String name) {

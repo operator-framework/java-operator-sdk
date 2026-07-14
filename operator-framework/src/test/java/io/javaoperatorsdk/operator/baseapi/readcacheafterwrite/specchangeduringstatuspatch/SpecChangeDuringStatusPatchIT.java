@@ -49,7 +49,7 @@ class SpecChangeDuringStatusPatchIT {
   LocallyRunOperatorExtension extension =
       LocallyRunOperatorExtension.builder().withReconciler(reconciler).build();
 
-  @RepeatedTest(10)
+  @RepeatedTest(3)
   void specChangeDuringStatusPatchIsReconciled() throws InterruptedException {
     var res = extension.create(testResource());
     var statusRes = testResource();

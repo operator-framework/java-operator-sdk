@@ -543,7 +543,7 @@ public class ResourceOperations<P extends HasMetadata> {
     return resourcePatch(
         desired,
         actualResource,
-        r -> context.getClient().resource(actualResource).edit(unaryOperator),
+        r -> context.getClient().resource(actualResource).edit(rr -> desired),
         options);
   }
 
@@ -607,7 +607,7 @@ public class ResourceOperations<P extends HasMetadata> {
     return resourcePatch(
         desired,
         actualResource,
-        r -> context.getClient().resource(r).editStatus(unaryOperator),
+        r -> context.getClient().resource(actualResource).editStatus(rr -> desired),
         options);
   }
 
@@ -632,7 +632,7 @@ public class ResourceOperations<P extends HasMetadata> {
     return resourcePatch(
         desired,
         actualResource,
-        r -> context.getClient().resource(r).editStatus(unaryOperator),
+        r -> context.getClient().resource(actualResource).editStatus(rr -> desired),
         informerEventSource,
         options);
   }
@@ -667,7 +667,7 @@ public class ResourceOperations<P extends HasMetadata> {
     return resourcePatch(
         desired,
         actualResource,
-        r -> context.getClient().resource(actualResource).edit(unaryOperator),
+        r -> context.getClient().resource(actualResource).edit(rr -> desired),
         context.eventSourceRetriever().getControllerEventSource(),
         options);
   }
@@ -971,25 +971,24 @@ public class ResourceOperations<P extends HasMetadata> {
       throw new IllegalArgumentException("Mode : " + options.mode + " requires matcher");
     }
     // this is to cover special case for jsonPatch were we should use actual resource as base
-    var targetBaseResource = desiredResource != null ? desiredResource : actualResource;
     if (matches) {
       if (log.isDebugEnabled()) {
         log.debug(
             "Resource match resource id: {}, type: {}, version: {}",
-            ResourceID.fromResource(targetBaseResource),
-            targetBaseResource.getClass().getSimpleName(),
-            targetBaseResource.getMetadata().getResourceVersion());
+            ResourceID.fromResource(desiredResource),
+            desiredResource.getClass().getSimpleName(),
+            desiredResource.getMetadata().getResourceVersion());
       }
       return actualResource;
     }
 
-    boolean optimisticLocking = targetBaseResource.getMetadata().getResourceVersion() != null;
+    boolean optimisticLocking = desiredResource.getMetadata().getResourceVersion() != null;
 
     if (options.getMode() == Mode.CACHE_ONLY
         || (options.getMode() == Mode.FILTER_IF_OPTIMISTIC_LOCKING && !optimisticLocking)) {
-      return ies.updateAndCacheResource(targetBaseResource, updateOperation);
+      return ies.updateAndCacheResource(desiredResource, updateOperation);
     } else {
-      return ies.eventFilteringUpdateAndCacheResource(targetBaseResource, updateOperation);
+      return ies.eventFilteringUpdateAndCacheResource(desiredResource, updateOperation);
     }
   }
 
@@ -1381,15 +1380,12 @@ public class ResourceOperations<P extends HasMetadata> {
 
   private <T extends HasMetadata> T desiredForJsonPatch(
       T actualResource, UnaryOperator<T> unaryOperator, Options options) {
-    if (options.getMatcher().isPresent()) {
-      var cloned =
-          context
-              .getControllerConfiguration()
-              .getConfigurationService()
-              .getResourceCloner()
-              .clone(actualResource);
-      return unaryOperator.apply(cloned);
-    }
-    return null;
+    var cloned =
+        context
+            .getControllerConfiguration()
+            .getConfigurationService()
+            .getResourceCloner()
+            .clone(actualResource);
+    return unaryOperator.apply(cloned);
   }
 }
