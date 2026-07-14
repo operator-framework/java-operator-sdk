@@ -32,9 +32,10 @@ class PatchMatchersTest {
 
   private static final Context<?> context = new TestContext();
 
-  private final JsonPatchMacher jsonPatchMatcher = JsonPatchMacher.getInstance();
+  private final JsonPatchMatcher jsonPatchMatcher = JsonPatchMatcher.getInstance();
   private final JsonMergePatchMatcher mergePatchMatcher = JsonMergePatchMatcher.getInstance();
-  private final JsonPatchStatusMacher jsonPatchStatusMatcher = JsonPatchStatusMacher.getInstance();
+  private final JsonPatchStatusMatcher jsonPatchStatusMatcher =
+      JsonPatchStatusMatcher.getInstance();
   private final JsonMergePatchStatusMatcher mergePatchStatusMatcher =
       JsonMergePatchStatusMatcher.getInstance();
 

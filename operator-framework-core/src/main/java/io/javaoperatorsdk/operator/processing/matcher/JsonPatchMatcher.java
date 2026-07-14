@@ -19,19 +19,19 @@ import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.matcher.Matcher;
 
-public class JsonPatchStatusMacher implements Matcher {
+public class JsonPatchMatcher implements Matcher {
 
-  private static final JsonPatchStatusMacher INSTANCE = new JsonPatchStatusMacher();
+  private static final JsonPatchMatcher INSTANCE = new JsonPatchMatcher();
 
-  public static JsonPatchStatusMacher getInstance() {
+  public static JsonPatchMatcher getInstance() {
     return INSTANCE;
   }
 
-  private JsonPatchStatusMacher() {}
+  private JsonPatchMatcher() {}
 
   @Override
   public boolean matches(HasMetadata desired, HasMetadata actual, Context<?> context) {
     return MatcherUtils.jsonPatchMatches(
-        MatcherUtils.statusNode(actual, context), MatcherUtils.statusNode(desired, context));
+        MatcherUtils.toNode(actual, context), MatcherUtils.toNode(desired, context));
   }
 }

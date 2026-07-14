@@ -22,8 +22,8 @@ public enum UpdateType {
   UPDATE_STATUS(UpdateStatusMatcher.getInstance()),
   SSA(SSAMatcher.getInstance()),
   SSA_STATUS(SSAStatusMatcher.getInstance()),
-  JSON_PATCH(JsonPatchMacher.getInstance()),
-  JSON_PATCH_STATUS(JsonPatchStatusMacher.getInstance()),
+  JSON_PATCH(JsonPatchMatcher.getInstance()),
+  JSON_PATCH_STATUS(JsonPatchStatusMatcher.getInstance()),
   JSON_MERGE_PATCH(JsonMergePatchMatcher.getInstance()),
   JSON_MERGE_PATCH_STATUS(JsonMergePatchStatusMatcher.getInstance());
 
