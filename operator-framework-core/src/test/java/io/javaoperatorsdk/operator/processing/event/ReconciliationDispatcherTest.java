@@ -169,7 +169,7 @@ class ReconciliationDispatcherTest {
     dispatcher.handleDispatch(executionScopeWithCREvent(testCustomResource), createTestContext());
 
     verify(reconciler, never()).reconcile(ArgumentMatchers.eq(testCustomResource), any());
-    verify(mockResourceOperations, times(1)).addFinalizer();
+    verify(mockResourceOperations, times(1)).addFinalizer(true);
   }
 
   @Test

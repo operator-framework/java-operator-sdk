@@ -995,7 +995,33 @@ public class ResourceOperations<P extends HasMetadata> {
    * @see #addFinalizer(String)
    */
   public P addFinalizer() {
-    return addFinalizer(context.getControllerConfiguration().getFinalizerName());
+    return addFinalizer(context.getControllerConfiguration().getFinalizerName(), false);
+  }
+
+  /**
+   * Adds the default finalizer (from controller configuration) to the primary resource. This is a
+   * convenience method that calls {@link #addFinalizer(String, boolean)} with the configured
+   * finalizer name.
+   *
+   * @param cacheOnly if {@code true} the finalizer patch does not filter its own event (see {@link
+   *     #addFinalizer(String, boolean)})
+   * @return updated resource from the server response
+   * @see #addFinalizer(String, boolean)
+   */
+  public P addFinalizer(boolean cacheOnly) {
+    return addFinalizer(context.getControllerConfiguration().getFinalizerName(), cacheOnly);
+  }
+
+  /**
+   * Adds the given finalizer to the primary resource, filtering the own event (equivalent to {@link
+   * #addFinalizer(String, boolean)} with {@code cacheOnly = false}).
+   *
+   * @param finalizerName name of the finalizer to add
+   * @return updated resource from the server response
+   * @see #addFinalizer(String, boolean)
+   */
+  public P addFinalizer(String finalizerName) {
+    return addFinalizer(finalizerName, false);
   }
 
   /**
@@ -1005,9 +1031,13 @@ public class ResourceOperations<P extends HasMetadata> {
    * "Trigger reconciliation on all event" mode is on.
    *
    * @param finalizerName name of the finalizer to add
+   * @param cacheOnly if {@code true} the finalizer patch only caches the response and does
+   *     <em>not</em> filter the resulting own event, so a subsequent reconciliation is triggered by
+   *     the finalizer addition; if {@code false} the default JSON Patch matcher is used and the own
+   *     event is filtered
    * @return updated resource from the server response
    */
-  public P addFinalizer(String finalizerName) {
+  public P addFinalizer(String finalizerName, boolean cacheOnly) {
     var resource = context.getPrimaryResource();
     if (resource.isMarkedForDeletion() || resource.hasFinalizer(finalizerName)) {
       return resource;
@@ -1017,7 +1047,8 @@ public class ResourceOperations<P extends HasMetadata> {
           r.addFinalizer(finalizerName);
           return r;
         },
-        r -> !r.hasFinalizer(finalizerName));
+        r -> !r.hasFinalizer(finalizerName),
+        cacheOnly);
   }
 
   /**
@@ -1062,6 +1093,22 @@ public class ResourceOperations<P extends HasMetadata> {
   }
 
   /**
+   * Patches the primary resource using JSON Patch, retrying on conflict, filtering the own event
+   * via the default JSON Patch matcher (equivalent to {@link
+   * #conflictRetryingPatchPrimary(UnaryOperator, Predicate, boolean)} with {@code cacheOnly =
+   * false}).
+   *
+   * @param resourceChangesOperator changes to be done on the resource before update
+   * @param preCondition condition to check if the patch operation still needs to be performed or
+   *     not
+   * @return updated resource from the server or unchanged if the precondition does not hold
+   */
+  public P conflictRetryingPatchPrimary(
+      UnaryOperator<P> resourceChangesOperator, Predicate<P> preCondition) {
+    return conflictRetryingPatchPrimary(resourceChangesOperator, preCondition, false);
+  }
+
+  /**
    * Patches the primary resource using JSON Patch, retrying on conflict. The {@code
    * resourceChangesOperator} is applied to the current resource before each attempt; if the server
    * responds with conflict (HTTP 409) or unprocessable content (HTTP 422) the latest version is
@@ -1071,12 +1118,15 @@ public class ResourceOperations<P extends HasMetadata> {
    * @param resourceChangesOperator changes to be done on the resource before update
    * @param preCondition condition to check if the patch operation still needs to be performed or
    *     not; evaluated against the (possibly re-fetched) resource before each attempt
+   * @param cacheOnly if {@code true} the patch only caches the response and does <em>not</em>
+   *     filter the resulting own event; if {@code false} the default JSON Patch matcher is used and
+   *     the own event is filtered
    * @return updated resource from the server or unchanged if the precondition does not hold
    * @throws OperatorException if the maximum number of retry attempts is exceeded
    */
   @SuppressWarnings("unchecked")
   public P conflictRetryingPatchPrimary(
-      UnaryOperator<P> resourceChangesOperator, Predicate<P> preCondition) {
+      UnaryOperator<P> resourceChangesOperator, Predicate<P> preCondition, boolean cacheOnly) {
     var resource = context.getPrimaryResource();
     var client = context.getClient();
     if (log.isDebugEnabled()) {
@@ -1088,7 +1138,12 @@ public class ResourceOperations<P extends HasMetadata> {
         if (!preCondition.test(resource)) {
           return resource;
         }
-        return jsonPatchPrimary(resource, resourceChangesOperator);
+        return jsonPatchPrimary(
+            resource,
+            resourceChangesOperator,
+            cacheOnly
+                ? Options.cacheOnly()
+                : Options.matchAndFilterWithDefaultMatcher(UpdateType.JSON_PATCH));
       } catch (KubernetesClientException e) {
         log.trace("Exception during patch for resource: {}", resource);
         retryIndex++;

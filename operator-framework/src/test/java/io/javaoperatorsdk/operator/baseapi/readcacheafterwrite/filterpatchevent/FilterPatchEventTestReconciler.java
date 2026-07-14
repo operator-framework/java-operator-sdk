@@ -42,11 +42,12 @@ public class FilterPatchEventTestReconciler
     resource.setStatus(new FilterPatchEventTestCustomResourceStatus());
     resource.getStatus().setValue(UPDATED);
 
-    var uc = UpdateControl.patchStatus(resource);
+    context.resourceOperations().jsonMergePatchPrimaryStatus(resource);
     if (!filterPatchEvent.get()) {
-      uc = uc.reschedule();
+      return UpdateControl.<FilterPatchEventTestCustomResource>noUpdate().reschedule();
+    } else {
+      return UpdateControl.noUpdate();
     }
-    return uc;
   }
 
   public int getNumberOfExecutions() {

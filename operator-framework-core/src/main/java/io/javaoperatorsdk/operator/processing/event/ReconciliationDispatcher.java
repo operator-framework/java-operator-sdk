@@ -137,7 +137,7 @@ class ReconciliationDispatcher<P extends HasMetadata> {
       if (useSSA) {
         updatedResource = context.resourceOperations().addFinalizerWithSSA();
       } else {
-        updatedResource = context.resourceOperations().addFinalizer();
+        updatedResource = context.resourceOperations().addFinalizer(true);
       }
       return PostExecutionControl.onlyFinalizerAdded(updatedResource);
     } else {

@@ -52,7 +52,7 @@ class ReconcilerExecutorIT {
 
     awaitResourcesCreatedOrUpdated();
     awaitStatusUpdated();
-    assertThat(TestUtils.getNumberOfExecutions(operator)).isEqualTo(1);
+    assertThat(TestUtils.getNumberOfExecutions(operator)).isEqualTo(2);
   }
 
   @Test
