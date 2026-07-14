@@ -331,12 +331,13 @@ public class EventProcessor<P extends HasMetadata> implements EventHandler, Life
     if (!isRetryConfigured() && postExecutionControl.exceptionDuringExecution()) {
       if (postExecutionControl.isErrorHandledByReconciler()) {
         log.debug(
-            "Error during event processing {}, but was handled by the reconciler",
+            "Error during event processing {}, but was handled by the reconciler. (No retry"
+                + " configured)",
             executionScope,
             postExecutionControl.getRuntimeException().orElseThrow());
       } else {
         log.error(
-            "Error during event processing {}",
+            "Error during event processing {}. (No retry configured)",
             executionScope,
             postExecutionControl.getRuntimeException().orElseThrow());
       }
