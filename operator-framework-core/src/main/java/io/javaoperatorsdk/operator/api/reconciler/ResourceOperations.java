@@ -539,7 +539,9 @@ public class ResourceOperations<P extends HasMetadata> {
    */
   public <R extends HasMetadata> R jsonPatch(
       R actualResource, UnaryOperator<R> unaryOperator, Options options) {
+    R desired = desiredForJsonPatch(actualResource, unaryOperator, options);
     return resourcePatch(
+        desired,
         actualResource,
         r -> context.getClient().resource(actualResource).edit(unaryOperator),
         options);
@@ -561,8 +563,9 @@ public class ResourceOperations<P extends HasMetadata> {
       UnaryOperator<R> unaryOperator,
       InformerEventSource<R, P> informerEventSource,
       Options options) {
-
+    R desired = desiredForJsonPatch(actualResource, unaryOperator, options);
     return resourcePatch(
+        desired,
         actualResource,
         r -> context.getClient().resource(actualResource).edit(unaryOperator),
         informerEventSource,
