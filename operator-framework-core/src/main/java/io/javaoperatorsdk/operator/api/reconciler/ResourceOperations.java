@@ -733,7 +733,7 @@ public class ResourceOperations<P extends HasMetadata> {
 
   public <R extends HasMetadata> R resourcePatch(
       R desired, UnaryOperator<R> updateOperation, ManagedInformerEventSource<R, P, ?> ies) {
-    return resourcePatch(desired, updateOperation, Options.filterIfOptimisticLocking());
+    return resourcePatch(desired, updateOperation, ies, Options.filterIfOptimisticLocking());
   }
 
   public <R extends HasMetadata> R resourcePatch(
@@ -1031,10 +1031,12 @@ public class ResourceOperations<P extends HasMetadata> {
   }
 
   @Experimental(API_MIGHT_CHANGE)
+  /** */
   public enum Mode {
     FILTER_IF_OPTIMISTIC_LOCKING,
     FILTER_IF_NOT_MATCHING,
     CACHE_ONLY,
+    /** */
     FORCE_FILTER,
   }
 
