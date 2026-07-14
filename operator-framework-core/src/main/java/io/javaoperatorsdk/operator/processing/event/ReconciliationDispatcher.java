@@ -398,7 +398,6 @@ class ReconciliationDispatcher<P extends HasMetadata> {
       String resourceVersion = resource.getMetadata().getResourceVersion();
       // the cached resource should not be changed in any circumstances
       // that can lead to all kinds of race conditions.
-      // TODO review
       R clonedOriginal = cloner.clone(originalResource);
       try {
         clonedOriginal.getMetadata().setResourceVersion(null);
@@ -406,7 +405,7 @@ class ReconciliationDispatcher<P extends HasMetadata> {
         return context
             .resourceOperations()
             .jsonPatchPrimaryStatus(
-                originalResource,
+                clonedOriginal,
                 r -> {
                   ReconcilerUtilsInternal.setStatus(r, ReconcilerUtilsInternal.getStatus(resource));
                   return r;

@@ -133,7 +133,6 @@ public class WebPageReconciler implements Reconciler<WebPage> {
           desired.getMetadata().getName(),
           desired.getMetadata().getNamespace());
       context.resourceOperations().serverSideApply(desired);
-
     }
     return previous;
   }

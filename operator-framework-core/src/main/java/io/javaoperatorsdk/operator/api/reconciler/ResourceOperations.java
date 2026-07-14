@@ -570,7 +570,7 @@ public class ResourceOperations<P extends HasMetadata> {
     return resourcePatch(
         desired,
         actualResource,
-        r -> context.getClient().resource(actualResource).editStatus(unaryOperator),
+        r -> context.getClient().resource(actualResource).status().edit(unaryOperator),
         context.eventSourceRetriever().getControllerEventSource(),
         options);
   }
@@ -769,13 +769,15 @@ public class ResourceOperations<P extends HasMetadata> {
     if (matches) {
       return actualResource;
     }
-    boolean optimisticLocking = desiredResource.getMetadata().getResourceVersion() != null;
+    var targetBaseResource = desiredResource != null ? desiredResource : actualResource;
+
+    boolean optimisticLocking = targetBaseResource.getMetadata().getResourceVersion() != null;
 
     if (options.getMode() == Mode.CACHE_ONLY
         || (options.getMode() == Mode.FILTER_IF_OPTIMISTIC_LOCKING && !optimisticLocking)) {
-      return ies.updateAndCacheResource(desiredResource, updateOperation);
+      return ies.updateAndCacheResource(targetBaseResource, updateOperation);
     } else {
-      return ies.eventFilteringUpdateAndCacheResource(desiredResource, updateOperation);
+      return ies.eventFilteringUpdateAndCacheResource(targetBaseResource, updateOperation);
     }
   }
 
