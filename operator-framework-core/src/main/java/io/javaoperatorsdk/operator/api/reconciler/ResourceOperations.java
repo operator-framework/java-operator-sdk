@@ -567,7 +567,7 @@ public class ResourceOperations<P extends HasMetadata> {
     return resourcePatch(
         desired,
         actualResource,
-        r -> context.getClient().resource(actualResource).edit(unaryOperator),
+        r -> context.getClient().resource(actualResource).edit(rr -> desired),
         informerEventSource,
         options);
   }
@@ -704,7 +704,7 @@ public class ResourceOperations<P extends HasMetadata> {
     return resourcePatch(
         desired,
         actualResource,
-        r -> context.getClient().resource(actualResource).status().edit(unaryOperator),
+        r -> context.getClient().resource(actualResource).status().edit(rr -> desired),
         context.eventSourceRetriever().getControllerEventSource(),
         options);
   }

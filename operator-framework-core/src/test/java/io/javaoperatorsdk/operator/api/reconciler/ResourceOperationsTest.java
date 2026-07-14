@@ -17,16 +17,20 @@ package io.javaoperatorsdk.operator.api.reconciler;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 import java.util.function.UnaryOperator;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.stubbing.Answer;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClientException;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
+import io.fabric8.kubernetes.client.dsl.NamespaceableResource;
 import io.fabric8.kubernetes.client.dsl.Resource;
+import io.fabric8.kubernetes.client.dsl.base.PatchContext;
 import io.fabric8.kubernetes.client.utils.KubernetesSerialization;
 import io.javaoperatorsdk.operator.TestUtils;
 import io.javaoperatorsdk.operator.api.config.Cloner;
@@ -55,6 +59,12 @@ class ResourceOperationsTest {
 
   private ControllerEventSource<TestCustomResource> controllerEventSource;
   private ResourceOperations<TestCustomResource> resourceOperations;
+
+  @SuppressWarnings("rawtypes")
+  private ManagedInformerEventSource verbEventSource;
+
+  @SuppressWarnings("rawtypes")
+  private NamespaceableResource verbClientResource;
 
   @BeforeEach
   void setupMocks() {
@@ -447,5 +457,228 @@ class ResourceOperationsTest {
                 resourceOperations.create(resource, ResourceOperations.Options.cacheOnly(matcher)));
 
     assertThat(exception.getMessage()).contains("does not support matcher");
+  }
+
+  // ---------------------------------------------------------------------------
+  // High-level update / create / patch verbs with different Options variations.
+  // These go through the full public API (resolving the event source from the
+  // retriever and invoking the real client verb), verifying both the routing
+  // (filter vs cache) and which underlying Kubernetes operation is used.
+  // ---------------------------------------------------------------------------
+
+  /**
+   * Wires a {@link ManagedInformerEventSource} into the retriever and a client {@link Resource} so
+   * that both cache paths actually run the update operation, letting us assert which client verb is
+   * invoked. Returns the resource the client verbs are stubbed to return.
+   */
+  @SuppressWarnings("rawtypes")
+  private TestCustomResource wireVerbMocks() {
+    verbEventSource = mock(ManagedInformerEventSource.class);
+    when(context.eventSourceRetriever().getEventSourcesFor(TestCustomResource.class))
+        .thenReturn(List.of(verbEventSource));
+
+    verbClientResource = mock(NamespaceableResource.class);
+    when(context.getClient().resource(any(HasMetadata.class))).thenReturn(verbClientResource);
+
+    var updated = TestUtils.testCustomResource1();
+    updated.getMetadata().setResourceVersion("999");
+    when(verbClientResource.update()).thenReturn(updated);
+    when(verbClientResource.create()).thenReturn(updated);
+    when(verbClientResource.updateStatus()).thenReturn(updated);
+    when(verbClientResource.patch()).thenReturn(updated);
+    when(verbClientResource.patch(any(PatchContext.class))).thenReturn(updated);
+
+    // both cache paths execute the update operation so the underlying client verb runs
+    Answer<Object> runOperation =
+        invocation -> ((UnaryOperator) invocation.getArgument(1)).apply(invocation.getArgument(0));
+    when(verbEventSource.eventFilteringUpdateAndCacheResource(any(), any(UnaryOperator.class)))
+        .thenAnswer(runOperation);
+    when(verbEventSource.updateAndCacheResource(any(), any(UnaryOperator.class)))
+        .thenAnswer(runOperation);
+    return updated;
+  }
+
+  // ---- update -------------------------------------------------------------
+
+  @Test
+  void updateCacheOnlyCachesAndCallsClientUpdate() {
+    var resource = TestUtils.testCustomResource1();
+    resource.getMetadata().setResourceVersion("1");
+    var updated = wireVerbMocks();
+
+    var result = resourceOperations.update(resource, ResourceOperations.Options.cacheOnly());
+
+    assertThat(result).isSameAs(updated);
+    verify(verbEventSource, times(1))
+        .updateAndCacheResource(eq(resource), any(UnaryOperator.class));
+    verify(verbEventSource, never())
+        .eventFilteringUpdateAndCacheResource(any(), any(UnaryOperator.class));
+    verify(verbClientResource, times(1)).update();
+  }
+
+  @Test
+  void updateForceFilterFiltersAndCallsClientUpdate() {
+    var resource = TestUtils.testCustomResource1();
+    var updated = wireVerbMocks();
+
+    var result =
+        resourceOperations.update(resource, ResourceOperations.Options.forceFilterEvents());
+
+    assertThat(result).isSameAs(updated);
+    verify(verbEventSource, times(1))
+        .eventFilteringUpdateAndCacheResource(eq(resource), any(UnaryOperator.class));
+    verify(verbEventSource, never()).updateAndCacheResource(any(), any(UnaryOperator.class));
+    verify(verbClientResource, times(1)).update();
+  }
+
+  @Test
+  void updateFilterIfOptimisticLockingFiltersWhenResourceVersionPresent() {
+    var resource = TestUtils.testCustomResource1();
+    resource.getMetadata().setResourceVersion("1");
+    wireVerbMocks();
+
+    resourceOperations.update(resource, ResourceOperations.Options.filterIfOptimisticLocking());
+
+    verify(verbEventSource, times(1))
+        .eventFilteringUpdateAndCacheResource(eq(resource), any(UnaryOperator.class));
+    verify(verbEventSource, never()).updateAndCacheResource(any(), any(UnaryOperator.class));
+  }
+
+  @Test
+  void updateFilterIfOptimisticLockingCachesWhenNoResourceVersion() {
+    var resource = TestUtils.testCustomResource1();
+    resource.getMetadata().setResourceVersion(null);
+    wireVerbMocks();
+
+    resourceOperations.update(resource, ResourceOperations.Options.filterIfOptimisticLocking());
+
+    verify(verbEventSource, times(1))
+        .updateAndCacheResource(eq(resource), any(UnaryOperator.class));
+    verify(verbEventSource, never())
+        .eventFilteringUpdateAndCacheResource(any(), any(UnaryOperator.class));
+  }
+
+  @Test
+  void updateWithMatcherMatchingSkipsWrite() {
+    var desired = TestUtils.testCustomResource1();
+    var actual = TestUtils.testCustomResource1();
+    wireVerbMocks();
+    when(verbEventSource.get(any())).thenReturn(Optional.of(actual));
+    var matcher = mock(Matcher.class);
+    when(matcher.matches(any(), any(), any())).thenReturn(true);
+
+    var result =
+        resourceOperations.update(desired, ResourceOperations.Options.matchAndFilter(matcher));
+
+    assertThat(result).isSameAs(actual);
+    verify(verbEventSource, never())
+        .eventFilteringUpdateAndCacheResource(any(), any(UnaryOperator.class));
+    verify(verbEventSource, never()).updateAndCacheResource(any(), any(UnaryOperator.class));
+    verify(verbClientResource, never()).update();
+  }
+
+  @Test
+  void updateWithMatcherNotMatchingFiltersAndWrites() {
+    var desired = TestUtils.testCustomResource1();
+    var actual = TestUtils.testCustomResource1();
+    var updated = wireVerbMocks();
+    when(verbEventSource.get(any())).thenReturn(Optional.of(actual));
+    var matcher = mock(Matcher.class);
+    when(matcher.matches(any(), any(), any())).thenReturn(false);
+
+    var result =
+        resourceOperations.update(desired, ResourceOperations.Options.matchAndFilter(matcher));
+
+    assertThat(result).isSameAs(updated);
+    verify(verbEventSource, times(1))
+        .eventFilteringUpdateAndCacheResource(eq(desired), any(UnaryOperator.class));
+    verify(verbClientResource, times(1)).update();
+  }
+
+  // ---- create -------------------------------------------------------------
+
+  @Test
+  void createDefaultForceFiltersAndCallsClientCreate() {
+    var resource = TestUtils.testCustomResource1();
+    var updated = wireVerbMocks();
+
+    var result = resourceOperations.create(resource);
+
+    assertThat(result).isSameAs(updated);
+    verify(verbEventSource, times(1))
+        .eventFilteringUpdateAndCacheResource(eq(resource), any(UnaryOperator.class));
+    verify(verbEventSource, never()).updateAndCacheResource(any(), any(UnaryOperator.class));
+    verify(verbClientResource, times(1)).create();
+  }
+
+  @Test
+  void createCacheOnlyCachesAndCallsClientCreate() {
+    var resource = TestUtils.testCustomResource1();
+    var updated = wireVerbMocks();
+
+    var result = resourceOperations.create(resource, ResourceOperations.Options.cacheOnly());
+
+    assertThat(result).isSameAs(updated);
+    verify(verbEventSource, times(1))
+        .updateAndCacheResource(eq(resource), any(UnaryOperator.class));
+    verify(verbEventSource, never())
+        .eventFilteringUpdateAndCacheResource(any(), any(UnaryOperator.class));
+    verify(verbClientResource, times(1)).create();
+  }
+
+  @Test
+  void createWithNullEventSourceFallsBackToForceFilter() {
+    var resource = TestUtils.testCustomResource1();
+    wireVerbMocks();
+
+    // a null informer event source falls back to the default create(), which force-filters
+    resourceOperations.create(resource, null, ResourceOperations.Options.cacheOnly());
+
+    verify(verbEventSource, times(1))
+        .eventFilteringUpdateAndCacheResource(eq(resource), any(UnaryOperator.class));
+    verify(verbEventSource, never()).updateAndCacheResource(any(), any(UnaryOperator.class));
+  }
+
+  // ---- patch / status verbs ----------------------------------------------
+
+  @Test
+  void jsonMergePatchCacheOnlyCallsClientPatch() {
+    var resource = TestUtils.testCustomResource1();
+    var updated = wireVerbMocks();
+
+    var result =
+        resourceOperations.jsonMergePatch(resource, ResourceOperations.Options.cacheOnly());
+
+    assertThat(result).isSameAs(updated);
+    verify(verbEventSource, times(1))
+        .updateAndCacheResource(eq(resource), any(UnaryOperator.class));
+    verify(verbClientResource, times(1)).patch();
+  }
+
+  @Test
+  void serverSideApplyCacheOnlyCallsClientSsaPatch() {
+    var resource = TestUtils.testCustomResource1();
+    var updated = wireVerbMocks();
+
+    var result =
+        resourceOperations.serverSideApply(resource, ResourceOperations.Options.cacheOnly());
+
+    assertThat(result).isSameAs(updated);
+    verify(verbEventSource, times(1))
+        .updateAndCacheResource(eq(resource), any(UnaryOperator.class));
+    verify(verbClientResource, times(1)).patch(any(PatchContext.class));
+  }
+
+  @Test
+  void updateStatusCacheOnlyCallsClientUpdateStatus() {
+    var resource = TestUtils.testCustomResource1();
+    var updated = wireVerbMocks();
+
+    var result = resourceOperations.updateStatus(resource, ResourceOperations.Options.cacheOnly());
+
+    assertThat(result).isSameAs(updated);
+    verify(verbEventSource, times(1))
+        .updateAndCacheResource(eq(resource), any(UnaryOperator.class));
+    verify(verbClientResource, times(1)).updateStatus();
   }
 }
