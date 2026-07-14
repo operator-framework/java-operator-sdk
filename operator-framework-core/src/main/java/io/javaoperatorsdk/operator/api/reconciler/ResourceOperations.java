@@ -695,13 +695,6 @@ public class ResourceOperations<P extends HasMetadata> {
     return resourcePatch(resource, updateOperation, Options.filterIfOptimisticLocking());
   }
 
-  /**
-   * @param desired resource to patch
-   * @param updateOperation operation to perform (update, patch, edit, etc.)
-   * @return updated resource
-   * @param <R> resource type
-   * @throws IllegalStateException if no event source or multiple event sources are found
-   */
   @Experimental(API_MIGHT_CHANGE)
   @SuppressWarnings({"rawtypes", "unchecked"})
   private <R extends HasMetadata> R resourcePatch(
