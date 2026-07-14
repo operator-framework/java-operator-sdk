@@ -30,8 +30,8 @@ public UpdateControl<WebPage> reconcile(WebPage webPage, Context<WebPage> contex
 }
 ```
 
-In addition to that, the framework will automatically filter events for your own updates,
-so they don't trigger the reconciliation again.
+In addition to that, the framework will provide facilities to filter out
+events for own updates so they don't trigger the reconciliation again.
 
 {{% alert color=success %}}
 **This should significantly simplify controller development, and will make reconciliation
@@ -180,12 +180,6 @@ From this point the idea of the algorithm is very simple:
    the one in the TRC. If yes, evict the resource from the TRC.
 3. When the controller reads a resource from cache, it checks the TRC first, then falls back to the Informer's cache.
 
-The actual filtering of events for our own writes is more nuanced than a simple
-"evict on RV ≥ TRC version" rule — it is driven by a per-resource state machine
-that tracks in-flight writes and the events received around them. See
-[Filtering events for our own updates](#filtering-events-for-our-own-updates) below.
-    
-
 ```mermaid
 sequenceDiagram
     box rgba(50,108,229,0.1)
@@ -226,10 +220,30 @@ sequenceDiagram
 When we update a resource, the informer will eventually propagate an event that would trigger a reconciliation.
 In most cases, however, this is not desirable. Since we already have the up-to-date resource at that point,
 we want to be notified only when the change originates outside our reconciler.
-Therefore, in addition to caching the resource, we filter out events caused by our own updates.
+Therefore, in addition to caching the resource, provide utilities to so you can optimize the update/patch
+operations to filter out those events.
 
-Note that the implementation of this is relatively complex: while performing the update, we record all the
-events received in the meantime and decide whether to propagate them further once the update request completes.
+See [ResourceOperations](https://github.com/operator-framework/java-operator-sdk/blob/main/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/api/reconciler/ResourceOperations.java#L49) 
+for details.
+
+```java
+public UpdateControl<WebPage> reconcile(WebPage webPage, Context<WebPage> context) {
+    
+    ConfigMap managedConfigMap = prepareConfigMap(webPage);
+    
+   // resource operation in this case will resource only if
+   // it does not match the actual, and will filter our the related event
+   context.resourceOperations().serverSideApply(managedConfigMap);
+
+   // UpdateControl.patchStatus would only cache the resource to filter out events too
+   // you have to use resourceOperations.
+   context.resourceOperations().serverSideApplyPrimaryStatus(alterStatusObject(webPage));    
+   return UpdateControl.noUpdate();
+}
+```
+
+Note that the implementation of this is relatively complex and has some caveats:
+while performing the update, we record all the events received in the meantime and decide whether to propagate them further once the update request completes.
 
 This way, we significantly reduce the number of reconciliations, making the whole process much more efficient.  
 
