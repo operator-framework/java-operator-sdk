@@ -39,12 +39,67 @@ import static io.javaoperatorsdk.operator.processing.KubernetesResourceUtils.get
 import static io.javaoperatorsdk.operator.processing.KubernetesResourceUtils.getVersion;
 
 /**
- * Provides useful operations to manipulate resources (server-side apply, patch, etc.) in an
- * idiomatic way, in particular to make sure that the latest version of the resource is present in
- * the caches for the next reconciliation. In other words, it provides read-cache-after-write
- * consistency.
+ * Provides various, useful operations to manipulate resources (server-side apply, patch, etc.) in
+ * an idiomatic ways. Provides improved update/patch/create operations to make sure that the latest
+ * version of the resource is present in the caches for the next reconciliation, and filter own
+ * update events. You can still use kubernetes client directly, these methods are however useful to
+ * achieve better efficiency.
  *
- * @param <P> the resource type on which this object operates
+ * <p>Every update/patch/create method comes in two flavors: a default one, and one that takes an
+ * {@link Options} argument to control how the resulting own event is handled. The behavior is
+ * selected through {@link Mode}:
+ *
+ * <ul>
+ *   <li>{@link Options#filterIfOptimisticLocking()} ({@link Mode#FILTER_IF_OPTIMISTIC_LOCKING}) -
+ *       the own event is filtered only when the write uses optimistic locking (i.e. the resource
+ *       version is set on the resource being written); otherwise the response is only cached. This
+ *       is the safe default for plain update/patch operations.
+ *   <li>{@link Options#matchAndFilter(Matcher)} / {@link
+ *       Options#matchAndFilterWithDefaultMatcher(io.javaoperatorsdk.operator.api.reconciler.matcher.UpdateType)}
+ *       ({@link Mode#FILTER_IF_NOT_MATCHING}) - before writing, the desired state is compared to
+ *       the actual (cached) state using the provided {@link Matcher}; if they already match the
+ *       write is skipped, otherwise it is performed and the own event is filtered.
+ *   <li>{@link Options#cacheOnly()} ({@link Mode#CACHE_ONLY}) - the response is only put into the
+ *       cache (read-cache-after-write consistency) and no own-event filtering is done.
+ *   <li>{@link Options#forceFilterEvents()} ({@link Mode#FORCE_FILTER}) - the own event is always
+ *       filtered, regardless of optimistic locking. Use only when correctness is otherwise
+ *       guaranteed (see the note below). This is mostly for internal usage, like in {@link
+ *       io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependentResource}
+ *       where we match the resource explicitly before update.
+ * </ul>
+ *
+ * <p><strong>Correctness of event filtering.</strong> Filtering an own update event is only safe if
+ * the framework can tell an own write apart from a concurrent third-party write. This requires
+ * <em>either</em>:
+ *
+ * <ul>
+ *   <li>a {@link Matcher} to be provided (so a filtered event can be confirmed to match the desired
+ *       state we just wrote), <em>or</em>
+ *   <li>the update to be done using <em>optimistic locking</em> (a resource version set on the
+ *       written resource), so a conflicting concurrent change is rejected by the API server rather
+ *       than silently swallowed.
+ * </ul>
+ *
+ * <p>If neither holds - for example {@link Options#forceFilterEvents()} on a write without
+ * optimistic locking and without a matcher - a concurrent external update happening within the
+ * filtering window may be filtered out and thus missed until the next resync. Prefer providing a
+ * matcher or using optimistic locking whenever own-event filtering is desired.
+ *
+ * <p><strong>Default matchers.</strong> For the matching modes a default {@link Matcher} is
+ * provided for every {@link io.javaoperatorsdk.operator.api.reconciler.matcher.UpdateType} (see
+ * {@link
+ * Options#matchAndFilterWithDefaultMatcher(io.javaoperatorsdk.operator.api.reconciler.matcher.UpdateType)}),
+ * so matching works out of the box. Note however that these default matchers are heuristics and may
+ * have issues in some edge cases, so a workflow relying on them should be tested against the
+ * concrete resources it manages. When a default matcher does not fit, provide your own via {@link
+ * Options#matchAndFilter(Matcher)}.
+ *
+ * <p>Despite that caveat, matching is generally the most efficient way to handle updates: it covers
+ * full event filtering <em>and</em> only performs a write when the actual state actually differs
+ * from the desired one, thus also reducing the number of requests made against the Kubernetes API
+ * server.
+ *
+ * @param <P> the primary resource type on which this object operates
  */
 public class ResourceOperations<P extends HasMetadata> {
 
@@ -696,14 +751,12 @@ public class ResourceOperations<P extends HasMetadata> {
     return resourcePatch(resource, updateOperation, Options.filterIfOptimisticLocking());
   }
 
-  @Experimental(API_MIGHT_CHANGE)
   @SuppressWarnings({"rawtypes", "unchecked"})
   private <R extends HasMetadata> R resourcePatch(
       R desired, UnaryOperator<R> updateOperation, Options options) {
     return resourcePatch(desired, null, updateOperation, options);
   }
 
-  @Experimental(API_MIGHT_CHANGE)
   @SuppressWarnings({"rawtypes", "unchecked"})
   private <R extends HasMetadata> R resourcePatch(
       R desired, R actual, UnaryOperator<R> updateOperation, Options options) {
@@ -731,12 +784,17 @@ public class ResourceOperations<P extends HasMetadata> {
     }
   }
 
+  /**
+   * This method is public to ensure backward compatibility, we will make it private in next major
+   * release.
+   */
+  @Deprecated(forRemoval = true)
   public <R extends HasMetadata> R resourcePatch(
       R desired, UnaryOperator<R> updateOperation, ManagedInformerEventSource<R, P, ?> ies) {
     return resourcePatch(desired, updateOperation, ies, Options.filterIfOptimisticLocking());
   }
 
-  public <R extends HasMetadata> R resourcePatch(
+  private <R extends HasMetadata> R resourcePatch(
       R desired,
       UnaryOperator<R> updateOperation,
       ManagedInformerEventSource<R, P, ?> ies,
@@ -745,7 +803,8 @@ public class ResourceOperations<P extends HasMetadata> {
     return resourcePatch(desired, null, updateOperation, ies, options);
   }
 
-  public <R extends HasMetadata> R resourcePatch(
+  // visible for testing
+  <R extends HasMetadata> R resourcePatch(
       R desiredResource,
       R actualResource,
       UnaryOperator<R> updateOperation,
@@ -758,7 +817,6 @@ public class ResourceOperations<P extends HasMetadata> {
       if (actualResource == null) {
         actualResource = ies.get(ResourceID.fromResource(desiredResource)).orElse(null);
       }
-      // todo describe might require optimistic locking
       if (actualResource != null) {
         matches = matcher.matches(desiredResource, actualResource, context);
       }
@@ -769,8 +827,8 @@ public class ResourceOperations<P extends HasMetadata> {
     if (matches) {
       return actualResource;
     }
+    // this is to cover special case for jsonPatch were we should use actual resource as base
     var targetBaseResource = desiredResource != null ? desiredResource : actualResource;
-
     boolean optimisticLocking = targetBaseResource.getMetadata().getResourceVersion() != null;
 
     if (options.getMode() == Mode.CACHE_ONLY
@@ -968,6 +1026,28 @@ public class ResourceOperations<P extends HasMetadata> {
     }
   }
 
+  /**
+   * Controls how an update/patch/create operation of {@link ResourceOperations} handles the own
+   * event resulting from the write. This is the entry point users interact with to tune caching and
+   * event filtering; instances are created through the static factory methods rather than a
+   * constructor, and each maps to a {@link Mode}.
+   *
+   * <p>See the {@link ResourceOperations} class documentation for a full description of the
+   * available strategies, their correctness requirements (a {@link Matcher} or optimistic locking
+   * is needed for safe own-event filtering), and the trade-offs of the default matchers.
+   *
+   * <ul>
+   *   <li>{@link #filterIfOptimisticLocking()} - filter the own event only when the write uses
+   *       optimistic locking, otherwise only cache the response.
+   *   <li>{@link #matchAndFilter(Matcher)} / {@link #matchAndFilterWithDefaultMatcher(UpdateType)}
+   *       - skip the write when the desired state already matches the actual state, otherwise write
+   *       and filter the own event.
+   *   <li>{@link #cacheOnly()} / {@link #cacheOnly(Matcher)} - only cache the response, no
+   *       own-event filtering.
+   *   <li>{@link #forceFilterEvents()} - always filter the own event (mostly for internal usage).
+   *       Mostly for internal usage, if we are sure that the resource is matched before.
+   * </ul>
+   */
   @Experimental(API_MIGHT_CHANGE)
   public static class Options {
 
@@ -977,25 +1057,53 @@ public class ResourceOperations<P extends HasMetadata> {
         new Options(Mode.FILTER_IF_OPTIMISTIC_LOCKING, null);
 
     private final Mode mode;
-    private Matcher matcher;
+    private final Matcher matcher;
 
     private Options(Mode mode, Matcher matcher) {
       this.mode = mode;
       this.matcher = matcher;
     }
 
+    /**
+     * Always filters the own event resulting from the write, regardless of optimistic locking. Safe
+     * only when correctness is otherwise guaranteed (see {@link ResourceOperations}); mostly for
+     * internal usage.
+     *
+     * @return options that always filter the own event
+     */
     public static Options forceFilterEvents() {
       return ALWAYS_FILTER;
     }
 
+    /**
+     * Only caches the response of the write for read-cache-after-write consistency, without doing
+     * any own-event filtering.
+     *
+     * @return options that only cache the response
+     */
     public static Options cacheOnly() {
       return ONLY_CACHE;
     }
 
+    /**
+     * Like {@link #cacheOnly()} but additionally skips the write when the desired state already
+     * matches the actual (cached) state according to the given {@link Matcher}.
+     *
+     * @param matcher the matcher used to decide whether the actual state already matches the
+     *     desired
+     * @return options that cache only, skipping the write when already matching
+     */
     public static Options cacheOnly(Matcher matcher) {
       return new Options(Mode.CACHE_ONLY, matcher);
     }
 
+    /**
+     * Filters the own event only when the write uses optimistic locking (a resource version is set
+     * on the written resource); otherwise only caches the response. This is the safe default for
+     * plain update/patch operations.
+     *
+     * @return options that filter the own event only when optimistic locking is used
+     */
     public static Options filterIfOptimisticLocking() {
       return FILTER_IF_OPTIMISTIC_LOCKING;
     }
@@ -1013,6 +1121,14 @@ public class ResourceOperations<P extends HasMetadata> {
       return new Options(Mode.FILTER_IF_NOT_MATCHING, matcher);
     }
 
+    /**
+     * Same as {@link #matchAndFilter(Matcher)} but uses the default {@link Matcher} registered for
+     * the given {@link UpdateType}. See the {@link ResourceOperations} class documentation for the
+     * caveats of the default matchers.
+     *
+     * @param updateType the update type whose default matcher should be used
+     * @return options that match using the default matcher and filter the own event
+     */
     public static Options matchAndFilterWithDefaultMatcher(UpdateType updateType) {
       return new Options(Mode.FILTER_IF_NOT_MATCHING, updateType.getMatcher());
     }
@@ -1030,13 +1146,22 @@ public class ResourceOperations<P extends HasMetadata> {
     }
   }
 
+  /**
+   * The strategy used to decide how the own event resulting from a write is handled. This is a
+   * low-level enum; users should not reference it directly but select the desired behavior through
+   * the {@link Options} factory methods (e.g. {@link Options#filterIfOptimisticLocking()}, {@link
+   * Options#matchAndFilter(Matcher)}, {@link Options#cacheOnly()}, {@link
+   * Options#forceFilterEvents()}), which is why each constant links to its corresponding factory.
+   */
   @Experimental(API_MIGHT_CHANGE)
-  /** */
-  public enum Mode {
+  enum Mode {
+    /** See {@link Options#filterIfOptimisticLocking()}. */
     FILTER_IF_OPTIMISTIC_LOCKING,
+    /** See {@link Options#matchAndFilter(Matcher)}. */
     FILTER_IF_NOT_MATCHING,
+    /** See {@link Options#cacheOnly()}. */
     CACHE_ONLY,
-    /** */
+    /** See {@link Options#forceFilterEvents()}. */
     FORCE_FILTER,
   }
 

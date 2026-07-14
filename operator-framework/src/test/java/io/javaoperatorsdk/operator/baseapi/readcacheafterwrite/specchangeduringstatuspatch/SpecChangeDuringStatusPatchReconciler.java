@@ -27,11 +27,10 @@ import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
 
 /**
  * On the first reconciliation the reconciler patches its own status, but keeps the event filtering
- * window (opened by {@link
- * io.javaoperatorsdk.operator.api.reconciler.ResourceOperations#resourcePatch}) open until the test
- * signals that it has changed the spec on the cluster. This reproduces the race where a spec change
- * lands while the controller's own status patch is in flight: the spec change event must still
- * propagate as a fresh reconciliation, it must not be absorbed as if it were our own status update.
+ * window open until the test signals that it has changed the spec on the cluster. This reproduces
+ * the race where a spec change lands while the controller's own status patch is in flight: the spec
+ * change event must still propagate as a fresh reconciliation, it must not be absorbed as if it
+ * were our own status update.
  */
 @ControllerConfiguration
 public class SpecChangeDuringStatusPatchReconciler
