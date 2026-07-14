@@ -297,7 +297,9 @@ public class EventProcessor<P extends HasMetadata> implements EventHandler, Life
         && postExecutionControl.exceptionDuringExecution()
         && (!state.deleteEventPresent() || triggerOnAllEvents())) {
       handleRetryOnException(
-          executionScope, postExecutionControl.getRuntimeException().orElseThrow());
+          executionScope,
+          postExecutionControl.getRuntimeException().orElseThrow(),
+          postExecutionControl.isErrorHandledByReconciler());
       return;
     }
     cleanupOnSuccessfulExecution(executionScope);
@@ -327,10 +329,17 @@ public class EventProcessor<P extends HasMetadata> implements EventHandler, Life
   private void logErrorIfNoRetryConfigured(
       ExecutionScope<P> executionScope, PostExecutionControl<P> postExecutionControl) {
     if (!isRetryConfigured() && postExecutionControl.exceptionDuringExecution()) {
-      log.error(
-          "Error during event processing {}",
-          executionScope,
-          postExecutionControl.getRuntimeException().orElseThrow());
+      if (postExecutionControl.isErrorHandledByReconciler()) {
+        log.debug(
+            "Error during event processing {}, but was handled by the reconciler",
+            executionScope,
+            postExecutionControl.getRuntimeException().orElseThrow());
+      } else {
+        log.error(
+            "Error during event processing {}",
+            executionScope,
+            postExecutionControl.getRuntimeException().orElseThrow());
+      }
     }
   }
 
@@ -369,14 +378,16 @@ public class EventProcessor<P extends HasMetadata> implements EventHandler, Life
    * events (received meanwhile retry is in place or already in buffer) instantly or always wait
    * according to the retry timing if there was an exception.
    */
-  private void handleRetryOnException(ExecutionScope<P> executionScope, Exception exception) {
+  private void handleRetryOnException(
+      ExecutionScope<P> executionScope, Exception exception, boolean errorHandledByReconciler) {
     final var state = getOrInitRetryExecution(executionScope);
     var resourceID = state.getId();
     boolean eventPresent =
         state.eventPresent()
             || (triggerOnAllEvents() && state.isAdditionalEventPresentAfterDeleteEvent());
     state.markEventReceived(triggerOnAllEvents());
-    retryAwareErrorLogging(state.getRetry(), eventPresent, exception, executionScope);
+    retryAwareErrorLogging(
+        state.getRetry(), eventPresent, errorHandledByReconciler, exception, executionScope);
     metrics.reconciliationFailed(
         executionScope.getResource(), state.getRetry(), exception, metricsMetadata);
     if (eventPresent) {
@@ -408,9 +419,17 @@ public class EventProcessor<P extends HasMetadata> implements EventHandler, Life
   private void retryAwareErrorLogging(
       RetryExecution retry,
       boolean eventPresent,
+      boolean errorHandledByReconciler,
       Exception exception,
       ExecutionScope<P> executionScope) {
-    if (!retry.isLastAttempt()
+    if (errorHandledByReconciler) {
+      // The reconciler already handled the error in updateErrorStatus (and had the chance to log it
+      // as needed), so the framework only logs it on debug level while still retrying.
+      log.debug(
+          "Error during event processing {}, but was handled by the reconciler",
+          executionScope,
+          exception);
+    } else if (!retry.isLastAttempt()
         && exception instanceof KubernetesClientException ex
         && ex.getCode() == HttpURLConnection.HTTP_CONFLICT) {
       log.debug("Full client conflict error during event processing {}", executionScope, exception);

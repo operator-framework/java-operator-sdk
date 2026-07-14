@@ -482,6 +482,40 @@ class ReconciliationDispatcherTest {
   }
 
   @Test
+  void errorHandledByReconcilerMarkedWhenErrorStatusHandledButRetried() {
+    testCustomResource.addFinalizer(DEFAULT_FINALIZER);
+    reconciler.reconcile =
+        (r, c) -> {
+          throw new IllegalStateException("Error Status Test");
+        };
+    reconciler.errorHandler = () -> ErrorStatusUpdateControl.patchStatus(testCustomResource);
+
+    var postExecControl =
+        reconciliationDispatcher.handleExecution(
+            new ExecutionScope(null, null, false, false).setResource(testCustomResource));
+
+    assertThat(postExecControl.exceptionDuringExecution()).isTrue();
+    assertThat(postExecControl.isErrorHandledByReconciler()).isTrue();
+  }
+
+  @Test
+  void errorNotHandledByReconcilerOnDefaultErrorProcessing() {
+    testCustomResource.addFinalizer(DEFAULT_FINALIZER);
+    reconciler.reconcile =
+        (r, c) -> {
+          throw new IllegalStateException("Error Status Test");
+        };
+    reconciler.errorHandler = () -> ErrorStatusUpdateControl.defaultErrorProcessing();
+
+    var postExecControl =
+        reconciliationDispatcher.handleExecution(
+            new ExecutionScope(null, null, false, false).setResource(testCustomResource));
+
+    assertThat(postExecControl.exceptionDuringExecution()).isTrue();
+    assertThat(postExecControl.isErrorHandledByReconciler()).isFalse();
+  }
+
+  @Test
   void errorHandlerCanInstructNoRetryWithUpdate() {
     testCustomResource.addFinalizer(DEFAULT_FINALIZER);
     reconciler.reconcile =

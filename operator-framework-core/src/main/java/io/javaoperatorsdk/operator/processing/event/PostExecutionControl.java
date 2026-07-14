@@ -27,6 +27,7 @@ final class PostExecutionControl<R extends HasMetadata> {
   private final Exception runtimeException;
 
   private Long reScheduleDelay = null;
+  private boolean errorHandledByReconciler = false;
 
   private PostExecutionControl(
       boolean finalizerRemoved,
@@ -66,6 +67,22 @@ final class PostExecutionControl<R extends HasMetadata> {
   public static <R extends HasMetadata> PostExecutionControl<R> exceptionDuringExecution(
       Exception exception) {
     return new PostExecutionControl<>(false, null, false, exception);
+  }
+
+  /**
+   * Marks that the exception was handled by the reconciler's {@code updateErrorStatus} (i.e. the
+   * reconciler did not return {@link
+   * io.javaoperatorsdk.operator.api.reconciler.ErrorStatusUpdateControl#defaultErrorProcessing()}),
+   * but the error is still retried. In this case the framework logs the error on a lower level,
+   * since the reconciler already had the chance to handle and log it as needed.
+   */
+  public PostExecutionControl<R> withErrorHandledByReconciler() {
+    this.errorHandledByReconciler = true;
+    return this;
+  }
+
+  public boolean isErrorHandledByReconciler() {
+    return errorHandledByReconciler;
   }
 
   public Optional<R> getUpdatedCustomResource() {

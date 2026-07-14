@@ -266,7 +266,12 @@ class ReconciliationDispatcher<P extends HasMetadata> {
       errorStatusUpdateControl.getScheduleDelay().ifPresent(postExecutionControl::withReSchedule);
       return postExecutionControl;
     }
-    throw e;
+    // The reconciler handled the error via updateErrorStatus (it did not return
+    // defaultErrorProcessing()) but still wants the error to be retried. The retry (and its
+    // backoff) is kept intact, but since the reconciler already had the chance to handle and log
+    // the error, the framework logs it on a lower level instead of emitting an "uncaught error"
+    // warning.
+    return PostExecutionControl.<P>exceptionDuringExecution(e).withErrorHandledByReconciler();
   }
 
   private PostExecutionControl<P> createPostExecutionControl(
