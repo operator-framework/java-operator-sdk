@@ -94,7 +94,8 @@ public class ResourceOperations<P extends HasMetadata> {
 
   public <R extends HasMetadata> R serverSideApply(
       R resource, InformerEventSource<R, P> informerEventSource) {
-    return serverSideApply(resource, informerEventSource, null);
+    return serverSideApply(
+        resource, informerEventSource, Options.matchAndFilterWithDefaultMatcher(UpdateType.SSA));
   }
 
   /**
