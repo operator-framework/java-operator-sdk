@@ -518,6 +518,46 @@ class EventFilterWindowTest {
   }
 
   @Test
+  void foreignUpdateCollidingWithNoOpOwnWriteVersionMustNotBeSwallowed() {
+    long foreignVersion = FIRST_OWN_VERSION; // rv of the generation 3 external change
+
+    // generation 2 reconciliation starts
+    eventFilterWindow.increaseActiveUpdates();
+
+    eventFilterWindow.addRelatedEvent(specChangeUpdateEvent(foreignVersion));
+    assertThat(eventFilterWindow.check()).isEmpty();
+
+    eventFilterWindow.decreaseActiveUpdates();
+
+    // the foreign generation 3 change must surface, not be swallowed as an echo of our write
+    assertThat(eventFilterWindow.check())
+            .as("foreign update sharing an rv with a no-op own write must still surface")
+            .hasValueSatisfying(e -> assertUpdateEvent(e, foreignVersion));
+
+    assertThat(eventFilterWindow.canBeRemoved()).isTrue();
+    assertEmptyState();
+  }
+
+  @Test
+  void foreignUpdateCollidingWithNoOpOwnWriteVersionMustNotBeSwallowed2() {
+    long foreignVersion = FIRST_OWN_VERSION; // rv of the generation 3 external change
+
+    eventFilterWindow.increaseActiveUpdates();
+    assertThat(eventFilterWindow.check()).isEmpty();
+
+    eventFilterWindow.addRelatedEvent(specChangeUpdateEvent(foreignVersion));
+
+    eventFilterWindow.decreaseActiveUpdates();
+
+    assertThat(eventFilterWindow.check())
+            .as("foreign update sharing an rv with a no-op own write must still surface")
+            .hasValueSatisfying(e -> assertUpdateEvent(e, foreignVersion));
+
+    assertThat(eventFilterWindow.canBeRemoved()).isTrue();
+    assertEmptyState();
+  }
+
+  @Test
   void combinedCaseWithEarlyEvent() {
     // Scenario: an own write is in flight (RV recorded), a foreign event with a
     // lower RV arrives, then the write completes (active → 0) but no echo for
@@ -610,5 +650,24 @@ class EventFilterWindowTest {
 
   private String s(long l) {
     return Long.toString(l);
+  }
+
+  // An update that also bumps the generation, i.e. an external spec change (not an own
+  // status/metadata write, which never changes the generation).
+  ExtendedResourceEvent specChangeUpdateEvent(long version) {
+    return new ExtendedResourceEvent(
+            UPDATED, testResource(version, 2L), testResource(version - 1, 1L), null);
+  }
+
+  ConfigMap testResource(Long version, Long generation) {
+    var cm = new ConfigMap();
+    cm.setMetadata(
+            new ObjectMetaBuilder()
+                    .withName(RESOURCE_ID.getName())
+                    .withNamespace(RESOURCE_ID.getNamespace().orElseThrow())
+                    .withResourceVersion(version.toString())
+                    .withGeneration(generation)
+                    .build());
+    return cm;
   }
 }
