@@ -385,23 +385,6 @@ class ResourceOperationsTest {
   }
 
   @Test
-  void matcherRequiresActualToBePresent() {
-    var desired = TestUtils.testCustomResource1();
-    var ies = mock(ManagedInformerEventSource.class);
-    var matcher = mock(Matcher.class);
-
-    assertThrows(
-        IllegalArgumentException.class,
-        () ->
-            resourceOperations.resourcePatch(
-                desired,
-                null,
-                UnaryOperator.identity(),
-                ies,
-                ResourceOperations.Options.matchAndFilter(matcher)));
-  }
-
-  @Test
   void onlyCacheModeSkipsEventFiltering() {
     var desired = TestUtils.testCustomResource1();
     var ies = mock(ManagedInformerEventSource.class);

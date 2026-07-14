@@ -747,11 +747,8 @@ public class ResourceOperations<P extends HasMetadata> {
       UnaryOperator<R> updateOperation,
       ManagedInformerEventSource<R, P, ?> ies,
       Options options) {
-    R originalResource = null;
-    if (options.getMatcher().isPresent()) {
-      originalResource = ies.get(ResourceID.fromResource(desired)).orElse(null);
-    }
-    return resourcePatch(desired, originalResource, updateOperation, ies, options);
+
+    return resourcePatch(desired, null, updateOperation, ies, options);
   }
 
   public <R extends HasMetadata> R resourcePatch(
@@ -765,9 +762,12 @@ public class ResourceOperations<P extends HasMetadata> {
     boolean matches = false;
     if (matcher != null) {
       if (actualResource == null) {
-        throw new IllegalArgumentException("Actual most be present for matching update/patch.");
+        actualResource = ies.get(ResourceID.fromResource(desiredResource)).orElse(null);
       }
-      matches = matcher.matches(desiredResource, actualResource, context);
+      // todo describe might require optimistic locking
+      if (actualResource != null) {
+        matches = matcher.matches(desiredResource, actualResource, context);
+      }
     }
     if (options.requiresMatcher() && matcher == null) {
       throw new IllegalArgumentException("Mode : " + options.mode + " requires matcher");
