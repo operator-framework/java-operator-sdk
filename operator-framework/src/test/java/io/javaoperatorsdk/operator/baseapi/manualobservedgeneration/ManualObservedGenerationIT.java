@@ -52,6 +52,7 @@ public class ManualObservedGenerationIT {
             () -> {
               var r = extension.get(ManualObservedGenerationCustomResource.class, RESOURCE_NAME);
               assertThat(r).isNotNull();
+              assertThat(r.getStatus()).isNotNull();
               assertThat(r.getStatus().getObservedGeneration()).isEqualTo(1);
               assertThat(r.getStatus().getObservedGeneration())
                   .isEqualTo(r.getMetadata().getGeneration());
@@ -65,6 +66,8 @@ public class ManualObservedGenerationIT {
         .untilAsserted(
             () -> {
               var r = extension.get(ManualObservedGenerationCustomResource.class, RESOURCE_NAME);
+              assertThat(r).isNotNull();
+              assertThat(r.getStatus()).isNotNull();
               assertThat(r.getStatus().getObservedGeneration()).isEqualTo(2);
               assertThat(r.getStatus().getObservedGeneration())
                   .isEqualTo(r.getMetadata().getGeneration());
