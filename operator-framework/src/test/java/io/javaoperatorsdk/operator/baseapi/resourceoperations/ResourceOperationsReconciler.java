@@ -17,6 +17,7 @@ package io.javaoperatorsdk.operator.baseapi.resourceoperations;
 
 import java.util.concurrent.atomic.AtomicInteger;
 
+import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
@@ -65,13 +66,20 @@ public class ResourceOperationsReconciler implements Reconciler<ResourceOperatio
       case SSA -> {
         markResource(resource);
         // SSA does not use optimistic locking
+        resource.getMetadata().setManagedFields(null);
         resource.getMetadata().setResourceVersion(null);
         ops.serverSideApplyPrimary(resource);
       }
       case SSA_STATUS -> {
-        resource.setStatus(new ResourceOperationsStatus().setValue(STATUS_VALUE));
-        resource.getMetadata().setResourceVersion(null);
-        ops.serverSideApplyPrimaryStatus(resource);
+        ResourceOperationsCustomResource fresh = new ResourceOperationsCustomResource();
+        fresh.setMetadata(new ObjectMetaBuilder()
+                        .withName(resource.getMetadata().getName())
+                        .withNamespace(resource.getMetadata().getNamespace())
+                .build());
+
+        fresh.setStatus(new ResourceOperationsStatus().setValue(STATUS_VALUE));
+        fresh.getMetadata().setResourceVersion(null);
+        ops.serverSideApplyPrimaryStatus(fresh);
       }
       case UPDATE -> {
         markResource(resource);
