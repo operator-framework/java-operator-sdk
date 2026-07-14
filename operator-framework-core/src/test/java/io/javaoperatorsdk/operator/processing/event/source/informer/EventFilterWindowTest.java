@@ -611,23 +611,4 @@ class EventFilterWindowTest {
   private String s(long l) {
     return Long.toString(l);
   }
-
-  // An update that also bumps the generation, i.e. an external spec change (not an own
-  // status/metadata write, which never changes the generation).
-  ExtendedResourceEvent specChangeUpdateEvent(long version) {
-    return new ExtendedResourceEvent(
-            UPDATED, testResource(version, 2L), testResource(version - 1, 1L), null);
-  }
-
-  ConfigMap testResource(Long version, Long generation) {
-    var cm = new ConfigMap();
-    cm.setMetadata(
-            new ObjectMetaBuilder()
-                    .withName(RESOURCE_ID.getName())
-                    .withNamespace(RESOURCE_ID.getNamespace().orElseThrow())
-                    .withResourceVersion(version.toString())
-                    .withGeneration(generation)
-                    .build());
-    return cm;
-  }
 }
