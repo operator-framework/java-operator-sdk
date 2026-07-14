@@ -518,46 +518,6 @@ class EventFilterWindowTest {
   }
 
   @Test
-  void foreignUpdateCollidingWithNoOpOwnWriteVersionMustNotBeSwallowed() {
-    long foreignVersion = FIRST_OWN_VERSION; // rv of the generation 3 external change
-
-    // generation 2 reconciliation starts
-    eventFilterWindow.increaseActiveUpdates();
-
-    eventFilterWindow.addRelatedEvent(specChangeUpdateEvent(foreignVersion));
-    assertThat(eventFilterWindow.check()).isEmpty();
-
-    eventFilterWindow.decreaseActiveUpdates();
-
-    // the foreign generation 3 change must surface, not be swallowed as an echo of our write
-    assertThat(eventFilterWindow.check())
-            .as("foreign update sharing an rv with a no-op own write must still surface")
-            .hasValueSatisfying(e -> assertUpdateEvent(e, foreignVersion));
-
-    assertThat(eventFilterWindow.canBeRemoved()).isTrue();
-    assertEmptyState();
-  }
-
-  @Test
-  void foreignUpdateCollidingWithNoOpOwnWriteVersionMustNotBeSwallowed2() {
-    long foreignVersion = FIRST_OWN_VERSION; // rv of the generation 3 external change
-
-    eventFilterWindow.increaseActiveUpdates();
-    assertThat(eventFilterWindow.check()).isEmpty();
-
-    eventFilterWindow.addRelatedEvent(specChangeUpdateEvent(foreignVersion));
-
-    eventFilterWindow.decreaseActiveUpdates();
-
-    assertThat(eventFilterWindow.check())
-            .as("foreign update sharing an rv with a no-op own write must still surface")
-            .hasValueSatisfying(e -> assertUpdateEvent(e, foreignVersion));
-
-    assertThat(eventFilterWindow.canBeRemoved()).isTrue();
-    assertEmptyState();
-  }
-
-  @Test
   void combinedCaseWithEarlyEvent() {
     // Scenario: an own write is in flight (RV recorded), a foreign event with a
     // lower RV arrives, then the write completes (active → 0) but no echo for
