@@ -141,6 +141,12 @@ public abstract class ManagedInformerEventSource<
 
   @Experimental(API_MIGHT_CHANGE)
   public R updateAndCacheResource(R resourceToUpdate, UnaryOperator<R> updateOperation) {
+    if (log.isDebugEnabled()) {
+      log.debug(
+          "Updating and caching resource without filtering. id: {} type: {}",
+          ResourceID.fromResource(resourceToUpdate),
+          resourceType());
+    }
     var result = updateOperation.apply(resourceToUpdate);
     handleRecentResourceUpdate(ResourceID.fromResource(resourceToUpdate), result, resourceToUpdate);
     return result;

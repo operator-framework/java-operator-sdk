@@ -970,11 +970,19 @@ public class ResourceOperations<P extends HasMetadata> {
     if (options.requiresMatcher() && matcher == null) {
       throw new IllegalArgumentException("Mode : " + options.mode + " requires matcher");
     }
-    if (matches) {
-      return actualResource;
-    }
     // this is to cover special case for jsonPatch were we should use actual resource as base
     var targetBaseResource = desiredResource != null ? desiredResource : actualResource;
+    if (matches) {
+      if (log.isDebugEnabled()) {
+        log.debug(
+            "Resource match resource id: {}, type: {},  version: {}",
+            ResourceID.fromResource(targetBaseResource),
+            targetBaseResource.getClass().getSimpleName(),
+            targetBaseResource.getMetadata().getResourceVersion());
+      }
+      return actualResource;
+    }
+
     boolean optimisticLocking = targetBaseResource.getMetadata().getResourceVersion() != null;
 
     if (options.getMode() == Mode.CACHE_ONLY
