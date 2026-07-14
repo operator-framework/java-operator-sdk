@@ -72,9 +72,10 @@ public class ResourceOperationsReconciler implements Reconciler<ResourceOperatio
       }
       case SSA_STATUS -> {
         ResourceOperationsCustomResource fresh = new ResourceOperationsCustomResource();
-        fresh.setMetadata(new ObjectMetaBuilder()
-                        .withName(resource.getMetadata().getName())
-                        .withNamespace(resource.getMetadata().getNamespace())
+        fresh.setMetadata(
+            new ObjectMetaBuilder()
+                .withName(resource.getMetadata().getName())
+                .withNamespace(resource.getMetadata().getNamespace())
                 .build());
 
         fresh.setStatus(new ResourceOperationsStatus().setValue(STATUS_VALUE));
