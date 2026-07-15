@@ -329,18 +329,13 @@ public class EventProcessor<P extends HasMetadata> implements EventHandler, Life
   private void logErrorIfNoRetryConfigured(
       ExecutionScope<P> executionScope, PostExecutionControl<P> postExecutionControl) {
     if (!isRetryConfigured() && postExecutionControl.exceptionDuringExecution()) {
-      if (postExecutionControl.isErrorHandledByReconciler()) {
-        log.debug(
-            "Error during event processing {}, but was handled by the reconciler. (No retry"
-                + " configured)",
-            executionScope,
-            postExecutionControl.getRuntimeException().orElseThrow());
-      } else {
-        log.error(
-            "Error during event processing {}. (No retry configured)",
-            executionScope,
-            postExecutionControl.getRuntimeException().orElseThrow());
-      }
+      // No retry is configured, so this failure is final. Even if the reconciler handled the error
+      // in updateErrorStatus, we keep the higher-severity log so a non-recoverable failure is not
+      // hidden from operators.
+      log.error(
+          "Error during event processing {}",
+          executionScope,
+          postExecutionControl.getRuntimeException().orElseThrow());
     }
   }
 
@@ -423,9 +418,11 @@ public class EventProcessor<P extends HasMetadata> implements EventHandler, Life
       boolean errorHandledByReconciler,
       Exception exception,
       ExecutionScope<P> executionScope) {
-    if (errorHandledByReconciler) {
+    if (errorHandledByReconciler && !retry.isLastAttempt()) {
       // The reconciler already handled the error in updateErrorStatus (and had the chance to log it
-      // as needed), so the framework only logs it on debug level while still retrying.
+      // as needed), so while there are retries remaining the framework only logs it on debug level.
+      // On the last attempt we still fall through to the higher-severity logging below, so a final,
+      // non-recoverable failure is not hidden from operators.
       log.debug(
           "Error during event processing {}, but was handled by the reconciler",
           executionScope,
