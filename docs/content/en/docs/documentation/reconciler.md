@@ -249,7 +249,7 @@ public UpdateControl<WebPage> reconcile(WebPage webPage, Context<WebPage> contex
 {{% alert title="UpdateControl and event filtering" %}}
 Since v5.5, returning an `UpdateControl` (or `ErrorStatusUpdateControl`) updates the resource and
 keeps the cache read-after-write consistent, but by default it **no longer filters the own event** —
-the resulting update may cause an additional (idempotent) reconciliation. To also filter the own
+the resulting update may an additional reconciliation (which should be idempotent). To also filter the own
 event, perform the update through `ResourceOperations` instead and return `UpdateControl.noUpdate()`.
 {{% /alert %}}
 
