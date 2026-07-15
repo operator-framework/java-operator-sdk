@@ -212,8 +212,10 @@ third-party write. This requires **either**:
   avoids a request to the API server when nothing changed. Default matchers are provided for every
   operation type, but they are heuristics — a workflow relying on them should be tested against the
   concrete resources it manages, or a custom matcher supplied.
-- `Options.filterIfOptimisticLocking()` — filter the own event only when the write uses optimistic
-  locking, otherwise just cache the response.
+- `Options.filterWithOptimisticLocking()` — filter the own event; the write must use optimistic
+  locking (a resource version set on the written resource), otherwise an `IllegalArgumentException`
+  is thrown. Requiring optimistic locking guarantees a concurrent third-party change is rejected by
+  the API server rather than being silently filtered out.
 - `Options.cacheOnly()` — only cache the response (read-cache-after-write consistency), no own-event
   filtering.
 - `Options.forceFilterEvents()` — always filter, regardless of optimistic locking. Only safe when

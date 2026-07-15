@@ -50,10 +50,11 @@ import static io.javaoperatorsdk.operator.processing.KubernetesResourceUtils.get
  * selected through {@link Mode}:
  *
  * <ul>
- *   <li>{@link Options#filterIfOptimisticLocking()} ({@link Mode#FILTER_IF_OPTIMISTIC_LOCKING}) -
- *       the own event is filtered only when the write uses optimistic locking (i.e. the resource
- *       version is set on the resource being written); otherwise the response is only cached. This
- *       is the safe default for plain update/patch operations.
+ *   <li>{@link Options#filterWithOptimisticLocking()} ({@link Mode#FILTER_WITH_OPTIMISTIC_LOCKING})
+ *       - the own event is filtered; the write must use optimistic locking (i.e. a resource version
+ *       is set on the resource being written), otherwise an {@link IllegalArgumentException} is
+ *       thrown. Requiring optimistic locking guarantees that a concurrent third-party change is
+ *       rejected by the API server rather than silently filtered out.
  *   <li>{@link Options#matchAndFilter(Matcher)} / {@link
  *       Options#matchAndFilterWithDefaultMatcher(io.javaoperatorsdk.operator.processing.matcher.UpdateType)}
  *       ({@link Mode#FILTER_IF_NOT_MATCHING}) - before writing, the desired state is compared to
@@ -860,7 +861,7 @@ public class ResourceOperations<P extends HasMetadata> {
    * Low-level building block behind all the update/patch operations above: runs the given {@code
    * updateOperation} against the API server, then caches the response and (depending on the {@link
    * Options}) filters the resulting own event. The target event source is resolved automatically
-   * from the desired resource's type. Uses {@link Options#filterIfOptimisticLocking()}.
+   * from the desired resource's type. Uses {@link Options#filterWithOptimisticLocking()}.
    *
    * @param resource the desired resource being written
    * @param updateOperation the actual write to perform (update, patch, edit, ...) returning the
@@ -871,7 +872,7 @@ public class ResourceOperations<P extends HasMetadata> {
    *     type
    */
   public <R extends HasMetadata> R resourcePatch(R resource, UnaryOperator<R> updateOperation) {
-    return resourcePatch(resource, updateOperation, Options.filterIfOptimisticLocking());
+    return resourcePatch(resource, updateOperation, Options.filterWithOptimisticLocking());
   }
 
   @SuppressWarnings({"rawtypes", "unchecked"})
@@ -917,7 +918,7 @@ public class ResourceOperations<P extends HasMetadata> {
   @Deprecated(forRemoval = true)
   public <R extends HasMetadata> R resourcePatch(
       R desired, UnaryOperator<R> updateOperation, ManagedInformerEventSource<R, P, ?> ies) {
-    return resourcePatch(desired, updateOperation, ies, Options.filterIfOptimisticLocking());
+    return resourcePatch(desired, updateOperation, ies, Options.filterWithOptimisticLocking());
   }
 
   private <R extends HasMetadata> R resourcePatch(
@@ -947,7 +948,9 @@ public class ResourceOperations<P extends HasMetadata> {
    * @param <R> the resource type
    * @return the resource as returned by {@code updateOperation}, or {@code actualResource} when the
    *     desired state already matches
-   * @throws IllegalArgumentException if the mode requires a matcher but none is provided
+   * @throws IllegalArgumentException if the mode requires a matcher but none is provided, or if the
+   *     mode is {@link Mode#FILTER_WITH_OPTIMISTIC_LOCKING} but the resource being written has no
+   *     resource version set
    */
   // visible for testing
   <R extends HasMetadata> R resourcePatch(
@@ -982,10 +985,16 @@ public class ResourceOperations<P extends HasMetadata> {
       return actualResource;
     }
 
-    boolean optimisticLocking = desiredResource.getMetadata().getResourceVersion() != null;
+    if (options.getMode() == Mode.FILTER_WITH_OPTIMISTIC_LOCKING
+        && desiredResource.getMetadata().getResourceVersion() == null) {
+      throw new IllegalArgumentException(
+          "Mode "
+              + Mode.FILTER_WITH_OPTIMISTIC_LOCKING
+              + " requires optimistic locking, but no resource version is set on the resource: "
+              + ResourceID.fromResource(desiredResource));
+    }
 
-    if (options.getMode() == Mode.CACHE_ONLY
-        || (options.getMode() == Mode.FILTER_IF_OPTIMISTIC_LOCKING && !optimisticLocking)) {
+    if (options.getMode() == Mode.CACHE_ONLY) {
       return ies.updateAndCacheResource(desiredResource, updateOperation);
     } else {
       return ies.eventFilteringUpdateAndCacheResource(desiredResource, updateOperation);
@@ -1250,8 +1259,8 @@ public class ResourceOperations<P extends HasMetadata> {
    * is needed for safe own-event filtering), and the trade-offs of the default matchers.
    *
    * <ul>
-   *   <li>{@link #filterIfOptimisticLocking()} - filter the own event only when the write uses
-   *       optimistic locking, otherwise only cache the response.
+   *   <li>{@link #filterWithOptimisticLocking()} - filter the own event; requires the write to use
+   *       optimistic locking (a resource version set), throwing if none is set.
    *   <li>{@link #matchAndFilter(Matcher)} / {@link #matchAndFilterWithDefaultMatcher(UpdateType)}
    *       - skip the write when the desired state already matches the actual state, otherwise write
    *       and filter the own event.
@@ -1265,8 +1274,8 @@ public class ResourceOperations<P extends HasMetadata> {
 
     private static final Options ALWAYS_FILTER = new Options(Mode.FORCE_FILTER, null);
     private static final Options ONLY_CACHE = new Options(Mode.CACHE_ONLY, null);
-    private static final Options FILTER_IF_OPTIMISTIC_LOCKING =
-        new Options(Mode.FILTER_IF_OPTIMISTIC_LOCKING, null);
+    private static final Options FILTER_WITH_OPTIMISTIC_LOCKING =
+        new Options(Mode.FILTER_WITH_OPTIMISTIC_LOCKING, null);
 
     private final Mode mode;
     private final Matcher matcher;
@@ -1310,14 +1319,31 @@ public class ResourceOperations<P extends HasMetadata> {
     }
 
     /**
-     * Filters the own event only when the write uses optimistic locking (a resource version is set
-     * on the written resource); otherwise only caches the response. This is the safe default for
-     * plain update/patch operations.
+     * Filters the own event resulting from the write, requiring the write to use optimistic locking
+     * (a resource version set on the written resource). If no resource version is set an {@link
+     * IllegalArgumentException} is thrown when the operation is performed. Requiring optimistic
+     * locking guarantees that a concurrent third-party change is rejected by the API server rather
+     * than being silently filtered out.
      *
-     * @return options that filter the own event only when optimistic locking is used
+     * @return options that filter the own event, requiring optimistic locking
      */
-    public static Options filterIfOptimisticLocking() {
-      return FILTER_IF_OPTIMISTIC_LOCKING;
+    public static Options filterWithOptimisticLocking() {
+      return FILTER_WITH_OPTIMISTIC_LOCKING;
+    }
+
+    /**
+     * Like {@link #filterWithOptimisticLocking()} but additionally skips the write when the desired
+     * state already matches the actual (cached) state according to the given {@link Matcher}. When
+     * a write is needed it still requires optimistic locking (see {@link
+     * #filterWithOptimisticLocking()}).
+     *
+     * @param matcher the matcher used to decide whether the actual state already matches the
+     *     desired
+     * @return options that match using the given matcher and, when a write is needed, filter the
+     *     own event requiring optimistic locking
+     */
+    public static Options filterWithOptimisticLocking(Matcher matcher) {
+      return new Options(Mode.FILTER_WITH_OPTIMISTIC_LOCKING, matcher);
     }
 
     /**
@@ -1362,14 +1388,14 @@ public class ResourceOperations<P extends HasMetadata> {
   /**
    * The strategy used to decide how the own event resulting from a write is handled. This is a
    * low-level enum; users should not reference it directly but select the desired behavior through
-   * the {@link Options} factory methods (e.g. {@link Options#filterIfOptimisticLocking()}, {@link
+   * the {@link Options} factory methods (e.g. {@link Options#filterWithOptimisticLocking()}, {@link
    * Options#matchAndFilter(Matcher)}, {@link Options#cacheOnly()}, {@link
    * Options#forceFilterEvents()}), which is why each constant links to its corresponding factory.
    */
   @Experimental(API_MIGHT_CHANGE)
   enum Mode {
-    /** See {@link Options#filterIfOptimisticLocking()}. */
-    FILTER_IF_OPTIMISTIC_LOCKING,
+    /** See {@link Options#filterWithOptimisticLocking()}. */
+    FILTER_WITH_OPTIMISTIC_LOCKING,
     /** See {@link Options#matchAndFilter(Matcher)}. */
     FILTER_IF_NOT_MATCHING,
     /** See {@link Options#cacheOnly()}. */

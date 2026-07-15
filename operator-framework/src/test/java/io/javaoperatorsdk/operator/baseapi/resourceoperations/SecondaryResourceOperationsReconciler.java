@@ -101,7 +101,7 @@ public class SecondaryResourceOperationsReconciler
       }
       case UPDATE -> {
         actual.getData().put(DATA_KEY, APPLIED_VALUE);
-        ops.update(actual, configMapEventSource, Options.filterIfOptimisticLocking());
+        ops.update(actual, configMapEventSource, Options.filterWithOptimisticLocking());
       }
       case JSON_PATCH ->
           ops.jsonPatch(
@@ -111,10 +111,10 @@ public class SecondaryResourceOperationsReconciler
                 return cm;
               },
               configMapEventSource,
-              Options.filterIfOptimisticLocking());
+              Options.filterWithOptimisticLocking());
       case JSON_MERGE_PATCH -> {
         var desired = desiredConfigMap(resource, APPLIED_VALUE);
-        ops.jsonMergePatch(desired, configMapEventSource, Options.filterIfOptimisticLocking());
+        ops.jsonMergePatch(desired, configMapEventSource, Options.filterWithOptimisticLocking());
       }
       default -> throw new IllegalStateException("Unexpected operation: " + operation);
     }

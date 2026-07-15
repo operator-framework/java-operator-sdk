@@ -43,8 +43,8 @@ operation type; when one does not fit, supply your own via `Options.matchAndFilt
 
 - `matchAndFilter(...)` / `matchAndFilterWithDefaultMatcher(...)` — match, then write-and-filter only
   if needed (the default).
-- `filterIfOptimisticLocking()` — filter the own event only when the write uses optimistic locking,
-  otherwise just cache the response.
+- `filterWithOptimisticLocking()` — filter the own event; the write must use optimistic locking,
+  otherwise an `IllegalArgumentException` is thrown.
 - `cacheOnly()` — only cache the response (read-cache-after-write consistency), no filtering.
 - `forceFilterEvents()` — always filter (mostly internal usage).
 

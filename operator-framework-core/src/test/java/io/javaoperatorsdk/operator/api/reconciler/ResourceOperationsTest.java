@@ -408,25 +408,7 @@ class ResourceOperationsTest {
   }
 
   @Test
-  void filterIfOptimisticLockingCachesWithoutFilteringWhenNoResourceVersion() {
-    var desired = TestUtils.testCustomResource1();
-    desired.getMetadata().setResourceVersion(null);
-    var ies = mock(ManagedInformerEventSource.class);
-    when(ies.updateAndCacheResource(any(), any(UnaryOperator.class))).thenReturn(desired);
-
-    resourceOperations.resourcePatch(
-        desired,
-        null,
-        UnaryOperator.identity(),
-        ies,
-        ResourceOperations.Options.filterIfOptimisticLocking());
-
-    verify(ies, times(1)).updateAndCacheResource(eq(desired), any(UnaryOperator.class));
-    verify(ies, never()).eventFilteringUpdateAndCacheResource(any(), any(UnaryOperator.class));
-  }
-
-  @Test
-  void filterIfOptimisticLockingFiltersWhenResourceVersionPresent() {
+  void filterWithOptimisticLockingFiltersWhenResourceVersionPresent() {
     var desired = TestUtils.testCustomResource1();
     desired.getMetadata().setResourceVersion("1");
     var ies = mock(ManagedInformerEventSource.class);
@@ -438,7 +420,7 @@ class ResourceOperationsTest {
         null,
         UnaryOperator.identity(),
         ies,
-        ResourceOperations.Options.filterIfOptimisticLocking());
+        ResourceOperations.Options.filterWithOptimisticLocking());
 
     verify(ies, times(1))
         .eventFilteringUpdateAndCacheResource(eq(desired), any(UnaryOperator.class));
@@ -532,30 +514,16 @@ class ResourceOperationsTest {
   }
 
   @Test
-  void updateFilterIfOptimisticLockingFiltersWhenResourceVersionPresent() {
+  void updateFilterWithOptimisticLockingFiltersWhenResourceVersionPresent() {
     var resource = TestUtils.testCustomResource1();
     resource.getMetadata().setResourceVersion("1");
     wireVerbMocks();
 
-    resourceOperations.update(resource, ResourceOperations.Options.filterIfOptimisticLocking());
+    resourceOperations.update(resource, ResourceOperations.Options.filterWithOptimisticLocking());
 
     verify(verbEventSource, times(1))
         .eventFilteringUpdateAndCacheResource(eq(resource), any(UnaryOperator.class));
     verify(verbEventSource, never()).updateAndCacheResource(any(), any(UnaryOperator.class));
-  }
-
-  @Test
-  void updateFilterIfOptimisticLockingCachesWhenNoResourceVersion() {
-    var resource = TestUtils.testCustomResource1();
-    resource.getMetadata().setResourceVersion(null);
-    wireVerbMocks();
-
-    resourceOperations.update(resource, ResourceOperations.Options.filterIfOptimisticLocking());
-
-    verify(verbEventSource, times(1))
-        .updateAndCacheResource(eq(resource), any(UnaryOperator.class));
-    verify(verbEventSource, never())
-        .eventFilteringUpdateAndCacheResource(any(), any(UnaryOperator.class));
   }
 
   @Test
