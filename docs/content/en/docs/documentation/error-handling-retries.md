@@ -110,15 +110,19 @@ Retry can be skipped in cases of unrecoverable errors:
 
 When `updateErrorStatus` returns any `ErrorStatusUpdateControl` other than
 `ErrorStatusUpdateControl.defaultErrorProcessing()`, the framework considers the error handled by
-the reconciler. In that case the native retry (including the exponential backoff from
-`@GradualRetry`) is still performed, and while retry attempts remain the framework no longer logs
-the "Uncaught error during event processing" warning; the error is logged on `DEBUG` level instead.
-This lets a reconciler keep retrying an expected, recoverable condition without producing a
-continuous stream of `WARN` messages, while it remains free to log the error at whatever level it
-deems appropriate inside `updateErrorStatus`. On the last retry attempt (or when no retry is
-configured), the failure is final, so the framework keeps its higher-severity logging to avoid
-hiding a non-recoverable error. Returning `ErrorStatusUpdateControl.defaultErrorProcessing()`
-preserves the default behavior, including the warning.
+the reconciler and, while retry attempts remain, no longer logs the "Uncaught error during event
+processing" warning; the error is logged on `DEBUG` level instead. This lets a reconciler keep
+retrying an expected, recoverable condition without producing a continuous stream of `WARN`
+messages, while it remains free to log the error at whatever level it deems appropriate inside
+`updateErrorStatus`.
+
+This log downgrade applies only when retry is actually taking place, i.e. a retry is configured and
+the returned control does not disable it. Controls that explicitly disable retry — `withNoRetry()`
+and `rescheduleAfter()` — cancel the native retry and its `@GradualRetry` backoff, so nothing is
+retried in those cases. Likewise, on the last retry attempt (or when no retry is configured) the
+failure is final, so the framework keeps its higher-severity logging to avoid hiding a
+non-recoverable error. Returning `ErrorStatusUpdateControl.defaultErrorProcessing()` preserves the
+default behavior, including the warning.
 
 ### Correctness and Automatic Retries
 
