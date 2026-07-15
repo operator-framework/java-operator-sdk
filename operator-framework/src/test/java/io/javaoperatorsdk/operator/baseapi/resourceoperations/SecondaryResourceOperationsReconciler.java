@@ -114,6 +114,7 @@ public class SecondaryResourceOperationsReconciler
               Options.filterWithOptimisticLocking());
       case JSON_MERGE_PATCH -> {
         var desired = desiredConfigMap(resource, APPLIED_VALUE);
+        desired.getMetadata().setResourceVersion(actual.getMetadata().getResourceVersion());
         ops.jsonMergePatch(desired, configMapEventSource, Options.filterWithOptimisticLocking());
       }
       default -> throw new IllegalStateException("Unexpected operation: " + operation);
