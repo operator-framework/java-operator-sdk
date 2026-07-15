@@ -235,9 +235,10 @@ public UpdateControl<WebPage> reconcile(WebPage webPage, Context<WebPage> contex
    // it does not match the actual, and will filter our the related event
    context.resourceOperations().serverSideApply(managedConfigMap);
 
-   // UpdateControl.patchStatus would only cache the resource to filter out events too
-   // you have to use resourceOperations.
-   context.resourceOperations().serverSideApplyPrimaryStatus(alterStatusObject(webPage));    
+   // UpdateControl.patchStatus would only cache the resource to
+   // filter out events too you have to use resourceOperations.
+   context.resourceOperations().serverSideApplyPrimaryStatus(alterStatusObject(webPage));
+   
    return UpdateControl.noUpdate();
 }
 ```
