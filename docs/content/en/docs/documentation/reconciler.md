@@ -207,15 +207,18 @@ third-party write. This requires **either**:
 
 - `Options.matchAndFilter(matcher)` / `Options.matchAndFilterWithDefaultMatcher(updateType)` — compare
   the desired state to the actual (cached) state; if they already match, skip the write entirely,
-  otherwise write and filter the own event. This is the **default** for the `ResourceOperations`
-  update/patch methods, and generally the most efficient option: it filters the own event *and*
-  avoids a request to the API server when nothing changed. Default matchers are provided for every
-  operation type, but they are heuristics — a workflow relying on them should be tested against the
-  concrete resources it manages, or a custom matcher supplied.
+  otherwise write and filter the own event. This is the **default** for the server-side apply and
+  patch (JSON Patch / JSON Merge Patch) methods, and generally the most efficient option: it filters
+  the own event *and* avoids a request to the API server when nothing changed. Default matchers are
+  provided for every operation type, but they are heuristics — a workflow relying on them should be
+  tested against the concrete resources it manages, or a custom matcher supplied.
 - `Options.filterWithOptimisticLocking()` — filter the own event; the write must use optimistic
   locking (a resource version set on the written resource), otherwise an `IllegalArgumentException`
   is thrown. Requiring optimistic locking guarantees a concurrent third-party change is rejected by
-  the API server rather than being silently filtered out.
+  the API server rather than being silently filtered out. The overloads taking a matcher /
+  `updateType` additionally skip the write when the desired state already matches. This match +
+  optimistic locking combination is the **default** for the PUT `update` / `updatePrimary` /
+  `updatePrimaryStatus` methods (a full PUT should not clobber a concurrent change).
 - `Options.cacheOnly()` — only cache the response (read-cache-after-write consistency), no own-event
   filtering.
 - `Options.forceFilterEvents()` — always filter, regardless of optimistic locking. Only safe when

@@ -325,15 +325,17 @@ public class ResourceOperations<P extends HasMetadata> {
    * it (read-cache-after-write consistency).
    *
    * <p>Uses the {@link UpdateType#UPDATE} default {@link Matcher}: the update is skipped when the
-   * actual (cached) state already matches the desired one, otherwise it is performed and the
-   * resulting own event is filtered. Use {@link #update(HasMetadata, Options)} to change this.
+   * actual (cached) state already matches the desired one, otherwise it is performed using
+   * optimistic locking (the resource version must be set, otherwise an {@link
+   * IllegalArgumentException} is thrown) and the resulting own event is filtered. Use {@link
+   * #update(HasMetadata, Options)} to change this.
    *
    * @param resource the desired resource to update
    * @param <R> the resource type
    * @return the updated resource as returned by the API server
    */
   public <R extends HasMetadata> R update(R resource) {
-    return update(resource, Options.matchAndFilterWithDefaultMatcher(UpdateType.UPDATE));
+    return update(resource, Options.filterWithOptimisticLocking(UpdateType.UPDATE));
   }
 
   /**
@@ -351,7 +353,9 @@ public class ResourceOperations<P extends HasMetadata> {
 
   /**
    * Updates (HTTP PUT) the resource, caching and filtering the own event through the given {@link
-   * InformerEventSource}. Uses the {@link UpdateType#UPDATE} default {@link Matcher}.
+   * InformerEventSource}. Uses the {@link UpdateType#UPDATE} default {@link Matcher} and optimistic
+   * locking: the update is skipped when the actual state already matches, otherwise it is performed
+   * with optimistic locking (the resource version must be set) and the own event is filtered.
    *
    * @param resource the desired resource to update
    * @param informerEventSource the event source used for caching and own-event filtering
@@ -361,7 +365,7 @@ public class ResourceOperations<P extends HasMetadata> {
   public <R extends HasMetadata> R update(
       R resource, InformerEventSource<R, P> informerEventSource) {
     return update(
-        resource, informerEventSource, Options.matchAndFilterWithDefaultMatcher(UpdateType.UPDATE));
+        resource, informerEventSource, Options.filterWithOptimisticLocking(UpdateType.UPDATE));
   }
 
   /**
@@ -439,15 +443,17 @@ public class ResourceOperations<P extends HasMetadata> {
 
   /**
    * Updates (HTTP PUT) the resource {@code status} subresource, caching the response and filtering
-   * the own event. Uses the {@link UpdateType#UPDATE_STATUS} default {@link Matcher}.
+   * the own event. Uses the {@link UpdateType#UPDATE_STATUS} default {@link Matcher} and optimistic
+   * locking: the update is skipped when the actual status already matches, otherwise it is
+   * performed with optimistic locking (the resource version must be set, otherwise an {@link
+   * IllegalArgumentException} is thrown) and the own event is filtered.
    *
    * @param resource the desired resource (with the status to update)
    * @param <R> the resource type
    * @return the updated resource as returned by the API server
    */
   public <R extends HasMetadata> R updateStatus(R resource) {
-    return updateStatus(
-        resource, Options.matchAndFilterWithDefaultMatcher(UpdateType.UPDATE_STATUS));
+    return updateStatus(resource, Options.filterWithOptimisticLocking(UpdateType.UPDATE_STATUS));
   }
 
   /**
@@ -465,13 +471,16 @@ public class ResourceOperations<P extends HasMetadata> {
 
   /**
    * Updates (HTTP PUT) the primary resource, caching and filtering the own event through the
-   * controller's own event source. Uses the {@link UpdateType#UPDATE} default {@link Matcher}.
+   * controller's own event source. Uses the {@link UpdateType#UPDATE} default {@link Matcher} and
+   * optimistic locking: the update is skipped when the actual state already matches, otherwise it
+   * is performed with optimistic locking (the resource version must be set) and the own event is
+   * filtered.
    *
    * @param desired the desired primary resource to update
    * @return the updated resource as returned by the API server
    */
   public P updatePrimary(P desired) {
-    return updatePrimary(desired, Options.matchAndFilterWithDefaultMatcher(UpdateType.UPDATE));
+    return updatePrimary(desired, Options.filterWithOptimisticLocking(UpdateType.UPDATE));
   }
 
   /**
@@ -493,7 +502,9 @@ public class ResourceOperations<P extends HasMetadata> {
   /**
    * Updates (HTTP PUT) the primary resource {@code status} subresource, caching and filtering the
    * own event through the controller's own event source. Uses the {@link UpdateType#UPDATE_STATUS}
-   * default {@link Matcher}.
+   * default {@link Matcher} and optimistic locking: the update is skipped when the actual status
+   * already matches, otherwise it is performed with optimistic locking (the resource version must
+   * be set) and the own event is filtered.
    *
    * @param desired the desired primary resource (with the status to update)
    * @return the updated resource as returned by the API server
@@ -503,7 +514,7 @@ public class ResourceOperations<P extends HasMetadata> {
         desired,
         r -> context.getClient().resource(r).updateStatus(),
         context.eventSourceRetriever().getControllerEventSource(),
-        Options.matchAndFilterWithDefaultMatcher(UpdateType.UPDATE_STATUS));
+        Options.filterWithOptimisticLocking(UpdateType.UPDATE_STATUS));
   }
 
   /**
@@ -1340,6 +1351,20 @@ public class ResourceOperations<P extends HasMetadata> {
      */
     public static Options filterWithOptimisticLocking(Matcher matcher) {
       return new Options(Mode.FILTER_WITH_OPTIMISTIC_LOCKING, matcher);
+    }
+
+    /**
+     * Like {@link #filterWithOptimisticLocking()} but additionally skips the write when the desired
+     * state already matches the actual (cached) state according to the default {@link Matcher} of
+     * the given {@link UpdateType}. When a write is needed it still requires optimistic locking
+     * (see {@link #filterWithOptimisticLocking()}).
+     *
+     * @param updateType the update type whose default matcher should be used
+     * @return options that match using the update type's default matcher and, when a write is
+     *     needed, filter the own event requiring optimistic locking
+     */
+    public static Options filterWithOptimisticLocking(UpdateType updateType) {
+      return new Options(Mode.FILTER_WITH_OPTIMISTIC_LOCKING, updateType.getMatcher());
     }
 
     /**
