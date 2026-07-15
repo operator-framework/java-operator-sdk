@@ -1393,7 +1393,7 @@ public class ResourceOperations<P extends HasMetadata> {
    * Options#forceFilterEvents()}), which is why each constant links to its corresponding factory.
    */
   @Experimental(API_MIGHT_CHANGE)
-  enum Mode {
+  public enum Mode {
     /** See {@link Options#filterWithOptimisticLocking()}. */
     FILTER_WITH_OPTIMISTIC_LOCKING,
     /** See {@link Options#matchAndFilter(Matcher)}. */
