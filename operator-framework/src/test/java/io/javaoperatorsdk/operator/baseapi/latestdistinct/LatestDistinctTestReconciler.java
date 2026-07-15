@@ -20,6 +20,9 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.javaoperatorsdk.operator.api.config.informer.InformerEventSourceConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
@@ -27,6 +30,7 @@ import io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.ErrorStatusUpdateControl;
 import io.javaoperatorsdk.operator.api.reconciler.EventSourceContext;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
+import io.javaoperatorsdk.operator.api.reconciler.ResourceOperations;
 import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
 import io.javaoperatorsdk.operator.processing.event.source.EventSource;
@@ -34,6 +38,8 @@ import io.javaoperatorsdk.operator.processing.event.source.informer.InformerEven
 
 @ControllerConfiguration
 public class LatestDistinctTestReconciler implements Reconciler<LatestDistinctTestResource> {
+
+  private static final Logger log = LoggerFactory.getLogger(LatestDistinctTestReconciler.class);
 
   public static final String EVENT_SOURCE_1_NAME = "configmap-es-1";
   public static final String EVENT_SOURCE_2_NAME = "configmap-es-2";
@@ -53,6 +59,7 @@ public class LatestDistinctTestReconciler implements Reconciler<LatestDistinctTe
     }
     var allConfigMaps = context.getSecondaryResourcesAsStream(ConfigMap.class).toList();
     if (allConfigMaps.size() < 2) {
+      log.info("Skipping reconciliation, only {} config map in cache", allConfigMaps.size());
       // wait until both informers see the config map
       return UpdateControl.noUpdate();
     }
@@ -66,7 +73,10 @@ public class LatestDistinctTestReconciler implements Reconciler<LatestDistinctTe
     resource.getStatus().setConfigMapCount(distinctConfigMaps.size());
     var configMap = distinctConfigMaps.get(0);
     configMap.setData(Map.of(KEY_2, "val2"));
-    var updated = context.resourceOperations().update(configMap);
+    var updated =
+        context
+            .resourceOperations()
+            .update(configMap, ResourceOperations.Options.filterWithOptimisticLocking());
 
     // makes sure that distinct config maps returned
     distinctConfigMaps = context.getSecondaryResourcesAsStream(ConfigMap.class, true).toList();

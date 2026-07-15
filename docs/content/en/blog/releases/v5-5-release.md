@@ -11,6 +11,8 @@ more efficient, and exposes a richer, matcher-aware `ResourceOperations` API. Th
 breaking API changes**, but there is one behavioral change around `UpdateControl` — see the
 migration notes.
 
+If you are running on version `5.3.x` or `5.4.0` upgrade is strongly recommend!
+
 ## Key Features
 
 ### Matcher-based updates in `ResourceOperations`
