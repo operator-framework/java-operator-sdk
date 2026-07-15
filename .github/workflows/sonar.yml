@@ -4,7 +4,9 @@ env:
   MAVEN_ARGS: -V -ntp -e
 
 concurrency:
-  group: ${{ github.ref }}-${{ github.workflow }}
+  # For PRs group by the PR number so concurrent PRs don't cancel each other;
+  # for pushes group by the branch ref.
+  group: ${{ github.event.pull_request.number || github.ref }}-${{ github.workflow }}
   cancel-in-progress: true
 on:
   push:
@@ -12,7 +14,12 @@ on:
       - 'docs/**'
       - 'adr/**'
     branches: [ main ]
-  pull_request:
+  # pull_request_target runs in the context of the base repo, so SONAR_TOKEN is
+  # available even for PRs opened from forks (regular pull_request does not expose
+  # secrets to fork PRs). SECURITY: this checks out and builds untrusted PR code
+  # with access to repository secrets — keep the build steps from reading/echoing
+  # secrets, and consider gating on a reviewer label if abuse becomes a concern.
+  pull_request_target:
     paths-ignore:
       - 'docs/**'
       - 'adr/**'
@@ -21,9 +28,16 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
-    if: ${{ github.actor != 'dependabot[bot]' && (( github.event_name == 'push' ) || ( github.event_name == 'pull_request' && github.event.pull_request.head.repo.owner.login == 'operator-framework' )) }}
+    # dependabot PRs don't have access to SONAR_TOKEN (separate secret store), so skip them.
+    if: ${{ github.actor != 'dependabot[bot]' }}
     steps:
       - uses: actions/checkout@v7
+        with:
+          # Check out the PR head so we analyze the proposed changes, not the base branch.
+          # For push events this expression is empty and checkout uses the pushed ref.
+          ref: ${{ github.event.pull_request.head.sha }}
+          # Full history improves Sonar's new-code / blame attribution.
+          fetch-depth: 0
       - name: Set up Java and Maven
         uses: actions/setup-java@v5
         with:
@@ -36,9 +50,24 @@ jobs:
           path: ~/.sonar/cache
           key: ${{ runner.os }}-sonar
           restore-keys: ${{ runner.os }}-sonar
-      - name: Build and analyze
+      - name: Build and analyze (push)
+        if: ${{ github.event_name == 'push' }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}  # Needed to get PR information, if any
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         run: mvn -B org.jacoco:jacoco-maven-plugin:prepare-agent clean install verify org.jacoco:jacoco-maven-plugin:report org.sonarsource.scanner.maven:sonar-maven-plugin:sonar -Dsonar.projectKey=java-operator-sdk_java-operator-sdk
-
+      - name: Build and analyze (pull request)
+        if: ${{ github.event_name == 'pull_request_target' }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}  # Needed to get PR information, if any
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        # Under pull_request_target the GitHub Actions env reflects the base branch,
+        # so Sonar can't auto-detect the PR — pass the PR context explicitly.
+        run: >
+          mvn -B org.jacoco:jacoco-maven-plugin:prepare-agent clean install verify
+          org.jacoco:jacoco-maven-plugin:report
+          org.sonarsource.scanner.maven:sonar-maven-plugin:sonar
+          -Dsonar.projectKey=java-operator-sdk_java-operator-sdk
+          -Dsonar.pullrequest.key=${{ github.event.pull_request.number }}
+          -Dsonar.pullrequest.branch=${{ github.event.pull_request.head.ref }}
+          -Dsonar.pullrequest.base=${{ github.event.pull_request.base.ref }}
