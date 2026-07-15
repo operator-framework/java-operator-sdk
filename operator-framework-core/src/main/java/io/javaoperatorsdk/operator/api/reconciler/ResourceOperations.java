@@ -141,7 +141,6 @@ public class ResourceOperations<P extends HasMetadata> {
    * @param <R> the resource type
    * @return the applied resource as returned by the API server
    */
-  @Experimental(API_MIGHT_CHANGE)
   public <R extends HasMetadata> R serverSideApply(R resource, Options options) {
     return resourcePatch(
         resource,
@@ -185,7 +184,6 @@ public class ResourceOperations<P extends HasMetadata> {
    * @param <R> the resource type
    * @return the applied resource as returned by the API server
    */
-  @Experimental(API_MIGHT_CHANGE)
   public <R extends HasMetadata> R serverSideApply(
       R resource, InformerEventSource<R, P> informerEventSource, Options options) {
     if (informerEventSource == null) {
@@ -347,7 +345,6 @@ public class ResourceOperations<P extends HasMetadata> {
    * @param <R> the resource type
    * @return the updated resource as returned by the API server
    */
-  @Experimental(API_MIGHT_CHANGE)
   public <R extends HasMetadata> R update(R desired, Options options) {
     return resourcePatch(desired, r -> context.getClient().resource(r).update(), options);
   }
@@ -378,7 +375,6 @@ public class ResourceOperations<P extends HasMetadata> {
    * @param <R> the resource type
    * @return the updated resource as returned by the API server
    */
-  @Experimental(API_MIGHT_CHANGE)
   public <R extends HasMetadata> R update(
       R resource, InformerEventSource<R, P> informerEventSource, Options options) {
     if (informerEventSource == null) {
