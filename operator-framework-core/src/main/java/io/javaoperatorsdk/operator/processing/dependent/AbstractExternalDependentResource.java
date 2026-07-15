@@ -91,7 +91,7 @@ public abstract class AbstractExternalDependentResource<
     context.getClient().resource(res).delete();
   }
 
-  @SuppressWarnings({"rawtypes", "unchecked", "unused"})
+  @SuppressWarnings({"rawtypes", "unchecked"})
   protected void handleExplicitStateCreation(P primary, R created, Context<P> context) {
     var resource = dependentResourceWithExplicitState.stateResource(primary, created);
     context.resourceOperations().create(resource);
