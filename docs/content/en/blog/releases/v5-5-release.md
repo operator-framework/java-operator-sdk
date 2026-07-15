@@ -44,9 +44,11 @@ operation type; when one does not fit, supply your own via `Options.matchAndFilt
 `Options` exposes the available strategies:
 
 - `matchAndFilter(...)` / `matchAndFilterWithDefaultMatcher(...)` — match, then write-and-filter only
-  if needed (the default).
+  if needed. This is the default for the server-side apply and patch methods.
 - `filterWithOptimisticLocking()` — filter the own event; the write must use optimistic locking,
-  otherwise an `IllegalArgumentException` is thrown.
+  otherwise an `IllegalArgumentException` is thrown. The matcher / `updateType` overloads also skip
+  the write when the desired state already matches; this match + optimistic locking combination is
+  the default for the PUT `update` methods.
 - `cacheOnly()` — only cache the response (read-cache-after-write consistency), no filtering.
 - `forceFilterEvents()` — always filter (mostly internal usage).
 
