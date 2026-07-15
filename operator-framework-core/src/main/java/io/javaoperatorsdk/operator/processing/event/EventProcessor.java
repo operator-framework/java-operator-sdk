@@ -418,7 +418,18 @@ public class EventProcessor<P extends HasMetadata> implements EventHandler, Life
       boolean errorHandledByReconciler,
       Exception exception,
       ExecutionScope<P> executionScope) {
-    if (errorHandledByReconciler && !retry.isLastAttempt()) {
+    if (!retry.isLastAttempt()
+        && exception instanceof KubernetesClientException ex
+        && ex.getCode() == HttpURLConnection.HTTP_CONFLICT) {
+      // The conflict branch is already low-noise (DEBUG + INFO) and provides actionable info, so it
+      // keeps precedence over the handled-error downgrade below.
+      log.debug("Full client conflict error during event processing {}", executionScope, exception);
+      log.info(
+          "Resource Kubernetes Resource Creator/Update Conflict during reconciliation. Message:"
+              + " {} Resource name: {}",
+          ex.getMessage(),
+          ex.getFullResourceName());
+    } else if (errorHandledByReconciler && !retry.isLastAttempt()) {
       // The reconciler already handled the error in updateErrorStatus (and had the chance to log it
       // as needed), so while there are retries remaining the framework only logs it on debug level.
       // On the last attempt we still fall through to the higher-severity logging below, so a final,
@@ -427,15 +438,6 @@ public class EventProcessor<P extends HasMetadata> implements EventHandler, Life
           "Error during event processing {}, but was handled by the reconciler",
           executionScope,
           exception);
-    } else if (!retry.isLastAttempt()
-        && exception instanceof KubernetesClientException ex
-        && ex.getCode() == HttpURLConnection.HTTP_CONFLICT) {
-      log.debug("Full client conflict error during event processing {}", executionScope, exception);
-      log.info(
-          "Resource Kubernetes Resource Creator/Update Conflict during reconciliation. Message:"
-              + " {} Resource name: {}",
-          ex.getMessage(),
-          ex.getFullResourceName());
     } else if (eventPresent || !retry.isLastAttempt()) {
       log.warn(
           "Uncaught error during event processing {} - but another reconciliation will be attempted"
