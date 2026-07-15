@@ -80,7 +80,7 @@ There are **no breaking API changes**; existing code compiles and runs unchanged
 
 Returning an `UpdateControl` (or `ErrorStatusUpdateControl`) still updates the resource and keeps the
 cache read-after-write consistent, but it **no longer filters the resulting own event by default** —
-so the write may cause an additional (idempotent) reconciliation. This change fixes correctness edge
+so the write may cause an additional reconciliation (which should be idempotent). This change fixes correctness edge
 cases where an event that should have propagated was previously swallowed.
 
 If you relied on the previous filtering, perform the update through `ResourceOperations` and return
