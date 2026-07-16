@@ -50,7 +50,8 @@ operation type; when one does not fit, supply your own via `Options.matchAndFilt
   the write when the desired state already matches; this match + optimistic locking combination is
   the default for the PUT `update` methods.
 - `cacheOnly()` — only cache the response (read-cache-after-write consistency), no filtering.
-- `forceFilterEvents()` — always filter (mostly internal usage).
+- `forceFilterEvents()` — always filter (mostly internal usage). Assumes resource was matched before
+   or update is done using optimistic locking.
 
 > **Correctness note**: filtering an own event is only safe if the framework can tell an own write
 > apart from a concurrent third-party write. This requires **either** a matcher **or** optimistic
@@ -71,6 +72,16 @@ the first place, and the filtering itself is now correct in these concurrent sce
   that compares just the `/status` subtree.
 - **New `Matcher` SPI**: `io.javaoperatorsdk.operator.api.reconciler.matcher.Matcher` lets you plug a
   custom matching strategy into `Options.matchAndFilter(...)`.
+- **Quieter logs for reconciler-handled errors**: when `updateErrorStatus(...)` returns any
+  `ErrorStatusUpdateControl` other than `defaultErrorProcessing()`, the error is treated as handled
+  by the reconciler and logged at `DEBUG` instead of the `Uncaught error during event processing`
+  `WARN`. Native retry (including `@GradualRetry` exponential backoff) is unchanged, so a reconciler
+  can keep retrying a recoverable condition without spamming warnings. Return
+  `defaultErrorProcessing()` to keep the previous behavior.
+- **Startup-latency metric**: a new `Metrics.eventProcessingStarted(Controller)` callback fires when
+  a controller's event processor begins accepting events (including after a deferred start such as
+  winning leader election). The Micrometer implementations record a per-controller gauge with the JVM
+  uptime at that moment, making operator startup latency measurable.
 - Extensive integration tests covering every `ResourceOperations` update/patch operation (primary,
   status, and secondary resources) against a real cluster.
 
