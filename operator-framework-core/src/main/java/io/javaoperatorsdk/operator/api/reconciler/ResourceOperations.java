@@ -99,6 +99,15 @@ import static io.javaoperatorsdk.operator.processing.KubernetesResourceUtils.get
  * from the desired one, thus also reducing the number of requests made against the Kubernetes API
  * server.
  *
+ * <p><strong>Matching against cached resources.</strong> When matching the actual resource (in most
+ * cases read from the cache) against the desired one for secondary resources, the matching must be
+ * done on a <em>cloned</em> version of the actual resource. Secondary resources are not cloned by
+ * default when read from the cache (see {@link
+ * io.javaoperatorsdk.operator.api.config.ConfigurationService#cloneSecondaryResourcesWhenGettingFromCache()}),
+ * so mutating the resource obtained from the cache while matching would also mutate the copy stored
+ * in the cache. Either clone the resource explicitly before matching, or enable {@link
+ * io.javaoperatorsdk.operator.api.config.ConfigurationService#cloneSecondaryResourcesWhenGettingFromCache()}.
+ *
  * @param <P> the primary resource type on which this object operates
  */
 public class ResourceOperations<P extends HasMetadata> {
