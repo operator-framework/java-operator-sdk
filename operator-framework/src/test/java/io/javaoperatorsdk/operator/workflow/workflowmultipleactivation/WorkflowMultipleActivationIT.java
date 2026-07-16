@@ -76,6 +76,9 @@ public class WorkflowMultipleActivationIT {
             () -> {
               var cm = extension.get(ConfigMap.class, TEST_RESOURCE1);
               assertThat(cm).isNull();
+              var cr =
+                  extension.get(WorkflowMultipleActivationCustomResource.class, TEST_RESOURCE1);
+              assertThat(cr).isNull();
             });
 
     ActivationCondition.MET = false;
