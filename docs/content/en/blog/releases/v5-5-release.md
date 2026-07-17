@@ -58,7 +58,7 @@ operation type; when one does not fit, supply your own via `Options.matchAndFilt
 > locking; otherwise a concurrent external update inside the filter window may be missed until the
 > next resync.
 
-### More correct own-event filtering (no-op update edge case)
+### Correct own-event filtering (no-op update edge case)
 
 The read-cache-after-write own-event filter has been reworked to fix an edge case where a legitimate
 external change could be filtered out together with a controller's own **no-op** update — for
