@@ -69,20 +69,25 @@ class KotlinCheckedExceptionDependentResourceTest {
 
     @Suppress("UNCHECKED_CAST")
     val context = mock(Context::class.java) as Context<TestCustomResource>
-    `when`(context.managedWorkflowAndDependentResourceContext())
-        .thenReturn(mock(ManagedWorkflowAndDependentResourceContext::class.java))
-    `when`(context.workflowExecutorService).thenReturn(Executors.newCachedThreadPool())
-    @Suppress("UNCHECKED_CAST")
-    `when`(context.eventSourceRetriever())
-        .thenReturn(mock(EventSourceRetriever::class.java) as EventSourceRetriever<TestCustomResource>)
+    val executorService = Executors.newSingleThreadExecutor()
+    try {
+      `when`(context.managedWorkflowAndDependentResourceContext())
+          .thenReturn(mock(ManagedWorkflowAndDependentResourceContext::class.java))
+      `when`(context.workflowExecutorService).thenReturn(executorService)
+      @Suppress("UNCHECKED_CAST")
+      `when`(context.eventSourceRetriever())
+          .thenReturn(mock(EventSourceRetriever::class.java) as EventSourceRetriever<TestCustomResource>)
 
-    val result = workflow.reconcile(TestCustomResource(), context)
+      val result = workflow.reconcile(TestCustomResource(), context)
 
-    // the checked exception was caught by the workflow executor, not left uncaught, so it is
-    // reported as an error for the dependent resource, which is what allows JOSDK to retry the
-    // reconciliation.
-    assertThat(result.erroredDependents).containsOnlyKeys(dependentResource)
-    assertThat(result.erroredDependents[dependentResource]).isInstanceOf(CheckedException::class.java)
-    assertThrows<AggregatedOperatorException> { result.throwAggregateExceptionIfErrorsPresent() }
-  }
+      // the checked exception was caught by the workflow executor, not left uncaught, so it is
+      // reported as an error for the dependent resource, which is what allows JOSDK to retry the
+      // reconciliation.
+      assertThat(result.erroredDependents).containsOnlyKeys(dependentResource)
+      assertThat(result.erroredDependents[dependentResource])
+          .isInstanceOf(CheckedException::class.java)
+      assertThrows<AggregatedOperatorException> { result.throwAggregateExceptionIfErrorsPresent() }
+    } finally {
+      executorService.shutdownNow()
+    }
 }
