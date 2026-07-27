@@ -21,6 +21,7 @@ import java.util.Optional;
 import java.util.Set;
 
 import io.javaoperatorsdk.operator.api.reconciler.Context;
+import io.javaoperatorsdk.operator.api.reconciler.dependent.Deleter;
 import io.javaoperatorsdk.operator.processing.dependent.Creator;
 import io.javaoperatorsdk.operator.processing.dependent.Matcher;
 import io.javaoperatorsdk.operator.processing.dependent.Updater;
@@ -40,7 +41,8 @@ public class ExternalStateInStatusDependentResource
     extends PerResourcePollingDependentResource<
         ExternalResource, ExternalStateInStatusWorkflowCustomResource, String>
     implements Creator<ExternalResource, ExternalStateInStatusWorkflowCustomResource>,
-        Updater<ExternalResource, ExternalStateInStatusWorkflowCustomResource> {
+        Updater<ExternalResource, ExternalStateInStatusWorkflowCustomResource>,
+        Deleter<ExternalStateInStatusWorkflowCustomResource> {
 
   private final ExternalIDGenServiceMock externalService = ExternalIDGenServiceMock.getInstance();
 
