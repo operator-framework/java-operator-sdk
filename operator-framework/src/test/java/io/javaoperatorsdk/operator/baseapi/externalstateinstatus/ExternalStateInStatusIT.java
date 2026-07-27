@@ -28,14 +28,6 @@ import io.javaoperatorsdk.operator.support.ExternalServiceResetExtension;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
 
-/**
- * Manages an external resource while storing its state (the external resource ID) directly in the
- * <b>status</b> of the custom resource, rather than in a separate resource like a ConfigMap. This
- * is only reliable because of the stronger read-after-write consistency for updates: after the
- * external resource is created the reconciler patches the status with the ID, and that patched
- * resource is placed into the cache so the next reconciliation observes the ID and does not create
- * a duplicate external resource.
- */
 @Sample(
     tldr = "Managing an External Resource with State Stored in the Status",
     description =
