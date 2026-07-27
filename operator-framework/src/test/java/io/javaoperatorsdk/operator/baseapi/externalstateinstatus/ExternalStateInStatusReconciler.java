@@ -69,11 +69,8 @@ public class ExternalStateInStatusReconciler
 
     var externalResource = context.getSecondaryResource(ExternalResource.class);
     if (externalResource.isEmpty()) {
-      // No external resource is associated with this primary yet. If we already stored an ID we
-      // are just waiting for the poll to catch up (do nothing), otherwise we create the external
-      // resource and persist its ID into the status. Relying on read-after-write consistency the
-      // stored ID is visible on the next reconciliation, so no duplicate is created.
-      if (idFromStatus(resource) == null) {
+      var id = idFromStatus(resource);
+      if (id == null || externalService.read(id).isEmpty()) {
         return createExternalResource(resource);
       }
       return UpdateControl.noUpdate();
