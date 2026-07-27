@@ -751,7 +751,10 @@ public class ResourceOperations<P extends HasMetadata> {
    * @return the patched resource as returned by the API server
    */
   public <R extends HasMetadata> R jsonMergePatch(R desired, Options options) {
-    return resourcePatch(desired, r -> context.getClient().resource(r).patch(), options);
+    return resourcePatch(
+        desired,
+        r -> context.getClient().resource(r).patch(PatchContext.of(PatchType.JSON_MERGE)),
+        options);
   }
 
   /**
@@ -767,7 +770,10 @@ public class ResourceOperations<P extends HasMetadata> {
   public <R extends HasMetadata> R jsonMergePatch(
       R desired, InformerEventSource<R, P> informerEventSource, Options options) {
     return resourcePatch(
-        desired, r -> context.getClient().resource(r).patch(), informerEventSource, options);
+        desired,
+        r -> context.getClient().resource(r).patch(PatchContext.of(PatchType.JSON_MERGE)),
+        informerEventSource,
+        options);
   }
 
   /**
@@ -838,7 +844,7 @@ public class ResourceOperations<P extends HasMetadata> {
   public P jsonMergePatchPrimary(P resource, Options options) {
     return resourcePatch(
         resource,
-        r -> context.getClient().resource(r).patch(),
+        r -> context.getClient().resource(r).patch(PatchContext.of(PatchType.JSON_MERGE)),
         context.eventSourceRetriever().getControllerEventSource(),
         options);
   }

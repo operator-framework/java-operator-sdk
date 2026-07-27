@@ -24,6 +24,8 @@ import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
 import io.javaoperatorsdk.operator.baseapi.resourceoperations.ResourceOperationsReconciler.Operation;
 import io.javaoperatorsdk.operator.junit.LocallyRunOperatorExtension;
 
+import static io.javaoperatorsdk.operator.baseapi.resourceoperations.ResourceOperationsReconciler.LABEL_KEY;
+import static io.javaoperatorsdk.operator.baseapi.resourceoperations.ResourceOperationsReconciler.LABEL_VALUE;
 import static io.javaoperatorsdk.operator.baseapi.resourceoperations.ResourceOperationsReconciler.SPEC_MARKER;
 import static io.javaoperatorsdk.operator.baseapi.resourceoperations.ResourceOperationsReconciler.STATUS_VALUE;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -84,6 +86,31 @@ class ResourceOperationsIT {
   @Test
   void jsonMergePatch() {
     assertSpecOperation(Operation.JSON_MERGE_PATCH);
+  }
+
+  /**
+   * A merge patch applied with a partial resource must only change what the partial resource
+   * contains; fields omitted from it - like the whole {@code spec} - have to survive on the server.
+   */
+  @Test
+  void jsonMergePatchWithPartialResourceKeepsOmittedFields() {
+    var operation = Operation.JSON_MERGE_PATCH_PARTIAL_METADATA;
+    runOperation(operation);
+
+    await()
+        .atMost(Duration.ofSeconds(30))
+        .untilAsserted(
+            () ->
+                assertThat(actual().getMetadata().getLabels())
+                    .as("the partial metadata merge patch should be applied")
+                    .containsEntry(LABEL_KEY, LABEL_VALUE));
+
+    assertThat(actual().getSpec())
+        .as("the spec omitted from the partial merge patch should not be removed")
+        .isNotNull()
+        .extracting(ResourceOperationsSpec::getValue)
+        .isEqualTo(INITIAL_SPEC_VALUE);
+    assertConvergesWithoutLooping(operation);
   }
 
   @Test
