@@ -90,4 +90,5 @@ class KotlinCheckedExceptionDependentResourceTest {
     } finally {
       executorService.shutdownNow()
     }
+  }
 }
