@@ -62,7 +62,8 @@ class ConfigMapCopyE2E {
           LocallyRunOperatorExtension.builder().withReconciler(ConfigMapCopyReconciler()).build()
       else
           ClusterDeployedOperatorExtension.builder()
-              .withOperatorDeployment(client.load(FileInputStream("k8s/operator.yaml")).items())
+              .withOperatorDeployment(
+                  FileInputStream("k8s/operator.yaml").use { client.load(it).items() })
               .build()
 
   @Test
