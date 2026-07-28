@@ -22,6 +22,7 @@ import java.util.function.UnaryOperator;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 import org.mockito.stubbing.Answer;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
@@ -31,6 +32,7 @@ import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.NamespaceableResource;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.fabric8.kubernetes.client.dsl.base.PatchContext;
+import io.fabric8.kubernetes.client.dsl.base.PatchType;
 import io.fabric8.kubernetes.client.utils.KubernetesSerialization;
 import io.javaoperatorsdk.operator.TestUtils;
 import io.javaoperatorsdk.operator.api.config.Cloner;
@@ -40,6 +42,7 @@ import io.javaoperatorsdk.operator.api.reconciler.matcher.Matcher;
 import io.javaoperatorsdk.operator.processing.event.EventSourceRetriever;
 import io.javaoperatorsdk.operator.processing.event.source.EventSource;
 import io.javaoperatorsdk.operator.processing.event.source.controller.ControllerEventSource;
+import io.javaoperatorsdk.operator.processing.event.source.informer.InformerEventSource;
 import io.javaoperatorsdk.operator.processing.event.source.informer.ManagedInformerEventSource;
 import io.javaoperatorsdk.operator.sample.simple.TestCustomResource;
 
@@ -471,13 +474,18 @@ class ResourceOperationsTest {
     when(verbClientResource.patch(any(PatchContext.class))).thenReturn(updated);
 
     // both cache paths execute the update operation so the underlying client verb runs
-    Answer<Object> runOperation =
-        invocation -> ((UnaryOperator) invocation.getArgument(1)).apply(invocation.getArgument(0));
     when(verbEventSource.eventFilteringUpdateAndCacheResource(any(), any(UnaryOperator.class)))
-        .thenAnswer(runOperation);
+        .thenAnswer(runUpdateOperation());
     when(verbEventSource.updateAndCacheResource(any(), any(UnaryOperator.class)))
-        .thenAnswer(runOperation);
+        .thenAnswer(runUpdateOperation());
     return updated;
+  }
+
+  /** Answer that executes the update operation passed to the caching methods of an event source. */
+  @SuppressWarnings("rawtypes")
+  private static Answer<Object> runUpdateOperation() {
+    return invocation ->
+        ((UnaryOperator) invocation.getArgument(1)).apply(invocation.getArgument(0));
   }
 
   // ---- update -------------------------------------------------------------
@@ -610,7 +618,7 @@ class ResourceOperationsTest {
   // ---- patch / status verbs ----------------------------------------------
 
   @Test
-  void jsonMergePatchCacheOnlyCallsClientPatch() {
+  void jsonMergePatchCacheOnlyCallsClientMergePatch() {
     var resource = TestUtils.testCustomResource1();
     var updated = wireVerbMocks();
 
@@ -620,7 +628,51 @@ class ResourceOperationsTest {
     assertThat(result).isSameAs(updated);
     verify(verbEventSource, times(1))
         .updateAndCacheResource(eq(resource), any(UnaryOperator.class));
-    verify(verbClientResource, times(1)).patch();
+    assertThat(capturedPatchType()).isEqualTo(PatchType.JSON_MERGE);
+  }
+
+  @Test
+  void jsonMergePatchWithEventSourceCallsClientMergePatch() {
+    var resource = TestUtils.testCustomResource1();
+    var updated = wireVerbMocks();
+    InformerEventSource<TestCustomResource, TestCustomResource> informerEventSource =
+        mock(InformerEventSource.class);
+    when(informerEventSource.updateAndCacheResource(any(), any(UnaryOperator.class)))
+        .thenAnswer(runUpdateOperation());
+
+    var result =
+        resourceOperations.jsonMergePatch(
+            resource, informerEventSource, ResourceOperations.Options.cacheOnly());
+
+    assertThat(result).isSameAs(updated);
+    assertThat(capturedPatchType()).isEqualTo(PatchType.JSON_MERGE);
+  }
+
+  @Test
+  void jsonMergePatchPrimaryCallsClientMergePatch() {
+    var resource = TestUtils.testCustomResource1();
+    var updated = wireVerbMocks();
+    when(controllerEventSource.updateAndCacheResource(any(), any(UnaryOperator.class)))
+        .thenAnswer(runUpdateOperation());
+
+    var result =
+        resourceOperations.jsonMergePatchPrimary(resource, ResourceOperations.Options.cacheOnly());
+
+    assertThat(result).isSameAs(updated);
+    assertThat(capturedPatchType()).isEqualTo(PatchType.JSON_MERGE);
+  }
+
+  /**
+   * Asserts that a merge patch operation went through Fabric8 with an explicit patch context and
+   * returns the used patch type. The no-context {@code patch()} must never be used for merge
+   * patches: it computes an RFC 6902 diff against the resource fetched from the server, which
+   * removes the fields missing from a partial resource.
+   */
+  private PatchType capturedPatchType() {
+    verify(verbClientResource, never()).patch();
+    var captor = ArgumentCaptor.forClass(PatchContext.class);
+    verify(verbClientResource, times(1)).patch(captor.capture());
+    return captor.getValue().getPatchType();
   }
 
   @Test
