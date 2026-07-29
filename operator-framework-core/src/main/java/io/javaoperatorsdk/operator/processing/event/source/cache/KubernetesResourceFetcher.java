@@ -45,7 +45,7 @@ public class KubernetesResourceFetcher<R extends HasMetadata>
     return resourceId
         .getNamespace()
         .map(ns -> client.resources(rClass).inNamespace(ns).withName(resourceId.getName()).get())
-        .orElse(client.resources(rClass).withName(resourceId.getName()).get());
+        .orElseGet(() -> client.resources(rClass).withName(resourceId.getName()).get());
   }
 
   public static Function<String, ResourceID> inverseNamespaceKeyFunction() {
