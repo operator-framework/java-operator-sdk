@@ -61,6 +61,32 @@ class PollingEventSourceTest
   }
 
   @Test
+  void canBeRestartedAfterStop() throws InterruptedException {
+    when(resourceFetcher.fetchResources()).thenReturn(testResponseWithTwoValues());
+    pollingEventSource.start();
+    Thread.sleep(DEFAULT_WAIT_PERIOD);
+    pollingEventSource.stop();
+
+    // a cancelled java.util.Timer cannot be reused, a new one has to be created on start
+    pollingEventSource.start();
+    Thread.sleep(DEFAULT_WAIT_PERIOD);
+
+    assertThat(pollingEventSource.getStatus()).isEqualTo(Status.HEALTHY);
+  }
+
+  @Test
+  void timerThreadIsADaemonSoItDoesNotKeepTheJvmAlive() throws InterruptedException {
+    when(resourceFetcher.fetchResources()).thenReturn(testResponseWithTwoValues());
+    pollingEventSource.start();
+    Thread.sleep(DEFAULT_WAIT_PERIOD);
+
+    assertThat(Thread.getAllStackTraces().keySet())
+        .filteredOn(t -> t.getName().startsWith("Timer-"))
+        .isNotEmpty()
+        .allMatch(Thread::isDaemon);
+  }
+
+  @Test
   void pollsAndProcessesEvents() throws InterruptedException {
     when(resourceFetcher.fetchResources()).thenReturn(testResponseWithTwoValues());
     pollingEventSource.start();

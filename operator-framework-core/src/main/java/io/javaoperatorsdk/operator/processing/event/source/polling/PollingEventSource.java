@@ -62,7 +62,7 @@ public class PollingEventSource<R, P extends HasMetadata, ID>
 
   private static final Logger log = LoggerFactory.getLogger(PollingEventSource.class);
 
-  private final Timer timer = new Timer();
+  private Timer timer;
   private final GenericResourceFetcher<R> genericResourceFetcher;
   private final Duration period;
   private final AtomicBoolean healthy = new AtomicBoolean(true);
@@ -76,6 +76,9 @@ public class PollingEventSource<R, P extends HasMetadata, ID>
   @Override
   public void start() throws OperatorException {
     super.start();
+    // a cancelled Timer cannot be reused, so a fresh one is created on every start; it is a daemon
+    // thread so that it never keeps the JVM alive
+    timer = new Timer(true);
     getStateAndFillCache();
     timer.schedule(
         new TimerTask() {
@@ -111,7 +114,10 @@ public class PollingEventSource<R, P extends HasMetadata, ID>
   @Override
   public void stop() throws OperatorException {
     super.stop();
-    timer.cancel();
+    if (timer != null) {
+      timer.cancel();
+      timer = null;
+    }
   }
 
   @Override
