@@ -36,5 +36,6 @@
     <module>leader-election</module>
     <module>controller-namespace-deletion</module>
     <module>operations</module>
+    <module>kotlin-operator</module>
   </modules>
 </project>
