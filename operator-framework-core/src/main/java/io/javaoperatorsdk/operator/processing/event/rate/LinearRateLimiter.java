@@ -64,7 +64,10 @@ public class LinearRateLimiter
       actualState.increaseCount();
       return Optional.empty();
     } else {
-      return Optional.of(Duration.between(actualState.getLastRefreshTime(), LocalDateTime.now()));
+      var remaining =
+          Duration.between(
+              LocalDateTime.now(), actualState.getLastRefreshTime().plus(refreshPeriod));
+      return Optional.of(remaining.isNegative() ? Duration.ZERO : remaining);
     }
   }
 
