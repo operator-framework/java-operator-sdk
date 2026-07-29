@@ -22,6 +22,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.OperatorException;
@@ -78,6 +79,7 @@ public class MicrometerMetrics implements Metrics {
   private final boolean collectPerResourceMetrics;
   private final MeterRegistry registry;
   private final Map<String, AtomicInteger> gauges = new ConcurrentHashMap<>();
+  private final Map<String, AtomicLong> longGauges = new ConcurrentHashMap<>();
   private final Cleaner cleaner;
 
   /**
@@ -153,10 +155,19 @@ public class MicrometerMetrics implements Metrics {
   public void eventProcessingStarted(Controller<? extends HasMetadata> controller) {
     final var configuration = controller.getConfiguration();
     final var name = configuration.getName();
-    final var tags = new ArrayList<Tag>(3);
-    addGVKTags(GroupVersionKind.gvkFor(configuration.getResourceClass()), tags, false);
-    registry.gauge(
-        PROCESSING_STARTED_LATENCY + name, tags, ManagementFactory.getRuntimeMXBean().getUptime());
+    // the registry only holds a weak reference to the gauged object, so it has to be kept alive
+    // here, otherwise the gauge reports NaN as soon as the value is garbage collected
+    longGauges
+        .computeIfAbsent(
+            PROCESSING_STARTED_LATENCY + name,
+            key -> {
+              final var tags = new ArrayList<Tag>(3);
+              addGVKTags(GroupVersionKind.gvkFor(configuration.getResourceClass()), tags, false);
+              var holder = new AtomicLong();
+              registry.gauge(key, tags, holder);
+              return holder;
+            })
+        .set(ManagementFactory.getRuntimeMXBean().getUptime());
   }
 
   @Override

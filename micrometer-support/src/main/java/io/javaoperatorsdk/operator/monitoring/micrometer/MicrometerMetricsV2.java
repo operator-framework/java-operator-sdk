@@ -20,6 +20,7 @@ import java.time.Duration;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
@@ -69,6 +70,7 @@ public class MicrometerMetricsV2 implements Metrics {
 
   private final MeterRegistry registry;
   private final Map<String, AtomicInteger> gauges = new ConcurrentHashMap<>();
+  private final Map<String, AtomicLong> longGauges = new ConcurrentHashMap<>();
   private final Map<String, Timer> executionTimers = new ConcurrentHashMap<>();
   private final Function<Timer.Builder, Timer.Builder> timerConfig;
   private final boolean includeNamespaceTag;
@@ -150,10 +152,19 @@ public class MicrometerMetricsV2 implements Metrics {
   @Override
   public void eventProcessingStarted(Controller<? extends HasMetadata> controller) {
     final var name = controller.getConfiguration().getName();
-    final var tags = new ArrayList<Tag>();
-    addControllerNameTag(name, tags);
-    registry.gauge(
-        PROCESSING_STARTED_LATENCY_GAUGE, tags, ManagementFactory.getRuntimeMXBean().getUptime());
+    // the registry only holds a weak reference to the gauged object, so it has to be kept alive
+    // here, otherwise the gauge reports NaN as soon as the value is garbage collected
+    longGauges
+        .computeIfAbsent(
+            processingStartedLatencyGaugeRefKey(name),
+            key -> {
+              final var tags = new ArrayList<Tag>();
+              addControllerNameTag(name, tags);
+              var holder = new AtomicLong();
+              registry.gauge(PROCESSING_STARTED_LATENCY_GAUGE, tags, holder);
+              return holder;
+            })
+        .set(ManagementFactory.getRuntimeMXBean().getUptime());
   }
 
   private String numberOfResourcesRefName(String name) {
@@ -287,6 +298,10 @@ public class MicrometerMetricsV2 implements Metrics {
 
   private static String controllerQueueSizeGaugeRefKey(String controllerName) {
     return RECONCILIATIONS_QUEUE_SIZE_GAUGE + "." + controllerName;
+  }
+
+  private static String processingStartedLatencyGaugeRefKey(String controllerName) {
+    return PROCESSING_STARTED_LATENCY_GAUGE + "." + controllerName;
   }
 
   public static String getControllerName(Map<String, Object> metadata) {
