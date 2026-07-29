@@ -143,7 +143,7 @@ public class EventSourceManager<P extends HasMetadata>
       eventSource.stop();
       logEventSourceEvent(eventSource, "Stopped");
     } catch (Exception e) {
-      log.warn("Error closing {} -> {}", eventSource.name(), e);
+      log.warn("Error closing event source {}", eventSource.name(), e);
     }
     return null;
   }
