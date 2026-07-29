@@ -212,6 +212,17 @@ class ExternalResourceCachingEventSourceTest
   }
 
   @Test
+  void getSecondaryResourcesReturnsASnapshotNotALiveView() {
+    source.handleResources(primaryID1(), Set.of(testResource1()));
+
+    var snapshot = source.getSecondaryResources(primaryID1());
+    source.handleDelete(primaryID1());
+
+    assertThat(snapshot).containsExactly(testResource1());
+    assertThat(source.getSecondaryResources(primaryID1())).isEmpty();
+  }
+
+  @Test
   void recentResourceUpdateIsIgnoredForUnknownSecondaryResource() {
     source.handleResources(primaryID1(), Set.of(testResource1()));
 

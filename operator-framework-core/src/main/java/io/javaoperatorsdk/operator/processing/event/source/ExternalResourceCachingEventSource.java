@@ -250,12 +250,23 @@ public abstract class ExternalResourceCachingEventSource<R, P extends HasMetadat
   }
 
   public Set<R> getSecondaryResources(ResourceID primaryID) {
+    return cachedResourcesFor(primaryID);
+  }
+
+  /**
+   * Snapshot of the currently cached secondary resources for the target primary. The per-primary
+   * maps held in the cache are not thread safe and are mutated while holding this object's monitor,
+   * so they must not be read outside of it.
+   *
+   * @param primaryID id of the primary resource
+   * @return a copy of the cached secondary resources, empty if none are cached
+   */
+  protected synchronized Set<R> cachedResourcesFor(ResourceID primaryID) {
     var cachedValues = cache.get(primaryID);
     if (cachedValues == null) {
       return Collections.emptySet();
-    } else {
-      return new HashSet<>(cache.get(primaryID).values());
     }
+    return new HashSet<>(cachedValues.values());
   }
 
   public Optional<R> getSecondaryResource(ResourceID primaryID) {
@@ -269,6 +280,12 @@ public abstract class ExternalResourceCachingEventSource<R, P extends HasMetadat
     }
   }
 
+  /**
+   * @return a live, unmodifiable view of the cache. Note that the nested per-primary maps are not
+   *     thread safe and are mutated while holding this object's monitor, so iterating them without
+   *     synchronizing on this event source is not safe. Prefer {@link
+   *     #getSecondaryResources(ResourceID)}, which returns a snapshot.
+   */
   public Map<ResourceID, Map<ID, R>> getCache() {
     return Collections.unmodifiableMap(cache);
   }

@@ -17,7 +17,6 @@ package io.javaoperatorsdk.operator.processing.event.source.polling;
 
 import java.time.Duration;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -123,9 +122,8 @@ public class PerResourcePollingEventSource<R, P extends HasMetadata, ID>
     var primaryID = ResourceID.fromResource(resource);
     if (scheduledFutures.get(primaryID) == null
         && (registerPredicate == null || registerPredicate.test(resource))) {
-      var cachedResources = cache.get(primaryID);
-      var actualResources =
-          cachedResources == null ? null : new HashSet<>(cachedResources.values());
+      var cachedResources = cachedResourcesFor(primaryID);
+      var actualResources = cachedResources.isEmpty() ? null : cachedResources;
       // note that there is a delay, to not do two fetches when the resources first appeared
       // and getSecondaryResource is called on reconciliation.
       scheduleNextExecution(resource, actualResources);
@@ -167,9 +165,9 @@ public class PerResourcePollingEventSource<R, P extends HasMetadata, ID>
   @Override
   public Set<R> getSecondaryResources(P primary) {
     var primaryID = ResourceID.fromResource(primary);
-    var cachedValue = cache.get(primaryID);
-    if (cachedValue != null && !cachedValue.isEmpty()) {
-      return new HashSet<>(cachedValue.values());
+    var cachedValues = cachedResourcesFor(primaryID);
+    if (!cachedValues.isEmpty()) {
+      return cachedValues;
     } else {
       if (fetchedForPrimaries.contains(primaryID)) {
         return Collections.emptySet();
