@@ -135,6 +135,53 @@ class EventProcessorTest {
   }
 
   @Test
+  void completesSubmissionIfResourceDisappearsFromCacheBeforeExecution() {
+    var resourceID = new ResourceID(UUID.randomUUID().toString(), TEST_NAMESPACE);
+    var customResource = testCustomResource(resourceID);
+    // present when the execution is submitted, but gone by the time the executor thread runs
+    when(controllerEventSourceMock.get(eq(resourceID)))
+        .thenReturn(Optional.of(customResource))
+        .thenReturn(Optional.empty());
+
+    eventProcessor.handleEvent(
+        new ResourceEvent(ResourceAction.UPDATED, resourceID, customResource));
+
+    await()
+        .atMost(Duration.ofSeconds(1))
+        .untilAsserted(() -> assertThat(eventProcessor.isUnderProcessing(resourceID)).isFalse());
+    verify(reconciliationDispatcherMock, times(0)).handleExecution(any());
+  }
+
+  @Test
+  void doesNotReportReconciliationFinishedIfItNeverStarted() {
+    var processorWithMetrics =
+        spy(
+            new EventProcessor(
+                controllerConfiguration(null, rateLimiterMock),
+                reconciliationDispatcherMock,
+                eventSourceManagerMock,
+                metricsMock));
+    processorWithMetrics.start();
+    when(processorWithMetrics.retryEventSource()).thenReturn(retryTimerEventSourceMock);
+
+    var resourceID = new ResourceID(UUID.randomUUID().toString(), TEST_NAMESPACE);
+    var customResource = testCustomResource(resourceID);
+    when(controllerEventSourceMock.get(eq(resourceID)))
+        .thenReturn(Optional.of(customResource))
+        .thenReturn(Optional.empty());
+
+    processorWithMetrics.handleEvent(
+        new ResourceEvent(ResourceAction.UPDATED, resourceID, customResource));
+
+    await()
+        .atMost(Duration.ofSeconds(1))
+        .untilAsserted(
+            () -> assertThat(processorWithMetrics.isUnderProcessing(resourceID)).isFalse());
+    verify(metricsMock, times(0)).reconciliationStarted(any(), any());
+    verify(metricsMock, times(0)).reconciliationFinished(any(), any(), any());
+  }
+
+  @Test
   void ifExecutionInProgressWaitsUntilItsFinished() {
     ResourceID resourceUid = eventAlreadyUnderProcessing();
 
