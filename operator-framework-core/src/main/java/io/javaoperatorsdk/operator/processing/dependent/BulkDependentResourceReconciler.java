@@ -148,12 +148,12 @@ class BulkDependentResourceReconciler<R, P extends HasMetadata, ID>
     }
 
     @Override
-    protected boolean isCreatable() {
+    protected boolean creatable() {
       return bulkDependentResource instanceof Creator<?, ?>;
     }
 
     @Override
-    protected boolean isUpdatable() {
+    protected boolean updatable() {
       return bulkDependentResource instanceof Updater<?, ?>;
     }
 

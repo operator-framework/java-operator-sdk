@@ -85,7 +85,7 @@ public abstract class AbstractDependentResource<R, P extends HasMetadata>
   protected ReconcileResult<R> reconcile(P primary, R actualResource, Context<P> context) {
     if (creatable() || updatable()) {
       if (actualResource == null) {
-        if (creatable) {
+        if (creatable()) {
           var desired = getOrComputeDesired(context);
           throwIfNull(desired, primary, "Desired");
           logForOperation("Creating", primary, desired);
@@ -244,12 +244,12 @@ public abstract class AbstractDependentResource<R, P extends HasMetadata>
   }
 
   protected boolean isCreatable() {
-    return creatable;
+    return creatable();
   }
 
   @SuppressWarnings("unused")
   protected boolean isUpdatable() {
-    return updatable;
+    return updatable();
   }
 
   @Override
