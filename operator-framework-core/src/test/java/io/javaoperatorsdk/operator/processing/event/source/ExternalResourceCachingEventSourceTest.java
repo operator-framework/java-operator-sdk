@@ -211,6 +211,17 @@ class ExternalResourceCachingEventSourceTest
     verify(eventHandler, times(0)).handleEvent(any());
   }
 
+  @Test
+  void recentResourceUpdateIsIgnoredForUnknownSecondaryResource() {
+    source.handleResources(primaryID1(), Set.of(testResource1()));
+
+    // testResource2 has a different id, so it is not present in the cache for primaryID1
+    var unknown = testResource2();
+    source.handleRecentResourceUpdate(primaryID1(), unknown, unknown);
+
+    assertThat(source.getSecondaryResources(primaryID1())).containsExactly(testResource1());
+  }
+
   public static class TestExternalCachingEventSource
       extends ExternalResourceCachingEventSource<SampleExternalResource, HasMetadata, String> {
     public TestExternalCachingEventSource() {

@@ -226,7 +226,7 @@ public abstract class ExternalResourceCachingEventSource<R, P extends HasMetadat
     if (actualValues != null) {
       var resourceId = resourceIDMapper.idFor(resource);
       R actualResource = actualValues.get(resourceId);
-      if (actualResource.equals(previousVersionOfResource)) {
+      if (actualResource != null && actualResource.equals(previousVersionOfResource)) {
         actualValues.put(resourceId, resource);
       }
     }
