@@ -36,6 +36,7 @@ import io.fabric8.kubernetes.client.KubernetesClientBuilder;
 import io.fabric8.kubernetes.client.utils.KubernetesSerialization;
 import io.javaoperatorsdk.operator.api.monitoring.Metrics;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
+import io.javaoperatorsdk.operator.api.reconciler.Experimental;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResourceFactory;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependent;
@@ -43,6 +44,7 @@ import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDep
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependentResourceConfig;
 import io.javaoperatorsdk.operator.processing.dependent.workflow.ManagedWorkflowFactory;
 import io.javaoperatorsdk.operator.processing.event.source.controller.ControllerEventSource;
+import io.javaoperatorsdk.operator.processing.event.source.informer.pool.InformerPool;
 
 /** An interface from which to retrieve configuration information. */
 public interface ConfigurationService {
@@ -476,4 +478,23 @@ public interface ConfigurationService {
   default boolean cloneSecondaryResourcesWhenGettingFromCache() {
     return false;
   }
+
+  /**
+   * The informer pool used to create and (when using the default, sharing pool) share the informers
+   * backing the event sources of all controllers managed by this {@code ConfigurationService}.
+   *
+   * <p><strong>Implementations must return the same instance on every call.</strong> The pool is
+   * effectively a per-{@code ConfigurationService} singleton: controllers share informers only if
+   * they resolve the same pool, and reference counting / informer shutdown are only correct if
+   * {@code getInformer} and {@code releaseInformer} operate on that same instance. This is
+   * intentionally not a {@code default} method, since a {@code default} could not cache the result
+   * and would hand out a fresh (unshared) pool on each call; {@link AbstractConfigurationService}
+   * provides a cached implementation backed by the default sharing pool.
+   *
+   * @return the informer pool for this configuration service
+   */
+  @Experimental(
+      "Only the configuration API around informer pooling could still change in a"
+          + " non-backwards-compatible way, the pooling itself is prod ready.")
+  InformerPool informerPool();
 }

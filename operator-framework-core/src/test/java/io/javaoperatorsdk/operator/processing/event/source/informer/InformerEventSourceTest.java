@@ -94,6 +94,10 @@ class InformerEventSourceTest {
     when(informerEventSourceConfiguration.getResourceClass()).thenReturn(Deployment.class);
     when(informerConfig.isComparableResourceVersions()).thenReturn(true);
     when(informerConfig.getEffectiveNamespaces(any())).thenReturn(DEFAULT_NAMESPACES_SET);
+    // a plain Long-returning Mockito mock yields 0 here, but a real unconfigured informer has no
+    // list limit; without this the pool would take the withLimit(...) branch when creating the
+    // informer
+    when(informerConfig.getInformerListLimit()).thenReturn(null);
 
     informerEventSource = buildInformerEventSource();
   }
@@ -101,7 +105,7 @@ class InformerEventSourceTest {
   private InformerEventSource<Deployment, TestCustomResource> buildInformerEventSource() {
     InformerEventSource<Deployment, TestCustomResource> eventSource =
         spy(
-            new InformerEventSource<>(informerEventSourceConfiguration, clientMock) {
+            new InformerEventSource<>(informerEventSourceConfiguration) {
               // mocking start
               @Override
               public synchronized void start() {}
@@ -259,22 +263,25 @@ class InformerEventSourceTest {
   void informerStoppedHandlerShouldBeCalledWhenInformerStops() {
     final var exception = new RuntimeException("Informer stopped exceptionally!");
     final var informerStoppedHandler = mock(InformerStoppedHandler.class);
+    // the informer is created by the pool, which uses the client from the configuration service, so
+    // the mock client has to be set there for its informer-start behavior to take effect
+    final var mockClient =
+        MockKubernetesClient.client(
+            Deployment.class,
+            unused -> {
+              throw exception;
+            });
     var configuration =
         ConfigurationService.newOverriddenConfigurationService(
             new BaseConfigurationService(),
-            o -> o.withInformerStoppedHandler(informerStoppedHandler));
+            o ->
+                o.withInformerStoppedHandler(informerStoppedHandler)
+                    .withKubernetesClient(mockClient));
 
     var mockControllerConfig = mock(ControllerConfiguration.class);
     when(mockControllerConfig.getConfigurationService()).thenReturn(configuration);
 
-    informerEventSource =
-        new InformerEventSource<>(
-            informerEventSourceConfiguration,
-            MockKubernetesClient.client(
-                Deployment.class,
-                unused -> {
-                  throw exception;
-                }));
+    informerEventSource = new InformerEventSource<>(informerEventSourceConfiguration);
     informerEventSource.setControllerConfiguration(mockControllerConfig);
 
     // by default informer fails to start if there is an exception in the client on start.

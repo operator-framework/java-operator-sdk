@@ -24,6 +24,7 @@ import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.MockKubernetesClient;
 import io.javaoperatorsdk.operator.OperatorException;
 import io.javaoperatorsdk.operator.api.config.BaseConfigurationService;
+import io.javaoperatorsdk.operator.api.config.ConfigurationService;
 import io.javaoperatorsdk.operator.api.config.MockControllerConfiguration;
 import io.javaoperatorsdk.operator.api.config.informer.InformerEventSourceConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
@@ -202,12 +203,14 @@ class EventSourceManagerTest {
 
   private EventSourceManager initManager() {
     final var configuration = MockControllerConfiguration.forResource(ConfigMap.class);
-    final var configService = new BaseConfigurationService();
+    final var mockClient = MockKubernetesClient.client(ConfigMap.class);
+    final var configService =
+        ConfigurationService.newOverriddenConfigurationService(
+            new BaseConfigurationService(),
+            overrider -> overrider.withKubernetesClient(mockClient));
     when(configuration.getConfigurationService()).thenReturn(configService);
 
-    final Controller controller =
-        new Controller(
-            mock(Reconciler.class), configuration, MockKubernetesClient.client(ConfigMap.class));
+    final Controller controller = new Controller(mock(Reconciler.class), configuration, mockClient);
     return new EventSourceManager(controller);
   }
 }

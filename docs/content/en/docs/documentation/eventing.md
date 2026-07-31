@@ -347,3 +347,69 @@ for [primary resources](https://github.com/operator-framework/java-operator-sdk/
 See
 also [CaffeineBoundedItemStores](https://github.com/operator-framework/java-operator-sdk/blob/main/caffeine-bounded-cache-support/src/main/java/io/javaoperatorsdk/operator/processing/event/source/cache/CaffeineBoundedItemStores.java)
 for more details.
+
+### Sharing Informers Between Controllers (Informer Pool)
+
+{{% alert title="Experimental" color="warning" %}}
+Informer pooling is marked `@Experimental`: the feature itself is production ready, but its
+configuration API may still change in a non-backwards-compatible way.
+{{% /alert %}}
+
+By default JOSDK maintains an *informer pool* so that informers are **shared** across controllers
+and event sources. When several `InformerEventSource`s (whether belonging to different controllers,
+or dynamically registered at runtime) watch the same resource type with an equivalent configuration,
+they are all backed by a single underlying `SharedIndexInformer` instead of one informer each. This
+reduces memory usage and the number of watch connections opened against the API server — which
+matters in operators where many controllers watch the same secondary resource type (for example
+`ConfigMap` or `Secret`).
+
+Two event sources share an informer when their effective informer configuration matches on all of:
+
+- the `KubernetesClient` they watch through, compared by instance: normally every event source
+  resolves the operator's own client, but an event source watching another cluster brings its own
+  (see [multi-cluster](#informereventsource-multi-cluster-support)). Two separate client instances
+  never share an informer, not even when they connect to the same API server — they may differ in
+  credentials, impersonation or TLS material, and the informer keeps using the client it was created
+  from,
+- the resource type (or the group/version/kind for generic resources),
+- the watched namespace,
+- the label, field and shard selectors,
+- the configured [item store](#bounded-caches-for-informers).
+
+The `informerListLimit` is intentionally *not* part of this identity: if two otherwise-equivalent
+event sources request a different list limit, the existing informer is reused (a warning is logged
+and the first-configured limit is kept). Indexers are also not part of the identity: they are
+registered on the shared informer under a name qualified with the controller and event source that
+added them, so index names are private to an event source and cannot collide with those of another
+one. You keep looking indexes up by the name you registered, and the indexers of an event source are
+removed from the shared informer when it stops using it.
+
+The pool is reference-counted: the shared informer is created on first use and only stopped once the
+last event source using it is de-registered (or its controller stops). Dynamically registering an
+event source for a resource that is already backed by a running informer reuses that informer, and
+the initial state already in its cache is replayed to the newly added handler.
+
+#### Selecting the pooling strategy
+
+The strategy is provided by the
+[`InformerPool`](https://github.com/operator-framework/java-operator-sdk/blob/main/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/processing/event/source/informer/pool/InformerPool.java)
+configured on the `ConfigurationService`. Two implementations are available:
+
+- [`DefaultInformerPool`](https://github.com/operator-framework/java-operator-sdk/blob/main/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/processing/event/source/informer/pool/DefaultInformerPool.java)
+  (the default): shares informers as described above.
+- [`NonSharingInformerPool`](https://github.com/operator-framework/java-operator-sdk/blob/main/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/processing/event/source/informer/pool/NonSharingInformerPool.java):
+  never shares informers, creating a dedicated informer for every event source. Use this to opt out
+  of pooling and restore the pre-pooling behavior.
+
+You can override the strategy through the `ConfigurationService`:
+
+```java
+Operator operator = new Operator(overrider ->
+    overrider.withInformerPool(new NonSharingInformerPool()));
+```
+
+A custom strategy has to extend
+[`AbstractInformerPool`](https://github.com/operator-framework/java-operator-sdk/blob/main/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/processing/event/source/informer/pool/AbstractInformerPool.java),
+which is what `withInformerPool` accepts: it already creates the informers from an
+`InformerClassifier` and starts them, leaving the subclass to decide only whether and how they are
+shared. `InformerPool` itself is just the narrower contract that the event sources consume.

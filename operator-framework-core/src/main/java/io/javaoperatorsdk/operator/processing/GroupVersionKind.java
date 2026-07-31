@@ -136,4 +136,8 @@ public class GroupVersionKind {
   public String toString() {
     return toGVKString();
   }
+
+  public String getApiVersion() {
+    return apiVersion;
+  }
 }
