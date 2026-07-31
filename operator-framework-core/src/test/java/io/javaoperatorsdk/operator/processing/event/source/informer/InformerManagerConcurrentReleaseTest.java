@@ -76,7 +76,7 @@ class InformerManagerConcurrentReleaseTest {
   void concurrentStopAndNamespaceChangeReleaseTheInformerOnlyOnce() throws Exception {
     var manager =
         new InformerManager<Deployment, InformerEventSourceConfiguration<Deployment>>(
-            configuration, eventHandler);
+            configuration, eventHandler, "event-source");
     manager.setControllerConfiguration(controllerConfiguration());
     manager.start();
     // a second controller shares the very same informer and never releases it, so the pool has to

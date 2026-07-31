@@ -51,14 +51,19 @@ class InformerManager<R extends HasMetadata, C extends Informable<R>>
   private final Map<String, InformerWrapper<R>> sources = new ConcurrentHashMap<>();
   private final C configuration;
   private final ResourceEventHandler<R> eventHandler;
+  // the identity of the event source these informers are managed for, towards the pool and towards
+  // the index names on a shared informer. Deliberately the event source's own name rather than
+  // InformerConfiguration#getName, which is null unless the event source was explicitly named
+  private final String eventSourceName;
   private final Map<String, Function<R, List<String>>> indexers = new HashMap<>();
   private ControllerConfiguration<R> controllerConfiguration;
   private InformerPool informerPool;
   private KubernetesClient targetClient;
 
-  InformerManager(C configuration, ResourceEventHandler<R> eventHandler) {
+  InformerManager(C configuration, ResourceEventHandler<R> eventHandler, String eventSourceName) {
     this.configuration = configuration;
     this.eventHandler = eventHandler;
+    this.eventSourceName = eventSourceName;
   }
 
   void setControllerConfiguration(ControllerConfiguration<R> controllerConfiguration) {
@@ -139,17 +144,14 @@ class InformerManager<R extends HasMetadata, C extends Informable<R>>
     final InformerWrapper<R> source;
     InformerClassifier<R> classifier = getClassifier(namespaceIdentifier);
     var informer =
-        informerPool.getInformer(
-            controllerConfiguration.getName(),
-            configuration.getInformerConfig().getName(),
-            classifier);
+        informerPool.getInformer(controllerConfiguration.getName(), eventSourceName, classifier);
     source =
         new InformerWrapper<>(
             informer,
             namespaceIdentifier,
             classifier,
             controllerConfiguration.getName(),
-            configuration.getInformerConfig().getName());
+            eventSourceName);
     sources.put(namespaceIdentifier, source);
     source.addIndexers(indexers);
     source.addEventHandler(eventHandler);
@@ -219,9 +221,7 @@ class InformerManager<R extends HasMetadata, C extends Informable<R>>
     wrapper.removeIndexers();
     informerPool
         .releaseInformer(
-            controllerConfiguration.getName(),
-            configuration.getInformerConfig().getName(),
-            wrapper.getClassifier())
+            controllerConfiguration.getName(), eventSourceName, wrapper.getClassifier())
         .ifPresent(i -> i.removeEventHandler(eventHandler));
   }
 

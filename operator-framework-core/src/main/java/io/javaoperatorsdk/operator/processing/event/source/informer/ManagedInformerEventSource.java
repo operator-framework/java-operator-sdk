@@ -165,7 +165,7 @@ public abstract class ManagedInformerEventSource<
       return;
     }
     temporaryResourceCache = new TemporaryResourceCache<>(comparableResourceVersions, this);
-    this.cache = new InformerManager<>(configuration, this);
+    this.cache = new InformerManager<>(configuration, this, name());
     cache.setControllerConfiguration(controllerConfiguration);
     cache.addIndexers(indexers);
     // A dynamically registered event source may join an already-running shared informer whose cache
