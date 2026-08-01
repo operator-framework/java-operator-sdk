@@ -498,6 +498,8 @@ public interface ConfigurationService {
       "Only the configuration API around informer pooling could still change in a"
           + " non-backwards-compatible way, the pooling itself is prod ready.")
   default InformerPool informerPool() {
-    return new DefaultInformerPool();
+    var pool = new DefaultInformerPool();
+    pool.setConfigurationService(this);
+    return pool;
   }
 }
