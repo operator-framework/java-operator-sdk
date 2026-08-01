@@ -71,7 +71,7 @@ project, as shown below:
 - [Debezium Operator](https://github.com/debezium/debezium-operator): Debezium Operator adds Change-Data-Capture capabilities to your Kubernetes or Openshift cluster by  providing an easy way to run and manage  [Debezium Server](https://debezium.io/documentation/reference/stable/operations/debezium-server.html) instances.
 - [Keycloak operator](https://github.com/keycloak/keycloak/tree/main/operator): the official Keycloak operator, built with Quarkus and JOSDK.
 - [Apache Hive Kubernetes Operator](https://github.com/apache/hive/tree/master/packaging/src/kubernetes/src/java/org/apache/hive/kubernetes/operator)
-- [OpenMetadata Operator](https://github.com/open-metadata/OpenMetadata/tree/main/openmetadata-k8s-operator)
+- [OpenMetadata Operator](https://github.com/open-metadata/OpenMetadata/tree/main/openmetadata-k8s-operator) for AI context, data cataloging, and metadata management service
 - [Strimzi Access operator](https://github.com/strimzi/kafka-access-operator). While the core Strimzi operator development predates  
   JOSDK, but new components like the Access operator is using the framework.
 - [Wanaku](https://github.com/wanaku-ai/wanaku/tree/main/apps/wanaku-operator) MCP Router Operator
