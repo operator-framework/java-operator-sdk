@@ -44,6 +44,7 @@ import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDep
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependentResourceConfig;
 import io.javaoperatorsdk.operator.processing.dependent.workflow.ManagedWorkflowFactory;
 import io.javaoperatorsdk.operator.processing.event.source.controller.ControllerEventSource;
+import io.javaoperatorsdk.operator.processing.event.source.informer.pool.DefaultInformerPool;
 import io.javaoperatorsdk.operator.processing.event.source.informer.pool.InformerPool;
 
 /** An interface from which to retrieve configuration information. */
@@ -496,5 +497,7 @@ public interface ConfigurationService {
   @Experimental(
       "Only the configuration API around informer pooling could still change in a"
           + " non-backwards-compatible way, the pooling itself is prod ready.")
-  InformerPool informerPool();
+  default InformerPool informerPool() {
+    return new DefaultInformerPool();
+  }
 }
