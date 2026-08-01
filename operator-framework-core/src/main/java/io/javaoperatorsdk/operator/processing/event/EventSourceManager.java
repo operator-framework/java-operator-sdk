@@ -148,7 +148,7 @@ public class EventSourceManager<P extends HasMetadata>
     return null;
   }
 
-  @SuppressWarnings("rawtypes")
+  @SuppressWarnings({"rawtypes", "unchecked"})
   public final synchronized <R> void registerEventSource(EventSource<R, P> eventSource)
       throws OperatorException {
     Objects.requireNonNull(eventSource, "EventSource must not be null");
@@ -250,7 +250,9 @@ public class EventSourceManager<P extends HasMetadata>
       }
     }
     // The start itself is blocking thus blocking only the threads which are attempt to start the
-    // actual event source. Think of this as a form of lock striping.
+    // actual event source. Think of this as a form of lock striping. Note that two event sources
+    // backed by the same pooled informer may reach this concurrently; starting an already started
+    // informer is a no-op.
     eventSource.start();
     return eventSource;
   }

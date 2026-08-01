@@ -62,6 +62,9 @@ class ControllerTest {
   @Test
   void crdShouldNotBeCheckedForNativeResources() {
     final var client = MockKubernetesClient.client(Secret.class);
+    final var configurationService =
+        ConfigurationService.newOverriddenConfigurationService(
+            this.configurationService, o -> o.withKubernetesClient(client));
     final var configuration =
         MockControllerConfiguration.forResource(Secret.class, configurationService);
     final var controller = new Controller<Secret>(reconciler, configuration, client);
@@ -75,7 +78,8 @@ class ControllerTest {
     final var metrics = mock(Metrics.class);
     final var configurationService =
         ConfigurationService.newOverriddenConfigurationService(
-            new BaseConfigurationService(), o -> o.withMetrics(metrics));
+            new BaseConfigurationService(),
+            o -> o.withMetrics(metrics).withKubernetesClient(client));
     final var configuration =
         MockControllerConfiguration.forResource(Secret.class, configurationService);
     final var controller = new Controller<Secret>(reconciler, configuration, client);
@@ -95,7 +99,8 @@ class ControllerTest {
     final var metrics = mock(Metrics.class);
     final var configurationService =
         ConfigurationService.newOverriddenConfigurationService(
-            new BaseConfigurationService(), o -> o.withMetrics(metrics));
+            new BaseConfigurationService(),
+            o -> o.withMetrics(metrics).withKubernetesClient(client));
     final var configuration =
         MockControllerConfiguration.forResource(Secret.class, configurationService);
     final var controller = new Controller<Secret>(reconciler, configuration, client);
@@ -110,7 +115,8 @@ class ControllerTest {
     final var client = MockKubernetesClient.client(TestCustomResource.class);
     ConfigurationService configurationService =
         ConfigurationService.newOverriddenConfigurationService(
-            new BaseConfigurationService(), o -> o.checkingCRDAndValidateLocalModel(false));
+            new BaseConfigurationService(),
+            o -> o.checkingCRDAndValidateLocalModel(false).withKubernetesClient(client));
 
     final var configuration =
         MockControllerConfiguration.forResource(TestCustomResource.class, configurationService);

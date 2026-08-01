@@ -28,7 +28,10 @@ import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.javaoperatorsdk.operator.Operator;
 import io.javaoperatorsdk.operator.api.monitoring.Metrics;
+import io.javaoperatorsdk.operator.api.reconciler.Experimental;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResourceFactory;
+import io.javaoperatorsdk.operator.processing.event.source.informer.pool.AbstractInformerPool;
+import io.javaoperatorsdk.operator.processing.event.source.informer.pool.InformerPool;
 
 @SuppressWarnings({"unused", "UnusedReturnValue"})
 public class ConfigurationServiceOverrider {
@@ -53,6 +56,7 @@ public class ConfigurationServiceOverrider {
   private Set<Class<? extends HasMetadata>> defaultNonSSAResource;
   private Boolean useSSAToPatchPrimaryResource;
   private Boolean cloneSecondaryResourcesWhenGettingFromCache;
+  private InformerPool informerPool;
 
   @SuppressWarnings("rawtypes")
   private DependentResourceFactory dependentResourceFactory;
@@ -173,6 +177,21 @@ public class ConfigurationServiceOverrider {
   public ConfigurationServiceOverrider withCloneSecondaryResourcesWhenGettingFromCache(
       boolean value) {
     this.cloneSecondaryResourcesWhenGettingFromCache = value;
+    return this;
+  }
+
+  /**
+   * Overrides the informer pool strategy used to create/share the informers backing the event
+   * sources. When not set, the default (informer-sharing) pool is used.
+   *
+   * <p>Custom strategies extend {@link AbstractInformerPool}, which already takes care of creating
+   * and starting the informers.
+   */
+  @Experimental(
+      "Only the configuration API around informer pooling could still change in a"
+          + " non-backwards-compatible way, the pooling itself is prod ready.")
+  public ConfigurationServiceOverrider withInformerPool(AbstractInformerPool informerPool) {
+    this.informerPool = informerPool;
     return this;
   }
 
@@ -308,6 +327,15 @@ public class ConfigurationServiceOverrider {
         return overriddenValueOrDefault(
             cloneSecondaryResourcesWhenGettingFromCache,
             ConfigurationService::cloneSecondaryResourcesWhenGettingFromCache);
+      }
+
+      @Override
+      public InformerPool informerPool() {
+        if (informerPool == null) {
+          return super.informerPool();
+        }
+        informerPool.setConfigurationService(this);
+        return informerPool;
       }
     };
   }
