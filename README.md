@@ -76,6 +76,7 @@ project, as shown below:
   JOSDK, but new components like the Access operator is using the framework.
 - [Wanaku](https://github.com/wanaku-ai/wanaku/tree/main/apps/wanaku-operator) MCP Router Operator
 - [Apicurio Registry Operator](https://github.com/Apicurio/apicurio-registry/tree/main/operator) 
+- [Kaap](https://github.com/datastax/kaap) autoscaling Operator for Apache Pulsar
 - [EureKubeOperator](https://medium.com/@heesuk.dev/implementing-kubernetes-operator-for-eureka-service-discovery-integration-by-java-operator-sdk-d21d8087c38e): integrates service discovery of Eureka and Kubernetes using the framework - developed by 11street. It is not released as an open source yet but is very interesting to read about this problem and how it is solved by an operator written with JOSDK.
 - [Locust k8s operator](https://github.com/AbdelrhmanHamouda/locust-k8s-operator): Cloud native solution to run performance tests on any Kubernetes cluster.
 - [ExposedApp operator](https://github.com/halkyonio/exposedapp-rhdblog): a sample operator
