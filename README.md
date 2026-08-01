@@ -67,8 +67,8 @@ project, as shown below:
 
 - [Apache Flink Kubernetes Operator](https://github.com/apache/flink-kubernetes-operator) is the market leader among Flink operators.
 - [Apache Spark Kubernetes Operator](https://github.com/apache/spark-kubernetes-operator) emerging operator for Spark.
-- [kroxylicious](https://github.com/kroxylicious/kroxylicious/tree/main/kroxylicious-kubernetes/kroxylicious-operator) Kafka proxy operator  
-- [Debezium Operator](https://github.com/debezium/debezium-operator): Debezium Operator adds Change-Data-Capture capabilities to your Kubernetes or Openshift cluster by  providing an easy way to run and manage  [Debezium Server](https://debezium.io/documentation/reference/stable/operations/debezium-server.html) instances.
+- [kroxylicious](https://github.com/kroxylicious/kroxylicious/tree/main/kroxylicious-kubernetes/kroxylicious-operator) Kafka proxy operator
+- [Debezium Operator](https://github.com/debezium/debezium-operator): Debezium Operator adds Change-Data-Capture capabilities to your Kubernetes or OpenShift cluster by providing an easy way to run and manage [Debezium Server](https://debezium.io/documentation/reference/stable/operations/debezium-server.html) instances.
 - [Keycloak operator](https://github.com/keycloak/keycloak/tree/main/operator): the official Keycloak operator, built with Quarkus and JOSDK.
 - [Apache Hive Kubernetes Operator](https://github.com/apache/hive/tree/master/packaging/src/kubernetes/src/java/org/apache/hive/kubernetes/operator)
 - [OpenMetadata Operator](https://github.com/open-metadata/OpenMetadata/tree/main/openmetadata-k8s-operator) for AI context, data cataloging, and metadata management service
