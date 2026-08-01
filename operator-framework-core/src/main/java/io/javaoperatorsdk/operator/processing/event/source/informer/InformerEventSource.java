@@ -24,8 +24,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
-import io.fabric8.kubernetes.client.KubernetesClient;
-import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.informers.ResourceEventHandler;
 import io.javaoperatorsdk.operator.api.config.informer.InformerEventSourceConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.EventSourceContext;
@@ -54,20 +52,18 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
   private final PrimaryToSecondaryIndex<R> primaryToSecondaryIndex;
   private final PrimaryToSecondaryMapper<P> primaryToSecondaryMapper;
 
+  /**
+   * @deprecated use {@link InformerEventSource(InformerEventSourceConfiguration)}
+   */
+  // todo migrate sample, separate PR?
+  @Deprecated(forRemoval = true)
   public InformerEventSource(
       InformerEventSourceConfiguration<R> configuration, EventSourceContext<P> context) {
-    this(configuration, configuration.getKubernetesClient().orElse(context.getClient()));
+    this(configuration);
   }
 
-  @SuppressWarnings({"unchecked", "rawtypes"})
-  InformerEventSource(InformerEventSourceConfiguration<R> configuration, KubernetesClient client) {
-    super(
-        configuration.name(),
-        configuration
-            .getGroupVersionKind()
-            .map(gvk -> client.genericKubernetesResources(gvk.apiVersion(), gvk.getKind()))
-            .orElseGet(() -> (MixedOperation) client.resources(configuration.getResourceClass())),
-        configuration);
+  public InformerEventSource(InformerEventSourceConfiguration<R> configuration) {
+    super(configuration.name(), configuration);
     // If there is a primary to secondary mapper there is no need for primary to secondary index.
     primaryToSecondaryMapper = configuration.getPrimaryToSecondaryMapper();
     if (usePrimaryToSecondaryIndex()) {

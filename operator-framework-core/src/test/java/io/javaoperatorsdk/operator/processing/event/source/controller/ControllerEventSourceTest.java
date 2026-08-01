@@ -27,6 +27,7 @@ import io.javaoperatorsdk.operator.MockKubernetesClient;
 import io.javaoperatorsdk.operator.ReconcilerUtilsInternal;
 import io.javaoperatorsdk.operator.TestUtils;
 import io.javaoperatorsdk.operator.api.config.BaseConfigurationService;
+import io.javaoperatorsdk.operator.api.config.ConfigurationService;
 import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.config.ResolvedControllerConfiguration;
 import io.javaoperatorsdk.operator.api.config.informer.InformerConfiguration;
@@ -59,7 +60,11 @@ class ControllerEventSourceTest
 
   @BeforeEach
   public void setup() {
-    when(controllerConfig.getConfigurationService()).thenReturn(new BaseConfigurationService());
+    var clientMock = MockKubernetesClient.client(TestCustomResource.class);
+    when(controllerConfig.getConfigurationService())
+        .thenReturn(
+            ConfigurationService.newOverriddenConfigurationService(
+                new BaseConfigurationService(), o -> o.withKubernetesClient(clientMock)));
     var ic = mock(InformerConfiguration.class);
     when(controllerConfig.getInformerConfig()).thenReturn(ic);
 

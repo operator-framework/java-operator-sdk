@@ -122,6 +122,21 @@ class ReconciliationDispatcherTest {
       boolean useFinalizer) {
 
     final Class<R> resourceClass = (Class<R>) customResource.getClass();
+    final var kubernetesClient = MockKubernetesClient.client(resourceClass);
+    // The informer pool obtains its client from the ConfigurationService, so the mock client has to
+    // be set there as well (not only on the Controller); otherwise starting the informers would hit
+    // a real cluster. Cloner and SSA settings are re-supplied so the re-wrapping does not drop
+    // them.
+    configurationService =
+        ConfigurationService.newOverriddenConfigurationService(
+            configurationService,
+            overrider ->
+                overrider
+                    .withKubernetesClient(kubernetesClient)
+                    .withResourceCloner(configurationService.getResourceCloner())
+                    .withUseSSAToPatchPrimaryResource(
+                        configurationService.useSSAToPatchPrimaryResource()));
+
     configuration =
         configuration == null
             ? MockControllerConfiguration.forResource(resourceClass, configurationService)
@@ -139,7 +154,7 @@ class ReconciliationDispatcherTest {
         .thenReturn(Optional.of(Duration.ofHours(RECONCILIATION_MAX_INTERVAL)));
 
     Controller<R> controller =
-        new Controller<>(reconciler, configuration, MockKubernetesClient.client(resourceClass)) {
+        new Controller<>(reconciler, configuration, kubernetesClient) {
           @Override
           public boolean useFinalizer() {
             return useFinalizer;

@@ -76,6 +76,7 @@ public interface InformerEventSourceConfiguration<R extends HasMetadata> extends
 
   <P extends HasMetadata> PrimaryToSecondaryMapper<P> getPrimaryToSecondaryMapper();
 
+  // todo deprecate
   Optional<GroupVersionKind> getGroupVersionKind();
 
   default String name() {
@@ -167,7 +168,7 @@ public interface InformerEventSourceConfiguration<R extends HasMetadata> extends
       this.resourceClass = resourceClass;
       this.groupVersionKind = groupVersionKind;
       this.primaryResourceClass = primaryResourceClass;
-      this.config = InformerConfiguration.builder(resourceClass);
+      this.config = InformerConfiguration.builder(resourceClass, groupVersionKind);
     }
 
     public Builder<R> withName(String name) {
