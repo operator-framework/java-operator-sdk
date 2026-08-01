@@ -30,6 +30,7 @@ import io.javaoperatorsdk.operator.ReconcilerUtilsInternal;
 import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.config.Utils;
 import io.javaoperatorsdk.operator.api.reconciler.Constants;
+import io.javaoperatorsdk.operator.processing.GroupVersionKind;
 import io.javaoperatorsdk.operator.processing.event.source.cache.BoundedItemStore;
 import io.javaoperatorsdk.operator.processing.event.source.filter.GenericFilter;
 import io.javaoperatorsdk.operator.processing.event.source.filter.OnAddFilter;
@@ -42,6 +43,7 @@ import static io.javaoperatorsdk.operator.api.reconciler.Constants.*;
 public class InformerConfiguration<R extends HasMetadata> {
   private final Builder builder = new Builder();
   private final Class<R> resourceClass;
+  private final GroupVersionKind resourceGroupVersionKind;
   private final String resourceTypeName;
   private String name;
   private Set<String> namespaces;
@@ -59,6 +61,7 @@ public class InformerConfiguration<R extends HasMetadata> {
 
   protected InformerConfiguration(
       Class<R> resourceClass,
+      GroupVersionKind resourceGroupVersionKind,
       String name,
       Set<String> namespaces,
       boolean followControllerNamespaceChanges,
@@ -74,7 +77,7 @@ public class InformerConfiguration<R extends HasMetadata> {
       Boolean comparableResourceVersions,
       // TODO for removal in major release
       Duration ghostResourceCacheCheckInterval) {
-    this(resourceClass);
+    this(resourceClass, resourceGroupVersionKind);
     this.name = name;
     this.namespaces = namespaces;
     this.followControllerNamespaceChanges = followControllerNamespaceChanges;
@@ -90,9 +93,14 @@ public class InformerConfiguration<R extends HasMetadata> {
     this.comparableResourceVersions = comparableResourceVersions;
   }
 
-  private InformerConfiguration(Class<R> resourceClass) {
+  private InformerConfiguration(Class<R> resourceClass, GroupVersionKind resourceGroupVersionKind) {
     this.resourceClass = resourceClass;
+    this.resourceGroupVersionKind = resourceGroupVersionKind;
     this.resourceTypeName =
+        // note the direction: this is true for GenericKubernetesResource, but also when the
+        // resource
+        // class is a supertype of it - i.e. a plain HasMetadata, for which no type name can be
+        // resolved from @Group/@Version annotations
         resourceClass.isAssignableFrom(GenericKubernetesResource.class)
             // in general this is irrelevant now for secondary resources it is used just by
             // controller
@@ -103,8 +111,14 @@ public class InformerConfiguration<R extends HasMetadata> {
 
   @SuppressWarnings({"rawtypes", "unchecked"})
   public static <R extends HasMetadata> InformerConfiguration<R>.Builder builder(
+      Class<R> resourceClass, GroupVersionKind groupVersionKind) {
+    return new InformerConfiguration(resourceClass, groupVersionKind).builder;
+  }
+
+  @SuppressWarnings({"rawtypes", "unchecked"})
+  public static <R extends HasMetadata> InformerConfiguration<R>.Builder builder(
       Class<R> resourceClass) {
-    return new InformerConfiguration(resourceClass).builder;
+    return new InformerConfiguration(resourceClass, null).builder;
   }
 
   @SuppressWarnings({"rawtypes", "unchecked"})
@@ -112,6 +126,7 @@ public class InformerConfiguration<R extends HasMetadata> {
       InformerConfiguration<R> original) {
     return new InformerConfiguration(
             original.resourceClass,
+            original.resourceGroupVersionKind,
             original.name,
             original.namespaces,
             original.followControllerNamespaceChanges,
@@ -303,6 +318,10 @@ public class InformerConfiguration<R extends HasMetadata> {
    */
   public Long getInformerListLimit() {
     return informerListLimit;
+  }
+
+  public GroupVersionKind getResourceGroupVersionKind() {
+    return resourceGroupVersionKind;
   }
 
   public FieldSelector getFieldSelector() {
@@ -500,8 +519,18 @@ public class InformerConfiguration<R extends HasMetadata> {
     }
 
     public Builder withFieldSelector(FieldSelector fieldSelector) {
-      InformerConfiguration.this.fieldSelector = fieldSelector;
+      // an empty selector filters nothing, so it must not be distinguishable from having none at
+      // all: the informer pool keys on the field selector, and the annotation path always builds
+      // one (@Informer#fieldSelector defaults to {}) where the programmatic path leaves it null,
+      // which would otherwise stop the two from sharing an informer
+      InformerConfiguration.this.fieldSelector = isEmpty(fieldSelector) ? null : fieldSelector;
       return this;
+    }
+
+    private static boolean isEmpty(FieldSelector fieldSelector) {
+      return fieldSelector == null
+          || fieldSelector.getFields() == null
+          || fieldSelector.getFields().isEmpty();
     }
 
     public Builder withComparableResourceVersions(boolean comparableResourceVersions) {

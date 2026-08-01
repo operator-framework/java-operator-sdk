@@ -26,12 +26,12 @@ import io.fabric8.kubernetes.api.model.KubernetesResourceList;
 import io.fabric8.kubernetes.api.model.authorization.v1.ResourceRule;
 import io.fabric8.kubernetes.api.model.authorization.v1.SelfSubjectRulesReview;
 import io.fabric8.kubernetes.api.model.authorization.v1.SubjectRulesReviewStatus;
+import io.fabric8.kubernetes.client.Config;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.V1ApiextensionAPIGroupDSL;
 import io.fabric8.kubernetes.client.dsl.AnyNamespaceOperation;
 import io.fabric8.kubernetes.client.dsl.ApiextensionsAPIGroupDSL;
 import io.fabric8.kubernetes.client.dsl.FilterWatchListDeletable;
-import io.fabric8.kubernetes.client.dsl.Informable;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.NamespaceableResource;
 import io.fabric8.kubernetes.client.dsl.NonNamespaceOperation;
@@ -112,9 +112,9 @@ public class MockKubernetesClient {
 
     when(filterable.runnableInformer(anyLong())).thenReturn(informer);
 
-    Informable<T> informable = mock(Informable.class);
-    when(filterable.withLimit(anyLong())).thenReturn(informable);
-    when(informable.runnableInformer(anyLong())).thenReturn(informer);
+    // The informer pool casts the result of withLimit() back to FilterWatchListDeletable, so it has
+    // to return the filterable mock (which is one) rather than a plain Informable mock.
+    when(filterable.withLimit(anyLong())).thenReturn(filterable);
 
     when(client.resources(clazz)).thenReturn(resources);
     when(client.leaderElector())
@@ -137,6 +137,10 @@ public class MockKubernetesClient {
 
     final var serialization = new KubernetesSerialization();
     when(client.getKubernetesSerialization()).thenReturn(serialization);
+
+    final var config = mock(Config.class);
+    when(config.getMasterUrl()).thenReturn("https://localhost:8443/");
+    when(client.getConfiguration()).thenReturn(config);
 
     return client;
   }

@@ -97,6 +97,18 @@ class GroupVersionKindTest {
   }
 
   @Test
+  void comparingAnExplicitPluralWithAnUnspecifiedOneIsSymmetricAndDoesNotThrow() {
+    final var original = new GroupVersionKind("josdk.io", "v1", "MyKind");
+    final var withPlural = GroupVersionKindPlural.gvkWithPlural(original, "MyPlural");
+    final var withoutPlural = GroupVersionKindPlural.gvkWithPlural(original, null);
+
+    // an unspecified plural is not a wildcard: it carries no plural form, just like the plain
+    // GroupVersionKind it compares equal to
+    assertThat(withPlural).isNotEqualTo(withoutPlural);
+    assertThat(withoutPlural).isNotEqualTo(withPlural);
+  }
+
+  @Test
   void equals() {
     final var original = new GroupVersionKind("josdk.io", "v1", "MyKind");
     assertEquals(original, original);
