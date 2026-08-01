@@ -24,6 +24,9 @@ import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.javaoperatorsdk.operator.ReconcilerUtilsInternal;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
+import io.javaoperatorsdk.operator.processing.event.source.informer.pool.AbstractInformerPool;
+import io.javaoperatorsdk.operator.processing.event.source.informer.pool.DefaultInformerPool;
+import io.javaoperatorsdk.operator.processing.event.source.informer.pool.InformerPool;
 
 /**
  * An abstract implementation of {@link ConfigurationService} meant to ease custom implementations
@@ -35,6 +38,7 @@ public class AbstractConfigurationService implements ConfigurationService {
   private KubernetesClient client;
   private Cloner cloner;
   private ExecutorServiceManager executorServiceManager;
+  private AbstractInformerPool informerPool;
 
   protected AbstractConfigurationService(Version version) {
     this(version, null);
@@ -189,5 +193,17 @@ public class AbstractConfigurationService implements ConfigurationService {
       executorServiceManager = ConfigurationService.super.getExecutorServiceManager();
     }
     return executorServiceManager;
+  }
+
+  @Override
+  public synchronized InformerPool informerPool() {
+    // cached so that all controllers backed by this ConfigurationService share the same pool and
+    // can therefore share the underlying informers; synchronized so concurrent first-access from
+    // multiple controllers cannot create (and share out) more than one pool instance
+    if (informerPool == null) {
+      informerPool = new DefaultInformerPool();
+      informerPool.setConfigurationService(this);
+    }
+    return informerPool;
   }
 }

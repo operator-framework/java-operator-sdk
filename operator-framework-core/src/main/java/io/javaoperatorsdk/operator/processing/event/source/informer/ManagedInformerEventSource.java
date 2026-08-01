@@ -32,7 +32,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
-import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.informers.ResourceEventHandler;
 import io.javaoperatorsdk.operator.OperatorException;
 import io.javaoperatorsdk.operator.ReconcilerUtilsInternal;
@@ -51,7 +50,6 @@ import io.javaoperatorsdk.operator.processing.event.source.ResourceAction;
 
 import static io.javaoperatorsdk.operator.api.reconciler.Experimental.API_MIGHT_CHANGE;
 
-@SuppressWarnings("rawtypes")
 public abstract class ManagedInformerEventSource<
         R extends HasMetadata, P extends HasMetadata, C extends Informable<R>>
     extends AbstractEventSource<R, P>
@@ -70,13 +68,11 @@ public abstract class ManagedInformerEventSource<
   private final C configuration;
   private final Map<String, Function<R, List<String>>> indexers = new HashMap<>();
   protected TemporaryResourceCache<R> temporaryResourceCache;
-  protected MixedOperation client;
 
-  protected ManagedInformerEventSource(String name, MixedOperation client, C configuration) {
+  protected ManagedInformerEventSource(String name, C configuration) {
     super(configuration.getResourceClass(), name);
     this.comparableResourceVersions =
         configuration.getInformerConfig().isComparableResourceVersions();
-    this.client = client;
     this.configuration = configuration;
   }
 
@@ -85,10 +81,14 @@ public abstract class ManagedInformerEventSource<
   }
 
   @Override
-  public void changeNamespaces(Set<String> namespaces) {
-    if (allowsNamespaceChanges()) {
-      manager().changeNamespaces(namespaces);
+  public synchronized void changeNamespaces(Set<String> namespaces) {
+    // a stopped event source has released its informers and its manager holds no sources, so every
+    // requested namespace would look new: it would acquire and start pooled informers that nothing
+    // can ever release, since stop() short-circuits on a non-running event source
+    if (!isRunning() || !allowsNamespaceChanges()) {
+      return;
     }
+    manager().changeNamespaces(namespaces);
   }
 
   /**
@@ -159,17 +159,31 @@ public abstract class ManagedInformerEventSource<
       Boolean deletedFinalStateUnknown,
       Set<ResourceID> relatedPrimaryIDs);
 
-  @SuppressWarnings("unchecked")
   @Override
   public synchronized void start() {
     if (isRunning()) {
       return;
     }
     temporaryResourceCache = new TemporaryResourceCache<>(comparableResourceVersions, this);
-    this.cache = new InformerManager<>(client, configuration, this);
+    this.cache = new InformerManager<>(configuration, this, name());
     cache.setControllerConfiguration(controllerConfiguration);
     cache.addIndexers(indexers);
-    manager().start();
+    // A dynamically registered event source may join an already-running shared informer whose cache
+    // is already populated. Those pre-existing resources are still delivered to this newly added
+    // handler: the underlying Fabric8 informer replays the current cache contents to every handler
+    // at registration time (see SharedProcessor#addProcessorListener). Replaying them here as well
+    // would deliver every pre-existing resource twice.
+    try {
+      manager().start();
+    } catch (RuntimeException e) {
+      // The manager acquires a pooled informer for every watched namespace before any of them is
+      // started, so a startup failure has to hand those references back here: super.start() is not
+      // reached, which leaves isRunning() false and makes stop() skip the release entirely. The
+      // pooled informer would then be referenced forever (never stopped, even on a clean shutdown)
+      // and a retried start() would acquire it a second time.
+      manager().stop();
+      throw e;
+    }
     super.start();
   }
 
