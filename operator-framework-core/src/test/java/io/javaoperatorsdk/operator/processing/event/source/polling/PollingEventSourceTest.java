@@ -77,13 +77,19 @@ class PollingEventSourceTest
   @Test
   void timerThreadIsADaemonSoItDoesNotKeepTheJvmAlive() throws InterruptedException {
     when(resourceFetcher.fetchResources()).thenReturn(testResponseWithTwoValues());
+
+    var threadsBeforeStart = Thread.getAllStackTraces().keySet();
+
     pollingEventSource.start();
     Thread.sleep(DEFAULT_WAIT_PERIOD);
 
-    assertThat(Thread.getAllStackTraces().keySet())
-        .filteredOn(t -> t.getName().startsWith("Timer-"))
-        .isNotEmpty()
-        .allMatch(Thread::isDaemon);
+    var newTimerThreads =
+        Thread.getAllStackTraces().keySet().stream()
+            .filter(t -> t.getName().startsWith("Timer-"))
+            .filter(t -> !threadsBeforeStart.contains(t))
+            .toList();
+
+    assertThat(newTimerThreads).isNotEmpty().allMatch(Thread::isDaemon);
   }
 
   @Test

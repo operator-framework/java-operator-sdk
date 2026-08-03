@@ -75,11 +75,12 @@ public class PollingEventSource<R, P extends HasMetadata, ID>
 
   @Override
   public void start() throws OperatorException {
+    if (timer != null) {
+      return;
+    }
     super.start();
-    // a cancelled Timer cannot be reused, so a fresh one is created on every start; it is a daemon
-    // thread so that it never keeps the JVM alive
-    timer = new Timer(true);
     getStateAndFillCache();
+    timer = new Timer(true);
     timer.schedule(
         new TimerTask() {
           @Override
