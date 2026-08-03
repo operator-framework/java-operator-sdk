@@ -245,24 +245,20 @@ public abstract class ManagedInformerEventSource<
    * completed its initial list, and the namespace might not be watched anymore after a dynamic
    * namespace change, in both of which cases the informer cache is used instead.
    */
-private boolean isLaterThanLastSyncResourceVersion(R resource) {
-  var namespace = resource.getMetadata().getNamespace();
-  if (!manager().isWatchingNamespace(namespace)) {
-    return false;
-  }
-  final String lastSyncResourceVersion;
-  try {
-    lastSyncResourceVersion = manager().lastSyncResourceVersion(namespace);
-  } catch (java.util.NoSuchElementException e) {
-    return false;
-  }
-  if (lastSyncResourceVersion == null) {
-    return false;
-  }
-  return ReconcilerUtilsInternal.compareResourceVersions(
-          resource.getMetadata().getResourceVersion(), lastSyncResourceVersion)
-      > 0;
-}
+  private boolean isLaterThanLastSyncResourceVersion(R resource) {
+    var namespace = resource.getMetadata().getNamespace();
+    if (!manager().isWatchingNamespace(namespace)) {
+      return false;
+    }
+    final String lastSyncResourceVersion;
+    try {
+      lastSyncResourceVersion = manager().lastSyncResourceVersion(namespace);
+    } catch (java.util.NoSuchElementException e) {
+      return false;
+    }
+    if (lastSyncResourceVersion == null) {
+      return false;
+    }
     return ReconcilerUtilsInternal.compareResourceVersions(
             resource.getMetadata().getResourceVersion(), lastSyncResourceVersion)
         > 0;
