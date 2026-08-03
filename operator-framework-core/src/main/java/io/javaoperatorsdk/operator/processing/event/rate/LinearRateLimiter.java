@@ -53,18 +53,17 @@ public class LinearRateLimiter
     if (!isActivated() || !(rateLimitState instanceof RateState actualState)) {
       return Optional.empty();
     }
-
+    var now = LocalDateTime.now();
     if (actualState.getCount() < limitForPeriod) {
       actualState.increaseCount();
       return Optional.empty();
-    } else if (actualState
-        .getLastRefreshTime()
-        .isBefore(LocalDateTime.now().minus(refreshPeriod))) {
+    } else if (actualState.getLastRefreshTime().isBefore(now.minus(refreshPeriod))) {
       actualState.reset();
       actualState.increaseCount();
       return Optional.empty();
     } else {
-      return Optional.of(Duration.between(actualState.getLastRefreshTime(), LocalDateTime.now()));
+      var remaining = Duration.between(now, actualState.getLastRefreshTime().plus(refreshPeriod));
+      return Optional.of(remaining.isNegative() ? Duration.ZERO : remaining);
     }
   }
 

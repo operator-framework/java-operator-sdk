@@ -53,7 +53,22 @@ class LinearRateLimiterTest {
     res = rl.isLimited(state);
 
     assertThat(res).isPresent();
-    assertThat(res.get()).isLessThan(REFRESH_PERIOD);
+    assertThat(res.get()).isLessThanOrEqualTo(REFRESH_PERIOD);
+    // the whole period is still ahead of us, so the reported wait must be close to it
+    assertThat(res.get()).isGreaterThan(REFRESH_PERIOD.dividedBy(2));
+  }
+
+  @Test
+  void reportedDurationIsTheTimeRemainingNotTheTimeElapsed() throws InterruptedException {
+    var rl = new LinearRateLimiter(REFRESH_PERIOD, 1);
+    assertThat(rl.isLimited(state)).isEmpty();
+
+    var justAfterLimit = rl.isLimited(state).orElseThrow();
+    Thread.sleep(REFRESH_PERIOD.toMillis() / 2);
+    var halfWayThroughPeriod = rl.isLimited(state).orElseThrow();
+
+    // as the refresh period elapses, less time remains until a permission is available again
+    assertThat(halfWayThroughPeriod).isLessThan(justAfterLimit);
   }
 
   @Test
