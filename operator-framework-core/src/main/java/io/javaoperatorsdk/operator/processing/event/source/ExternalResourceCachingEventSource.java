@@ -163,7 +163,7 @@ public abstract class ExternalResourceCachingEventSource<R, P extends HasMetadat
     if (onAddFilter != null || genericFilter != null) {
       var anyAddAccepted =
           addedResources.values().stream()
-              .anyMatch(r -> acceptedByGenericFiler(r) && onAddFilter.accept(r));
+              .anyMatch(r -> acceptedByGenericFilter(r) && acceptedByOnAddFilter(r));
       if (anyAddAccepted) {
         return true;
       }
@@ -176,7 +176,7 @@ public abstract class ExternalResourceCachingEventSource<R, P extends HasMetadat
     if (onDeleteFilter != null || genericFilter != null) {
       var anyDeleteAccepted =
           deletedResource.values().stream()
-              .anyMatch(r -> acceptedByGenericFiler(r) && onDeleteFilter.accept(r, false));
+              .anyMatch(r -> acceptedByGenericFilter(r) && acceptedByOnDeleteFilter(r));
       if (anyDeleteAccepted) {
         return true;
       }
@@ -196,13 +196,25 @@ public abstract class ExternalResourceCachingEventSource<R, P extends HasMetadat
           .anyMatch(
               entry -> {
                 var newResource = newResourcesMap.get(entry.getKey());
-                return acceptedByGenericFiler(newResource)
-                    && onUpdateFilter.accept(newResource, entry.getValue());
+                return acceptedByGenericFilter(newResource)
+                    && acceptedByOnUpdateFilter(newResource, entry.getValue());
               });
     } else return !possibleUpdatedResources.isEmpty();
   }
 
-  private boolean acceptedByGenericFiler(R resource) {
+  private boolean acceptedByOnAddFilter(R resource) {
+    return onAddFilter == null || onAddFilter.accept(resource);
+  }
+
+  private boolean acceptedByOnDeleteFilter(R resource) {
+    return onDeleteFilter == null || onDeleteFilter.accept(resource, false);
+  }
+
+  private boolean acceptedByOnUpdateFilter(R newResource, R oldResource) {
+    return onUpdateFilter == null || onUpdateFilter.accept(newResource, oldResource);
+  }
+
+  private boolean acceptedByGenericFilter(R resource) {
     return genericFilter == null || genericFilter.accept(resource);
   }
 

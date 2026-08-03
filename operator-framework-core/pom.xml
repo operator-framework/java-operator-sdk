@@ -30,6 +30,11 @@
   <name>Operator SDK - Framework - Core</name>
   <description>Core framework for implementing Kubernetes operators</description>
 
+  <properties>
+    <!-- Used only for test sources, to verify that the framework works properly with Kotlin. -->
+    <kotlin.version>2.4.10</kotlin.version>
+  </properties>
+
   <dependencies>
     <dependency>
       <groupId>io.github.java-diff-utils</groupId>
@@ -101,6 +106,13 @@
       <artifactId>kube-api-test-client-inject</artifactId>
       <scope>test</scope>
     </dependency>
+    <dependency>
+      <!-- Test-only, used to verify JOSDK works properly when used from Kotlin. -->
+      <groupId>org.jetbrains.kotlin</groupId>
+      <artifactId>kotlin-stdlib</artifactId>
+      <version>${kotlin.version}</version>
+      <scope>test</scope>
+    </dependency>
   </dependencies>
 
   <build>
@@ -144,6 +156,37 @@
             <goals>
               <goal>filter-sources</goal>
             </goals>
+          </execution>
+        </executions>
+      </plugin>
+      <plugin>
+        <!--
+          Compiles the Kotlin test sources under src/test/kotlin, used only to verify that JOSDK
+          works properly when used from Kotlin (see https://github.com/operator-framework/java-operator-sdk/issues/2967).
+          Bound to process-test-sources so the compiled Kotlin classes are on the classpath before
+          the regular Java test sources are compiled.
+        -->
+        <groupId>org.jetbrains.kotlin</groupId>
+        <artifactId>kotlin-maven-plugin</artifactId>
+        <version>${kotlin.version}</version>
+        <configuration>
+          <jvmTarget>${java.version}</jvmTarget>
+        </configuration>
+        <executions>
+          <execution>
+            <id>kotlin-test-compile</id>
+            <goals>
+              <goal>test-compile</goal>
+            </goals>
+            <phase>process-test-sources</phase>
+            <configuration>
+              <sourceDirs>
+                <sourceDir>${project.basedir}/src/test/kotlin</sourceDir>
+                <!-- Not compiled by Kotlin, only needed so the Kotlin sources can reference the
+                     existing Java test classes (e.g. TestCustomResource). -->
+                <sourceDir>${project.basedir}/src/test/java</sourceDir>
+              </sourceDirs>
+            </configuration>
           </execution>
         </executions>
       </plugin>

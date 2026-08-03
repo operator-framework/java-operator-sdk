@@ -126,7 +126,7 @@ public abstract class AbstractExternalDependentResource<
   @Override
   protected Optional<R> selectTargetSecondaryResource(
       Set<R> secondaryResources, P primary, Context<P> context) {
-    R desired = desired(primary, context);
+    R desired = getOrComputeDesired(context);
     List<R> targetResources;
     var desiredID = resourceIDMapper.idFor(desired);
     targetResources =

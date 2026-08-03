@@ -25,6 +25,7 @@ jobs:
           - "sample-operators/webpage"
           - "sample-operators/leader-election"
           - "sample-operators/operations"
+          - "sample-operators/kotlin-operator"
     runs-on: ubuntu-latest
     steps:
       - name: Checkout

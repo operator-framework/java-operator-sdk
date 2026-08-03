@@ -15,6 +15,7 @@
  */
 package io.javaoperatorsdk.operator.baseapi.resourceoperations;
 
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
@@ -40,6 +41,8 @@ public class ResourceOperationsReconciler implements Reconciler<ResourceOperatio
 
   public static final String STATUS_VALUE = "reconciled";
   public static final String SPEC_MARKER = "applied";
+  public static final String LABEL_KEY = "resolved";
+  public static final String LABEL_VALUE = "true";
 
   public enum Operation {
     SSA,
@@ -49,6 +52,7 @@ public class ResourceOperationsReconciler implements Reconciler<ResourceOperatio
     JSON_PATCH,
     JSON_PATCH_STATUS,
     JSON_MERGE_PATCH,
+    JSON_MERGE_PATCH_PARTIAL_METADATA,
     JSON_MERGE_PATCH_STATUS
   }
 
@@ -101,6 +105,18 @@ public class ResourceOperationsReconciler implements Reconciler<ResourceOperatio
       case JSON_MERGE_PATCH -> {
         markResource(resource);
         ops.jsonMergePatchPrimary(resource);
+      }
+      // a partial resource, holding only the metadata to change: a merge patch must not touch the
+      // fields omitted from it (like spec)
+      case JSON_MERGE_PATCH_PARTIAL_METADATA -> {
+        ResourceOperationsCustomResource partial = new ResourceOperationsCustomResource();
+        partial.setMetadata(
+            new ObjectMetaBuilder()
+                .withName(resource.getMetadata().getName())
+                .withNamespace(resource.getMetadata().getNamespace())
+                .withLabels(Map.of(LABEL_KEY, LABEL_VALUE))
+                .build());
+        ops.jsonMergePatchPrimary(partial);
       }
       case JSON_MERGE_PATCH_STATUS -> {
         resource.setStatus(new ResourceOperationsStatus().setValue(STATUS_VALUE));

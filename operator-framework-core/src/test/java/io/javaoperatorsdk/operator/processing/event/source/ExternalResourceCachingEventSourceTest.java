@@ -222,6 +222,42 @@ class ExternalResourceCachingEventSourceTest
     assertThat(source.getSecondaryResources(primaryID1())).containsExactly(testResource1());
   }
 
+  void onlyGenericFilterSetDoesNotFailOnAdd() {
+    var eventSource = new TestExternalCachingEventSource();
+    eventSource.setGenericFilter(res -> true);
+    setUpSource(eventSource);
+
+    source.handleResources(primaryID1(), Set.of(testResource1()));
+
+    verify(eventHandler, times(1)).handleEvent(any());
+  }
+
+  @Test
+  void onlyGenericFilterSetDoesNotFailOnDelete() {
+    var eventSource = new TestExternalCachingEventSource();
+    eventSource.setGenericFilter(res -> true);
+    setUpSource(eventSource);
+
+    source.handleResources(primaryID1(), Set.of(testResource1()));
+    source.handleResources(primaryID1(), Set.of());
+
+    verify(eventHandler, times(2)).handleEvent(any());
+  }
+
+  @Test
+  void onlyGenericFilterSetDoesNotFailOnUpdate() {
+    var eventSource = new TestExternalCachingEventSource();
+    eventSource.setGenericFilter(res -> true);
+    setUpSource(eventSource);
+
+    source.handleResources(primaryID1(), Set.of(testResource1()));
+    var changed = testResource1();
+    changed.setValue("changedValue");
+    source.handleResources(primaryID1(), Set.of(changed));
+
+    verify(eventHandler, times(2)).handleEvent(any());
+  }
+
   public static class TestExternalCachingEventSource
       extends ExternalResourceCachingEventSource<SampleExternalResource, HasMetadata, String> {
     public TestExternalCachingEventSource() {
