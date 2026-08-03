@@ -163,7 +163,7 @@ public abstract class ExternalResourceCachingEventSource<R, P extends HasMetadat
     if (onAddFilter != null || genericFilter != null) {
       var anyAddAccepted =
           addedResources.values().stream()
-              .anyMatch(r -> acceptedByGenericFiler(r) && acceptedByOnAddFilter(r));
+              .anyMatch(r -> acceptedByGenericFilter(r) && acceptedByOnAddFilter(r));
       if (anyAddAccepted) {
         return true;
       }
@@ -176,7 +176,7 @@ public abstract class ExternalResourceCachingEventSource<R, P extends HasMetadat
     if (onDeleteFilter != null || genericFilter != null) {
       var anyDeleteAccepted =
           deletedResource.values().stream()
-              .anyMatch(r -> acceptedByGenericFiler(r) && acceptedByOnDeleteFilter(r));
+              .anyMatch(r -> acceptedByGenericFilter(r) && acceptedByOnDeleteFilter(r));
       if (anyDeleteAccepted) {
         return true;
       }
@@ -196,7 +196,7 @@ public abstract class ExternalResourceCachingEventSource<R, P extends HasMetadat
           .anyMatch(
               entry -> {
                 var newResource = newResourcesMap.get(entry.getKey());
-                return acceptedByGenericFiler(newResource)
+                return acceptedByGenericFilter(newResource)
                     && acceptedByOnUpdateFilter(newResource, entry.getValue());
               });
     } else return !possibleUpdatedResources.isEmpty();
@@ -214,7 +214,7 @@ public abstract class ExternalResourceCachingEventSource<R, P extends HasMetadat
     return onUpdateFilter == null || onUpdateFilter.accept(newResource, oldResource);
   }
 
-  private boolean acceptedByGenericFiler(R resource) {
+  private boolean acceptedByGenericFilter(R resource) {
     return genericFilter == null || genericFilter.accept(resource);
   }
 
