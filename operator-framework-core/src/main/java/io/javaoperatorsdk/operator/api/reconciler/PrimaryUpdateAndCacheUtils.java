@@ -291,7 +291,7 @@ public class PrimaryUpdateAndCacheUtils {
         },
         r -> {
           if (r == null) {
-            log.warn("Cannot add finalizer since resource not exists.");
+            log.warn("Cannot add finalizer since resource no longer exists.");
             return false;
           }
           return !r.hasFinalizer(finalizerName);
