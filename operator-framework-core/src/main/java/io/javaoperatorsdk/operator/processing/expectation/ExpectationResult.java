@@ -36,7 +36,16 @@ public record ExpectationResult<P extends HasMetadata>(
     return !isExpectationPresent() || isFulfilled();
   }
 
+  /**
+   * @return the name of the expectation this result refers to
+   * @throws IllegalStateException if there is no expectation, check {@link #isExpectationPresent()}
+   *     first
+   */
   public String name() {
+    if (expectation == null) {
+      throw new IllegalStateException(
+          "No expectation present for this result, check isExpectationPresent() first.");
+    }
     return expectation.name();
   }
 }

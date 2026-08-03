@@ -224,10 +224,7 @@ public abstract class ManagedInformerEventSource<
     Optional<R> resource = temporaryResourceCache.getResourceFromCache(resourceID);
     if (comparableResourceVersions
         && resource.isPresent()
-        && ReconcilerUtilsInternal.compareResourceVersions(
-                resource.get().getMetadata().getResourceVersion(),
-                manager().lastSyncResourceVersion(resource.get().getMetadata().getNamespace()))
-            > 0) {
+        && isLaterThanLastSyncResourceVersion(resource.orElseThrow())) {
       log.debug("Latest resource found in temporary cache for Resource ID: {}", resourceID);
       return resource;
     } else {
@@ -240,6 +237,31 @@ public abstract class ManagedInformerEventSource<
           resourceID);
       return resFromInformer;
     }
+  }
+
+  /**
+   * A resource from the temporary cache is only preferred over the informer cache if we can tell
+   * that it is newer. The last sync resource version is not available before an informer has
+   * completed its initial list, and the namespace might not be watched anymore after a dynamic
+   * namespace change, in both of which cases the informer cache is used instead.
+   */
+  private boolean isLaterThanLastSyncResourceVersion(R resource) {
+    var namespace = resource.getMetadata().getNamespace();
+    if (!manager().isWatchingNamespace(namespace)) {
+      return false;
+    }
+    final String lastSyncResourceVersion;
+    try {
+      lastSyncResourceVersion = manager().lastSyncResourceVersion(namespace);
+    } catch (java.util.NoSuchElementException e) {
+      return false;
+    }
+    if (lastSyncResourceVersion == null) {
+      return false;
+    }
+    return ReconcilerUtilsInternal.compareResourceVersions(
+            resource.getMetadata().getResourceVersion(), lastSyncResourceVersion)
+        > 0;
   }
 
   /**

@@ -406,7 +406,9 @@ public class ResourceOperations<P extends HasMetadata> {
    * @return the created resource as returned by the API server
    */
   public <R extends HasMetadata> R create(R resource) {
-    // it is safe to do event filtering for create since check if the resource already exists.
+    // filtering the own event is safe here without optimistic locking or a matcher: a create either
+    // succeeds, in which case the event we filter is unambiguously ours, or the API server rejects
+    // it because the resource already exists.
     return create(resource, Options.forceFilterEvents());
   }
 
@@ -445,7 +447,7 @@ public class ResourceOperations<P extends HasMetadata> {
     if (informerEventSource == null) {
       return create(resource);
     }
-    // it is safe to do event filtering for create since check if the resource already exists.
+    // see the note on create(R) about why filtering the own event is safe here
     return resourcePatch(
         resource, r -> context.getClient().resource(r).create(), informerEventSource, options);
   }
@@ -556,7 +558,7 @@ public class ResourceOperations<P extends HasMetadata> {
    */
   public <R extends HasMetadata> R jsonPatch(
       R actualResource, UnaryOperator<R> unaryOperator, Options options) {
-    R desired = desiredForJsonPatch(actualResource, unaryOperator, options);
+    R desired = desiredForJsonPatch(actualResource, unaryOperator);
     return resourcePatch(
         desired,
         actualResource,
@@ -580,7 +582,7 @@ public class ResourceOperations<P extends HasMetadata> {
       UnaryOperator<R> unaryOperator,
       InformerEventSource<R, P> informerEventSource,
       Options options) {
-    R desired = desiredForJsonPatch(actualResource, unaryOperator, options);
+    R desired = desiredForJsonPatch(actualResource, unaryOperator);
     return resourcePatch(
         desired,
         actualResource,
@@ -620,7 +622,7 @@ public class ResourceOperations<P extends HasMetadata> {
    */
   public <R extends HasMetadata> R jsonPatchStatus(
       R actualResource, UnaryOperator<R> unaryOperator, Options options) {
-    R desired = desiredForJsonPatch(actualResource, unaryOperator, options);
+    R desired = desiredForJsonPatch(actualResource, unaryOperator);
     return resourcePatch(
         desired,
         actualResource,
@@ -645,7 +647,7 @@ public class ResourceOperations<P extends HasMetadata> {
       UnaryOperator<R> unaryOperator,
       InformerEventSource<R, P> informerEventSource,
       Options options) {
-    R desired = desiredForJsonPatch(actualResource, unaryOperator, options);
+    R desired = desiredForJsonPatch(actualResource, unaryOperator);
     return resourcePatch(
         desired,
         actualResource,
@@ -680,7 +682,7 @@ public class ResourceOperations<P extends HasMetadata> {
    * @return the patched resource as returned by the API server
    */
   public P jsonPatchPrimary(P actualResource, UnaryOperator<P> unaryOperator, Options options) {
-    P desired = desiredForJsonPatch(actualResource, unaryOperator, options);
+    P desired = desiredForJsonPatch(actualResource, unaryOperator);
     return resourcePatch(
         desired,
         actualResource,
@@ -717,7 +719,7 @@ public class ResourceOperations<P extends HasMetadata> {
    */
   public P jsonPatchPrimaryStatus(
       P actualResource, UnaryOperator<P> unaryOperator, Options options) {
-    P desired = desiredForJsonPatch(actualResource, unaryOperator, options);
+    P desired = desiredForJsonPatch(actualResource, unaryOperator);
     return resourcePatch(
         desired,
         actualResource,
@@ -1447,7 +1449,7 @@ public class ResourceOperations<P extends HasMetadata> {
   }
 
   private <T extends HasMetadata> T desiredForJsonPatch(
-      T actualResource, UnaryOperator<T> unaryOperator, Options options) {
+      T actualResource, UnaryOperator<T> unaryOperator) {
     var cloned =
         context
             .getControllerConfiguration()
