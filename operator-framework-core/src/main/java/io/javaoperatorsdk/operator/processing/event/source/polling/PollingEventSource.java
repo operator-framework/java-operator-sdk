@@ -62,7 +62,7 @@ public class PollingEventSource<R, P extends HasMetadata, ID>
 
   private static final Logger log = LoggerFactory.getLogger(PollingEventSource.class);
 
-  private final Timer timer = new Timer();
+  private Timer timer;
   private final GenericResourceFetcher<R> genericResourceFetcher;
   private final Duration period;
   private final AtomicBoolean healthy = new AtomicBoolean(true);
@@ -75,8 +75,12 @@ public class PollingEventSource<R, P extends HasMetadata, ID>
 
   @Override
   public void start() throws OperatorException {
+    if (timer != null) {
+      return;
+    }
     super.start();
     getStateAndFillCache();
+    timer = new Timer(true);
     timer.schedule(
         new TimerTask() {
           @Override
@@ -111,7 +115,10 @@ public class PollingEventSource<R, P extends HasMetadata, ID>
   @Override
   public void stop() throws OperatorException {
     super.stop();
-    timer.cancel();
+    if (timer != null) {
+      timer.cancel();
+      timer = null;
+    }
   }
 
   @Override
