@@ -16,8 +16,7 @@
 package io.javaoperatorsdk.operator.api.reconciler;
 
 import java.lang.reflect.InvocationTargetException;
-import java.time.LocalTime;
-import java.time.temporal.ChronoUnit;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Predicate;
 import java.util.function.UnaryOperator;
 
@@ -232,9 +231,8 @@ public class PrimaryUpdateAndCacheUtils {
       Context<P> context, P staleResource, long timeoutMillis, long pollDelayMillis) {
     try {
       var resourceId = ResourceID.fromResource(staleResource);
-      var startTime = LocalTime.now();
-      final var timeoutTime = startTime.plus(timeoutMillis, ChronoUnit.MILLIS);
-      while (timeoutTime.isAfter(LocalTime.now())) {
+      final var deadlineNanos = System.nanoTime() + TimeUnit.MILLISECONDS.toNanos(timeoutMillis);
+      while (System.nanoTime() - deadlineNanos < 0) {
         log.debug("Polling cache for resource: {}", resourceId);
         var cachedResource = context.getPrimaryCache().get(resourceId).orElseThrow();
         if (!cachedResource
