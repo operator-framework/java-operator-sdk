@@ -138,7 +138,7 @@ public class Controller<P extends HasMetadata>
             kubernetesClient,
             configuration.getResourceClass());
     initAndRegisterEventSources(eventSourceContext);
-    configurationService.getMetrics().controllerRegistered(this);
+    metrics.controllerRegistered(this);
   }
 
   @Override
