@@ -223,16 +223,6 @@ class ExternalResourceCachingEventSourceTest
   }
 
   @Test
-  void recentResourceUpdateIsIgnoredForUnknownSecondaryResource() {
-    source.handleResources(primaryID1(), Set.of(testResource1()));
-
-    // testResource2 has a different id, so it is not present in the cache for primaryID1
-    var unknown = testResource2();
-    source.handleRecentResourceUpdate(primaryID1(), unknown, unknown);
-
-    assertThat(source.getSecondaryResources(primaryID1())).containsExactly(testResource1());
-  }
-
   void onlyGenericFilterSetDoesNotFailOnAdd() {
     var eventSource = new TestExternalCachingEventSource();
     eventSource.setGenericFilter(res -> true);
@@ -241,6 +231,17 @@ class ExternalResourceCachingEventSourceTest
     source.handleResources(primaryID1(), Set.of(testResource1()));
 
     verify(eventHandler, times(1)).handleEvent(any());
+  }
+
+  @Test
+  void recentResourceUpdateIsIgnoredForUnknownSecondaryResource() {
+    source.handleResources(primaryID1(), Set.of(testResource1()));
+
+    // testResource2 has a different id, so it is not present in the cache for primaryID1
+    var unknown = testResource2();
+    source.handleRecentResourceUpdate(primaryID1(), unknown, unknown);
+
+    assertThat(source.getSecondaryResources(primaryID1())).containsExactly(testResource1());
   }
 
   @Test
