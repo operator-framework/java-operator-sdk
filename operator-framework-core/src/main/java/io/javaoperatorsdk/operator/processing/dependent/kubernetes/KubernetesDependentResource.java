@@ -52,6 +52,15 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
 
   private static final Logger log = LoggerFactory.getLogger(KubernetesDependentResource.class);
 
+  /**
+   * Annotation used to record the API version the operator applied to this resource, when {@link
+   * KubernetesDependentResourceConfig#detectApiVersionChange()} is enabled.
+   *
+   * @see KubernetesDependent#detectApiVersionChange()
+   */
+  public static final String LAST_APPLIED_API_VERSION_ANNOTATION_KEY =
+      "javaoperatorsdk.io/last-applied-api-version";
+
   private final boolean garbageCollected = this instanceof GarbageCollected;
   private KubernetesDependentResourceConfig<R> kubernetesDependentResourceConfig;
   private volatile Boolean useSSA;
@@ -173,7 +182,28 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
         annotations.remove(InformerEventSource.PREVIOUS_ANNOTATION_KEY);
       }
     }
+    addLastAppliedApiVersion(target);
     addReferenceHandlingMetadata(target, primary);
+  }
+
+  /**
+   * When {@link KubernetesDependentResourceConfig#detectApiVersionChange()} is enabled, marks the
+   * target resource with the API version the operator is currently applying. Comparing this marker
+   * with the one recorded on the actual resource lets the regular matching logic detect a mismatch,
+   * without ever inspecting the actual, potentially unreliable, stored API version.
+   */
+  private void addLastAppliedApiVersion(R target) {
+    if (kubernetesDependentResourceConfig == null
+        || !kubernetesDependentResourceConfig.detectApiVersionChange()) {
+      return;
+    }
+    var apiVersion = target.getApiVersion();
+    if (apiVersion != null) {
+      target
+          .getMetadata()
+          .getAnnotations()
+          .put(LAST_APPLIED_API_VERSION_ANNOTATION_KEY, apiVersion);
+    }
   }
 
   protected boolean useSSA(Context<P> context) {
