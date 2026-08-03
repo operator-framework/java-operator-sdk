@@ -1085,7 +1085,13 @@ public class ResourceOperations<P extends HasMetadata> {
           r.addFinalizer(finalizerName);
           return r;
         },
-        r -> !r.hasFinalizer(finalizerName),
+        r -> {
+          if (r == null) {
+            log.warn("Cannot add finalizer since resource no longer exists.");
+            return false;
+          }
+          return !r.hasFinalizer(finalizerName);
+        },
         cacheOnly);
   }
 
