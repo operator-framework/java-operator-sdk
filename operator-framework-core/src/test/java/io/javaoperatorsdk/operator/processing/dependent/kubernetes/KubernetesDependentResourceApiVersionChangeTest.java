@@ -177,9 +177,33 @@ class KubernetesDependentResourceApiVersionChangeTest {
 
     var result = dr.match(actual, desired, primary(), context);
 
-    assertThat(result.matched()).isNotNull();
+    assertThat(result.matched())
+        .withFailMessage("A null desired API version must not prevent normal matching")
+        .isTrue();
     assertThat(desired.getMetadata().getAnnotations())
         .doesNotContainKey(KubernetesDependentResource.LAST_APPLIED_API_VERSION_ANNOTATION_KEY);
+  }
+
+  @Test
+  void nonSSA_preservesExistingAnnotationsWhenMarkingEvenIfImmutable() {
+    var dr = newDependentResource(true);
+    var context = context(false);
+
+    var actual = widget(NEW_API_VERSION, null, 3);
+    var desired = widget(NEW_API_VERSION, null, 3);
+    // simulate a desired resource whose annotations map is immutable, as returned by Map.of(...)
+    desired.getMetadata().setAnnotations(Map.of("user.example.com/owner", "team-a"));
+
+    var result = dr.match(actual, desired, primary(), context);
+
+    assertThat(result.matched())
+        .withFailMessage("A missing marker must still cause a mismatch")
+        .isFalse();
+    assertThat(desired.getMetadata().getAnnotations())
+        .withFailMessage("Existing annotations must be preserved alongside the new marker")
+        .containsEntry("user.example.com/owner", "team-a")
+        .containsEntry(
+            KubernetesDependentResource.LAST_APPLIED_API_VERSION_ANNOTATION_KEY, NEW_API_VERSION);
   }
 
   @Test
@@ -245,9 +269,9 @@ class KubernetesDependentResourceApiVersionChangeTest {
         .isFalse();
   }
 
-  private static ConfigMapDependentResourceForTest newDependentResource(
+  private static WidgetDependentResourceForTest newDependentResource(
       boolean detectApiVersionChange) {
-    var dr = new ConfigMapDependentResourceForTest();
+    var dr = new WidgetDependentResourceForTest();
     dr.configureWith(
         new KubernetesDependentResourceConfigBuilder<GenericKubernetesResource>()
             .withDetectApiVersionChange(detectApiVersionChange)
@@ -310,9 +334,9 @@ class KubernetesDependentResourceApiVersionChangeTest {
     return entry;
   }
 
-  private static class ConfigMapDependentResourceForTest
+  private static class WidgetDependentResourceForTest
       extends KubernetesDependentResource<GenericKubernetesResource, HasMetadata> {
-    public ConfigMapDependentResourceForTest() {
+    public WidgetDependentResourceForTest() {
       super(GenericKubernetesResource.class, null);
     }
   }

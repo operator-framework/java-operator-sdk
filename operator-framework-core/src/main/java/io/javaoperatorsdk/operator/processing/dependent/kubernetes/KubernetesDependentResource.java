@@ -15,6 +15,7 @@
  */
 package io.javaoperatorsdk.operator.processing.dependent.kubernetes;
 
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
@@ -169,6 +170,12 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
 
   protected void addMetadata(
       boolean forMatch, R actualResource, final R target, P primary, Context<P> context) {
+    if (kubernetesDependentResourceConfig != null
+        && kubernetesDependentResourceConfig.detectApiVersionChange()) {
+      // desired resources might expose a null or immutable annotations map (e.g. Map.of(...));
+      // make sure it's a mutable one before this method or its callees write to it
+      ensureMutableAnnotations(target);
+    }
     if (forMatch) { // keep the current previous annotation
       String actual =
           actualResource
@@ -184,6 +191,12 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
     }
     addLastAppliedApiVersion(target);
     addReferenceHandlingMetadata(target, primary);
+  }
+
+  private static void ensureMutableAnnotations(HasMetadata target) {
+    var metadata = target.getMetadata();
+    metadata.setAnnotations(
+        new LinkedHashMap<>(Optional.ofNullable(metadata.getAnnotations()).orElseGet(Map::of)));
   }
 
   /**

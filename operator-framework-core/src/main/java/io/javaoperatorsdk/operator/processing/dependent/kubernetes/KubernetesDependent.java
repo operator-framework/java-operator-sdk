@@ -72,13 +72,13 @@ public @interface KubernetesDependent {
    * to target a new CRD version) and, in that case, request a one-time update of the actual
    * resource.
    *
-   * <p>When enabled, JOSDK records the API version it applies in the {@code
-   * javaoperatorsdk.io/last-applied-api-version} annotation. On subsequent reconciliations, the
-   * resource is considered mismatched (and thus updated) if that recorded marker differs from the
-   * API version the operator currently uses, including when the marker is missing entirely (for
-   * example on resources created before this feature was enabled). Once the resource has been
-   * updated, the marker matches the current API version again, so no further update is requested
-   * until the API version changes again.
+   * <p>When enabled, JOSDK records the API version it applies in the {@value
+   * KubernetesDependentResource#LAST_APPLIED_API_VERSION_ANNOTATION_KEY} annotation. On subsequent
+   * reconciliations, the resource is considered mismatched (and thus updated) if that recorded
+   * marker differs from the API version the operator currently uses, including when the marker is
+   * missing entirely (for example on resources created before this feature was enabled). Once the
+   * resource has been updated, the marker matches the current API version again, so no further
+   * update is requested until the API version changes again.
    *
    * <p>This is opt-in and disabled by default: when disabled, no marker annotation is ever added or
    * read, and matching behavior is unchanged. It does not read or infer the actual storage version
