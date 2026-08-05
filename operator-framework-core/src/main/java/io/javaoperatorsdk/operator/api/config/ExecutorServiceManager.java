@@ -143,20 +143,25 @@ public class ExecutorServiceManager {
   }
 
   public synchronized void stop(Duration gracefulShutdownTimeout) {
+    var parallelExec = Executors.newFixedThreadPool(4);
     try {
       log.debug("Closing executor");
-      var parallelExec = Executors.newFixedThreadPool(3);
       parallelExec.invokeAll(
           List.of(
               shutdown(executor, gracefulShutdownTimeout),
               shutdown(workflowExecutor, gracefulShutdownTimeout),
-              shutdown(cachingExecutorService, gracefulShutdownTimeout)));
-      workflowExecutor = null;
-      parallelExec.shutdownNow();
-      started = false;
+              shutdown(cachingExecutorService, gracefulShutdownTimeout),
+              shutdown(scheduledExecutorService, gracefulShutdownTimeout)));
     } catch (InterruptedException e) {
       log.debug("Exception closing executor: {}", e.getLocalizedMessage());
       Thread.currentThread().interrupt();
+    } finally {
+      // this has to happen even if we were interrupted, otherwise the helper pool leaks its
+      // (non-daemon) threads, and leaving started == true would make a subsequent start() a no-op,
+      // silently leaving the manager with already terminated executors
+      parallelExec.shutdownNow();
+      workflowExecutor = null;
+      started = false;
     }
   }
 
