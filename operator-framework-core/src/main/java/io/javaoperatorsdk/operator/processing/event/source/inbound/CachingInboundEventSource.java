@@ -16,7 +16,6 @@
 package io.javaoperatorsdk.operator.processing.event.source.inbound;
 
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -76,9 +75,9 @@ public class CachingInboundEventSource<R, P extends HasMetadata, ID>
   @Override
   public Set<R> getSecondaryResources(P primary) {
     var primaryID = ResourceID.fromResource(primary);
-    var cachedValue = cache.get(primaryID);
-    if (cachedValue != null && !cachedValue.isEmpty()) {
-      return new HashSet<>(cachedValue.values());
+    var cachedValues = cachedResourcesFor(primaryID);
+    if (!cachedValues.isEmpty()) {
+      return cachedValues;
     } else {
       if (fetchedForPrimaries.contains(primaryID)) {
         return Collections.emptySet();
