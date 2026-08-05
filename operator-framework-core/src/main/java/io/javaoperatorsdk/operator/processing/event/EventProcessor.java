@@ -543,6 +543,7 @@ public class EventProcessor<P extends HasMetadata> implements EventHandler, Life
       // change thread name for easier debugging
       final var thread = Thread.currentThread();
       final var name = thread.getName();
+      boolean reconciliationStarted = false;
       try {
         // we try to get the most up-to-date resource from cache
         var actualResource = cache.get(resourceID);
@@ -567,19 +568,27 @@ public class EventProcessor<P extends HasMetadata> implements EventHandler, Life
             }
           } else {
             log.debug("Skipping execution; primary resource missing from cache");
+            // the submission has to be completed, otherwise the resource stays marked as under
+            // processing and no further reconciliation would ever be submitted for it
+            eventProcessingFinished(executionScope, PostExecutionControl.defaultDispatch());
             return;
           }
         }
         actualResource.ifPresent(executionScope::setResource);
         MDCUtils.addResourceInfo(executionScope.getResource());
         metrics.reconciliationStarted(executionScope.getResource(), metricsMetadata);
+        reconciliationStarted = true;
         thread.setName("ReconcilerExecutor-" + controllerName() + "-" + thread.getId());
         PostExecutionControl<P> postExecutionControl =
             reconciliationDispatcher.handleExecution(executionScope);
         eventProcessingFinished(executionScope, postExecutionControl);
       } finally {
-        metrics.reconciliationFinished(
-            executionScope.getResource(), executionScope.getRetryInfo(), metricsMetadata);
+        // only report the reconciliation as finished if it was reported as started, otherwise
+        // gauges tracking in-flight reconciliations drift on every skipped execution
+        if (reconciliationStarted) {
+          metrics.reconciliationFinished(
+              executionScope.getResource(), executionScope.getRetryInfo(), metricsMetadata);
+        }
         // restore original name
         thread.setName(name);
         MDCUtils.removeResourceInfo();
