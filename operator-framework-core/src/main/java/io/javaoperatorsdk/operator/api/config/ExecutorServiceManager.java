@@ -161,7 +161,6 @@ public class ExecutorServiceManager {
       // silently leaving the manager with already terminated executors
       parallelExec.shutdownNow();
       workflowExecutor = null;
-      scheduledExecutorService = null;
       started = false;
     }
   }

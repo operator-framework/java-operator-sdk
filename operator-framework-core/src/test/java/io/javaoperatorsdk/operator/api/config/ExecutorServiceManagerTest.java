@@ -30,9 +30,12 @@ class ExecutorServiceManagerTest {
     ConfigurationService configurationService = new BaseConfigurationService();
     var manager = configurationService.getExecutorServiceManager();
     var scheduled = manager.scheduledExecutorService();
-    assertThat(scheduled.isShutdown()).isFalse();
 
-    manager.stop(SHUTDOWN_TIMEOUT);
+    try {
+      assertThat(scheduled.isShutdown()).isFalse();
+    } finally {
+      manager.stop(SHUTDOWN_TIMEOUT);
+    }
 
     assertThat(scheduled.isShutdown()).isTrue();
   }
