@@ -84,7 +84,7 @@ public List<EventSource<?, MyCustomResource>> prepareEventSources(
           .withOnAddFilter(cm -> true)
           .build();
 
-  return List.of(new InformerEventSource<>(informerConfiguration, context));
+  return List.of(new InformerEventSource<>(informerConfiguration));
 }
 ```
 

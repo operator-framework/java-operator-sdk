@@ -68,8 +68,7 @@ public class OwnSecondaryUpdateReconciler implements Reconciler<OwnSecondaryUpda
         new InformerEventSource<>(
             InformerEventSourceConfiguration.from(
                     ConfigMap.class, OwnSecondaryUpdateCustomResource.class)
-                .build(),
-            context);
+                .build());
     return List.of(configMapEventSource);
   }
 

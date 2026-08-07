@@ -76,7 +76,10 @@ public interface InformerEventSourceConfiguration<R extends HasMetadata> extends
 
   <P extends HasMetadata> PrimaryToSecondaryMapper<P> getPrimaryToSecondaryMapper();
 
-  // todo deprecate
+  /**
+   * @deprecated use {@link InformerConfiguration#getResourceGroupVersionKind()}
+   */
+  @Deprecated(forRemoval = true)
   Optional<GroupVersionKind> getGroupVersionKind();
 
   default String name() {

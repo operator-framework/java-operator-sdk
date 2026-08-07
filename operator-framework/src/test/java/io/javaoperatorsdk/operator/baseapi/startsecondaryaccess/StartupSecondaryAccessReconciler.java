@@ -75,8 +75,7 @@ public class StartupSecondaryAccessReconciler
             InformerEventSourceConfiguration.from(
                     ConfigMap.class, StartupSecondaryAccessCustomResource.class)
                 .withLabelSelector(LABEL_KEY + "=" + LABEL_VALUE)
-                .build(),
-            context);
+                .build());
     return List.of(cmInformer);
   }
 

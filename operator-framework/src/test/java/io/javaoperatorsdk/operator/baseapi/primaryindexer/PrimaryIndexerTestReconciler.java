@@ -49,6 +49,6 @@ public class PrimaryIndexerTestReconciler extends AbstractPrimaryIndexerTestReco
                         .collect(Collectors.toSet()))
             .build();
 
-    return List.of(new InformerEventSource<>(informerConfiguration, context));
+    return List.of(new InformerEventSource<>(informerConfiguration));
   }
 }

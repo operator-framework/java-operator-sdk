@@ -45,7 +45,7 @@ public class DeregisterReconciler implements Reconciler<DeregisterPrimaryCustomR
     numberOfExecutions.incrementAndGet();
 
     if (primary.getSpec() != null && primary.getSpec().isRegisterEventSource()) {
-      context.eventSourceRetriever().dynamicallyRegisterEventSource(watchedEventSource(context));
+      context.eventSourceRetriever().dynamicallyRegisterEventSource(watchedEventSource());
     } else {
       context.eventSourceRetriever().dynamicallyDeRegisterEventSource(WATCHED_EVENT_SOURCE_NAME);
     }
@@ -54,7 +54,7 @@ public class DeregisterReconciler implements Reconciler<DeregisterPrimaryCustomR
   }
 
   private InformerEventSource<DeregisterWatchedCustomResource, DeregisterPrimaryCustomResource>
-      watchedEventSource(Context<DeregisterPrimaryCustomResource> context) {
+      watchedEventSource() {
     var config =
         InformerEventSourceConfiguration.from(
                 DeregisterWatchedCustomResource.class, DeregisterPrimaryCustomResource.class)
@@ -63,8 +63,7 @@ public class DeregisterReconciler implements Reconciler<DeregisterPrimaryCustomR
                 (DeregisterWatchedCustomResource watched) ->
                     Set.of(new ResourceID("ignored", watched.getMetadata().getNamespace())))
             .build();
-    return new InformerEventSource<>(
-        config, context.eventSourceRetriever().eventSourceContextForDynamicRegistration());
+    return new InformerEventSource<>(config);
   }
 
   public int getNumberOfExecutions() {

@@ -53,15 +53,13 @@ public class DynamicSharedInformerReconciler
       DynamicSharedInformerPrimaryCustomResource2 resource,
       Context<DynamicSharedInformerPrimaryCustomResource2> context) {
     numberOfExecutions.incrementAndGet();
-    context
-        .eventSourceRetriever()
-        .dynamicallyRegisterEventSource(thirdResourceEventSource(context));
+    context.eventSourceRetriever().dynamicallyRegisterEventSource(thirdResourceEventSource());
     return UpdateControl.noUpdate();
   }
 
   private InformerEventSource<
           DynamicSharedInformerThirdCustomResource, DynamicSharedInformerPrimaryCustomResource2>
-      thirdResourceEventSource(Context<DynamicSharedInformerPrimaryCustomResource2> context) {
+      thirdResourceEventSource() {
     var config =
         InformerEventSourceConfiguration.from(
                 DynamicSharedInformerThirdCustomResource.class,
@@ -71,8 +69,7 @@ public class DynamicSharedInformerReconciler
                 (DynamicSharedInformerThirdCustomResource third) ->
                     Set.of(new ResourceID(PRIMARY_NAME, third.getMetadata().getNamespace())))
             .build();
-    return new InformerEventSource<>(
-        config, context.eventSourceRetriever().eventSourceContextForDynamicRegistration());
+    return new InformerEventSource<>(config);
   }
 
   public int getNumberOfExecutions() {

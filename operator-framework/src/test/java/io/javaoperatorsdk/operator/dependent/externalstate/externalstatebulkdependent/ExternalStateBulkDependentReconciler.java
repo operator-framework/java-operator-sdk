@@ -50,11 +50,10 @@ public class ExternalStateBulkDependentReconciler
   public List<EventSource<?, ExternalStateBulkDependentCustomResource>> prepareEventSources(
       EventSourceContext<ExternalStateBulkDependentCustomResource> context) {
     var configMapEventSource =
-        new InformerEventSource<>(
+        new InformerEventSource<ConfigMap, ExternalStateBulkDependentCustomResource>(
             InformerEventSourceConfiguration.from(
                     ConfigMap.class, ExternalStateBulkDependentCustomResource.class)
-                .build(),
-            context);
+                .build());
     return List.of(configMapEventSource);
   }
 }

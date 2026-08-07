@@ -72,8 +72,7 @@ public class FieldSelectorTestReconciler implements Reconciler<Secret>, TestExec
                 .withNamespacesInheritedFromController()
                 .withFieldSelector(
                     new FieldSelectorBuilder().withField("type", OTHER_SECRET_TYPE).build())
-                .build(),
-            context);
+                .build());
 
     return List.of(dependentSecretEventSource);
   }
