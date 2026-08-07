@@ -28,6 +28,11 @@ class ResourceStateManager {
   // will process to avoid under- or over-sizing the state maps and avoid too many resizing that
   // take time and memory?
   private final Map<ResourceID, ResourceState> states = new ConcurrentHashMap<>(100);
+  private final boolean triggerOnAllEvents;
+
+  public ResourceStateManager(boolean triggerOnAllEvents) {
+    this.triggerOnAllEvents = triggerOnAllEvents;
+  }
 
   public Optional<ResourceState> getOrCreateOnResourceEvent(Event event) {
     var resourceId = event.getRelatedCustomResourceID();
@@ -36,7 +41,7 @@ class ResourceStateManager {
       return Optional.of(state);
     }
     if (event instanceof ResourceEvent) {
-      state = new ResourceState(resourceId);
+      state = new ResourceState(resourceId, triggerOnAllEvents);
       states.put(resourceId, state);
       return Optional.of(state);
     } else {
@@ -45,7 +50,7 @@ class ResourceStateManager {
   }
 
   public ResourceState getOrCreate(ResourceID resourceID) {
-    return states.computeIfAbsent(resourceID, ResourceState::new);
+    return states.computeIfAbsent(resourceID, id -> new ResourceState(id, triggerOnAllEvents));
   }
 
   public Optional<ResourceState> get(ResourceID resourceID) {
