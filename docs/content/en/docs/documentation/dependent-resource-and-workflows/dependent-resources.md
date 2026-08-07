@@ -289,6 +289,41 @@ If you encounter this issue on an older Kubernetes version, consider changing yo
 that resource, or even upgrading your Kubernetes version. If you encounter it on a newer Kubernetes version, please log
 an issue with the JOSDK and with upstream Kubernetes.
 
+### Detecting dependent resource API version changes (experimental)
+
+When a dependent resource's CRD gains a new API version and the operator is upgraded to target it,
+comparing `actualResource.getApiVersion()` with the desired resource's API version is not a
+reliable way to detect resources that still need to be updated: the Kubernetes API server serves a
+resource using the requested, served API version regardless of which version it is actually stored
+as, so this comparison would always trivially match.
+
+`KubernetesDependentResource` therefore ignores `apiVersion` when matching. To still force a
+one-time update of dependent resources after such an upgrade, without triggering an update on every
+reconciliation, `KubernetesDependent` provides the opt-in, experimental
+`detectApiVersionChange` flag:
+
+```java
+@KubernetesDependent(detectApiVersionChange = true)
+public class MyDependentResource extends CRUDKubernetesDependentResource<MyResource, MyPrimary> {
+  // ...
+}
+```
+
+When enabled, JOSDK records the API version it applies in the `javaoperatorsdk.io/last-applied-api-version`
+annotation. On subsequent reconciliations, the resource is considered mismatched (and thus updated)
+if that recorded marker differs from the API version the operator currently uses - this also
+covers resources that predate this feature and therefore have no marker at all. Once the resource
+has been updated, the marker matches the current API version again, so no further update is
+requested until the API version changes again.
+
+This is disabled by default: existing behavior, including for resources created before this
+feature existed, is unaffected unless you opt in. It does not read or infer the actual storage
+version of the resource from the Kubernetes API, since that information is not reliably exposed;
+it only tracks what the operator itself last applied. It is also not a replacement for
+Kubernetes' [StorageVersionMigration](https://kubernetes.io/docs/tasks/manage-kubernetes-objects/storage-version-migration/),
+which addresses migrating the stored representation of resources, a concern orthogonal to this
+feature.
+
 ## Telling JOSDK how to find which secondary resources are associated with a given primary resource
 
 [`KubernetesDependentResource`](https://github.com/java-operator-sdk/java-operator-sdk/blob/main/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/processing/dependent/kubernetes/KubernetesDependentResource.java)
