@@ -178,7 +178,9 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
     super.start();
     // this makes sure that on first reconciliation all resources are
     // present on the index
-    manager().list().forEach(r -> primaryToSecondaryIndex.onAddOrUpdate(r, null));
+    if (useSecondaryToPrimaryIndex()) {
+      manager().list().forEach(r -> primaryToSecondaryIndex.onAddOrUpdate(r, null));
+    }
   }
 
   @SuppressWarnings("unchecked")
