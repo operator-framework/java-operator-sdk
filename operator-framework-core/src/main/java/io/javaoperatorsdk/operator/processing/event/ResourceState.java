@@ -47,6 +47,7 @@ class ResourceState {
   }
 
   private final ResourceID id;
+  private final boolean triggerOnAllEvents;
 
   private boolean underProcessing;
   private RetryExecution retry;
@@ -55,8 +56,9 @@ class ResourceState {
   private HasMetadata lastKnownResource;
   private boolean isDeleteFinalStateUnknown = false;
 
-  public ResourceState(ResourceID id) {
+  public ResourceState(ResourceID id, boolean triggerOnAllEvents) {
     this.id = id;
+    this.triggerOnAllEvents = triggerOnAllEvents;
     eventing = EventingState.NO_EVENT_PRESENT;
   }
 
@@ -108,8 +110,8 @@ class ResourceState {
     return eventing == EventingState.PROCESSED_MARK_FOR_DELETION;
   }
 
-  public void markEventReceived(boolean isAllEventMode) {
-    if (!isAllEventMode && deleteEventPresent()) {
+  public void markEventReceived() {
+    if (!triggerOnAllEvents && deleteEventPresent()) {
       throw new IllegalStateException("Cannot receive event after a delete event received");
     }
     log.debug("Marking event received for: {}", getId());
@@ -151,7 +153,7 @@ class ResourceState {
     return lastKnownResource;
   }
 
-  public void unMarkEventReceived(boolean isAllEventReconcileMode) {
+  public void unMarkEventReceived() {
     switch (eventing) {
       case EVENT_PRESENT:
         eventing = EventingState.NO_EVENT_PRESENT;
@@ -159,12 +161,12 @@ class ResourceState {
       case PROCESSED_MARK_FOR_DELETION:
         throw new IllegalStateException("Cannot unmark processed marked for deletion.");
       case DELETE_EVENT_PRESENT:
-        if (!isAllEventReconcileMode) {
+        if (!triggerOnAllEvents) {
           throw new IllegalStateException("Cannot unmark delete event.");
         }
         break;
       case ADDITIONAL_EVENT_PRESENT_AFTER_DELETE_EVENT:
-        if (!isAllEventReconcileMode) {
+        if (!triggerOnAllEvents) {
           throw new IllegalStateException(
               "This state should not happen in non all-event-reconciliation mode");
         }
