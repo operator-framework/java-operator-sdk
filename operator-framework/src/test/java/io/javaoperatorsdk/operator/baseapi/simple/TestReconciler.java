@@ -133,8 +133,7 @@ public class TestReconciler
     InformerEventSource<ConfigMap, TestCustomResource> es =
         new InformerEventSource<>(
             InformerEventSourceConfiguration.from(ConfigMap.class, TestCustomResource.class)
-                .build(),
-            context);
+                .build());
     return List.of(es);
   }
 

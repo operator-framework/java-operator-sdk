@@ -84,7 +84,7 @@ public class MyReconciler implements Reconciler<TestCustomResource> {
     InformerEventSource<ConfigMap, TestCustomResource> configMapES =
         new InformerEventSource<>(InformerEventSourceConfiguration.from(ConfigMap.class, TestCustomResource.class)
             .withNamespacesInheritedFromController(context)
-            .build(), context);
+            .build());
 
     return EventSourceUtils.nameEventSources(configMapES);
   }

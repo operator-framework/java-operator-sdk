@@ -44,7 +44,7 @@ public class SharedInformerReconciler2 implements Reconciler<SharedInformerCusto
     var config =
         InformerEventSourceConfiguration.from(ConfigMap.class, SharedInformerCustomResource2.class)
             .build();
-    return List.of(new InformerEventSource<>(config, context));
+    return List.of(new InformerEventSource<>(config));
   }
 
   @Override

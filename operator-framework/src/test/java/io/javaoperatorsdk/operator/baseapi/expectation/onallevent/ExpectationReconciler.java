@@ -103,8 +103,7 @@ public class ExpectationReconciler implements Reconciler<ExpectationCustomResour
     return List.of(
         new InformerEventSource<>(
             InformerEventSourceConfiguration.from(Deployment.class, ExpectationCustomResource.class)
-                .build(),
-            context));
+                .build()));
   }
 
   private static void createDeployment(
