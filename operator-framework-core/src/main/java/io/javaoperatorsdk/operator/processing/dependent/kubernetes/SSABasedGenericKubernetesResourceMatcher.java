@@ -38,6 +38,7 @@ import io.fabric8.kubernetes.api.model.apps.DaemonSet;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.api.model.apps.ReplicaSet;
 import io.fabric8.kubernetes.api.model.apps.StatefulSet;
+import io.fabric8.kubernetes.api.model.apps.StatefulSetSpec;
 import io.fabric8.kubernetes.client.utils.KubernetesSerialization;
 import io.javaoperatorsdk.operator.OperatorException;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
@@ -199,25 +200,7 @@ public class SSABasedGenericKubernetesResourceMatcher<R extends HasMetadata> {
         && desired instanceof StatefulSet desiredStatefulSet) {
       var actualSpec = actualStatefulSet.getSpec();
       var desiredSpec = desiredStatefulSet.getSpec();
-      int claims = desiredSpec.getVolumeClaimTemplates().size();
-      if (claims == actualSpec.getVolumeClaimTemplates().size()) {
-        for (int i = 0; i < claims; i++) {
-          var claim = desiredSpec.getVolumeClaimTemplates().get(i);
-          if (claim.getSpec().getVolumeMode() == null) {
-            Optional.ofNullable(
-                    GenericKubernetesResource.get(
-                        actualMap, "spec", "volumeClaimTemplates", i, "spec"))
-                .map(Map.class::cast)
-                .ifPresent(m -> m.remove("volumeMode"));
-          }
-          if (claim.getStatus() == null) {
-            Optional.ofNullable(
-                    GenericKubernetesResource.get(actualMap, "spec", "volumeClaimTemplates", i))
-                .map(Map.class::cast)
-                .ifPresent(m -> m.remove("status"));
-          }
-        }
-      }
+      sanitizeVolumeClaimTemplates(actualMap, actualSpec, desiredSpec);
       sanitizePodTemplateSpec(actualMap, actualSpec.getTemplate(), desiredSpec.getTemplate());
     } else if (actual instanceof Deployment actualDeployment
         && desired instanceof Deployment desiredDeployment) {
@@ -237,6 +220,29 @@ public class SSABasedGenericKubernetesResourceMatcher<R extends HasMetadata> {
           actualMap,
           actualDaemonSet.getSpec().getTemplate(),
           desiredDaemonSet.getSpec().getTemplate());
+    }
+  }
+
+  private static void sanitizeVolumeClaimTemplates(
+      Map<String, Object> actualMap, StatefulSetSpec actualSpec, StatefulSetSpec desiredSpec) {
+    int claims = desiredSpec.getVolumeClaimTemplates().size();
+    if (claims != actualSpec.getVolumeClaimTemplates().size()) {
+      return;
+    }
+    for (int i = 0; i < claims; i++) {
+      var claim = desiredSpec.getVolumeClaimTemplates().get(i);
+      if (claim.getSpec().getVolumeMode() == null) {
+        Optional.ofNullable(
+                GenericKubernetesResource.get(actualMap, "spec", "volumeClaimTemplates", i, "spec"))
+            .map(Map.class::cast)
+            .ifPresent(m -> m.remove("volumeMode"));
+      }
+      if (claim.getStatus() == null) {
+        Optional.ofNullable(
+                GenericKubernetesResource.get(actualMap, "spec", "volumeClaimTemplates", i))
+            .map(Map.class::cast)
+            .ifPresent(m -> m.remove("status"));
+      }
     }
   }
 
