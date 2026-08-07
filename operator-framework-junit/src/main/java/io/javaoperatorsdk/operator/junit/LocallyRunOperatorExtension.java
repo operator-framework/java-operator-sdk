@@ -51,6 +51,7 @@ import io.javaoperatorsdk.operator.ReconcilerUtilsInternal;
 import io.javaoperatorsdk.operator.RegisteredController;
 import io.javaoperatorsdk.operator.api.config.ConfigurationServiceOverrider;
 import io.javaoperatorsdk.operator.api.config.ControllerConfigurationOverrider;
+import io.javaoperatorsdk.operator.api.config.Utils;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 import io.javaoperatorsdk.operator.processing.retry.Retry;
 
@@ -558,11 +559,7 @@ public class LocallyRunOperatorExtension extends AbstractOperatorExtension {
 
     @SuppressWarnings("rawtypes")
     public Builder withReconciler(Class<? extends Reconciler> value) {
-      try {
-        reconcilers.add(new ReconcilerSpec(value.getConstructor().newInstance(), null));
-      } catch (Exception e) {
-        throw new RuntimeException(e);
-      }
+      reconcilers.add(new ReconcilerSpec(Utils.instantiate(value, Reconciler.class, null), null));
       return this;
     }
 

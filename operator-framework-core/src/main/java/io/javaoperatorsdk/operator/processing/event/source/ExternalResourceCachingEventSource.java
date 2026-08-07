@@ -242,7 +242,7 @@ public abstract class ExternalResourceCachingEventSource<R, P extends HasMetadat
     if (cachedValues == null) {
       return Collections.emptySet();
     } else {
-      return new HashSet<>(cache.get(primaryID).values());
+      return new HashSet<>(cachedValues.values());
     }
   }
 
