@@ -25,12 +25,12 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
-import io.fabric8.kubernetes.api.model.ObjectMeta;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClientException;
 import io.fabric8.kubernetes.client.dsl.base.PatchContext;
 import io.fabric8.kubernetes.client.dsl.base.PatchType;
 import io.javaoperatorsdk.operator.OperatorException;
+import io.javaoperatorsdk.operator.ReconcilerUtilsInternal;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
 
 import static io.javaoperatorsdk.operator.processing.KubernetesResourceUtils.getUID;
@@ -430,10 +430,7 @@ public class PrimaryUpdateAndCacheUtils {
     }
     try {
       P resource = (P) originalResource.getClass().getConstructor().newInstance();
-      ObjectMeta objectMeta = new ObjectMeta();
-      objectMeta.setName(originalResource.getMetadata().getName());
-      objectMeta.setNamespace(originalResource.getMetadata().getNamespace());
-      resource.setMetadata(objectMeta);
+      resource.initNameAndNamespaceFrom(originalResource);
       resource.addFinalizer(finalizerName);
       return client
           .resource(resource)
@@ -456,43 +453,10 @@ public class PrimaryUpdateAndCacheUtils {
   }
 
   public static int compareResourceVersions(HasMetadata h1, HasMetadata h2) {
-    return compareResourceVersions(
-        h1.getMetadata().getResourceVersion(), h2.getMetadata().getResourceVersion());
+    return ReconcilerUtilsInternal.validateAndCompareResourceVersions(h1, h2);
   }
 
   public static int compareResourceVersions(String v1, String v2) {
-    int v1Length = validateResourceVersion(v1);
-    int v2Length = validateResourceVersion(v2);
-    int comparison = v1Length - v2Length;
-    if (comparison != 0) {
-      return comparison;
-    }
-    for (int i = 0; i < v2Length; i++) {
-      int comp = v1.charAt(i) - v2.charAt(i);
-      if (comp != 0) {
-        return comp;
-      }
-    }
-    return 0;
-  }
-
-  private static int validateResourceVersion(String v1) {
-    int v1Length = v1.length();
-    if (v1Length == 0) {
-      throw new NonComparableResourceVersionException("Resource version is empty");
-    }
-    for (int i = 0; i < v1Length; i++) {
-      char char1 = v1.charAt(i);
-      if (char1 == '0') {
-        if (i == 0) {
-          throw new NonComparableResourceVersionException(
-              "Resource version cannot begin with 0: " + v1);
-        }
-      } else if (char1 < '0' || char1 > '9') {
-        throw new NonComparableResourceVersionException(
-            "Non numeric characters in resource version: " + v1);
-      }
-    }
-    return v1Length;
+    return ReconcilerUtilsInternal.validateAndCompareResourceVersions(v1, v2);
   }
 }

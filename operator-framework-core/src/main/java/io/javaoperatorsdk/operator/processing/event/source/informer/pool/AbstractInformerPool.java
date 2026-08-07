@@ -128,15 +128,11 @@ public abstract class AbstractInformerPool implements InformerPool {
                       return null;
                     });
               } else {
-                final var apiTypeClass = informer.getApiTypeClass();
-                final var fullResourceName = HasMetadata.getFullResourceName(apiTypeClass);
-                final var version = HasMetadata.getVersion(apiTypeClass);
                 throw new IllegalStateException(
                     "Cannot retrieve 'stopped' callback to listen to informer stopping for"
                         + " informer for "
-                        + fullResourceName
-                        + "/"
-                        + version);
+                        + ReconcilerUtilsInternal.getResourceTypeNameWithVersion(
+                            informer.getApiTypeClass()));
               }
             });
     if (!configurationService.stopOnInformerErrorDuringStartup()) {
