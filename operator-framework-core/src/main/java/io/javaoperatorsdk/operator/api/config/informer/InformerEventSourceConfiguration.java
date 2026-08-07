@@ -83,14 +83,6 @@ public interface InformerEventSourceConfiguration<R extends HasMetadata> extends
     return getInformerConfig().getName();
   }
 
-  /**
-   * Optional, specific kubernetes client, typically to connect to a different cluster than the rest
-   * of the operator. Note that this is solely for multi cluster support.
-   */
-  default Optional<KubernetesClient> getKubernetesClient() {
-    return Optional.empty();
-  }
-
   class DefaultInformerEventSourceConfiguration<R extends HasMetadata>
       implements InformerEventSourceConfiguration<R> {
     private final PrimaryToSecondaryMapper<?> primaryToSecondaryMapper;
