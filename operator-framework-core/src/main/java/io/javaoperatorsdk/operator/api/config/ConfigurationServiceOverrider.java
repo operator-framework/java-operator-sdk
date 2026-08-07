@@ -183,7 +183,7 @@ public class ConfigurationServiceOverrider {
    * Overrides the informer pool strategy used to create/share the informers backing the event
    * sources. When not set, the default (informer-sharing) pool is used.
    *
-   * <p>Custom strategies extend {@link InformerPool}, which already takes care of creating and
+   * <p>Custom strategies implement {@link InformerPool}, which already takes care of creating and
    * starting the informers.
    */
   @Experimental(
