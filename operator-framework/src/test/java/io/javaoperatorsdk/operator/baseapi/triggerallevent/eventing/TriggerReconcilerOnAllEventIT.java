@@ -21,6 +21,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
+import io.fabric8.kubernetes.client.KubernetesClientException;
 import io.javaoperatorsdk.operator.junit.LocallyRunOperatorExtension;
 import io.javaoperatorsdk.operator.processing.retry.GenericRetry;
 
@@ -218,13 +219,6 @@ public class TriggerReconcilerOnAllEventIT {
 
     addNoMoreExceptionAnnotation();
 
-    await()
-        .untilAsserted(
-            () -> {
-              var r = getResource();
-              assertThat(r.getMetadata().getFinalizers()).doesNotContain(FINALIZER);
-            });
-
     removeAdditionalFinalizerWaitForResourceDeletion();
   }
 
@@ -258,9 +252,24 @@ public class TriggerReconcilerOnAllEventIT {
   }
 
   private void removeAdditionalFinalizerWaitForResourceDeletion() {
-    var res = getResource();
-    res.removeFinalizer(ADDITIONAL_FINALIZER);
-    extension.update(res);
+    // The reconciler removes its own finalizer during the reconciliation triggered above, but the
+    // event count is already increased at the beginning of the reconciliation. Therefore, waiting
+    // for the event count alone would release the test into the middle of that reconciliation, and
+    // the update below would race with the finalizer removal.
+    await()
+        .untilAsserted(
+            () ->
+                assertThat(getResource().getMetadata().getFinalizers())
+                    .containsExactly(ADDITIONAL_FINALIZER));
+    // update is optimistically locked, so retry with a fresh read on conflict
+    await()
+        .ignoreException(KubernetesClientException.class)
+        .untilAsserted(
+            () -> {
+              var res = getResource();
+              res.removeFinalizer(ADDITIONAL_FINALIZER);
+              extension.update(res);
+            });
     await().untilAsserted(() -> assertThat(getResource()).isNull());
   }
 
