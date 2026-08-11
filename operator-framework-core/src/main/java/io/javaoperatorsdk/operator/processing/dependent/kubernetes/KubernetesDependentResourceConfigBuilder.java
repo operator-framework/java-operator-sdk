@@ -24,6 +24,8 @@ public final class KubernetesDependentResourceConfigBuilder<R extends HasMetadat
   private Boolean useSSA = null;
   private InformerConfiguration<R> informerConfiguration;
   private SSABasedGenericKubernetesResourceMatcher<R> matcher;
+  private boolean detectApiVersionChange =
+      KubernetesDependentResourceConfig.DEFAULT_DETECT_API_VERSION_CHANGE;
 
   public KubernetesDependentResourceConfigBuilder() {}
 
@@ -51,8 +53,18 @@ public final class KubernetesDependentResourceConfigBuilder<R extends HasMetadat
     return this;
   }
 
+  public KubernetesDependentResourceConfigBuilder<R> withDetectApiVersionChange(
+      boolean detectApiVersionChange) {
+    this.detectApiVersionChange = detectApiVersionChange;
+    return this;
+  }
+
   public KubernetesDependentResourceConfig<R> build() {
     return new KubernetesDependentResourceConfig<>(
-        useSSA, createResourceOnlyIfNotExistingWithSSA, informerConfiguration, matcher);
+        useSSA,
+        createResourceOnlyIfNotExistingWithSSA,
+        informerConfiguration,
+        matcher,
+        detectApiVersionChange);
   }
 }
