@@ -33,7 +33,6 @@ import io.javaoperatorsdk.operator.ReconcilerUtilsInternal;
 import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.config.Informable;
 import io.javaoperatorsdk.operator.api.config.informer.InformerConfiguration;
-import io.javaoperatorsdk.operator.api.config.informer.InformerEventSourceConfiguration;
 import io.javaoperatorsdk.operator.health.InformerHealthIndicator;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
 import io.javaoperatorsdk.operator.processing.event.source.Cache;
@@ -179,13 +178,11 @@ class InformerManager<R extends HasMetadata, C extends Informable<R>>
     // to see the very same instance. ConfigurationService#getKubernetesClient is expected to return
     // a stable instance, but its default implementation does create a new client on every call.
     if (targetClient == null) {
-      targetClient = controllerConfiguration.getConfigurationService().getKubernetesClient();
-      if (configuration instanceof InformerEventSourceConfiguration<?> iesc) {
-        var remoteClient = iesc.getKubernetesClient().orElse(null);
-        if (remoteClient != null) {
-          targetClient = remoteClient;
-        }
-      }
+      targetClient =
+          configuration
+              .getKubernetesClient()
+              .orElseGet(
+                  () -> controllerConfiguration.getConfigurationService().getKubernetesClient());
     }
     return targetClient;
   }
