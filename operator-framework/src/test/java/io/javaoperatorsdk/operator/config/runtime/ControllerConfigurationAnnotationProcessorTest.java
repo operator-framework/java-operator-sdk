@@ -15,12 +15,16 @@
  */
 package io.javaoperatorsdk.operator.config.runtime;
 
+import javax.tools.StandardLocation;
+
 import org.junit.jupiter.api.Test;
 
 import com.google.testing.compile.Compilation;
 import com.google.testing.compile.CompilationSubject;
 import com.google.testing.compile.Compiler;
 import com.google.testing.compile.JavaFileObjects;
+
+import static io.javaoperatorsdk.operator.config.runtime.RuntimeControllerMetadata.RECONCILERS_RESOURCE_PATH;
 
 class ControllerConfigurationAnnotationProcessorTest {
 
@@ -33,6 +37,9 @@ class ControllerConfigurationAnnotationProcessorTest {
                 JavaFileObjects.forResource(
                     "compile-fixtures/ReconcilerImplemented2Interfaces.java"));
     CompilationSubject.assertThat(compilation).succeeded();
+    assertMapping(
+        compilation,
+        "io.ReconcilerImplemented2Interfaces,io.ReconcilerImplemented2Interfaces.MyCustomResource");
   }
 
   @Test
@@ -45,6 +52,9 @@ class ControllerConfigurationAnnotationProcessorTest {
                 JavaFileObjects.forResource(
                     "compile-fixtures/ReconcilerImplementedIntermediateAbstractClass.java"));
     CompilationSubject.assertThat(compilation).succeeded();
+    assertMapping(
+        compilation,
+        "io.ReconcilerImplementedIntermediateAbstractClass,io.AbstractReconciler.MyCustomResource");
   }
 
   @Test
@@ -57,5 +67,18 @@ class ControllerConfigurationAnnotationProcessorTest {
                 JavaFileObjects.forResource("compile-fixtures/MultilevelAbstractReconciler.java"),
                 JavaFileObjects.forResource("compile-fixtures/MultilevelReconciler.java"));
     CompilationSubject.assertThat(compilation).succeeded();
+    assertMapping(compilation, "io.MultilevelReconciler,io.MultilevelReconciler.MyCustomResource");
+  }
+
+  /**
+   * Checks that the generated mapping resource contains the expected {@code
+   * reconciler,resource-class} line, using the same fully qualified, dot separated names that
+   * {@link ClassMappingProvider} expects to be able to load at runtime.
+   */
+  private static void assertMapping(Compilation compilation, String expectedMapping) {
+    CompilationSubject.assertThat(compilation)
+        .generatedFile(StandardLocation.CLASS_OUTPUT, RECONCILERS_RESOURCE_PATH)
+        .contentsAsUtf8String()
+        .contains(expectedMapping);
   }
 }

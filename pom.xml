@@ -77,7 +77,6 @@
     <mokito.version>5.23.0</mokito.version>
     <commons-lang3.version>3.20.0</commons-lang3.version>
     <compile-testing.version>0.23.0</compile-testing.version>
-    <javapoet.version>1.13.0</javapoet.version>
     <assertj.version>3.27.7</assertj.version>
     <awaitility.version>4.3.0</awaitility.version>
     <spring-boot.version>2.7.3</spring-boot.version>
@@ -147,11 +146,6 @@
         <groupId>io.micrometer</groupId>
         <artifactId>micrometer-core</artifactId>
         <version>${micrometer-core.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>com.squareup</groupId>
-        <artifactId>javapoet</artifactId>
-        <version>${javapoet.version}</version>
       </dependency>
       <dependency>
         <groupId>org.awaitility</groupId>
