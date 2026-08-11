@@ -556,7 +556,7 @@ public class ResourceOperations<P extends HasMetadata> {
    */
   public <R extends HasMetadata> R jsonPatch(
       R actualResource, UnaryOperator<R> unaryOperator, Options options) {
-    R desired = desiredForJsonPatch(actualResource, unaryOperator, options);
+    R desired = desiredForJsonPatch(actualResource, unaryOperator);
     return resourcePatch(
         desired,
         actualResource,
@@ -580,7 +580,7 @@ public class ResourceOperations<P extends HasMetadata> {
       UnaryOperator<R> unaryOperator,
       InformerEventSource<R, P> informerEventSource,
       Options options) {
-    R desired = desiredForJsonPatch(actualResource, unaryOperator, options);
+    R desired = desiredForJsonPatch(actualResource, unaryOperator);
     return resourcePatch(
         desired,
         actualResource,
@@ -620,7 +620,7 @@ public class ResourceOperations<P extends HasMetadata> {
    */
   public <R extends HasMetadata> R jsonPatchStatus(
       R actualResource, UnaryOperator<R> unaryOperator, Options options) {
-    R desired = desiredForJsonPatch(actualResource, unaryOperator, options);
+    R desired = desiredForJsonPatch(actualResource, unaryOperator);
     return resourcePatch(
         desired,
         actualResource,
@@ -645,7 +645,7 @@ public class ResourceOperations<P extends HasMetadata> {
       UnaryOperator<R> unaryOperator,
       InformerEventSource<R, P> informerEventSource,
       Options options) {
-    R desired = desiredForJsonPatch(actualResource, unaryOperator, options);
+    R desired = desiredForJsonPatch(actualResource, unaryOperator);
     return resourcePatch(
         desired,
         actualResource,
@@ -680,7 +680,7 @@ public class ResourceOperations<P extends HasMetadata> {
    * @return the patched resource as returned by the API server
    */
   public P jsonPatchPrimary(P actualResource, UnaryOperator<P> unaryOperator, Options options) {
-    P desired = desiredForJsonPatch(actualResource, unaryOperator, options);
+    P desired = desiredForJsonPatch(actualResource, unaryOperator);
     return resourcePatch(
         desired,
         actualResource,
@@ -717,7 +717,7 @@ public class ResourceOperations<P extends HasMetadata> {
    */
   public P jsonPatchPrimaryStatus(
       P actualResource, UnaryOperator<P> unaryOperator, Options options) {
-    P desired = desiredForJsonPatch(actualResource, unaryOperator, options);
+    P desired = desiredForJsonPatch(actualResource, unaryOperator);
     return resourcePatch(
         desired,
         actualResource,
@@ -1441,7 +1441,7 @@ public class ResourceOperations<P extends HasMetadata> {
   }
 
   private <T extends HasMetadata> T desiredForJsonPatch(
-      T actualResource, UnaryOperator<T> unaryOperator, Options options) {
+      T actualResource, UnaryOperator<T> unaryOperator) {
     var cloned =
         context
             .getControllerConfiguration()
