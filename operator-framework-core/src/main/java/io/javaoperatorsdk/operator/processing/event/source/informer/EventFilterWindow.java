@@ -239,8 +239,7 @@ class EventFilterWindow {
       event.setPartOfReList(true);
     }
 
-    relatedEvents.put(
-        Long.valueOf(event.getResource().orElseThrow().getMetadata().getResourceVersion()), event);
+    relatedEvents.put(event.getResourceVersion(), event);
   }
 
   public synchronized void setReListStarted() {
