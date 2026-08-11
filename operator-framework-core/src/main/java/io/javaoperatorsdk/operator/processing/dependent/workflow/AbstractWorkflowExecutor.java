@@ -52,7 +52,7 @@ abstract class AbstractWorkflowExecutor<P extends HasMetadata> {
     this.context = context;
     this.primaryID = ResourceID.fromResource(primary);
     executorService = context.getWorkflowExecutorService();
-    results = new HashMap<>(workflow.getDependentResourcesByName().size());
+    results = new HashMap<>(workflow.size());
   }
 
   protected abstract Logger logger();
