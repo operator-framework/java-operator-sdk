@@ -38,6 +38,12 @@ public class GenericKubernetesResourceMatcher<R extends HasMetadata, P extends H
   public static final String METADATA_LABELS = "/metadata/labels";
   public static final String METADATA_ANNOTATIONS = "/metadata/annotations";
 
+  private static final List<String> SPEC_PREFIX = List.of(SPEC);
+  private static final List<String> STATUS_PREFIX = List.of(STATUS);
+  private static final List<String> METADATA_PREFIX = List.of(METADATA);
+  private static final List<String> LABELS_AND_ANNOTATIONS_PREFIX =
+      List.of(METADATA_LABELS, METADATA_ANNOTATIONS);
+
   private static final String PATH = "path";
   private static final String[] EMPTY_ARRAY = {};
 
@@ -182,11 +188,11 @@ public class GenericKubernetesResourceMatcher<R extends HasMetadata, P extends H
     boolean matched = true;
     for (int i = 0; i < wholeDiffJsonPatch.size() && matched; i++) {
       var node = wholeDiffJsonPatch.get(i);
-      if (nodeIsChildOf(node, List.of(SPEC))) {
+      if (nodeIsChildOf(node, SPEC_PREFIX)) {
         matched = match(valuesEquality, node, ignoreList);
-      } else if (nodeIsChildOf(node, List.of(METADATA))) {
+      } else if (nodeIsChildOf(node, METADATA_PREFIX)) {
         // conditionally consider labels and annotations
-        if (nodeIsChildOf(node, List.of(METADATA_LABELS, METADATA_ANNOTATIONS))) {
+        if (nodeIsChildOf(node, LABELS_AND_ANNOTATIONS_PREFIX)) {
           matched = match(labelsAndAnnotationsEquality, node, Collections.emptyList());
         }
       } else if (!nodeIsChildOf(node, IGNORED_FIELDS)) {
@@ -241,7 +247,7 @@ public class GenericKubernetesResourceMatcher<R extends HasMetadata, P extends H
     boolean matched = true;
     for (int i = 0; i < wholeDiffJsonPatch.size() && matched; i++) {
       var node = wholeDiffJsonPatch.get(i);
-      if (nodeIsChildOf(node, List.of(STATUS))) {
+      if (nodeIsChildOf(node, STATUS_PREFIX)) {
         matched = match(valuesEquality, node, Collections.emptyList());
       }
     }
@@ -261,7 +267,12 @@ public class GenericKubernetesResourceMatcher<R extends HasMetadata, P extends H
 
   static boolean nodeIsChildOf(JsonNode n, List<String> prefixes) {
     var path = getPath(n);
-    return prefixes.stream().anyMatch(path::startsWith);
+    for (int i = 0; i < prefixes.size(); i++) {
+      if (path.startsWith(prefixes.get(i))) {
+        return true;
+      }
+    }
+    return false;
   }
 
   static String getPath(JsonNode n) {
