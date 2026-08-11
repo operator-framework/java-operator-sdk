@@ -35,6 +35,8 @@ public class KubernetesDependentConverter<R extends HasMetadata, P extends HasMe
       ControllerConfiguration<?> controllerConfig) {
     var createResourceOnlyIfNotExistingWithSSA =
         DEFAULT_CREATE_RESOURCE_ONLY_IF_NOT_EXISTING_WITH_SSA;
+    var detectApiVersionChange =
+        KubernetesDependentResourceConfig.DEFAULT_DETECT_API_VERSION_CHANGE;
 
     Boolean useSSA = null;
     SSABasedGenericKubernetesResourceMatcher<R> matcher =
@@ -43,6 +45,7 @@ public class KubernetesDependentConverter<R extends HasMetadata, P extends HasMe
       createResourceOnlyIfNotExistingWithSSA =
           configAnnotation.createResourceOnlyIfNotExistingWithSSA();
       useSSA = configAnnotation.useSSA().asBoolean();
+      detectApiVersionChange = configAnnotation.detectApiVersionChange();
 
       // check if we have a specific matcher
       Class<? extends KubernetesDependentResource<?, ?>> dependentResourceClass =
@@ -62,7 +65,11 @@ public class KubernetesDependentConverter<R extends HasMetadata, P extends HasMe
             controllerConfig);
 
     return new KubernetesDependentResourceConfig<>(
-        useSSA, createResourceOnlyIfNotExistingWithSSA, informerConfiguration, matcher);
+        useSSA,
+        createResourceOnlyIfNotExistingWithSSA,
+        informerConfiguration,
+        matcher,
+        detectApiVersionChange);
   }
 
   @SuppressWarnings({"unchecked"})
