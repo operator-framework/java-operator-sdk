@@ -23,6 +23,47 @@ Operator operator = new Operator( override -> override
         .withLeaderElectionConfiguration(new LeaderElectionConfiguration("bar", "barNS")));
 ```
 
+## Running on Virtual Threads
+
+Reconciliations and workflow steps are executed on the executors provided by
+`ConfigurationService`, which are fixed size thread pools by default. On Java 21 and newer, these
+can be replaced with virtual threads, so that a reconciliation waiting on a remote call does not
+occupy a platform thread:
+
+```java
+Operator operator = new Operator(override -> override
+        .withExecutorService(Executors.newVirtualThreadPerTaskExecutor())
+        .withWorkflowExecutorService(Executors.newVirtualThreadPerTaskExecutor()));
+```
+
+Since a virtual thread per task executor is not a pool, `concurrentReconciliationThreads` and
+`concurrentWorkflowExecutorThreads` have no effect in this case: the number of parallel
+reconciliations is not limited anymore. Reconciliations of the same resource are still serialized
+by the framework.
+
+The Kubernetes client runs its asynchronous tasks - most notably the informer event handlers the
+framework registers - on its own task executor, which can be configured similarly:
+
+```java
+KubernetesClient client = new KubernetesClientBuilder()
+        .withTaskExecutorSupplier(new KubernetesClientBuilder.ExecutorSupplier() {
+          @Override
+          public Executor get() {
+            return Executors.newVirtualThreadPerTaskExecutor();
+          }
+
+          @Override
+          public void onClose(Executor executor) {
+            ((ExecutorService) executor).shutdownNow();
+          }
+        })
+        .build();
+```
+
+See the
+[virtual threads sample](https://github.com/operator-framework/java-operator-sdk/tree/main/sample-operators/virtual-threads)
+for a complete operator using both.
+
 ## Reconciler-Level Configuration
 
 While reconcilers are typically configured using the `@ControllerConfiguration` annotation, you can also override configuration at runtime when registering the reconciler with the operator. You can either:

@@ -38,4 +38,17 @@
     <module>operations</module>
     <module>kotlin-operator</module>
   </modules>
+
+  <profiles>
+    <profile>
+      <!-- Virtual threads require Java 21, while the project itself targets Java 17. -->
+      <id>virtual-threads-sample</id>
+      <activation>
+        <jdk>[21,)</jdk>
+      </activation>
+      <modules>
+        <module>virtual-threads</module>
+      </modules>
+    </profile>
+  </profiles>
 </project>
