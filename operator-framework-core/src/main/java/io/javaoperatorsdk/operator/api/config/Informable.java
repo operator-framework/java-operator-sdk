@@ -15,7 +15,10 @@
  */
 package io.javaoperatorsdk.operator.api.config;
 
+import java.util.Optional;
+
 import io.fabric8.kubernetes.api.model.HasMetadata;
+import io.fabric8.kubernetes.client.KubernetesClient;
 import io.javaoperatorsdk.operator.api.config.informer.InformerConfiguration;
 
 public interface Informable<R extends HasMetadata> {
@@ -28,5 +31,13 @@ public interface Informable<R extends HasMetadata> {
 
   default Class<R> getResourceClass() {
     return getInformerConfig().getResourceClass();
+  }
+
+  /**
+   * Optional, specific kubernetes client, typically to connect to a different cluster than the rest
+   * of the operator. Note that this is solely for multi cluster support.
+   */
+  default Optional<KubernetesClient> getKubernetesClient() {
+    return Optional.empty();
   }
 }
