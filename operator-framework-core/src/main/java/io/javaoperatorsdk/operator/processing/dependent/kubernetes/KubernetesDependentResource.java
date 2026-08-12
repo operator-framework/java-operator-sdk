@@ -263,7 +263,7 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
       configBuilder.updateFrom(kubernetesDependentResourceConfig.informerConfig());
     }
 
-    var es = new InformerEventSource<>(configBuilder.build(), context);
+    var es = new InformerEventSource<R, P>(configBuilder.build());
     setEventSource(es);
     return eventSource().orElseThrow();
   }

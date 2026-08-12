@@ -123,7 +123,7 @@ public class JobReconciler implements Reconciler<Job> {
                               primary.getMetadata().getNamespace())));
     }
 
-    return List.of(new InformerEventSource<>(informerConfiguration.build(), context));
+    return List.of(new InformerEventSource<>(informerConfiguration.build()));
   }
 
   private String indexKey(String clusterName, String namespace) {

@@ -89,15 +89,13 @@ public class ComplexWorkflowReconciler implements Reconciler<ComplexWorkflowCust
             InformerEventSourceConfiguration.from(
                     Service.class, ComplexWorkflowCustomResource.class)
                 .withName(SERVICE_EVENT_SOURCE_NAME)
-                .build(),
-            context);
+                .build());
     InformerEventSource<StatefulSet, ComplexWorkflowCustomResource> statefulSetEventSource =
         new InformerEventSource<>(
             InformerEventSourceConfiguration.from(
                     StatefulSet.class, ComplexWorkflowCustomResource.class)
                 .withName(STATEFUL_SET_EVENT_SOURCE_NAME)
-                .build(),
-            context);
+                .build());
     return List.of(serviceEventSource, statefulSetEventSource);
   }
 

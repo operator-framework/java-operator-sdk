@@ -85,8 +85,7 @@ public class WebPageReconciler implements Reconciler<WebPage> {
        configMapEventSource = new InformerEventSource<>(
                 InformerEventSourceConfiguration.from(ConfigMap.class, WebPage.class)
                         .withLabelSelector(SELECTOR)
-                        .build(),
-                context);
+                        .build());
         
         return List.of(configMapEventSource);
     }
@@ -200,7 +199,7 @@ With this index in place, you can retrieve the target resources very efficiently
 ```java
 
   InformerEventSource<Job,Cluster> clusterInformer =
-          new InformerEventSource(
+          new InformerEventSource<>(
         InformerEventSourceConfiguration.from(Cluster.class, Job.class)
             .withSecondaryToPrimaryMapper(
                 cluster ->
@@ -214,7 +213,7 @@ With this index in place, you can retrieve the target resources very efficiently
                         .stream()
                         .map(ResourceID::fromResource)
                         .collect(Collectors.toSet()))
-            .withNamespacesInheritedFromController().build(), context);
+            .withNamespacesInheritedFromController().build());
 ```
 
 ## Read-cache-after-write consistency and event filtering

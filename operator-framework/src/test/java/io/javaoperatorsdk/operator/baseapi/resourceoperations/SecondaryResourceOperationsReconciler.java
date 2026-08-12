@@ -129,8 +129,7 @@ public class SecondaryResourceOperationsReconciler
         new InformerEventSource<>(
             InformerEventSourceConfiguration.from(
                     ConfigMap.class, SecondaryResourceOperationsCustomResource.class)
-                .build(),
-            context);
+                .build());
     return List.of(configMapEventSource);
   }
 
