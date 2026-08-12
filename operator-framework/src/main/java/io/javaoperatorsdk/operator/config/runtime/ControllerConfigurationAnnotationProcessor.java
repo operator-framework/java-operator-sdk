@@ -34,8 +34,6 @@ import org.slf4j.LoggerFactory;
 import io.fabric8.kubernetes.client.CustomResource;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 
-import com.squareup.javapoet.TypeName;
-
 import static io.javaoperatorsdk.operator.config.runtime.RuntimeControllerMetadata.RECONCILERS_RESOURCE_PATH;
 
 @SupportedAnnotationTypes("io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration")
@@ -103,9 +101,12 @@ public class ControllerConfigurationAnnotationProcessor extends AbstractProcesso
                 + "': ignoring!");
         return;
       }
-      final TypeName customResourceType = TypeName.get(resourceType);
+      // the resolved resource type is always a declared type, so its element is a TypeElement
+      final var customResourceType =
+          (TypeElement) processingEnv.getTypeUtils().asElement(resourceType);
       controllersResourceWriter.add(
-          controllerClassSymbol.getQualifiedName().toString(), customResourceType.toString());
+          controllerClassSymbol.getQualifiedName().toString(),
+          customResourceType.getQualifiedName().toString());
 
     } catch (Exception ioException) {
       log.error("Error", ioException);
