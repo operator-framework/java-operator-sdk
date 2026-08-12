@@ -70,7 +70,7 @@ public class InformerRemoteClusterReconciler
       EventSourceContext<InformerRemoteClusterCustomResource> context) {
 
     var es =
-        new InformerEventSource<>(
+        new InformerEventSource<ConfigMap, InformerRemoteClusterCustomResource>(
             InformerEventSourceConfiguration.from(
                     ConfigMap.class, InformerRemoteClusterCustomResource.class)
                 // owner references do not work cross cluster, using
@@ -80,8 +80,7 @@ public class InformerRemoteClusterReconciler
                 // setting remote client for informer
                 .withKubernetesClient(remoteClient)
                 .withWatchAllNamespaces()
-                .build(),
-            context);
+                .build());
 
     return List.of(es);
   }

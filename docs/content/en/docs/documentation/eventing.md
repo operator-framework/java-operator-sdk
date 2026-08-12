@@ -97,7 +97,7 @@ public class WebPageReconciler implements Reconciler<WebPage> {
                 InformerEventSourceConfiguration.from(Deployment.class, WebPage.class)
                         .withLabelSelector(SELECTOR)
                         .build();
-        return List.of(new InformerEventSource<>(configuration, context));
+        return List.of(new InformerEventSource<>(configuration));
     }
 
     // omitted code

@@ -70,8 +70,7 @@ public class MultipleManagedDependentResourceReconciler
             InformerEventSourceConfiguration.from(
                     ConfigMap.class, MultipleManagedDependentResourceCustomResource.class)
                 .withName(CONFIG_MAP_EVENT_SOURCE)
-                .build(),
-            context);
+                .build());
     return List.of(ies);
   }
 }

@@ -93,7 +93,7 @@ public class PrimaryToSecondaryDependentReconciler
                         primary.getMetadata().getNamespace()))));
 
     var es =
-        new InformerEventSource<>(
+        new InformerEventSource<ConfigMap, PrimaryToSecondaryDependentCustomResource>(
             InformerEventSourceConfiguration.from(
                     ConfigMap.class, PrimaryToSecondaryDependentCustomResource.class)
                 .withName(CONFIG_MAP_EVENT_SOURCE)
@@ -120,8 +120,7 @@ public class PrimaryToSecondaryDependentReconciler
                             .stream()
                             .map(ResourceID::fromResource)
                             .collect(Collectors.toSet()))
-                .build(),
-            context);
+                .build());
 
     return List.of(es);
   }

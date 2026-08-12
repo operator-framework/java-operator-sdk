@@ -56,7 +56,7 @@ public class StaticSharedInformerReconciler
                 (DynamicSharedInformerThirdCustomResource third) ->
                     Set.of(new ResourceID(PRIMARY_NAME, third.getMetadata().getNamespace())))
             .build();
-    return List.of(new InformerEventSource<>(config, context));
+    return List.of(new InformerEventSource<>(config));
   }
 
   @Override

@@ -123,8 +123,7 @@ public class ReadOwnUpdatesReconciler implements Reconciler<ReadOwnUpdatesCustom
         new InformerEventSource<>(
             InformerEventSourceConfiguration.from(
                     ConfigMap.class, ReadOwnUpdatesCustomResource.class)
-                .build(),
-            context);
+                .build());
     configMapEventSource.addIndexers(
         Map.of(RESOURCE_VERSION_INDEX, cm -> List.of(cm.getMetadata().getResourceVersion())));
     return List.of(configMapEventSource);

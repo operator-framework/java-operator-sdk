@@ -67,8 +67,7 @@ public class DependentPrimaryIndexerTestReconciler extends AbstractPrimaryIndexe
                             .stream()
                             .map(ResourceID::fromResource)
                             .collect(Collectors.toSet()))
-                .build(),
-            context);
+                .build());
 
     return List.of(es);
   }

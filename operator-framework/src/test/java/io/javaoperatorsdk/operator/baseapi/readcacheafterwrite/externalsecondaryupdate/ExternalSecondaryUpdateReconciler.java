@@ -102,8 +102,7 @@ public class ExternalSecondaryUpdateReconciler
         new InformerEventSource<>(
             InformerEventSourceConfiguration.from(
                     ConfigMap.class, ExternalSecondaryUpdateCustomResource.class)
-                .build(),
-            context);
+                .build());
     return List.of(configMapEventSource);
   }
 
