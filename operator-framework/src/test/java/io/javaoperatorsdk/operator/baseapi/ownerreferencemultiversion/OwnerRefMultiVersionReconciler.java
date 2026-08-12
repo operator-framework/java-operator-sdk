@@ -77,13 +77,12 @@ public class OwnerRefMultiVersionReconciler implements Reconciler<OwnerRefMultiV
   public List<EventSource<?, OwnerRefMultiVersionCR1>> prepareEventSources(
       EventSourceContext<OwnerRefMultiVersionCR1> context) {
     var ies =
-        new InformerEventSource<>(
+        new InformerEventSource<ConfigMap, OwnerRefMultiVersionCR1>(
             InformerEventSourceConfiguration.from(ConfigMap.class, OwnerRefMultiVersionCR1.class)
                 .withSecondaryToPrimaryMapper(
                     Mappers.fromOwnerReferences(context.getPrimaryResourceClass()))
                 .withLabelSelector(LABEL_KEY + "=" + LABEL_VALUE)
-                .build(),
-            context);
+                .build());
     return List.of(ies);
   }
 

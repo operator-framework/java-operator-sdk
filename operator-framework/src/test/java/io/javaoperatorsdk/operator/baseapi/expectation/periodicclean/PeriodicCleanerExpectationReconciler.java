@@ -128,8 +128,7 @@ public class PeriodicCleanerExpectationReconciler
         new InformerEventSource<>(
             InformerEventSourceConfiguration.from(
                     Deployment.class, PeriodicCleanerExpectationCustomResource.class)
-                .build(),
-            context));
+                .build()));
   }
 
   private static void createDeployment(

@@ -61,7 +61,7 @@ public class InformerEventSourceTestCustomReconciler
                     InformerEventSourceTestCustomResource.class))
             .build();
 
-    return List.of(new InformerEventSource<>(config, context));
+    return List.of(new InformerEventSource<>(config));
   }
 
   @Override

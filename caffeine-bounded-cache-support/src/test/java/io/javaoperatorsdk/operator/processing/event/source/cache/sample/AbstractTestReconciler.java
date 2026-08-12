@@ -96,15 +96,14 @@ public abstract class AbstractTestReconciler<
             1); // setting max size for testing purposes
 
     var es =
-        new InformerEventSource<>(
+        new InformerEventSource<ConfigMap, P>(
             InformerEventSourceConfiguration.from(ConfigMap.class, primaryClass())
                 .withItemStore(boundedItemStore)
                 .withSecondaryToPrimaryMapper(
                     Mappers.fromOwnerReferences(
                         context.getPrimaryResourceClass(),
                         this instanceof BoundedCacheClusterScopeTestReconciler))
-                .build(),
-            context);
+                .build());
 
     return List.of(es);
   }

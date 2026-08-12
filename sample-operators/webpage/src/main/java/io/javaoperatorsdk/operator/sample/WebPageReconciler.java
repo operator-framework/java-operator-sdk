@@ -53,29 +53,25 @@ public class WebPageReconciler implements Reconciler<WebPage> {
   @Override
   public List<EventSource<?, WebPage>> prepareEventSources(EventSourceContext<WebPage> context) {
     var configMapEventSource =
-        new InformerEventSource<>(
+        new InformerEventSource<ConfigMap, WebPage>(
             InformerEventSourceConfiguration.from(ConfigMap.class, WebPage.class)
                 .withLabelSelector(SELECTOR)
-                .build(),
-            context);
+                .build());
     var deploymentEventSource =
-        new InformerEventSource<>(
+        new InformerEventSource<Deployment, WebPage>(
             InformerEventSourceConfiguration.from(Deployment.class, WebPage.class)
                 .withLabelSelector(SELECTOR)
-                .build(),
-            context);
+                .build());
     var serviceEventSource =
-        new InformerEventSource<>(
+        new InformerEventSource<Service, WebPage>(
             InformerEventSourceConfiguration.from(Service.class, WebPage.class)
                 .withLabelSelector(SELECTOR)
-                .build(),
-            context);
+                .build());
     var ingressEventSource =
-        new InformerEventSource<>(
+        new InformerEventSource<Ingress, WebPage>(
             InformerEventSourceConfiguration.from(Ingress.class, WebPage.class)
                 .withLabelSelector(SELECTOR)
-                .build(),
-            context);
+                .build());
     return List.of(
         configMapEventSource, deploymentEventSource, serviceEventSource, ingressEventSource);
   }

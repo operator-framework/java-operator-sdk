@@ -80,7 +80,7 @@ public class FilterTestReconciler implements Reconciler<FilterTestCustomResource
                     !newCM.getData().get(CM_VALUE_KEY).equals(CONFIG_MAP_FILTER_VALUE))
             .build();
     InformerEventSource<ConfigMap, FilterTestCustomResource> configMapES =
-        new InformerEventSource<>(informerConfiguration, context);
+        new InformerEventSource<>(informerConfiguration);
 
     return List.of(configMapES);
   }

@@ -84,7 +84,7 @@ public class WebappReconciler implements Reconciler<Webapp>, Cleaner<Webapp> {
                         new ResourceID(
                             primary.getSpec().getTomcat(), primary.getMetadata().getNamespace())))
             .build();
-    return List.of(new InformerEventSource<>(configuration, context));
+    return List.of(new InformerEventSource<>(configuration));
   }
 
   /**

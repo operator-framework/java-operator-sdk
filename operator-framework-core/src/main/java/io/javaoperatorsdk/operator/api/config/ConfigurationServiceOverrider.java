@@ -30,7 +30,6 @@ import io.javaoperatorsdk.operator.Operator;
 import io.javaoperatorsdk.operator.api.monitoring.Metrics;
 import io.javaoperatorsdk.operator.api.reconciler.Experimental;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResourceFactory;
-import io.javaoperatorsdk.operator.processing.event.source.informer.pool.AbstractInformerPool;
 import io.javaoperatorsdk.operator.processing.event.source.informer.pool.InformerPool;
 
 @SuppressWarnings({"unused", "UnusedReturnValue"})
@@ -184,13 +183,13 @@ public class ConfigurationServiceOverrider {
    * Overrides the informer pool strategy used to create/share the informers backing the event
    * sources. When not set, the default (informer-sharing) pool is used.
    *
-   * <p>Custom strategies extend {@link AbstractInformerPool}, which already takes care of creating
-   * and starting the informers.
+   * <p>Custom strategies implement {@link InformerPool}, which already takes care of creating and
+   * starting the informers.
    */
   @Experimental(
       "Only the configuration API around informer pooling could still change in a"
           + " non-backwards-compatible way, the pooling itself is prod ready.")
-  public ConfigurationServiceOverrider withInformerPool(AbstractInformerPool informerPool) {
+  public ConfigurationServiceOverrider withInformerPool(InformerPool informerPool) {
     this.informerPool = informerPool;
     return this;
   }

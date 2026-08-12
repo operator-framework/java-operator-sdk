@@ -53,9 +53,8 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
   private final PrimaryToSecondaryMapper<P> primaryToSecondaryMapper;
 
   /**
-   * @deprecated use {@link InformerEventSource(InformerEventSourceConfiguration)}
+   * @deprecated use {@link #InformerEventSource(InformerEventSourceConfiguration)}
    */
-  // todo migrate sample, separate PR?
   @Deprecated(forRemoval = true)
   public InformerEventSource(
       InformerEventSourceConfiguration<R> configuration, EventSourceContext<P> context) {

@@ -126,9 +126,7 @@ public class LatestDistinctTestReconciler implements Reconciler<LatestDistinctTe
                             cm.getMetadata().getNamespace())))
             .build();
 
-    return List.of(
-        new InformerEventSource<>(configEs1, context),
-        new InformerEventSource<>(configEs2, context));
+    return List.of(new InformerEventSource<>(configEs1), new InformerEventSource<>(configEs2));
   }
 
   @Override

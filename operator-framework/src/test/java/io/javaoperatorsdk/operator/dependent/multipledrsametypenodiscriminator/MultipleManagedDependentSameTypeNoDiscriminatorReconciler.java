@@ -71,8 +71,7 @@ public class MultipleManagedDependentSameTypeNoDiscriminatorReconciler
             InformerEventSourceConfiguration.from(
                     ConfigMap.class, MultipleManagedDependentNoDiscriminatorCustomResource.class)
                 .withName(CONFIG_MAP_EVENT_SOURCE)
-                .build(),
-            context);
+                .build());
 
     return List.of(ies);
   }
