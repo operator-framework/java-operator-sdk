@@ -170,6 +170,15 @@ public abstract class AbstractInformerPool implements InformerPool {
       if (configurationService.stopOnInformerErrorDuringStartup()) {
         log.error("Informer startup error. Operator will be stopped. Informer: {}", informer, e);
         throw new OperatorException(e);
+      } else if (ExceptionHandler.isDeserializationException(e)) {
+        // the exception handler installed in createInformer declines a retry for these, and an
+        // informer that is not retried is stopped for good, so don't promise a retry here
+        log.error(
+            "Informer startup error caused by a deserialization problem. The informer is stopped"
+                + " and won't be retried, the operator has to be restarted after the problem is"
+                + " fixed. Informer: {}",
+            informer,
+            e);
       } else {
         log.warn("Informer startup error. Will periodically retry. Informer: {}", informer, e);
       }
