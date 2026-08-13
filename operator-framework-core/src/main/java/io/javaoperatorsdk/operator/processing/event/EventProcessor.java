@@ -64,7 +64,7 @@ public class EventProcessor<P extends HasMetadata> implements EventHandler, Life
   private final Cache<P> cache;
   private final EventSourceManager<P> eventSourceManager;
   private final RateLimiter<? extends RateLimitState> rateLimiter;
-  private final ResourceStateManager resourceStateManager = new ResourceStateManager();
+  private final ResourceStateManager resourceStateManager;
   private final Map<String, Object> metricsMetadata;
   private ExecutorService executor;
 
@@ -107,6 +107,8 @@ public class EventProcessor<P extends HasMetadata> implements EventHandler, Life
     this.metrics = metrics != null ? metrics : Metrics.NOOP;
     this.eventSourceManager = eventSourceManager;
     this.rateLimiter = controllerConfiguration.getRateLimiter();
+    this.resourceStateManager =
+        new ResourceStateManager(controllerConfiguration.triggerReconcilerOnAllEvents());
 
     metricsMetadata =
         Optional.ofNullable(eventSourceManager.getController())
@@ -194,7 +196,7 @@ public class EventProcessor<P extends HasMetadata> implements EventHandler, Life
                 state.getRetry(),
                 state.deleteEventPresent(),
                 state.isDeleteFinalStateUnknown());
-        state.unMarkEventReceived(triggerOnAllEvents());
+        state.unMarkEventReceived();
         metrics.reconciliationSubmitted(latest, state.getRetry(), metricsMetadata);
         log.debug("Executing events for custom resource. Scope: {}", executionScope);
         executor.execute(new ReconcilerExecutor(resourceID, executionScope));
@@ -249,10 +251,10 @@ public class EventProcessor<P extends HasMetadata> implements EventHandler, Life
         // removed, but also the informers websocket is disconnected and later reconnected. So
         // meanwhile the resource could be deleted and recreated. In this case we just mark a new
         // event as below.
-        state.markEventReceived(triggerOnAllEvents());
+        state.markEventReceived();
       }
     } else if (!state.deleteEventPresent() && !state.processedMarkForDeletionPresent()) {
-      state.markEventReceived(triggerOnAllEvents());
+      state.markEventReceived();
     } else if (isTriggerOnAllEventAndDeleteEventPresent(state)) {
       state.markAdditionalEventAfterDeleteEvent();
     } else if (log.isDebugEnabled()) {
@@ -381,7 +383,7 @@ public class EventProcessor<P extends HasMetadata> implements EventHandler, Life
     boolean eventPresent =
         state.eventPresent()
             || (triggerOnAllEvents() && state.isAdditionalEventPresentAfterDeleteEvent());
-    state.markEventReceived(triggerOnAllEvents());
+    state.markEventReceived();
     retryAwareErrorLogging(
         state.getRetry(), eventPresent, errorHandledByReconciler, exception, executionScope);
     metrics.reconciliationFailed(
