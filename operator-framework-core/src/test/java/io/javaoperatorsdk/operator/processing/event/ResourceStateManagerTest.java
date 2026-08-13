@@ -27,7 +27,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 class ResourceStateManagerTest {
 
-  private final ResourceStateManager manager = new ResourceStateManager();
+  private final ResourceStateManager manager = new ResourceStateManager(false);
   private final ResourceID sampleResourceID = new ResourceID("test-name");
   private final ResourceID sampleResourceID2 = new ResourceID("test-name2");
   private ResourceState state;
@@ -49,7 +49,7 @@ class ResourceStateManagerTest {
 
   @Test
   public void marksEvent() {
-    state.markEventReceived(false);
+    state.markEventReceived();
 
     assertThat(state.eventPresent()).isTrue();
     assertThat(state.deleteEventPresent()).isFalse();
@@ -65,7 +65,7 @@ class ResourceStateManagerTest {
 
   @Test
   public void afterDeleteEventMarkEventIsNotRelevant() {
-    state.markEventReceived(false);
+    state.markEventReceived();
 
     state.markDeleteEventReceived(TestUtils.testCustomResource(), true);
 
@@ -75,7 +75,7 @@ class ResourceStateManagerTest {
 
   @Test
   public void cleansUp() {
-    state.markEventReceived(false);
+    state.markEventReceived();
     state.markDeleteEventReceived(TestUtils.testCustomResource(), true);
 
     manager.remove(sampleResourceID);
@@ -91,15 +91,15 @@ class ResourceStateManagerTest {
         IllegalStateException.class,
         () -> {
           state.markDeleteEventReceived(TestUtils.testCustomResource(), true);
-          state.markEventReceived(false);
+          state.markEventReceived();
         });
   }
 
   @Test
   public void listsResourceIDSWithEventsPresent() {
-    state.markEventReceived(false);
-    state2.markEventReceived(false);
-    state.unMarkEventReceived(false);
+    state.markEventReceived();
+    state2.markEventReceived();
+    state.unMarkEventReceived();
 
     var res = manager.resourcesWithEventPresent();
 
