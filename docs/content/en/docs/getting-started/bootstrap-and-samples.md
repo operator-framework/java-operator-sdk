@@ -50,6 +50,11 @@ The [sample-operators](https://github.com/java-operator-sdk/java-operator-sdk/tr
 - **Key Features**: Multiple controllers managing related custom resources
 - **Good for**: Understanding complex operators with multiple resource types and relationships
 
+**[virtual-threads](https://github.com/operator-framework/java-operator-sdk/tree/main/sample-operators/virtual-threads)**
+- **Purpose**: Runs reconciliations and Kubernetes client callbacks on virtual threads
+- **Key Features**: Requires Java 21 or newer, configures both the framework and the client executors
+- **Good for**: Operators with blocking reconciliations, see also [configuration](../../documentation/operations/configuration#running-on-virtual-threads)
+
 ## Running the Samples
 
 ### Prerequisites

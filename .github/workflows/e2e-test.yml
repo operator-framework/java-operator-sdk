@@ -26,6 +26,8 @@ jobs:
           - "sample-operators/leader-election"
           - "sample-operators/operations"
           - "sample-operators/kotlin-operator"
+          # requires Java 21+, only built with such a JDK, see sample-operators/pom.xml
+          - "sample-operators/virtual-threads"
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
