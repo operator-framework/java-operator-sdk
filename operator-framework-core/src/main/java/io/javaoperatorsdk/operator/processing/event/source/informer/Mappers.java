@@ -124,6 +124,8 @@ public class Mappers {
       String typeKey,
       Class<? extends HasMetadata> primaryResourceType,
       boolean isLabel) {
+    final var expectedGvk = GroupVersionKind.gvkFor(primaryResourceType);
+    final var expectedGvkString = expectedGvk.toGVKString();
     return resource -> {
       final var metadata = resource.getMetadata();
       if (metadata == null) {
@@ -143,8 +145,8 @@ public class Mappers {
         String gvkSimple = map.get(typeKey);
 
         if (gvkSimple != null
-            && !GroupVersionKind.fromString(gvkSimple)
-                .equals(GroupVersionKind.gvkFor(primaryResourceType))) {
+            && !expectedGvkString.equals(gvkSimple)
+            && !GroupVersionKind.fromString(gvkSimple).equals(expectedGvk)) {
           return Set.of();
         }
 
@@ -183,7 +185,7 @@ public class Mappers {
       }
       return owners.stream()
           .filter(it -> kind.equals(it.getKind()))
-          .map(it -> new ResourceID(it.getName(), resource.getMetadata().getNamespace()))
+          .map(it -> ResourceID.fromOwnerReference(resource, it, false))
           .collect(Collectors.toSet());
     };
   }
@@ -191,16 +193,16 @@ public class Mappers {
   public static class SecondaryToPrimaryFromDefaultAnnotation
       implements SecondaryToPrimaryMapper<HasMetadata> {
 
-    private final Class<? extends HasMetadata> primaryResourceType;
+    private final SecondaryToPrimaryMapper<HasMetadata> delegate;
 
     public SecondaryToPrimaryFromDefaultAnnotation(
         Class<? extends HasMetadata> primaryResourceType) {
-      this.primaryResourceType = primaryResourceType;
+      this.delegate = Mappers.fromDefaultAnnotations(primaryResourceType);
     }
 
     @Override
     public Set<ResourceID> toPrimaryResourceIDs(HasMetadata resource) {
-      return Mappers.fromDefaultAnnotations(primaryResourceType).toPrimaryResourceIDs(resource);
+      return delegate.toPrimaryResourceIDs(resource);
     }
   }
 }
