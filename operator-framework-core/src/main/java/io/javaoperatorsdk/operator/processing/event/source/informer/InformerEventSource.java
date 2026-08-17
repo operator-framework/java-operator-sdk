@@ -70,7 +70,7 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
         configuration);
     // If there is a primary to secondary mapper there is no need for primary to secondary index.
     primaryToSecondaryMapper = configuration.getPrimaryToSecondaryMapper();
-    if (useSecondaryToPrimaryIndex()) {
+    if (usePrimaryToSecondaryIndex()) {
       primaryToSecondaryIndex =
           // The index uses the secondary to primary mapper (always present) to build the index
           new DefaultPrimaryToSecondaryIndex<>(configuration.getSecondaryToPrimaryMapper());
@@ -236,7 +236,7 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
   @Override
   public Set<R> getSecondaryResources(P primary) {
     Set<ResourceID> secondaryIDs;
-    if (useSecondaryToPrimaryIndex()) {
+    if (usePrimaryToSecondaryIndex()) {
       var primaryResourceID = ResourceID.fromResource(primary);
       secondaryIDs = primaryToSecondaryIndex.getSecondaryResources(primaryResourceID);
       log.debug(
@@ -281,7 +281,7 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
     return relatedPrimaryIds;
   }
 
-  private boolean useSecondaryToPrimaryIndex() {
+  private boolean usePrimaryToSecondaryIndex() {
     return this.primaryToSecondaryMapper == null;
   }
 
