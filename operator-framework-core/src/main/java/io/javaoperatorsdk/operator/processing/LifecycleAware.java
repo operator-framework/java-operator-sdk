@@ -17,6 +17,7 @@ package io.javaoperatorsdk.operator.processing;
 
 import io.javaoperatorsdk.operator.OperatorException;
 
+@Deprecated(forRemoval = true)
 public interface LifecycleAware {
   void start() throws OperatorException;
 
