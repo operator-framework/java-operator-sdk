@@ -480,6 +480,17 @@ also be created, one per dependent resource.
 See [integration test](https://github.com/operator-framework/java-operator-sdk/blob/main/operator-framework/src/test/java/io/javaoperatorsdk/operator/dependent/externalstate/externalstatebulkdependent)
 as a sample.
 
+Note that an external resource and the state resource referencing it cannot be created atomically:
+the external resource has to be created first, since its identifier is what gets stored in the
+state. If the resources are fetched based on the state - which is usually the case, since the
+identifier is only known from the state - a poll happening in between the two steps cannot see the
+new external resource yet. JOSDK keeps such a recently created resource in the cache for the next
+update to avoid creating a duplicate of it, but for a resource that takes longer to become visible,
+it is recommended to resolve the actual resources from the state resources in
+`BulkDependentResource.getSecondaryResources`, as done in the integration test above. The state
+resources are managed by an `InformerEventSource`, thus are always up-to-date regarding the
+operator's own changes.
+
 ## GenericKubernetesResource based Dependent Resources
 
 In rare circumstances resource handling where there is no class representation or just typeless handling might be

@@ -15,6 +15,7 @@
  */
 package io.javaoperatorsdk.operator.processing.event.source;
 
+import java.util.Map;
 import java.util.Set;
 
 import org.junit.jupiter.api.BeforeEach;
@@ -209,6 +210,167 @@ class ExternalResourceCachingEventSourceTest
 
     source.handleResources(primaryID1(), Set.of(testResource2()));
     verify(eventHandler, times(0)).handleEvent(any());
+  }
+
+  @Test
+  void retainsRecentlyCreatedResourceMissingFromUpdate() {
+    source.handleResources(primaryID1(), Set.of(testResource1()));
+    source.handleRecentResourceCreate(primaryID1(), testResource2());
+
+    // the update was created before the resource, thus does not contain it yet
+    source.handleResources(primaryID1(), Set.of(testResource1()));
+
+    assertThat(source.getSecondaryResources(primaryID1()))
+        .containsExactlyInAnyOrder(testResource1(), testResource2());
+    // no event for the retained resource, only the initial add event
+    verify(eventHandler, times(1)).handleEvent(new Event(primaryID1()));
+  }
+
+  @Test
+  void retainsRecentlyCreatedResourceOnlyForASingleUpdate() {
+    source.handleResources(primaryID1(), Set.of(testResource1()));
+    source.handleRecentResourceCreate(primaryID1(), testResource2());
+    source.handleResources(primaryID1(), Set.of(testResource1()));
+
+    // this update is created after the resource, so it is really deleted meanwhile
+    source.handleResources(primaryID1(), Set.of(testResource1()));
+
+    assertThat(source.getSecondaryResources(primaryID1())).containsExactly(testResource1());
+    verify(eventHandler, times(2)).handleEvent(new Event(primaryID1()));
+  }
+
+  @Test
+  void doesNotRetainRecentlyCreatedResourceDeletedBeforeTheUpdate() {
+    source.handleRecentResourceCreate(primaryID1(), testResource2());
+    source.handleDelete(primaryID1(), testResource2());
+
+    source.handleResources(primaryID1(), Set.of(testResource1()));
+
+    assertThat(source.getSecondaryResources(primaryID1())).containsExactly(testResource1());
+  }
+
+  @Test
+  void retainsRecentlyCreatedResourceMissingFromWholeCacheUpdate() {
+    source.handleRecentResourceCreate(primaryID1(), testResource1());
+
+    source.handleResources(Map.of());
+
+    assertThat(source.getSecondaryResources(primaryID1())).containsExactly(testResource1());
+
+    source.handleResources(Map.of());
+
+    assertThat(source.getSecondaryResources(primaryID1())).isEmpty();
+  }
+
+  @Test
+  void retainsRecentlyUpdatedResourceMissingFromUpdate() {
+    source.handleResources(primaryID1(), Set.of(testResource1()));
+    source.handleRecentResourceUpdate(primaryID1(), changedTestResource1(), testResource1());
+
+    // the update was created before the resource was updated, thus still contains the old state
+    source.handleResources(primaryID1(), Set.of(testResource1()));
+
+    assertThat(source.getSecondaryResources(primaryID1())).containsExactly(changedTestResource1());
+    // no event for the retained resource, only the initial add event
+    verify(eventHandler, times(1)).handleEvent(new Event(primaryID1()));
+  }
+
+  @Test
+  void retainsRecentlyUpdatedResourceOnlyForASingleUpdate() {
+    source.handleResources(primaryID1(), Set.of(testResource1()));
+    source.handleRecentResourceUpdate(primaryID1(), changedTestResource1(), testResource1());
+    source.handleResources(primaryID1(), Set.of(testResource1()));
+
+    // this update is created after the resource was updated, so it was really changed meanwhile
+    source.handleResources(primaryID1(), Set.of(testResource1()));
+
+    assertThat(source.getSecondaryResources(primaryID1())).containsExactly(testResource1());
+    verify(eventHandler, times(2)).handleEvent(new Event(primaryID1()));
+  }
+
+  @Test
+  void doesNotRetainRecentlyUpdatedResourceChangedOutsideOfTheReconciler() {
+    var externallyChanged = testResource1().setValue("externallyChangedValue");
+    source.handleResources(primaryID1(), Set.of(testResource1()));
+    source.handleRecentResourceUpdate(primaryID1(), changedTestResource1(), testResource1());
+
+    source.handleResources(primaryID1(), Set.of(externallyChanged));
+
+    assertThat(source.getSecondaryResources(primaryID1())).containsExactly(externallyChanged);
+  }
+
+  @Test
+  void retainsRecentlyUpdatedResourceInWholeCacheUpdate() {
+    source.handleResources(primaryID1(), Set.of(testResource1()));
+    source.handleRecentResourceUpdate(primaryID1(), changedTestResource1(), testResource1());
+
+    source.handleResources(Map.of(primaryID1(), Set.of(testResource1())));
+
+    assertThat(source.getSecondaryResources(primaryID1())).containsExactly(changedTestResource1());
+  }
+
+  @Test
+  void retainsResourceUpdatedTwiceIfUpdateContainsTheStateBeforeBothWrites() {
+    source.handleResources(primaryID1(), Set.of(testResource1()));
+    source.handleRecentResourceUpdate(primaryID1(), changedTestResource1(), testResource1());
+    source.handleRecentResourceUpdate(
+        primaryID1(), changedTwiceTestResource1(), changedTestResource1());
+
+    // the update was created before both writes, thus contains the state before the first one
+    source.handleResources(primaryID1(), Set.of(testResource1()));
+
+    assertThat(source.getSecondaryResources(primaryID1()))
+        .containsExactly(changedTwiceTestResource1());
+    // no event for the retained resource, only the initial add event
+    verify(eventHandler, times(1)).handleEvent(new Event(primaryID1()));
+  }
+
+  @Test
+  void retainsResourceUpdatedTwiceIfUpdateContainsTheStateBetweenTheWrites() {
+    source.handleResources(primaryID1(), Set.of(testResource1()));
+    source.handleRecentResourceUpdate(primaryID1(), changedTestResource1(), testResource1());
+    source.handleRecentResourceUpdate(
+        primaryID1(), changedTwiceTestResource1(), changedTestResource1());
+
+    // the update was created between the two writes, thus contains the intermediate state
+    source.handleResources(primaryID1(), Set.of(changedTestResource1()));
+
+    assertThat(source.getSecondaryResources(primaryID1()))
+        .containsExactly(changedTwiceTestResource1());
+    verify(eventHandler, times(1)).handleEvent(new Event(primaryID1()));
+  }
+
+  @Test
+  void retainsRecentlyCreatedAndThenUpdatedResourceMissingFromUpdate() {
+    source.handleRecentResourceCreate(primaryID1(), testResource1());
+    source.handleRecentResourceUpdate(primaryID1(), changedTestResource1(), testResource1());
+
+    // the update was created before both writes, thus does not contain the resource yet
+    source.handleResources(primaryID1(), Set.of(testResource2()));
+
+    assertThat(source.getSecondaryResources(primaryID1()))
+        .containsExactlyInAnyOrder(changedTestResource1(), testResource2());
+  }
+
+  @Test
+  void doesNotRetainResourceUpdatedTwiceIfChangedOutsideOfTheReconciler() {
+    var externallyChanged = testResource1().setValue("externallyChangedValue");
+    source.handleResources(primaryID1(), Set.of(testResource1()));
+    source.handleRecentResourceUpdate(primaryID1(), changedTestResource1(), testResource1());
+    source.handleRecentResourceUpdate(
+        primaryID1(), changedTwiceTestResource1(), changedTestResource1());
+
+    source.handleResources(primaryID1(), Set.of(externallyChanged));
+
+    assertThat(source.getSecondaryResources(primaryID1())).containsExactly(externallyChanged);
+  }
+
+  private static SampleExternalResource changedTestResource1() {
+    return testResource1().setValue("changedValue");
+  }
+
+  private static SampleExternalResource changedTwiceTestResource1() {
+    return testResource1().setValue("changedValueAgain");
   }
 
   public static class TestExternalCachingEventSource
