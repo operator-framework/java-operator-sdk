@@ -135,12 +135,21 @@ public class BulkDependentResourceExternalWithState
     return res;
   }
 
+  /**
+   * Resolves the actual resources from the persisted state instead of the polled cache. An external
+   * resource and the state referencing it cannot be created atomically, so a poll happening in
+   * between replaces the cached resources with the ones it can already see, dropping the freshly
+   * created one. The next reconciliation would then create a duplicate external resource that no
+   * state references anymore, thus is leaked. The state itself is read-after-write consistent,
+   * since it is managed through an {@link
+   * io.javaoperatorsdk.operator.processing.event.source.informer.InformerEventSource}.
+   */
   @Override
   public Map<String, ExternalResource> getSecondaryResources(
       ExternalStateBulkDependentCustomResource primary,
       Context<ExternalStateBulkDependentCustomResource> context) {
-    var resources = context.getSecondaryResources(ExternalResource.class);
-    return resources.stream().collect(Collectors.toMap(this::externalResourceIndex, r -> r));
+    return fetchResources(primary).stream()
+        .collect(Collectors.toMap(this::externalResourceIndex, r -> r));
   }
 
   @Override
