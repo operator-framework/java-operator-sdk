@@ -67,6 +67,28 @@ public abstract class ExternalResourceCachingEventSource<R, P extends HasMetadat
 
   protected Map<ResourceID, Map<ID, R>> cache = new ConcurrentHashMap<>();
 
+  /**
+   * The resources written by the reconciler ({@link #handleRecentResourceCreate(ResourceID,
+   * Object)} and {@link #handleRecentResourceUpdate(ResourceID, Object, Object)}) that were not
+   * seen yet in a subsequent update of the whole resource set of a primary. Such an update might
+   * have been created (polled or received) before the resource was actually written, thus not
+   * containing the new state yet. Since these updates are handled as the full actual state, the
+   * write would be lost from the cache; the next reconciliation would then create a duplicate of an
+   * already created resource, or repeat an already executed update. Note that a mark is dropped on
+   * the first update, so a resource really deleted or changed in the meantime is not retained
+   * indefinitely.
+   *
+   * @see #retainUnconfirmedWrites(ResourceID, Map)
+   */
+  private final Map<ResourceID, Map<ID, RecentWrite<R>>> unconfirmedWrites =
+      new ConcurrentHashMap<>();
+
+  /**
+   * A resource written by the reconciler and the state it replaced, which is {@code null} in case
+   * the resource was created.
+   */
+  private record RecentWrite<R>(R written, R replaced) {}
+
   protected ExternalResourceCachingEventSource(
       Class<R> resourceClass, ResourceIDMapper<R, ID> resourceIDMapper) {
     this(null, resourceClass, resourceIDMapper);
@@ -86,6 +108,7 @@ public abstract class ExternalResourceCachingEventSource<R, P extends HasMetadat
   }
 
   protected synchronized void handleDelete(ResourceID primaryID) {
+    unconfirmedWrites.remove(primaryID);
     var res = cache.remove(primaryID);
     if (res != null && deleteAcceptedByFilter(res.values())) {
       getEventHandler().handleEvent(new Event(primaryID));
@@ -104,6 +127,13 @@ public abstract class ExternalResourceCachingEventSource<R, P extends HasMetadat
   protected synchronized void handleDelete(ResourceID primaryID, Set<ID> resourceIDs) {
     if (!isRunning()) {
       return;
+    }
+    var unconfirmed = unconfirmedWrites.get(primaryID);
+    if (unconfirmed != null) {
+      unconfirmed.keySet().removeAll(resourceIDs);
+      if (unconfirmed.isEmpty()) {
+        unconfirmedWrites.remove(primaryID);
+      }
     }
     var cachedValues = cache.get(primaryID);
     List<R> removedResources =
@@ -131,7 +161,16 @@ public abstract class ExternalResourceCachingEventSource<R, P extends HasMetadat
 
   protected synchronized void handleResources(Map<ResourceID, Set<R>> allNewResources) {
     var toDelete = cache.keySet().stream().filter(k -> !allNewResources.containsKey(k)).toList();
-    toDelete.forEach(this::handleDelete);
+    toDelete.forEach(
+        primaryID -> {
+          if (unconfirmedWrites.containsKey(primaryID)) {
+            // handled as an empty update, so that a recently written resource, that this update
+            // could not see yet, is not removed from the cache
+            handleResources(primaryID, Collections.emptySet());
+          } else {
+            handleDelete(primaryID);
+          }
+        });
     allNewResources.forEach(this::handleResources);
   }
 
@@ -148,12 +187,41 @@ public abstract class ExternalResourceCachingEventSource<R, P extends HasMetadat
     }
     var newResourcesMap =
         newResources.stream().collect(Collectors.toMap(resourceIDMapper::idFor, r -> r));
+    retainUnconfirmedWrites(primaryID, newResourcesMap);
     cache.put(primaryID, newResourcesMap);
     if (propagateEvent
         && !newResourcesMap.equals(cachedResources)
         && acceptedByFiler(cachedResources, newResourcesMap)) {
       getEventHandler().handleEvent(new Event(primaryID));
     }
+  }
+
+  /**
+   * Keeps the resources written since the received update was created, thus missing from it. An
+   * update is considered stale for a written resource if it does not contain it at all - which is
+   * the expected case for a create - or if it still contains the state that the write replaced. Any
+   * other state is a change that happened outside of the reconciler, so it is accepted as the
+   * actual state.
+   *
+   * @see #unconfirmedWrites
+   */
+  private void retainUnconfirmedWrites(ResourceID primaryID, Map<ID, R> newResourcesMap) {
+    var unconfirmed = unconfirmedWrites.remove(primaryID);
+    if (unconfirmed == null) {
+      return;
+    }
+    unconfirmed.forEach(
+        (id, write) -> {
+          var newResource = newResourcesMap.get(id);
+          if (newResource == null || newResource.equals(write.replaced())) {
+            log.debug(
+                "Retaining recently written resource missing from the update. Primary ID: {},"
+                    + " resource ID: {}",
+                primaryID,
+                id);
+            newResourcesMap.put(id, write.written());
+          }
+        });
   }
 
   private boolean acceptedByFiler(Map<ID, R> cachedResourceMap, Map<ID, R> newResourcesMap) {
@@ -217,6 +285,7 @@ public abstract class ExternalResourceCachingEventSource<R, P extends HasMetadat
     } else {
       actualValues.computeIfAbsent(resourceId, r -> resource);
     }
+    markUnconfirmedWrite(primaryID, resourceId, new RecentWrite<>(resource, null));
   }
 
   @Override
@@ -226,10 +295,16 @@ public abstract class ExternalResourceCachingEventSource<R, P extends HasMetadat
     if (actualValues != null) {
       var resourceId = resourceIDMapper.idFor(resource);
       R actualResource = actualValues.get(resourceId);
-      if (actualResource.equals(previousVersionOfResource)) {
+      if (actualResource != null && actualResource.equals(previousVersionOfResource)) {
         actualValues.put(resourceId, resource);
+        markUnconfirmedWrite(
+            primaryID, resourceId, new RecentWrite<>(resource, previousVersionOfResource));
       }
     }
+  }
+
+  private void markUnconfirmedWrite(ResourceID primaryID, ID resourceId, RecentWrite<R> write) {
+    unconfirmedWrites.computeIfAbsent(primaryID, id -> new HashMap<>()).put(resourceId, write);
   }
 
   @Override
