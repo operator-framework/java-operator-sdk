@@ -294,6 +294,12 @@ All operator-level keys are prefixed with `josdk.`.
 |---|---|---|
 | `josdk.dependent-resources.ssa-based-create-update-match` | `Boolean` | Use SSA-based matching for dependent resource create/update |
 
+#### Events
+
+| Key | Type | Description |
+|---|---|---|
+| `josdk.events.cluster-scoped-namespace` | `String` | Namespace to record events about cluster scoped resources in (defaults to `default`) |
+
 #### Leader Election
 
 Leader election is activated when at least one `josdk.leader-election.*` key is present.

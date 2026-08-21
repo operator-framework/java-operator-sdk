@@ -101,7 +101,11 @@ public class ConfigLoader {
           new ConfigBinding<>(
               "clone-secondary-resources-when-getting-from-cache",
               Boolean.class,
-              ConfigurationServiceOverrider::withCloneSecondaryResourcesWhenGettingFromCache));
+              ConfigurationServiceOverrider::withCloneSecondaryResourcesWhenGettingFromCache),
+          new ConfigBinding<>(
+              "events.cluster-scoped-namespace",
+              String.class,
+              ConfigurationServiceOverrider::withClusterScopedEventNamespace));
 
   // ---------------------------------------------------------------------------
   // Operator-level leader-election property keys
