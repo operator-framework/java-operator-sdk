@@ -66,7 +66,7 @@ public class DefaultInformerPool extends AbstractInformerPool {
                         existing.informerListLimit(),
                         classifier.informerListLimit()));
         var referenceCount = pooled.referenceCount().incrementAndGet();
-        log.debug(
+        log.info(
             "Reusing pooled informer for classifier: {}. Reference count now: {}. Requested by"
                 + " controller: {}, event source: {}",
             classifier,
