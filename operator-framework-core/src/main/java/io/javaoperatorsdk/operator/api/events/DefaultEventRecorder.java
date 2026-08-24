@@ -17,8 +17,12 @@ package io.javaoperatorsdk.operator.api.events;
 
 import java.net.InetAddress;
 import java.net.UnknownHostException;
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
+import java.util.HexFormat;
 import java.util.Objects;
 
 import org.slf4j.Logger;
@@ -60,6 +64,11 @@ public class DefaultEventRecorder implements EventRecorder {
 
   /** Separates the parts hashed into the event name, so no two sets of parts can collide. */
   private static final char IDENTITY_SEPARATOR = '\0';
+
+  /** Digest used to derive the event name suffix from the identity of the event. */
+  private static final String IDENTITY_DIGEST = "SHA-256";
+
+  private static final int IDENTITY_HASH_LENGTH = 32;
 
   private final String reportingController;
   private final String reportingInstance;
@@ -179,13 +188,38 @@ public class DefaultEventRecorder implements EventRecorder {
             record.reportingComponent().orElse(reportingController),
             record.key().orElseGet(() -> requireNonNullElse(record.message(), "")));
 
-    var suffix = "." + Integer.toHexString(identity.hashCode() & 0x7FFFFFFF);
+    var suffix = "." + identityDigest(identity);
     var prefix = metadata.getName();
     var maxPrefixLength = MAX_NAME_LENGTH - suffix.length();
     if (prefix.length() > maxPrefixLength) {
       prefix = prefix.substring(0, maxPrefixLength);
     }
     return prefix + suffix;
+  }
+
+  /**
+   * Digests the <em>contents</em> of the identity of an event into lowercase hexadecimal, which is
+   * valid in an RFC 1123 DNS subdomain. Being a digest of the contents, it is the same in every
+   * process and on every machine for the same event, which is what makes the event name stable
+   * across restarts and between replicas.
+   *
+   * <p>A cryptographic digest is used rather than {@link String#hashCode()}: the latter collides on
+   * inputs as short as {@code Aa} and {@code BB}, and two colliding events would resolve to the
+   * same name, so the sink would take the second one for a repeat of the first and drop it.
+   *
+   * <p>A {@link MessageDigest} is created per call on purpose, as it is stateful and not thread
+   * safe; sharing one across concurrent reconciliations would interleave their digests.
+   */
+  private static String identityDigest(String identity) {
+    try {
+      var digest =
+          MessageDigest.getInstance(IDENTITY_DIGEST)
+              .digest(identity.getBytes(StandardCharsets.UTF_8));
+      return HexFormat.of().formatHex(digest).substring(0, IDENTITY_HASH_LENGTH);
+    } catch (NoSuchAlgorithmException e) {
+      // every JVM is required to provide SHA-256
+      throw new IllegalStateException(IDENTITY_DIGEST + " is not available", e);
+    }
   }
 
   private ObjectReference objectReferenceFor(HasMetadata resource) {

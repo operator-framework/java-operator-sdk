@@ -185,6 +185,29 @@ class DefaultEventRecorderTest {
         .isThrownBy(() -> EventRecord.builder().message("no reason given").build());
   }
 
+  @Test
+  void namesEventsWithADnsSafeHashSuffix() {
+    recorder.record(configMap(), EventRecord.normal("Created", "created"));
+
+    assertThat(emitted.get(0).getMetadata().getName()).matches("test1\\.[0-9a-f]{32}");
+  }
+
+  @Test
+  void givesEventsWhoseMessagesCollideUnderStringHashCodeDistinctNames() {
+    // "Aa" and "BB" share a String.hashCode(), and so do the two identities they are part of: the
+    // message comes last and both are of the same length, so the collision survives the common
+    // prefix. Were the name suffix derived from that hash, the two events would resolve to one
+    // name and the sink would take the second for a repeat of the first and drop it.
+    assertThat("Aa".hashCode()).isEqualTo("BB".hashCode());
+
+    recorder.record(configMap(), EventRecord.warning("Failed", "Aa"));
+    recorder.record(configMap(), EventRecord.warning("Failed", "BB"));
+
+    assertThat(emitted).hasSize(2);
+    assertThat(emitted.get(0).getMetadata().getName())
+        .isNotEqualTo(emitted.get(1).getMetadata().getName());
+  }
+
   ConfigMap configMap() {
     return new ConfigMapBuilder()
         .withNewMetadata()
