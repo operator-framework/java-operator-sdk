@@ -27,7 +27,7 @@ import io.fabric8.kubernetes.api.model.Event;
 public interface EventSink {
 
   /**
-   * Delivers the event. Implementations may throw, callers are expected to isolate failures.
+   * Delivers the event.
    *
    * @param event the event to deliver
    */

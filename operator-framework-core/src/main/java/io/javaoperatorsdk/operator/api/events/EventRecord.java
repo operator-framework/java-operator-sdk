@@ -32,6 +32,7 @@ public final class EventRecord {
   private final EventType type;
   private final String reason;
   private final String message;
+  private final String key;
   private final String action;
   private final String reportingComponent;
   private final Map<String, String> labels;
@@ -41,6 +42,7 @@ public final class EventRecord {
     this.type = builder.type;
     this.reason = builder.reason;
     this.message = builder.message;
+    this.key = builder.key;
     this.action = builder.action;
     this.reportingComponent = builder.reportingComponent;
     this.labels = Map.copyOf(builder.labels);
@@ -71,6 +73,14 @@ public final class EventRecord {
 
   public String message() {
     return message;
+  }
+
+  /**
+   * Identifies this event among the events about the same object, so that repeated occurrences
+   * resolve to the same event rather than to one event each.
+   */
+  public Optional<String> key() {
+    return Optional.ofNullable(key);
   }
 
   /**
@@ -109,6 +119,7 @@ public final class EventRecord {
     private EventType type = EventType.NORMAL;
     private String reason;
     private String message;
+    private String key;
     private String action;
     private String reportingComponent;
     private final Map<String, String> labels = new HashMap<>();
@@ -128,6 +139,12 @@ public final class EventRecord {
 
     public Builder message(String message) {
       this.message = message;
+      return this;
+    }
+
+    /** Sets the key identifying this event, see {@link EventRecord#key()}. */
+    public Builder key(String key) {
+      this.key = key;
       return this;
     }
 

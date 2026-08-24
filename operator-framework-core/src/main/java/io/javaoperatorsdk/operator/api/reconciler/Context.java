@@ -220,8 +220,12 @@ public interface Context<P extends HasMetadata> {
    * {@link io.javaoperatorsdk.operator.RegisteredController#eventRecorder()}.
    *
    * @return an event recorder bound to the primary resource
+   * @throws UnsupportedOperationException if the implementation does not provide an event recorder
    */
-  ResourceEventRecorder eventRecorder();
+  default ResourceEventRecorder eventRecorder() {
+    throw new UnsupportedOperationException(
+        "This implementation of Context does not provide a ResourceEventRecorder");
+  }
 
   /** ExecutorService initialized by framework for workflows. Used for workflow standalone mode. */
   ExecutorService getWorkflowExecutorService();

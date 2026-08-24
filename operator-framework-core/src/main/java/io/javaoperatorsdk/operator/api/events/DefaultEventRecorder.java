@@ -30,6 +30,8 @@ import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.ObjectReference;
 import io.fabric8.kubernetes.api.model.ObjectReferenceBuilder;
 
+import static java.util.Objects.requireNonNullElse;
+
 /**
  * Default {@link EventRecorder}. Assembles events from an {@link EventRecord} plus the context the
  * controller already knows about (the involved object reference, the reporting controller and
@@ -39,6 +41,10 @@ import io.fabric8.kubernetes.api.model.ObjectReferenceBuilder;
  * #CLUSTER_SCOPED_EVENT_NAMESPACE} namespace is used, following the Kubernetes convention, but it
  * can be overridden, see {@link
  * io.javaoperatorsdk.operator.api.config.ConfigurationService#clusterScopedEventNamespace()}.
+ *
+ * <p>Events are named deterministically, after the object they are about plus a hash of everything
+ * that identifies the event, so that recording the same event again resolves to the event already
+ * recorded for it rather than to a duplicate, see {@link DefaultEventSink}.
  */
 public class DefaultEventRecorder implements EventRecorder {
 
@@ -51,6 +57,9 @@ public class DefaultEventRecorder implements EventRecorder {
    * subdomains.
    */
   private static final int MAX_NAME_LENGTH = 253;
+
+  /** Separates the parts hashed into the event name, so no two sets of parts can collide. */
+  private static final char IDENTITY_SEPARATOR = '\0';
 
   private final String reportingController;
   private final String reportingInstance;
@@ -121,7 +130,7 @@ public class DefaultEventRecorder implements EventRecorder {
     var builder =
         new EventBuilder()
             .withNewMetadata()
-            .withName(eventName(regarding))
+            .withName(eventName(regarding, record))
             .withNamespace(eventNamespace(regarding))
             .withLabels(record.labels())
             .withAnnotations(record.annotations())
@@ -149,13 +158,29 @@ public class DefaultEventRecorder implements EventRecorder {
   }
 
   /**
-   * Names events after the object they are about plus a unique suffix, the same convention the Go
-   * client uses. Note that once aggregation is supported the name has to be derived from the
-   * deduplication key instead, so that an existing event can be found and its count increased.
+   * Names events {@code <object name>.<hash>}, following the convention of the Go client, hashing
+   * everything that makes two events the same event: the object, the type, the reason, the
+   * reporting component and, unless the record sets a {@link EventRecord#key()}, the message. The
+   * name is therefore stable across occurrences, which is what lets the sink recognise a repeat,
+   * and stays so across operator restarts and between replicas, unlike a name remembered in memory.
+   *
+   * <p>The object is identified by its uid, with the kind as a fallback for objects that do not
+   * have one yet, such as a dependent resource that has only been built so far.
    */
-  private String eventName(HasMetadata regarding) {
-    var suffix = "." + Long.toHexString(System.nanoTime());
-    var prefix = regarding.getMetadata().getName();
+  private String eventName(HasMetadata regarding, EventRecord record) {
+    var metadata = regarding.getMetadata();
+    var identity =
+        String.join(
+            String.valueOf(IDENTITY_SEPARATOR),
+            requireNonNullElse(regarding.getKind(), ""),
+            requireNonNullElse(metadata.getUid(), ""),
+            record.type().value(),
+            record.reason(),
+            record.reportingComponent().orElse(reportingController),
+            record.key().orElseGet(() -> requireNonNullElse(record.message(), "")));
+
+    var suffix = "." + Integer.toHexString(identity.hashCode() & 0x7FFFFFFF);
+    var prefix = metadata.getName();
     var maxPrefixLength = MAX_NAME_LENGTH - suffix.length();
     if (prefix.length() > maxPrefixLength) {
       prefix = prefix.substring(0, maxPrefixLength);

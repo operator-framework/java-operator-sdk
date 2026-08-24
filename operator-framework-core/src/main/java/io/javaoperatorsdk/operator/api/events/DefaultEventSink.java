@@ -22,6 +22,10 @@ import io.fabric8.kubernetes.client.KubernetesClient;
  * Default {@link EventSink}, creating events in the {@code v1} (core) API group. The core group is
  * used rather than {@code events.k8s.io/v1} because it is what {@code kubectl describe} renders
  * uniformly and what the count based aggregation of the Kubernetes event model is defined on.
+ *
+ * <p>An event is only created if it does not exist yet.Should another writer create the event
+ * between the lookup and the create, the resulting conflict is left to the caller, which is
+ * expected to treat recording as best effort.
  */
 public class DefaultEventSink implements EventSink {
 
@@ -33,6 +37,10 @@ public class DefaultEventSink implements EventSink {
 
   @Override
   public void emit(Event event) {
-    client.v1().events().inNamespace(event.getMetadata().getNamespace()).resource(event).create();
+    var events = client.v1().events().inNamespace(event.getMetadata().getNamespace());
+    var existing = events.withName(event.getMetadata().getName()).get();
+    if (existing == null) {
+      events.resource(event).create();
+    }
   }
 }
