@@ -87,6 +87,8 @@
     <mustache.version>0.9.14</mustache.version>
     <commons.io.version>2.22.0</commons.io.version>
     <java.diff.version>4.17</java.diff.version>
+    <!-- aligned with the version brought in by the Kubernetes client -->
+    <jackson.version>2.21.4</jackson.version>
 
     <fmt-maven-plugin.version>2.11</fmt-maven-plugin.version>
     <maven-compiler-plugin.version>3.15.0</maven-compiler-plugin.version>
@@ -105,7 +107,10 @@
     <jib-maven-plugin.version>3.5.2</jib-maven-plugin.version>
     <spotless.version>3.9.0</spotless.version>
     <spotbugs-maven-plugin.version>4.10.3.0</spotbugs-maven-plugin.version>
+    <maven-shade-plugin.version>3.6.0</maven-shade-plugin.version>
     <jmh.version>1.37</jmh.version>
+    <!-- Performance tests are skipped by default, enable them with the performance-tests profile -->
+    <skipPerformanceTests>true</skipPerformanceTests>
   </properties>
 
   <dependencyManagement>
@@ -179,6 +184,11 @@
         <groupId>io.github.java-diff-utils</groupId>
         <artifactId>java-diff-utils</artifactId>
         <version>${java.diff.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>com.fasterxml.jackson.core</groupId>
+        <artifactId>jackson-databind</artifactId>
+        <version>${jackson.version}</version>
       </dependency>
       <dependency>
         <groupId>org.slf4j</groupId>

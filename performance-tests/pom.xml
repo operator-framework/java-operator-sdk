@@ -26,152 +26,19 @@
   </parent>
 
   <artifactId>performance-tests</artifactId>
-  <packaging>jar</packaging>
+  <packaging>pom</packaging>
   <name>Operator SDK - Performance Tests</name>
-  <description>JMH benchmarks and performance tests for the Operator SDK</description>
+  <description>Aggregator for the performance test modules of the Operator SDK</description>
+
+  <modules>
+    <module>reporting</module>
+    <module>jmh</module>
+    <module>e2e</module>
+  </modules>
 
   <properties>
-    <skipPerformanceTests>true</skipPerformanceTests>
+    <!-- nothing below performance-tests is ever published, but the modules are installed locally
+         so that single module builds can resolve them -->
     <maven.deploy.skip>true</maven.deploy.skip>
-    <maven.install.skip>true</maven.install.skip>
   </properties>
-
-  <dependencies>
-    <!-- Module under test -->
-    <dependency>
-      <groupId>io.javaoperatorsdk</groupId>
-      <artifactId>operator-framework-core</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>io.javaoperatorsdk</groupId>
-      <artifactId>operator-framework-core</artifactId>
-      <type>test-jar</type>
-    </dependency>
-
-    <!-- JMH (compile scope: benchmarks live in src/main/java) -->
-    <dependency>
-      <groupId>org.openjdk.jmh</groupId>
-      <artifactId>jmh-core</artifactId>
-      <version>${jmh.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>org.openjdk.jmh</groupId>
-      <artifactId>jmh-generator-annprocess</artifactId>
-      <version>${jmh.version}</version>
-      <scope>provided</scope>
-    </dependency>
-
-    <!-- Mocking (compile scope: used in JMH setup in src/main) -->
-    <dependency>
-      <groupId>org.mockito</groupId>
-      <artifactId>mockito-core</artifactId>
-    </dependency>
-
-    <!-- Kubernetes client -->
-    <dependency>
-      <groupId>io.fabric8</groupId>
-      <artifactId>kubernetes-client</artifactId>
-      <exclusions>
-        <exclusion>
-          <groupId>io.fabric8</groupId>
-          <artifactId>kubernetes-httpclient-okhttp</artifactId>
-        </exclusion>
-      </exclusions>
-    </dependency>
-
-    <!-- Testing -->
-    <dependency>
-      <groupId>org.junit.jupiter</groupId>
-      <artifactId>junit-jupiter-api</artifactId>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>org.junit.jupiter</groupId>
-      <artifactId>junit-jupiter-engine</artifactId>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>org.assertj</groupId>
-      <artifactId>assertj-core</artifactId>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>org.awaitility</groupId>
-      <artifactId>awaitility</artifactId>
-      <scope>test</scope>
-    </dependency>
-
-    <!-- Logging -->
-    <dependency>
-      <groupId>org.slf4j</groupId>
-      <artifactId>slf4j-api</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>org.apache.logging.log4j</groupId>
-      <artifactId>log4j-slf4j2-impl</artifactId>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>org.apache.logging.log4j</groupId>
-      <artifactId>log4j-core</artifactId>
-      <scope>test</scope>
-    </dependency>
-  </dependencies>
-
-  <build>
-    <plugins>
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-compiler-plugin</artifactId>
-        <configuration>
-          <annotationProcessorPaths>
-            <path>
-              <groupId>org.openjdk.jmh</groupId>
-              <artifactId>jmh-generator-annprocess</artifactId>
-              <version>${jmh.version}</version>
-            </path>
-          </annotationProcessorPaths>
-        </configuration>
-      </plugin>
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-shade-plugin</artifactId>
-        <version>3.6.0</version>
-        <executions>
-          <execution>
-            <goals>
-              <goal>shade</goal>
-            </goals>
-            <phase>package</phase>
-            <configuration>
-              <finalName>benchmarks</finalName>
-              <transformers>
-                <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
-                  <mainClass>org.openjdk.jmh.Main</mainClass>
-                </transformer>
-                <transformer implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer"/>
-              </transformers>
-              <filters>
-                <filter>
-                  <artifact>*:*</artifact>
-                  <excludes>
-                    <exclude>META-INF/*.SF</exclude>
-                    <exclude>META-INF/*.DSA</exclude>
-                    <exclude>META-INF/*.RSA</exclude>
-                  </excludes>
-                </filter>
-              </filters>
-            </configuration>
-          </execution>
-        </executions>
-      </plugin>
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-surefire-plugin</artifactId>
-        <configuration>
-          <skipTests>${skipPerformanceTests}</skipTests>
-        </configuration>
-      </plugin>
-    </plugins>
-  </build>
 </project>
