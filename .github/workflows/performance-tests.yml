@@ -2,11 +2,15 @@ name: Performance Tests
 
 env:
   MAVEN_ARGS: -V -ntp -e
+  # branch the results of every run are stored on, created on the first run
+  RESULTS_BRANCH: performance-test-results
+  RESULTS_PATH: performance-tests/results
 
 on:
   push:
     branches:
       - main
+      - next
     paths:
       - 'operator-framework-core/src/main/**'
       - 'performance-tests/**'
@@ -27,18 +31,27 @@ jobs:
       - name: Build project
         run: ./mvnw ${MAVEN_ARGS} install -DskipTests --file pom.xml
       - name: Run JMH benchmarks
-        run: java -jar performance-tests/target/benchmarks.jar -rf json -rff performance-tests/target/jmh-result.json
+        run: |
+          java -Dperformance.results.dir=performance-tests/jmh/target/performance-results \
+            -Dperformance.results.branch=${{ github.ref_name }} \
+            -jar performance-tests/jmh/target/benchmarks.jar \
+            -rf json -rff performance-tests/jmh/target/jmh-result.json
       - name: Upload benchmark results
         uses: actions/upload-artifact@v4
         with:
           name: jmh-result
-          path: performance-tests/target/jmh-result.json
+          path: performance-tests/jmh/target/jmh-result.json
+      - name: Upload performance results
+        uses: actions/upload-artifact@v4
+        with:
+          name: performance-results-jmh
+          path: performance-tests/jmh/target/performance-results
       - name: Store benchmark result
         uses: benchmark-action/github-action-benchmark@v1
         if: github.ref == 'refs/heads/main'
         with:
           tool: 'jmh'
-          output-file-path: performance-tests/target/jmh-result.json
+          output-file-path: performance-tests/jmh/target/jmh-result.json
           auto-push: true
           alert-threshold: '130%'
           comment-on-alert: true
@@ -46,7 +59,7 @@ jobs:
           gh-pages-branch: gh-pages
           benchmark-data-dir-path: dev/bench
 
-  integration-perf-tests:
+  in-process-tests:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
@@ -57,5 +70,105 @@ jobs:
           distribution: temurin
           java-version: 17
           cache: 'maven'
-      - name: Run integration performance tests
-        run: ./mvnw ${MAVEN_ARGS} verify -P performance-tests -pl performance-tests -am --file pom.xml
+      - name: Run in-process performance tests
+        run: |
+          ./mvnw ${MAVEN_ARGS} install -DskipTests --file pom.xml
+          ./mvnw ${MAVEN_ARGS} verify -P performance-tests \
+            -Dperformance.results.branch=${{ github.ref_name }} \
+            -pl performance-tests/jmh --file pom.xml
+      - name: Upload performance results
+        uses: actions/upload-artifact@v4
+        with:
+          name: performance-results-in-process
+          path: performance-tests/jmh/target/performance-results
+
+  e2e-performance-tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v6
+      - name: Set up Java and Maven
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: 17
+          cache: 'maven'
+      - name: Set up Minikube
+        uses: manusa/actions-setup-minikube@v2.18.0
+        with:
+          minikube version: 'v1.38.1'
+          kubernetes version: 'v1.35.2'
+          github token: ${{ github.token }}
+      - name: Run performance tests against the cluster
+        run: |
+          ./mvnw ${MAVEN_ARGS} install -DskipTests --file pom.xml
+          ./mvnw ${MAVEN_ARGS} verify -P performance-tests \
+            -Dperformance.results.branch=${{ github.ref_name }} \
+            -pl performance-tests/e2e --file pom.xml
+      - name: Upload performance results
+        uses: actions/upload-artifact@v4
+        with:
+          name: performance-results-e2e
+          path: performance-tests/e2e/target/performance-results
+
+  publish-results:
+    needs: [jmh-benchmarks, in-process-tests, e2e-performance-tests]
+    # results of a partially failed run would be misleading when comparing commits, and only the
+    # long living branches are worth keeping a history for
+    if: github.ref_name == 'main' || github.ref_name == 'next'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v6
+      - name: Set up Java and Maven
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: 17
+          cache: 'maven'
+      - name: Build the results tooling
+        run: |
+          ./mvnw ${MAVEN_ARGS} package -Dmaven.test.skip=true \
+            -pl performance-tests/reporting -am --file pom.xml
+      - name: Download the results of all performance test jobs
+        uses: actions/download-artifact@v4
+        with:
+          pattern: performance-results-*
+          # all jobs of a run write into the same directory, named after the commit
+          merge-multiple: true
+          path: collected-results
+      - name: Check out the results branch
+        env:
+          REPOSITORY_URL: https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git
+        run: |
+          set -euo pipefail
+          if git ls-remote --exit-code --heads "$REPOSITORY_URL" "$RESULTS_BRANCH" > /dev/null; then
+            git clone --depth 1 --branch "$RESULTS_BRANCH" "$REPOSITORY_URL" results-branch
+          else
+            # first run: the branch holds only results, so it is started without any history
+            echo "$RESULTS_BRANCH does not exist yet, creating it"
+            git init results-branch
+            git -C results-branch remote add origin "$REPOSITORY_URL"
+            git -C results-branch checkout -b "$RESULTS_BRANCH"
+          fi
+      - name: Add the results of this commit
+        run: |
+          mkdir -p "results-branch/$RESULTS_PATH"
+          cp -R collected-results/. "results-branch/$RESULTS_PATH/"
+          java -cp performance-tests/reporting/target/performance-results-tools.jar \
+            io.javaoperatorsdk.operator.performance.results.ResultsIndexer \
+            "results-branch/$RESULTS_PATH"
+      - name: Push the results
+        working-directory: results-branch
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add "$RESULTS_PATH"
+          if git diff --cached --quiet; then
+            echo "No new results to store"
+            exit 0
+          fi
+          git commit -m "perf: results of ${{ github.ref_name }} at ${GITHUB_SHA:0:7}"
+          git push origin "HEAD:$RESULTS_BRANCH"
