@@ -71,11 +71,15 @@ rules:
   {{- end }}
 {{- end }}
 # Event permissions - for recording events
+# "get" is required because the event sink looks an event up by name before creating it, so that a
+# repeat of an event resolves to the one already recorded instead of a duplicate. Without it,
+# recording fails and is only visible as a warning in the operator log.
 - apiGroups:
   - ""
   resources:
   - events
   verbs:
+  - get
   - create
   - patch
 {{- /* Leader election - Lease permissions */}}
