@@ -36,9 +36,9 @@ import static org.awaitility.Awaitility.await;
  * Companion of {@link MultiVersionCRDIT}: there the resource that cannot be deserialized shows up
  * while the informer is already watching, here it is already present when the informer lists the
  * resources on startup. Since {@code stopOnInformerErrorDuringStartup} is {@code false} the
- * operator starts anyway and logs that it will periodically retry the informer, so this test checks
- * whether such a retry really happens, i.e. whether an operator picks it up when the problem is
- * fixed in the cluster while it is running.
+ * operator starts anyway, but the informer is stopped for good and not retried after a
+ * deserialization failure; this test documents what happens when the problem is fixed in the
+ * cluster while the operator is running.
  */
 @Sample(
     tldr = "Informer Retry After a Custom Resource Deserialization Problem",
@@ -94,6 +94,8 @@ class MultiVersionCRDDeserializationRetryIT {
     // is removed. It is deleted through the v2 endpoint, where it can be deserialized.
     operator.delete(notDeserializableResource());
     await()
+        .atMost(Duration.ofSeconds(10))
+        .pollInterval(Duration.ofMillis(50))
         .untilAsserted(
             () ->
                 assertThat(
