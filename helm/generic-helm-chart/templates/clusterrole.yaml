@@ -71,9 +71,9 @@ rules:
   {{- end }}
 {{- end }}
 # Event permissions - for recording events
-# "get" is required because the event sink looks an event up by name before creating it, so that a
-# repeat of an event resolves to the one already recorded instead of a duplicate. Without it,
-# recording fails and is only visible as a warning in the operator log.
+# All three verbs are used: an event is looked up by name ("get") so that a repeat of it resolves to
+# the event already recorded, which is then "patch"ed to count the new occurrence instead of being
+# "create"d a second time. Without them recording fails, visible only as a warning in the log.
 - apiGroups:
   - ""
   resources:

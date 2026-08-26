@@ -15,20 +15,31 @@
  */
 package io.javaoperatorsdk.operator.baseapi.eventrecorder;
 
+import java.util.concurrent.atomic.AtomicInteger;
+
 import io.javaoperatorsdk.operator.api.reconciler.Context;
+import io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
 
+@ControllerConfiguration(generationAwareEventProcessing = false)
 public class EventRecorderReconciler implements Reconciler<EventRecorderCustomResource> {
 
   public static final String NORMAL_REASON = "Reconciled";
   public static final String WARNING_REASON = "SomethingIsOff";
 
+  private final AtomicInteger numberOfExecutions = new AtomicInteger();
+
   @Override
   public UpdateControl<EventRecorderCustomResource> reconcile(
       EventRecorderCustomResource resource, Context<EventRecorderCustomResource> context) {
+    numberOfExecutions.incrementAndGet();
     context.eventRecorder().normal(NORMAL_REASON, "resource reconciled");
     context.eventRecorder().warn(WARNING_REASON, "this is a warning about the resource");
     return UpdateControl.noUpdate();
+  }
+
+  public int getNumberOfExecutions() {
+    return numberOfExecutions.get();
   }
 }

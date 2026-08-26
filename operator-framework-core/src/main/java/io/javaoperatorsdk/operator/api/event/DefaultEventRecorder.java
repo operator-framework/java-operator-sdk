@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.javaoperatorsdk.operator.api.events;
+package io.javaoperatorsdk.operator.api.event;
 
 import java.net.InetAddress;
 import java.net.UnknownHostException;
@@ -48,7 +48,8 @@ import static java.util.Objects.requireNonNullElse;
  *
  * <p>Events are named deterministically, after the object they are about plus a hash of everything
  * that identifies the event, so that recording the same event again resolves to the event already
- * recorded for it rather than to a duplicate, see {@link DefaultEventSink}.
+ * recorded for it. Repeat occurrences are then counted on that event rather than recorded as copies
+ * of it, see {@link DefaultEventSink}.
  */
 public class DefaultEventRecorder implements EventRecorder {
 

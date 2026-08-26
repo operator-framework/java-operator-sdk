@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.javaoperatorsdk.operator.api.events;
+package io.javaoperatorsdk.operator.api.event;
 
 /**
  * Type of a recorded Kubernetes event.
