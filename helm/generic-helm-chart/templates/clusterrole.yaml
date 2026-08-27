@@ -71,11 +71,15 @@ rules:
   {{- end }}
 {{- end }}
 # Event permissions - for recording events
+# All three verbs are used: an event is looked up by name ("get") so that a repeat of it resolves to
+# the event already recorded, which is then "patch"ed to count the new occurrence instead of being
+# "create"d a second time. Without them recording fails, visible only as a warning in the log.
 - apiGroups:
   - ""
   resources:
   - events
   verbs:
+  - get
   - create
   - patch
 {{- /* Leader election - Lease permissions */}}

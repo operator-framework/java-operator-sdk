@@ -34,6 +34,7 @@ import io.fabric8.kubernetes.client.CustomResource;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClientBuilder;
 import io.fabric8.kubernetes.client.utils.KubernetesSerialization;
+import io.javaoperatorsdk.operator.api.event.DefaultEventRecorder;
 import io.javaoperatorsdk.operator.api.monitoring.Metrics;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
@@ -272,6 +273,23 @@ public interface ConfigurationService {
    */
   default Optional<LeaderElectionConfiguration> getLeaderElectionConfiguration() {
     return Optional.empty();
+  }
+
+  /**
+   * The namespace in which Kubernetes events about cluster scoped resources are created, since such
+   * events still have to live in some namespace.
+   *
+   * <p>Defaults to the {@code default} namespace, following the Kubernetes convention, which is
+   * also what the Go client does, so that events recorded by an operator end up alongside the ones
+   * recorded by the built-in controllers. Operators whose RBAC does not allow creating events in
+   * the {@code default} namespace should override this, typically with the namespace the operator
+   * itself runs in. Note that recording an event is best effort, so a missing permission results in
+   * the event being dropped with a warning in the log rather than in an error.
+   *
+   * @return the namespace to record events about cluster scoped resources in
+   */
+  default String clusterScopedEventNamespace() {
+    return DefaultEventRecorder.CLUSTER_SCOPED_EVENT_NAMESPACE;
   }
 
   /**

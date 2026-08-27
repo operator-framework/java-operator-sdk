@@ -38,7 +38,11 @@ import io.javaoperatorsdk.operator.OperatorException;
 import io.javaoperatorsdk.operator.RegisteredController;
 import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.config.ExecutorServiceManager;
+import io.javaoperatorsdk.operator.api.config.LeaderElectionConfiguration;
 import io.javaoperatorsdk.operator.api.config.workflow.WorkflowSpec;
+import io.javaoperatorsdk.operator.api.event.DefaultEventRecorder;
+import io.javaoperatorsdk.operator.api.event.DefaultEventSink;
+import io.javaoperatorsdk.operator.api.event.EventRecorder;
 import io.javaoperatorsdk.operator.api.monitoring.Metrics;
 import io.javaoperatorsdk.operator.api.monitoring.Metrics.ControllerExecution;
 import io.javaoperatorsdk.operator.api.reconciler.Cleaner;
@@ -96,6 +100,7 @@ public class Controller<P extends HasMetadata>
   private final EventProcessor<P> eventProcessor;
   private final ControllerHealthInfo controllerHealthInfo;
   private final EventSourceContext<P> eventSourceContext;
+  private final EventRecorder eventRecorder;
 
   public Controller(
       Reconciler<P> reconciler,
@@ -109,6 +114,16 @@ public class Controller<P extends HasMetadata>
     this.configuration = configuration;
     this.kubernetesClient = kubernetesClient;
     this.metrics = Optional.ofNullable(configurationService.getMetrics()).orElse(Metrics.NOOP);
+    this.eventRecorder =
+        new DefaultEventRecorder(
+            configuration.getName(),
+            configurationService
+                .getLeaderElectionConfiguration()
+                .flatMap(LeaderElectionConfiguration::getIdentity)
+                .orElseGet(DefaultEventRecorder::defaultReportingInstance),
+            Optional.ofNullable(configurationService.clusterScopedEventNamespace())
+                .orElse(DefaultEventRecorder.CLUSTER_SCOPED_EVENT_NAMESPACE),
+            new DefaultEventSink(kubernetesClient));
     contextInitializer = reconciler instanceof ContextInitializer;
     isCleaner = reconciler instanceof Cleaner;
 
@@ -341,6 +356,11 @@ public class Controller<P extends HasMetadata>
   @Override
   public ControllerHealthInfo getControllerHealthInfo() {
     return controllerHealthInfo;
+  }
+
+  @Override
+  public EventRecorder eventRecorder() {
+    return eventRecorder;
   }
 
   public KubernetesClient getClient() {

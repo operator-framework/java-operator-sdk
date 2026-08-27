@@ -294,6 +294,26 @@ All operator-level keys are prefixed with `josdk.`.
 |---|---|---|
 | `josdk.dependent-resources.ssa-based-create-update-match` | `Boolean` | Use SSA-based matching for dependent resource create/update |
 
+#### Events
+
+| Key | Type | Description |
+|---|---|---|
+| `josdk.events.cluster-scoped-namespace` | `String` | Namespace to record events about cluster scoped resources in (defaults to `default`) |
+
+Recording events requires the operator's service account to be allowed `get`, `create` and `patch` on
+`events` in the core (`""`) API group. All three are used: an event that does not exist yet is
+created, and an event that does is a repeat of one already recorded, which is patched to count the
+new occurrence instead of being recorded a second time. The
+[generic Helm chart](helm-chart.md) grants all three. If you write your own RBAC and a permission is
+missing, recording fails silently as far as reconciliation is concerned: the failure is swallowed so
+that it cannot break a reconciliation, and only shows up as a warning in the operator log.
+
+Note that events live in a namespace of their own choosing, which is the namespace of the object
+they are about, and for cluster scoped objects the namespace configured above. A namespaced `Role`
+therefore has to grant the permission in every namespace events are recorded in — including
+`default`, or whatever `josdk.events.cluster-scoped-namespace` is set to, if the operator reconciles
+cluster scoped resources. A `ClusterRole` covers all of them at once.
+
 #### Leader Election
 
 Leader election is activated when at least one `josdk.leader-election.*` key is present.

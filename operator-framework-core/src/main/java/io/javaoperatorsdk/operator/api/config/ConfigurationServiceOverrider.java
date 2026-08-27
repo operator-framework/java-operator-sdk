@@ -45,6 +45,7 @@ public class ConfigurationServiceOverrider {
   private ExecutorService executorService;
   private ExecutorService workflowExecutorService;
   private LeaderElectionConfiguration leaderElectionConfiguration;
+  private String clusterScopedEventNamespace;
   private InformerStoppedHandler informerStoppedHandler;
   private Boolean stopOnInformerErrorDuringStartup;
   private Duration cacheSyncTimeout;
@@ -128,6 +129,19 @@ public class ConfigurationServiceOverrider {
   public ConfigurationServiceOverrider withLeaderElectionConfiguration(
       LeaderElectionConfiguration leaderElectionConfiguration) {
     this.leaderElectionConfiguration = leaderElectionConfiguration;
+    return this;
+  }
+
+  /**
+   * Sets the namespace in which Kubernetes events about cluster scoped resources are recorded. Use
+   * this when the operator is not allowed to create events in the {@code default} namespace,
+   * passing for example the namespace the operator itself runs in.
+   *
+   * @param namespace the namespace to record events about cluster scoped resources in
+   * @return this {@link ConfigurationServiceOverrider} for chained customization
+   */
+  public ConfigurationServiceOverrider withClusterScopedEventNamespace(String namespace) {
+    this.clusterScopedEventNamespace = namespace;
     return this;
   }
 
@@ -256,6 +270,13 @@ public class ConfigurationServiceOverrider {
         return leaderElectionConfiguration != null
             ? Optional.of(leaderElectionConfiguration)
             : original.getLeaderElectionConfiguration();
+      }
+
+      @Override
+      public String clusterScopedEventNamespace() {
+        return clusterScopedEventNamespace != null
+            ? clusterScopedEventNamespace
+            : original.clusterScopedEventNamespace();
       }
 
       @Override

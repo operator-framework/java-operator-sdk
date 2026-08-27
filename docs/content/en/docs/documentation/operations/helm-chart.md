@@ -49,6 +49,12 @@ secondaryResources:
 Primary resources get read/watch/patch permissions and status sub-resource access.
 Secondary resources get full CRUD permissions. Default verbs can be overridden per resource entry.
 
+The ClusterRole always grants `get`, `create` and `patch` on `events` in the core API group, so
+recording events works without any extra configuration. All three are needed: an event is looked up
+by name before it is created, so that recording the same event again resolves to the event already
+recorded, and that event is then patched to count the new occurrence rather than recorded again. See
+[Events](configuration.md#events) for what this means if you write your own RBAC.
+
 ### Operator Environment
 
 The chart injects `OPERATOR_NAMESPACE` automatically. You can optionally set `WATCH_NAMESPACE` to
