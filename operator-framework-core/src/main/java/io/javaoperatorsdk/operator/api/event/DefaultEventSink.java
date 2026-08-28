@@ -60,7 +60,7 @@ public class DefaultEventSink implements EventSink {
               .withLastTimestamp(event.getLastTimestamp())
               .withMessage(event.getMessage())
               .build();
-      events.withName(name).patch(aggregated);
+      events.resource(existing).patch(aggregated);
     }
   }
 }
