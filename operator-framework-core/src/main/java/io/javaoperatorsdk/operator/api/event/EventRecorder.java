@@ -16,20 +16,25 @@
 package io.javaoperatorsdk.operator.api.event;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
+import io.javaoperatorsdk.operator.api.reconciler.Experimental;
+
+import static io.javaoperatorsdk.operator.api.reconciler.Experimental.API_MIGHT_CHANGE;
 
 /**
  * Records Kubernetes events on behalf of a controller.
  *
  * <p>This is the unbound form of the API: it is scoped to a controller, not to a reconciliation,
  * and can therefore be used outside of the reconciliation loop, for example from a status listener
- * or a background task. Obtain it from {@link
- * io.javaoperatorsdk.operator.RegisteredController#eventRecorder()}. Within a reconciliation,
- * prefer {@link io.javaoperatorsdk.operator.api.reconciler.Context#eventRecorder()}, which is
- * already bound to the primary resource.
+ * or a background task. To use it that way, configure the instance the operator records its events
+ * through, see {@link io.javaoperatorsdk.operator.api.config.ConfigurationService#eventRecorder()},
+ * and keep a reference to it. Within a reconciliation, prefer {@link
+ * io.javaoperatorsdk.operator.api.reconciler.Context#eventRecorder()}, which is already bound to
+ * the primary resource.
  *
  * <p>Recording an event is best effort: failures to write the event to the cluster are logged and
  * swallowed, and never fail the caller.
  */
+@Experimental(API_MIGHT_CHANGE)
 public interface EventRecorder {
 
   /**

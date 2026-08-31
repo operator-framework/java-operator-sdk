@@ -23,6 +23,9 @@ import java.util.concurrent.ThreadPoolExecutor;
 import org.junit.jupiter.api.Test;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
+import io.javaoperatorsdk.operator.api.event.EventRecord;
+import io.javaoperatorsdk.operator.api.event.EventRecorder;
+import io.javaoperatorsdk.operator.api.event.ResourceEventRecorder;
 import io.javaoperatorsdk.operator.api.monitoring.Metrics;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -104,6 +107,28 @@ class ConfigurationServiceOverriderTest {
         config.getInformerStoppedHandler(), overridden.getLeaderElectionConfiguration());
     assertNotEquals(
         config.reconciliationTerminationTimeout(), overridden.reconciliationTerminationTimeout());
+  }
+
+  @Test
+  void eventRecorderIsNotConfiguredByDefaultAndCanBeOverridden() {
+    final var eventRecorder =
+        new EventRecorder() {
+          @Override
+          public void record(HasMetadata regarding, EventRecord event) {}
+
+          @Override
+          public ResourceEventRecorder forResource(HasMetadata regarding) {
+            return null;
+          }
+        };
+
+    assertThat(config.eventRecorder()).isEmpty();
+    assertThat(
+            new ConfigurationServiceOverrider(config)
+                .withEventRecorder(eventRecorder)
+                .build()
+                .eventRecorder())
+        .contains(eventRecorder);
   }
 
   @Test

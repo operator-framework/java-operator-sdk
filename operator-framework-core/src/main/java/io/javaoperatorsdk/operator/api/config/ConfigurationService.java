@@ -35,6 +35,7 @@ import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClientBuilder;
 import io.fabric8.kubernetes.client.utils.KubernetesSerialization;
 import io.javaoperatorsdk.operator.api.event.DefaultEventRecorder;
+import io.javaoperatorsdk.operator.api.event.EventRecorder;
 import io.javaoperatorsdk.operator.api.monitoring.Metrics;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.Experimental;
@@ -293,6 +294,25 @@ public interface ConfigurationService {
    */
   default String clusterScopedEventNamespace() {
     return DefaultEventRecorder.CLUSTER_SCOPED_EVENT_NAMESPACE;
+  }
+
+  /**
+   * The {@link EventRecorder} the controllers of the operator record their Kubernetes events
+   * through, to plug in a custom implementation, for example one that assembles events differently
+   * by extending {@link DefaultEventRecorder}, or one that records them somewhere else entirely.
+   *
+   * <p>When empty, which is the default, every controller gets a {@link DefaultEventRecorder} of
+   * its own, which attributes the events it records to that controller. A recorder configured here
+   * is shared by all controllers of the operator, so it decides on its own what the events it
+   * records are attributed to, and it is up to the caller to hold on to the instance if it also
+   * records events outside of a reconciliation.
+   *
+   * @return the event recorder to use for the whole operator, or an empty optional to let each
+   *     controller use its own default one
+   */
+  @Experimental(Experimental.API_MIGHT_CHANGE)
+  default Optional<EventRecorder> eventRecorder() {
+    return Optional.empty();
   }
 
   /**

@@ -27,6 +27,7 @@ import org.slf4j.LoggerFactory;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.javaoperatorsdk.operator.Operator;
+import io.javaoperatorsdk.operator.api.event.EventRecorder;
 import io.javaoperatorsdk.operator.api.monitoring.Metrics;
 import io.javaoperatorsdk.operator.api.reconciler.Experimental;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResourceFactory;
@@ -48,6 +49,7 @@ public class ConfigurationServiceOverrider {
   private ExecutorService workflowExecutorService;
   private LeaderElectionConfiguration leaderElectionConfiguration;
   private String clusterScopedEventNamespace;
+  private EventRecorder eventRecorder;
   private InformerStoppedHandler informerStoppedHandler;
   private Boolean stopOnInformerErrorDuringStartup;
   private Duration cacheSyncTimeout;
@@ -145,6 +147,25 @@ public class ConfigurationServiceOverrider {
    */
   public ConfigurationServiceOverrider withClusterScopedEventNamespace(String namespace) {
     this.clusterScopedEventNamespace = namespace;
+    return this;
+  }
+
+  /**
+   * Replaces the {@link EventRecorder} the controllers of the operator record their Kubernetes
+   * events through by the specified one, which is then shared by all of them. Use this to record
+   * events differently, for example through a subclass of {@link
+   * io.javaoperatorsdk.operator.api.event.DefaultEventRecorder} that assembles them another way, or
+   * to hold on to the recorder in order to also record events outside of a reconciliation.
+   *
+   * <p>When not set, every controller records its events through a recorder of its own, which
+   * attributes them to that controller.
+   *
+   * @param eventRecorder the event recorder to use for the whole operator
+   * @return this {@link ConfigurationServiceOverrider} for chained customization
+   */
+  @Experimental(Experimental.API_MIGHT_CHANGE)
+  public ConfigurationServiceOverrider withEventRecorder(EventRecorder eventRecorder) {
+    this.eventRecorder = eventRecorder;
     return this;
   }
 
@@ -295,6 +316,11 @@ public class ConfigurationServiceOverrider {
         return clusterScopedEventNamespace != null
             ? clusterScopedEventNamespace
             : original.clusterScopedEventNamespace();
+      }
+
+      @Override
+      public Optional<EventRecorder> eventRecorder() {
+        return eventRecorder != null ? Optional.of(eventRecorder) : original.eventRecorder();
       }
 
       @Override

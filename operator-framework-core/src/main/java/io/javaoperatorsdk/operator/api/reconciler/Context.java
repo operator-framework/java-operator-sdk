@@ -216,8 +216,9 @@ public interface Context<P extends HasMetadata> {
 
   /**
    * Returns a {@link ResourceEventRecorder} bound to the primary resource, to record Kubernetes
-   * events about it. To record events outside of a reconciliation, or about another object, use
-   * {@link io.javaoperatorsdk.operator.RegisteredController#eventRecorder()}.
+   * events about it. To record events outside of a reconciliation, or about another object, use an
+   * {@link io.javaoperatorsdk.operator.api.event.EventRecorder} configured for the operator, see
+   * {@link io.javaoperatorsdk.operator.api.config.ConfigurationService#eventRecorder()}.
    *
    * @return an event recorder bound to the primary resource
    * @throws UnsupportedOperationException if the implementation does not provide an event recorder
