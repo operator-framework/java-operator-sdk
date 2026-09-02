@@ -17,6 +17,9 @@ package io.javaoperatorsdk.operator.api.event;
 
 import io.fabric8.kubernetes.api.model.Event;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
+import io.javaoperatorsdk.operator.api.reconciler.Experimental;
+
+import static io.javaoperatorsdk.operator.api.reconciler.Experimental.API_MIGHT_CHANGE;
 
 /**
  * Writes fully built events somewhere. Extracted from {@link EventRecorder} so that the assembly of
@@ -36,5 +39,6 @@ public interface EventSink {
    *     implementations that route the event based on it rather than on its contents. Ignored by
    *     {@link DefaultEventSink}.
    */
+  @Experimental(API_MIGHT_CHANGE)
   void emit(Event event, Context<?> context);
 }
