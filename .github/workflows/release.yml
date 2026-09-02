@@ -10,8 +10,10 @@ jobs:
     runs-on: ubuntu-latest
     env:
       tmp_version_branch: ''
+      RAW_TAG: ${{ github.event.release.tag_name }}
     outputs:
       version_branch: ${{ steps.set-version-branch.outputs.version_branch }}
+      release_tag: ${{ steps.set-release-tag.outputs.release_tag }}
     steps:
       - if: ${{ startsWith(github.event.release.tag_name, 'v1.' ) }}
         run: |
@@ -31,8 +33,7 @@ jobs:
           echo "tmp_version_branch=v4" >> "$GITHUB_ENV"
       - if: ${{ startsWith(github.event.release.tag_name, 'v5.' ) }}
         run: |
-          RELEASE_VERSION="${{ github.event.release.tag_name }}"
-          RELEASE_VERSION="${RELEASE_VERSION#v}"
+          RELEASE_VERSION="${RAW_TAG#v}"
           RELEASE_MAJOR_MINOR=$(echo "$RELEASE_VERSION" | cut -d. -f1-2)
 
           MAIN_POM_VERSION=$(curl -fsSL "https://raw.githubusercontent.com/${{ github.repository }}/main/pom.xml" | yq -p xml '.project.version')
@@ -55,16 +56,22 @@ jobs:
       - if: ${{ env.tmp_version_branch == '' }}
         name: Fail if version_branch is not set
         run: |
-          echo "Failed to find appropriate branch to release ${{github.event.release.tag_name}} from"
+          echo "Failed to find appropriate branch to release $RAW_TAG from"
           exit 1
       - id: set-version-branch
         name: Set version_branch if matched
-        run: echo "version_branch=${{env.tmp_version_branch}}" >> $GITHUB_OUTPUT
+        run: echo "version_branch=${{ env.tmp_version_branch }}" >> "$GITHUB_OUTPUT"
+      - id: set-release-tag
+        name: Pass release tag
+        run: echo "release_tag=${RAW_TAG}" >> "$GITHUB_OUTPUT"
 
   release-sdk:
     needs: prepare-release
+    permissions:
+      contents: write
     uses: ./.github/workflows/release-project-in-dir.yml
     secrets: inherit
     with:
-      version_branch: ${{needs.prepare-release.outputs.version_branch}}
+      version_branch: ${{ needs.prepare-release.outputs.version_branch }}
+      release_tag: ${{ needs.prepare-release.outputs.release_tag }}
       project_dir: '.'
