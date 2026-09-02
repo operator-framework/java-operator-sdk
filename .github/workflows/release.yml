@@ -15,8 +15,10 @@ jobs:
     timeout-minutes: 10
     env:
       tmp_version_branch: ''
+      RAW_TAG: ${{ github.event.release.tag_name }}
     outputs:
       version_branch: ${{ steps.set-version-branch.outputs.version_branch }}
+      release_tag: ${{ steps.set-release-tag.outputs.release_tag }}
     steps:
       - if: ${{ startsWith(github.event.release.tag_name, 'v1.' ) }}
         run: |
@@ -98,7 +100,10 @@ jobs:
           exit 1
       - id: set-version-branch
         name: Set version_branch if matched
-        run: echo "version_branch=${{env.tmp_version_branch}}" >> $GITHUB_OUTPUT
+        run: echo "version_branch=${{ env.tmp_version_branch }}" >> "$GITHUB_OUTPUT"
+      - id: set-release-tag
+        name: Pass release tag
+        run: echo "release_tag=${RAW_TAG}" >> "$GITHUB_OUTPUT"
 
   release-sdk:
     needs: prepare-release
@@ -108,5 +113,6 @@ jobs:
     uses: ./.github/workflows/release-project-in-dir.yml
     secrets: inherit
     with:
-      version_branch: ${{needs.prepare-release.outputs.version_branch}}
+      version_branch: ${{ needs.prepare-release.outputs.version_branch }}
+      release_tag: ${{ needs.prepare-release.outputs.release_tag }}
       project_dir: '.'
