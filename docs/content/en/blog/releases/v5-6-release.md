@@ -36,7 +36,7 @@ event sources that disagree only on it still share an informer, keeping the limi
 created it and logging a warning. Indexers are excluded because they can be added to a running
 informer: they are registered under a name qualified with the controller and event source that added
 them, so index names stay private to an event source and cannot collide, and they are removed again
-when that event source releases the informer. You keep looking indexes up by the name you
+when that event source releases the informer. You keep looking up indexes by the name you
 registered.
 
 The pool is reference counted: the informer is created on first use and stopped only once the last
