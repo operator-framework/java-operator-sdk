@@ -67,7 +67,7 @@ public class DefaultInformerPool extends AbstractInformerPool {
                         classifier.informerListLimit()));
         var referenceCount = pooled.referenceCount().incrementAndGet();
         log.info(
-            "Reusing pooled informer for classifier: {}. Reference count: {}",
+            "Reusing pooled informer for resource type: {}. Reference count: {}",
             classifier.resourceClass() == null
                 ? classifier.groupVersionKind()
                 : classifier.resourceClass(),
