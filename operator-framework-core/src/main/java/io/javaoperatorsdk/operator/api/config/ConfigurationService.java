@@ -302,10 +302,9 @@ public interface ConfigurationService {
    * by extending {@link DefaultEventRecorder}, or one that records them somewhere else entirely.
    *
    * <p>When empty, which is the default, every controller gets a {@link DefaultEventRecorder} of
-   * its own, which attributes the events it records to that controller. A recorder configured here
-   * is shared by all controllers of the operator, so it decides on its own what the events it
-   * records are attributed to, and it is up to the caller to hold on to the instance if it also
-   * records events outside of a reconciliation.
+   * its own. A recorder configured here is shared by all controllers of the operator instead, which
+   * is why the reconciliation an event is recorded from is passed to it per call rather than
+   * configured on it: implementations have to be stateless and thread safe.
    *
    * @return the event recorder to use for the whole operator, or an empty optional to let each
    *     controller use its own default one

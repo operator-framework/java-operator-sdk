@@ -27,6 +27,7 @@ import io.javaoperatorsdk.operator.api.event.EventRecord;
 import io.javaoperatorsdk.operator.api.event.EventRecorder;
 import io.javaoperatorsdk.operator.api.event.ResourceEventRecorder;
 import io.javaoperatorsdk.operator.api.monitoring.Metrics;
+import io.javaoperatorsdk.operator.api.reconciler.Context;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
@@ -114,10 +115,10 @@ class ConfigurationServiceOverriderTest {
     final var eventRecorder =
         new EventRecorder() {
           @Override
-          public void record(HasMetadata regarding, EventRecord event) {}
+          public void record(EventRecord event, Context<?> context) {}
 
           @Override
-          public ResourceEventRecorder forResource(HasMetadata regarding) {
+          public ResourceEventRecorder forContext(Context<?> context) {
             return null;
           }
         };

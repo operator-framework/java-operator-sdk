@@ -38,7 +38,6 @@ import io.javaoperatorsdk.operator.OperatorException;
 import io.javaoperatorsdk.operator.RegisteredController;
 import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.config.ExecutorServiceManager;
-import io.javaoperatorsdk.operator.api.config.LeaderElectionConfiguration;
 import io.javaoperatorsdk.operator.api.config.workflow.WorkflowSpec;
 import io.javaoperatorsdk.operator.api.event.DefaultEventRecorder;
 import io.javaoperatorsdk.operator.api.event.DefaultEventSink;
@@ -117,17 +116,7 @@ public class Controller<P extends HasMetadata>
     this.eventRecorder =
         configurationService
             .eventRecorder()
-            .orElseGet(
-                () ->
-                    new DefaultEventRecorder(
-                        configuration.getName(),
-                        configurationService
-                            .getLeaderElectionConfiguration()
-                            .flatMap(LeaderElectionConfiguration::getIdentity)
-                            .orElseGet(DefaultEventRecorder::defaultReportingInstance),
-                        Optional.ofNullable(configurationService.clusterScopedEventNamespace())
-                            .orElse(DefaultEventRecorder.CLUSTER_SCOPED_EVENT_NAMESPACE),
-                        new DefaultEventSink(kubernetesClient)));
+            .orElseGet(() -> new DefaultEventRecorder(new DefaultEventSink(kubernetesClient)));
     contextInitializer = reconciler instanceof ContextInitializer;
     isCleaner = reconciler instanceof Cleaner;
 

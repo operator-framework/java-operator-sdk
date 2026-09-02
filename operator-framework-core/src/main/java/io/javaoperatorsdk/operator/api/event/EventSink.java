@@ -16,6 +16,7 @@
 package io.javaoperatorsdk.operator.api.event;
 
 import io.fabric8.kubernetes.api.model.Event;
+import io.javaoperatorsdk.operator.api.reconciler.Context;
 
 /**
  * Writes fully built events somewhere. Extracted from {@link EventRecorder} so that the assembly of
@@ -29,7 +30,11 @@ public interface EventSink {
   /**
    * Delivers the event.
    *
-   * @param event the event to deliver
+   * @param event the event to deliver, fully assembled: everything the event says is already built
+   *     into it
+   * @param context the context of the reconciliation the event was recorded from, for
+   *     implementations that route the event based on it rather than on its contents. Ignored by
+   *     {@link DefaultEventSink}.
    */
-  void emit(Event event);
+  void emit(Event event, Context<?> context);
 }

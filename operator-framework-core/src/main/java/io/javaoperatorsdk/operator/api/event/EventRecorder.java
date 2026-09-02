@@ -15,7 +15,7 @@
  */
 package io.javaoperatorsdk.operator.api.event;
 
-import io.fabric8.kubernetes.api.model.HasMetadata;
+import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.Experimental;
 
 import static io.javaoperatorsdk.operator.api.reconciler.Experimental.API_MIGHT_CHANGE;
@@ -23,13 +23,16 @@ import static io.javaoperatorsdk.operator.api.reconciler.Experimental.API_MIGHT_
 /**
  * Records Kubernetes events on behalf of a controller.
  *
- * <p>This is the unbound form of the API: it is scoped to a controller, not to a reconciliation,
- * and can therefore be used outside of the reconciliation loop, for example from a status listener
- * or a background task. To use it that way, configure the instance the operator records its events
- * through, see {@link io.javaoperatorsdk.operator.api.config.ConfigurationService#eventRecorder()},
- * and keep a reference to it. Within a reconciliation, prefer {@link
+ * <p>This is the unbound form of the API: an instance is shared by all the controllers of the
+ * operator, and everything that varies between them - the primary resource an event is about, the
+ * controller the event is attributed to, and the configuration the event is assembled from - is
+ * passed per call, as the {@link Context} of the reconciliation recording the event.
+ * Implementations are therefore expected to be stateless and thread safe. To record events through
+ * an implementation of your own, see {@link
+ * io.javaoperatorsdk.operator.api.config.ConfigurationService#eventRecorder()}. Within a
+ * reconciliation, prefer {@link
  * io.javaoperatorsdk.operator.api.reconciler.Context#eventRecorder()}, which is already bound to
- * the primary resource.
+ * the context.
  *
  * <p>Recording an event is best effort: failures to write the event to the cluster are logged and
  * swallowed, and never fail the caller.
@@ -38,20 +41,20 @@ import static io.javaoperatorsdk.operator.api.reconciler.Experimental.API_MIGHT_
 public interface EventRecorder {
 
   /**
-   * Records an event about the given object.
+   * Records an event about the primary resource of the given reconciliation.
    *
-   * @param regarding the object the event is about; it will be referenced as the involved object of
-   *     the resulting event
    * @param event the event to record
+   * @param context the context of the reconciliation recording the event; the event is about its
+   *     primary resource and is attributed to its controller
    */
-  void record(HasMetadata regarding, EventRecord event);
+  void record(EventRecord event, Context<?> context);
 
   /**
-   * Returns a view of this recorder bound to the given object, so that the object doesn't have to
-   * be passed for every event.
+   * Returns a view of this recorder bound to the given reconciliation, so that the context doesn't
+   * have to be passed for every event.
    *
-   * @param regarding the object subsequent events will be about
-   * @return a recorder bound to {@code regarding}
+   * @param context the context subsequent events will be recorded from
+   * @return a recorder bound to {@code context}
    */
-  ResourceEventRecorder forResource(HasMetadata regarding);
+  ResourceEventRecorder forContext(Context<?> context);
 }
