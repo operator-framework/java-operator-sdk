@@ -155,7 +155,7 @@ public class ConfigurationServiceOverrider {
    * events through by the specified one, which is then shared by all of them. Use this to record
    * events differently, for example through a subclass of {@link
    * io.javaoperatorsdk.operator.api.event.DefaultEventRecorder} that assembles them another way, or
-   * to hold on to the recorder in order to also record events outside of a reconciliation.
+   * by delegating to another system (e.g. emitting events to an external store).
    *
    * <p>When not set, every controller records its events through a recorder of its own, which
    * attributes them to that controller.
