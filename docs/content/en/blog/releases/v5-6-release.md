@@ -154,7 +154,7 @@ Thanks to [한의준](https://github.com/hej090224) for this contribution!
 
 ## Bug Fixes
 
-### Recently written external resources no longer lost from the cache
+### Recently written external resources are no longer lost from the cache
 
 An update of the whole resource set of a primary — a poll result or a received event — might have
 been created *before* the reconciler wrote a resource, and therefore not contain it yet. Since such
@@ -184,8 +184,6 @@ is now documented and shown in the
   the entire informer cache to seed a primary-to-secondary index that is the no-op implementation
   (i.e. whenever a `primaryToSecondaryMapper` is configured) — that walk was pure startup latency
   proportional to the number of cached secondaries.
-- **Informer reuse is logged at `INFO`**, making it visible at a glance which informers a running
-  operator actually shares.
 - **The JavaPoet dependency is gone.** It was only used by the annotation processor to turn a
   resolved `TypeMirror` into its fully qualified name, which the standard annotation processing API
   does on its own. JavaPoet has not been released since 2024, which made it a problem for users whose
