@@ -353,7 +353,8 @@ public class Controller<P extends HasMetadata>
 
   /**
    * The {@link EventRecorder} this controller records its Kubernetes events through, either the one
-   * configured for the operator, see {@link ConfigurationService#eventRecorder()}, or a {@link
+   * configured for the operator, see {@link
+   * io.javaoperatorsdk.operator.api.config.ConfigurationService#eventRecorder()}, or a {@link
    * DefaultEventRecorder} of its own.
    */
   public EventRecorder eventRecorder() {

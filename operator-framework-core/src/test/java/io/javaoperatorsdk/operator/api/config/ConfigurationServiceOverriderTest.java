@@ -25,11 +25,11 @@ import org.junit.jupiter.api.Test;
 
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.HasMetadata;
+import io.fabric8.kubernetes.api.model.Secret;
 import io.javaoperatorsdk.operator.api.event.DefaultEventRecorder;
 import io.javaoperatorsdk.operator.api.event.EventRecord;
 import io.javaoperatorsdk.operator.api.event.EventRecorder;
 import io.javaoperatorsdk.operator.api.event.ResourceEventRecorder;
-import io.fabric8.kubernetes.api.model.Secret;
 import io.javaoperatorsdk.operator.api.monitoring.Metrics;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResourceFactory;
