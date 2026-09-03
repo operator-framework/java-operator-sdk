@@ -642,21 +642,21 @@
               <tokenAuth>true</tokenAuth>
               <autoPublish>true</autoPublish>
               <waitUntil>published</waitUntil>
-            </configuration>
-            <!-- The samples are demos and end-to-end tests, not artifacts to depend on, so they
+              <!-- The samples are demos and end-to-end tests, not artifacts to depend on, so they
                    are not published. The Kotlin one could not be published anyway: it has no Java
                    sources, so no javadoc jar is attached to it and Central rejects the whole
                    deployment with "Javadocs must be provided but not found in entries". -->
-            <excludeArtifacts>
-              <excludeArtifact>sample-operators</excludeArtifact>
-              <excludeArtifact>sample-controller-namespace-deletion</excludeArtifact>
-              <excludeArtifact>sample-kotlin-operator</excludeArtifact>
-              <excludeArtifact>sample-leader-election</excludeArtifact>
-              <excludeArtifact>sample-mysql-schema-operator</excludeArtifact>
-              <excludeArtifact>sample-operations</excludeArtifact>
-              <excludeArtifact>sample-tomcat-operator</excludeArtifact>
-              <excludeArtifact>sample-webpage-operator</excludeArtifact>
-            </excludeArtifacts>
+              <excludeArtifacts>
+                <excludeArtifact>sample-operators</excludeArtifact>
+                <excludeArtifact>sample-controller-namespace-deletion</excludeArtifact>
+                <excludeArtifact>sample-kotlin-operator</excludeArtifact>
+                <excludeArtifact>sample-leader-election</excludeArtifact>
+                <excludeArtifact>sample-mysql-schema-operator</excludeArtifact>
+                <excludeArtifact>sample-operations</excludeArtifact>
+                <excludeArtifact>sample-tomcat-operator</excludeArtifact>
+                <excludeArtifact>sample-webpage-operator</excludeArtifact>
+              </excludeArtifacts>
+            </configuration>
           </plugin>
         </plugins>
       </build>
