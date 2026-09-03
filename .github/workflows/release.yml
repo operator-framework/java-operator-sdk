@@ -34,23 +34,19 @@ jobs:
           RELEASE_VERSION="${{ github.event.release.tag_name }}"
           RELEASE_VERSION="${RELEASE_VERSION#v}"
           RELEASE_MAJOR_MINOR=$(echo "$RELEASE_VERSION" | cut -d. -f1-2)
+          MAINTENANCE_BRANCH="${RELEASE_MAJOR_MINOR}.x"
 
-          MAIN_POM_VERSION=$(curl -fsSL "https://raw.githubusercontent.com/${{ github.repository }}/main/pom.xml" | yq -p xml '.project.version')
-          if [ -z "$MAIN_POM_VERSION" ]; then
-            echo "Failed to determine main branch POM version"
-            exit 1
-          fi
-          MAIN_MAJOR_MINOR=$(echo "$MAIN_POM_VERSION" | cut -d. -f1-2)
-
+          # A maintenance branch (e.g. 5.3.x) exists only for streams no longer
+          # developed on main, so its absence means main is the stream being
+          # released. Main's pom cannot be used to identify the stream: it carries
+          # the 999-SNAPSHOT sentinel version.
           echo "Release tag major.minor: $RELEASE_MAJOR_MINOR"
-          echo "Main branch major.minor: $MAIN_MAJOR_MINOR"
-
-          if [ "$RELEASE_MAJOR_MINOR" = "$MAIN_MAJOR_MINOR" ]; then
-            echo "Setting version_branch to main"
-            echo "tmp_version_branch=main" >> "$GITHUB_ENV"
+          if git ls-remote --exit-code --heads "${{ github.server_url }}/${{ github.repository }}.git" "refs/heads/${MAINTENANCE_BRANCH}" >/dev/null 2>&1; then
+            echo "Setting version_branch to ${MAINTENANCE_BRANCH}"
+            echo "tmp_version_branch=${MAINTENANCE_BRANCH}" >> "$GITHUB_ENV"
           else
-            echo "Setting version_branch to ${RELEASE_MAJOR_MINOR}.x"
-            echo "tmp_version_branch=${RELEASE_MAJOR_MINOR}.x" >> "$GITHUB_ENV"
+            echo "No ${MAINTENANCE_BRANCH} branch, setting version_branch to main"
+            echo "tmp_version_branch=main" >> "$GITHUB_ENV"
           fi
       - if: ${{ env.tmp_version_branch == '' }}
         name: Fail if version_branch is not set
