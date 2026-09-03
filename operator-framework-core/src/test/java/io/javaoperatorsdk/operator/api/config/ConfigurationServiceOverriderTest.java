@@ -23,6 +23,7 @@ import java.util.concurrent.ThreadPoolExecutor;
 import org.junit.jupiter.api.Test;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
+import io.javaoperatorsdk.operator.api.event.DefaultEventRecorder;
 import io.javaoperatorsdk.operator.api.event.EventRecord;
 import io.javaoperatorsdk.operator.api.event.EventRecorder;
 import io.javaoperatorsdk.operator.api.event.ResourceEventRecorder;
@@ -143,5 +144,17 @@ class ConfigurationServiceOverriderTest {
         .isEqualTo(13);
     assertThat(((ThreadPoolExecutor) overridden.getWorkflowExecutorService()).getMaximumPoolSize())
         .isEqualTo(14);
+  }
+
+  @Test
+  void clusterScopedEventNamespaceDefaultsToTheDefaultNamespaceAndCanBeOverridden() {
+    assertThat(config.clusterScopedEventNamespace())
+        .isEqualTo(DefaultEventRecorder.CLUSTER_SCOPED_EVENT_NAMESPACE);
+    assertThat(
+            new ConfigurationServiceOverrider(config)
+                .withClusterScopedEventNamespace("operator-ns")
+                .build()
+                .clusterScopedEventNamespace())
+        .isEqualTo("operator-ns");
   }
 }

@@ -123,6 +123,19 @@ class ConfigLoaderTest {
   }
 
   @Test
+  void applyConfigsAppliesStrings() {
+    var loader =
+        new ConfigLoader(
+            mapProvider(Map.of("josdk.events.cluster-scoped-namespace", "operator-ns")));
+
+    var base = new BaseConfigurationService(null);
+    var result =
+        ConfigurationService.newOverriddenConfigurationService(base, loader.applyConfigs());
+
+    assertThat(result.clusterScopedEventNamespace()).isEqualTo("operator-ns");
+  }
+
+  @Test
   void applyConfigsOnlyAppliesPresentKeys() {
     // Only one key present — other defaults must be unchanged.
     var loader =
