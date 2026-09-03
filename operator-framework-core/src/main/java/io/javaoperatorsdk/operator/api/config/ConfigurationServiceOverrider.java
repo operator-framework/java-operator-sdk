@@ -376,7 +376,7 @@ public class ConfigurationServiceOverrider {
       }
 
       @Override
-      public InformerPool informerPool() {
+      public synchronized InformerPool informerPool() {
         if (informerPool == null) {
           return super.informerPool();
         }
