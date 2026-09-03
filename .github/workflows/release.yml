@@ -4,6 +4,10 @@ env:
 on:
   release:
     types: [ released ]
+
+permissions:
+  contents: read
+
 jobs:
 
   prepare-release:
@@ -30,6 +34,8 @@ jobs:
           echo "Setting version_branch to v4"
           echo "tmp_version_branch=v4" >> "$GITHUB_ENV"
       - if: ${{ startsWith(github.event.release.tag_name, 'v5.' ) }}
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
           RELEASE_VERSION="${{ github.event.release.tag_name }}"
           RELEASE_VERSION="${RELEASE_VERSION#v}"
@@ -41,13 +47,30 @@ jobs:
           # released. Main's pom cannot be used to identify the stream: it carries
           # the 999-SNAPSHOT sentinel version.
           echo "Release tag major.minor: $RELEASE_MAJOR_MINOR"
-          if git ls-remote --exit-code --heads "${{ github.server_url }}/${{ github.repository }}.git" "refs/heads/${MAINTENANCE_BRANCH}" >/dev/null 2>&1; then
-            echo "Setting version_branch to ${MAINTENANCE_BRANCH}"
-            echo "tmp_version_branch=${MAINTENANCE_BRANCH}" >> "$GITHUB_ENV"
-          else
-            echo "No ${MAINTENANCE_BRANCH} branch, setting version_branch to main"
-            echo "tmp_version_branch=main" >> "$GITHUB_ENV"
-          fi
+
+          # Only 404 means "no such branch". Any other status is a lookup failure
+          # and must abort: silently falling back to main would release the wrong
+          # stream.
+          HTTP_STATUS=$(curl -sS -o /dev/null -w '%{http_code}' \
+            -H "Authorization: Bearer ${GH_TOKEN}" \
+            -H "Accept: application/vnd.github+json" \
+            -H "X-GitHub-Api-Version: 2022-11-28" \
+            "${{ github.api_url }}/repos/${{ github.repository }}/branches/${MAINTENANCE_BRANCH}")
+
+          case "$HTTP_STATUS" in
+            200)
+              echo "Setting version_branch to ${MAINTENANCE_BRANCH}"
+              echo "tmp_version_branch=${MAINTENANCE_BRANCH}" >> "$GITHUB_ENV"
+              ;;
+            404)
+              echo "No ${MAINTENANCE_BRANCH} branch, setting version_branch to main"
+              echo "tmp_version_branch=main" >> "$GITHUB_ENV"
+              ;;
+            *)
+              echo "Could not determine whether ${MAINTENANCE_BRANCH} exists (HTTP ${HTTP_STATUS})"
+              exit 1
+              ;;
+          esac
       - if: ${{ env.tmp_version_branch == '' }}
         name: Fail if version_branch is not set
         run: |
@@ -59,6 +82,9 @@ jobs:
 
   release-sdk:
     needs: prepare-release
+    # The reusable workflow commits and pushes the SNAPSHOT version bump.
+    permissions:
+      contents: write
     uses: ./.github/workflows/release-project-in-dir.yml
     secrets: inherit
     with:
