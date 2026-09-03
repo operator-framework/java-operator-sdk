@@ -25,8 +25,13 @@ import org.junit.jupiter.api.Test;
 
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.HasMetadata;
+import io.javaoperatorsdk.operator.api.event.DefaultEventRecorder;
+import io.javaoperatorsdk.operator.api.event.EventRecord;
+import io.javaoperatorsdk.operator.api.event.EventRecorder;
+import io.javaoperatorsdk.operator.api.event.ResourceEventRecorder;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.javaoperatorsdk.operator.api.monitoring.Metrics;
+import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResourceFactory;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -111,6 +116,28 @@ class ConfigurationServiceOverriderTest {
   }
 
   @Test
+  void eventRecorderIsNotConfiguredByDefaultAndCanBeOverridden() {
+    final var eventRecorder =
+        new EventRecorder() {
+          @Override
+          public void record(EventRecord event, Context<?> context) {}
+
+          @Override
+          public ResourceEventRecorder forContext(Context<?> context) {
+            return null;
+          }
+        };
+
+    assertThat(config.eventRecorder()).isEmpty();
+    assertThat(
+            new ConfigurationServiceOverrider(config)
+                .withEventRecorder(eventRecorder)
+                .build()
+                .eventRecorder())
+        .contains(eventRecorder);
+  }
+
+  @Test
   void threadCountConfiguredProperly() {
     final var overridden =
         new ConfigurationServiceOverrider(config)
@@ -147,5 +174,17 @@ class ConfigurationServiceOverriderTest {
                 .build()
                 .defaultNonSSAResources())
         .isEmpty();
+  }
+
+  @Test
+  void clusterScopedEventNamespaceDefaultsToTheDefaultNamespaceAndCanBeOverridden() {
+    assertThat(config.clusterScopedEventNamespace())
+        .isEqualTo(DefaultEventRecorder.CLUSTER_SCOPED_EVENT_NAMESPACE);
+    assertThat(
+            new ConfigurationServiceOverrider(config)
+                .withClusterScopedEventNamespace("operator-ns")
+                .build()
+                .clusterScopedEventNamespace())
+        .isEqualTo("operator-ns");
   }
 }

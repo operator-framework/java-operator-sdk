@@ -38,7 +38,6 @@ import io.javaoperatorsdk.operator.OperatorException;
 import io.javaoperatorsdk.operator.RegisteredController;
 import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.config.ExecutorServiceManager;
-import io.javaoperatorsdk.operator.api.config.LeaderElectionConfiguration;
 import io.javaoperatorsdk.operator.api.config.workflow.WorkflowSpec;
 import io.javaoperatorsdk.operator.api.event.DefaultEventRecorder;
 import io.javaoperatorsdk.operator.api.event.DefaultEventSink;
@@ -115,15 +114,9 @@ public class Controller<P extends HasMetadata>
     this.kubernetesClient = kubernetesClient;
     this.metrics = Optional.ofNullable(configurationService.getMetrics()).orElse(Metrics.NOOP);
     this.eventRecorder =
-        new DefaultEventRecorder(
-            configuration.getName(),
-            configurationService
-                .getLeaderElectionConfiguration()
-                .flatMap(LeaderElectionConfiguration::getIdentity)
-                .orElseGet(DefaultEventRecorder::defaultReportingInstance),
-            Optional.ofNullable(configurationService.clusterScopedEventNamespace())
-                .orElse(DefaultEventRecorder.CLUSTER_SCOPED_EVENT_NAMESPACE),
-            new DefaultEventSink(kubernetesClient));
+        configurationService
+            .eventRecorder()
+            .orElseGet(() -> new DefaultEventRecorder(new DefaultEventSink(kubernetesClient)));
     contextInitializer = reconciler instanceof ContextInitializer;
     isCleaner = reconciler instanceof Cleaner;
 
@@ -358,7 +351,11 @@ public class Controller<P extends HasMetadata>
     return controllerHealthInfo;
   }
 
-  @Override
+  /**
+   * The {@link EventRecorder} this controller records its Kubernetes events through, either the one
+   * configured for the operator, see {@link ConfigurationService#eventRecorder()}, or a {@link
+   * DefaultEventRecorder} of its own.
+   */
   public EventRecorder eventRecorder() {
     return eventRecorder;
   }

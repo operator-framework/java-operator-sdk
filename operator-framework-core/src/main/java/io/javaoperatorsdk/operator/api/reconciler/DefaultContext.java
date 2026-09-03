@@ -211,7 +211,7 @@ public class DefaultContext<P extends HasMetadata> implements Context<P> {
 
   @Override
   public ResourceEventRecorder eventRecorder() {
-    return controller.eventRecorder().forResource(primaryResource);
+    return controller.eventRecorder().forContext(this);
   }
 
   @Override

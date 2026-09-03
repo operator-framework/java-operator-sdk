@@ -28,6 +28,8 @@ import io.javaoperatorsdk.operator.api.config.BaseConfigurationService;
 import io.javaoperatorsdk.operator.api.config.ConfigurationService;
 import io.javaoperatorsdk.operator.api.config.MockControllerConfiguration;
 import io.javaoperatorsdk.operator.api.config.workflow.WorkflowSpec;
+import io.javaoperatorsdk.operator.api.event.DefaultEventRecorder;
+import io.javaoperatorsdk.operator.api.event.EventRecorder;
 import io.javaoperatorsdk.operator.api.monitoring.Metrics;
 import io.javaoperatorsdk.operator.api.reconciler.Cleaner;
 import io.javaoperatorsdk.operator.api.reconciler.DefaultContext;
@@ -108,6 +110,36 @@ class ControllerTest {
     // e.g. leader election enabled: event sources start but event processing is deferred.
     controller.start(false);
     verify(metrics, never()).eventProcessingStarted(controller);
+  }
+
+  @Test
+  void recordsEventsThroughTheEventRecorderConfiguredForTheOperator() {
+    final var client = MockKubernetesClient.client(Secret.class);
+    final var eventRecorder = mock(EventRecorder.class);
+    final var configurationService =
+        ConfigurationService.newOverriddenConfigurationService(
+            new BaseConfigurationService(),
+            o -> o.withEventRecorder(eventRecorder).withKubernetesClient(client));
+    final var configuration =
+        MockControllerConfiguration.forResource(Secret.class, configurationService);
+
+    final var controller = new Controller<Secret>(reconciler, configuration, client);
+
+    assertThat(controller.eventRecorder()).isSameAs(eventRecorder);
+  }
+
+  @Test
+  void recordsEventsThroughAnEventRecorderOfItsOwnWhenNoneIsConfigured() {
+    final var client = MockKubernetesClient.client(Secret.class);
+    final var configuration =
+        MockControllerConfiguration.forResource(
+            Secret.class,
+            ConfigurationService.newOverriddenConfigurationService(
+                new BaseConfigurationService(), o -> o.withKubernetesClient(client)));
+
+    final var controller = new Controller<Secret>(reconciler, configuration, client);
+
+    assertThat(controller.eventRecorder()).isInstanceOf(DefaultEventRecorder.class);
   }
 
   @Test
