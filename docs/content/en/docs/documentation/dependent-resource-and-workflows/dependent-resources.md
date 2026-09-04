@@ -531,6 +531,34 @@ samples [here](https://github.com/java-operator-sdk/java-operator-sdk/tree/main/
    in [related integration test](https://github.com/operator-framework/java-operator-sdk/blob/main/operator-framework/src/test/java/io/javaoperatorsdk/operator/workflow/orderedmanageddependent/ConfigMapDependentResource2.java)
    .
 
+### Adding Common Metadata to All Managed Resources (Desired State Aspects)
+
+Operators often need to mark every resource they manage in a uniform way, for example with a
+`app.kubernetes.io/managed-by` label, so that these resources can easily be identified, selected or
+garbage-collected later on. Instead of repeating that logic in every `desired()` implementation, a
+`DesiredStateAspect` can be registered once, at the operator level, and is then applied to the
+desired state of every Kubernetes dependent resource managed by the operator:
+
+```java
+Operator operator = new Operator(overrider -> overrider
+    .withDesiredStateAspects(List.of(
+        (desired, dependentResource, context) -> desired.getMetadata().getLabels()
+            .put("app.kubernetes.io/managed-by", "my-operator"))));
+```
+
+Aspects are applied, in registration order, right after the desired state has been computed and
+before the desired state is matched against the actual resource, created or updated. As a
+consequence, the metadata added by an aspect is part of the desired state proper: if it is removed
+from the actual resource, or if the aspect itself changes, the associated secondary resources are
+updated accordingly on the next reconciliation.
+
+Since the desired state is computed at most once per reconciliation and cached in the `Context`,
+aspects are called at most once per dependent resource and reconciliation. They are only called for
+dependent resources whose desired state is a `HasMetadata`, meaning that external (non-Kubernetes)
+dependent resources are left untouched. Implementations are expected to modify the provided desired
+state in place and need to be thread-safe as they can be called concurrently for different primary
+resources.
+
 ## "Read-only" Dependent Resources vs. Event Source
 
 See Integration test for a read-only
