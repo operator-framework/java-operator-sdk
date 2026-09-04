@@ -21,6 +21,9 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 import io.javaoperatorsdk.operator.api.config.informer.Informer;
+import io.javaoperatorsdk.operator.api.reconciler.Experimental;
+
+import static io.javaoperatorsdk.operator.api.reconciler.Experimental.API_MIGHT_CHANGE;
 
 @Retention(RetentionPolicy.RUNTIME)
 @Target({ElementType.TYPE})
@@ -62,4 +65,32 @@ public @interface KubernetesDependent {
    */
   Class<? extends SSABasedGenericKubernetesResourceMatcher> matcher() default
       SSABasedGenericKubernetesResourceMatcher.class;
+
+  /**
+   * Whether JOSDK should detect that the API version of this dependent resource's desired state has
+   * changed since it was last applied by the operator (for example after the operator was upgraded
+   * to target a new CRD version) and, in that case, request a one-time update of the actual
+   * resource.
+   *
+   * <p>When enabled, JOSDK records the API version it applies in the {@value
+   * KubernetesDependentResource#LAST_APPLIED_API_VERSION_ANNOTATION_KEY} annotation. On subsequent
+   * reconciliations, the resource is considered mismatched (and thus updated) if that recorded
+   * marker differs from the API version the operator currently uses, including when the marker is
+   * missing entirely (for example on resources created before this feature was enabled). Once the
+   * resource has been updated, the marker matches the current API version again, so no further
+   * update is requested until the API version changes again.
+   *
+   * <p>This is opt-in and disabled by default: when disabled, no marker annotation is ever added or
+   * read, and matching behavior is unchanged. It does not read or infer the actual storage version
+   * of the resource in Kubernetes, since that information is not reliably exposed by the API
+   * server; it only tracks what the operator itself last applied. It is not a replacement for
+   * Kubernetes' <a
+   * href="https://kubernetes.io/docs/tasks/manage-kubernetes-objects/storage-version-migration/">StorageVersionMigration</a>.
+   *
+   * @return {@code true} if API version change detection is enabled, {@code false} otherwise
+   * @since 5.6
+   */
+  @Experimental(API_MIGHT_CHANGE)
+  boolean detectApiVersionChange() default
+      KubernetesDependentResourceConfig.DEFAULT_DETECT_API_VERSION_CHANGE;
 }

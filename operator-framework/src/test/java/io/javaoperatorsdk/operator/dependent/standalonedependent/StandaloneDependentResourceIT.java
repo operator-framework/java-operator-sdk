@@ -28,6 +28,7 @@ import io.javaoperatorsdk.annotation.Sample;
 import io.javaoperatorsdk.operator.api.config.*;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 import io.javaoperatorsdk.operator.junit.LocallyRunOperatorExtension;
+import io.javaoperatorsdk.operator.processing.event.source.informer.pool.AbstractInformerPool;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
@@ -125,6 +126,12 @@ public class StandaloneDependentResourceIT {
 
       @Override
       public Version getVersion() {
+        return null;
+      }
+
+      // only used here to obtain the resource cloner, so the pool is never accessed
+      @Override
+      public AbstractInformerPool informerPool() {
         return null;
       }
     }.getResourceCloner();

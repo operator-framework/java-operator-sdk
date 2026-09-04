@@ -102,7 +102,9 @@ public class CreateUpdateEventFilterTestReconciler
             .withComparableResourceVersion(comparableResourceVersion)
             .build();
 
-    final var informerEventSource = new InformerEventSource<>(informerConfiguration, context);
+    final var informerEventSource =
+        new InformerEventSource<ConfigMap, CreateUpdateEventFilterTestCustomResource>(
+            informerConfiguration);
     this.configMapDR.setEventSource(informerEventSource);
 
     return List.of(informerEventSource);

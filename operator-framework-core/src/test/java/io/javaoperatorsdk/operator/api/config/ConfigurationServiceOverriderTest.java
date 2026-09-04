@@ -17,13 +17,22 @@ package io.javaoperatorsdk.operator.api.config;
 
 import java.time.Duration;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadPoolExecutor;
 
 import org.junit.jupiter.api.Test;
 
+import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.HasMetadata;
+import io.fabric8.kubernetes.api.model.Secret;
+import io.javaoperatorsdk.operator.api.event.DefaultEventRecorder;
+import io.javaoperatorsdk.operator.api.event.EventRecord;
+import io.javaoperatorsdk.operator.api.event.EventRecorder;
+import io.javaoperatorsdk.operator.api.event.ResourceEventRecorder;
 import io.javaoperatorsdk.operator.api.monitoring.Metrics;
+import io.javaoperatorsdk.operator.api.reconciler.Context;
+import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResourceFactory;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
@@ -98,12 +107,34 @@ class ConfigurationServiceOverriderTest {
     assertNotEquals(config.getExecutorService(), overridden.getExecutorService());
     assertNotEquals(config.getWorkflowExecutorService(), overridden.getWorkflowExecutorService());
     assertNotEquals(config.getMetrics(), overridden.getMetrics());
+    assertNotEquals(config.getResourceCloner(), overridden.getResourceCloner());
     assertNotEquals(
         config.getLeaderElectionConfiguration(), overridden.getLeaderElectionConfiguration());
-    assertNotEquals(
-        config.getInformerStoppedHandler(), overridden.getLeaderElectionConfiguration());
+    assertNotEquals(config.getInformerStoppedHandler(), overridden.getInformerStoppedHandler());
     assertNotEquals(
         config.reconciliationTerminationTimeout(), overridden.reconciliationTerminationTimeout());
+  }
+
+  @Test
+  void eventRecorderIsNotConfiguredByDefaultAndCanBeOverridden() {
+    final var eventRecorder =
+        new EventRecorder() {
+          @Override
+          public void record(EventRecord event, Context<?> context) {}
+
+          @Override
+          public ResourceEventRecorder forContext(Context<?> context) {
+            return null;
+          }
+        };
+
+    assertThat(config.eventRecorder()).isEmpty();
+    assertThat(
+            new ConfigurationServiceOverrider(config)
+                .withEventRecorder(eventRecorder)
+                .build()
+                .eventRecorder())
+        .contains(eventRecorder);
   }
 
   @Test
@@ -117,5 +148,43 @@ class ConfigurationServiceOverriderTest {
         .isEqualTo(13);
     assertThat(((ThreadPoolExecutor) overridden.getWorkflowExecutorService()).getMaximumPoolSize())
         .isEqualTo(14);
+  }
+
+  @SuppressWarnings("rawtypes")
+  @Test
+  void dependentResourceFactoryDefaultsToTheSharedOneAndCanBeOverridden() {
+    final var factory = new DependentResourceFactory() {};
+
+    assertThat(config.dependentResourceFactory()).isSameAs(DependentResourceFactory.DEFAULT);
+    assertThat(
+            new ConfigurationServiceOverrider(config)
+                .withDependentResourceFactory(factory)
+                .build()
+                .dependentResourceFactory())
+        .isSameAs(factory);
+  }
+
+  @Test
+  void defaultNonSSAResourcesDefaultToConfigMapsAndSecretsAndCanBeOverridden() {
+    assertThat(config.defaultNonSSAResources())
+        .containsExactlyInAnyOrder(ConfigMap.class, Secret.class);
+    assertThat(
+            new ConfigurationServiceOverrider(config)
+                .withDefaultNonSSAResource(Set.of())
+                .build()
+                .defaultNonSSAResources())
+        .isEmpty();
+  }
+
+  @Test
+  void clusterScopedEventNamespaceDefaultsToTheDefaultNamespaceAndCanBeOverridden() {
+    assertThat(config.clusterScopedEventNamespace())
+        .isEqualTo(DefaultEventRecorder.CLUSTER_SCOPED_EVENT_NAMESPACE);
+    assertThat(
+            new ConfigurationServiceOverrider(config)
+                .withClusterScopedEventNamespace("operator-ns")
+                .build()
+                .clusterScopedEventNamespace())
+        .isEqualTo("operator-ns");
   }
 }

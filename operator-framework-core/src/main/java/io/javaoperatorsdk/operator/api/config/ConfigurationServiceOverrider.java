@@ -27,8 +27,11 @@ import org.slf4j.LoggerFactory;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.javaoperatorsdk.operator.Operator;
+import io.javaoperatorsdk.operator.api.event.EventRecorder;
 import io.javaoperatorsdk.operator.api.monitoring.Metrics;
+import io.javaoperatorsdk.operator.api.reconciler.Experimental;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResourceFactory;
+import io.javaoperatorsdk.operator.processing.event.source.informer.pool.InformerPool;
 
 @SuppressWarnings({"unused", "UnusedReturnValue"})
 public class ConfigurationServiceOverrider {
@@ -46,6 +49,7 @@ public class ConfigurationServiceOverrider {
   private ExecutorService workflowExecutorService;
   private LeaderElectionConfiguration leaderElectionConfiguration;
   private String clusterScopedEventNamespace;
+  private EventRecorder eventRecorder;
   private InformerStoppedHandler informerStoppedHandler;
   private Boolean stopOnInformerErrorDuringStartup;
   private Duration cacheSyncTimeout;
@@ -54,6 +58,7 @@ public class ConfigurationServiceOverrider {
   private Set<Class<? extends HasMetadata>> defaultNonSSAResource;
   private Boolean useSSAToPatchPrimaryResource;
   private Boolean cloneSecondaryResourcesWhenGettingFromCache;
+  private InformerPool informerPool;
 
   @SuppressWarnings("rawtypes")
   private DependentResourceFactory dependentResourceFactory;
@@ -145,6 +150,25 @@ public class ConfigurationServiceOverrider {
     return this;
   }
 
+  /**
+   * Replaces the {@link EventRecorder} the controllers of the operator record their Kubernetes
+   * events through by the specified one, which is then shared by all of them. Use this to record
+   * events differently, for example through a subclass of {@link
+   * io.javaoperatorsdk.operator.api.event.DefaultEventRecorder} that assembles them another way, or
+   * by delegating to another system (e.g. emitting events to an external store).
+   *
+   * <p>When not set, every controller records its events through a recorder of its own, which
+   * attributes them to that controller.
+   *
+   * @param eventRecorder the event recorder to use for the whole operator
+   * @return this {@link ConfigurationServiceOverrider} for chained customization
+   */
+  @Experimental(Experimental.API_MIGHT_CHANGE)
+  public ConfigurationServiceOverrider withEventRecorder(EventRecorder eventRecorder) {
+    this.eventRecorder = eventRecorder;
+    return this;
+  }
+
   public ConfigurationServiceOverrider withInformerStoppedHandler(InformerStoppedHandler handler) {
     this.informerStoppedHandler = handler;
     return this;
@@ -187,6 +211,21 @@ public class ConfigurationServiceOverrider {
   public ConfigurationServiceOverrider withCloneSecondaryResourcesWhenGettingFromCache(
       boolean value) {
     this.cloneSecondaryResourcesWhenGettingFromCache = value;
+    return this;
+  }
+
+  /**
+   * Overrides the informer pool strategy used to create/share the informers backing the event
+   * sources. When not set, the default (informer-sharing) pool is used.
+   *
+   * <p>Custom strategies implement {@link InformerPool}, which already takes care of creating and
+   * starting the informers.
+   */
+  @Experimental(
+      "Only the configuration API around informer pooling could still change in a"
+          + " non-backwards-compatible way, the pooling itself is prod ready.")
+  public ConfigurationServiceOverrider withInformerPool(InformerPool informerPool) {
+    this.informerPool = informerPool;
     return this;
   }
 
@@ -280,6 +319,11 @@ public class ConfigurationServiceOverrider {
       }
 
       @Override
+      public Optional<EventRecorder> eventRecorder() {
+        return eventRecorder != null ? Optional.of(eventRecorder) : original.eventRecorder();
+      }
+
+      @Override
       public Optional<InformerStoppedHandler> getInformerStoppedHandler() {
         return informerStoppedHandler != null
             ? Optional.of(informerStoppedHandler)
@@ -329,6 +373,15 @@ public class ConfigurationServiceOverrider {
         return overriddenValueOrDefault(
             cloneSecondaryResourcesWhenGettingFromCache,
             ConfigurationService::cloneSecondaryResourcesWhenGettingFromCache);
+      }
+
+      @Override
+      public synchronized InformerPool informerPool() {
+        if (informerPool == null) {
+          return super.informerPool();
+        }
+        informerPool.setConfigurationService(this);
+        return informerPool;
       }
     };
   }

@@ -141,8 +141,7 @@ public class OnRelistFilterReconciler implements Reconciler<OnRelistFilterCustom
         new RelistAwareInformerEventSource<>(
             InformerEventSourceConfiguration.from(
                     ConfigMap.class, OnRelistFilterCustomResource.class)
-                .build(),
-            context);
+                .build());
     return List.of(configMapEventSource);
   }
 
@@ -180,9 +179,8 @@ public class OnRelistFilterReconciler implements Reconciler<OnRelistFilterCustom
     // Lets a test block until the event for its own write has been received and processed.
     private final ConcurrentMap<ResourceID, Long> latestReceivedVersion = new ConcurrentHashMap<>();
 
-    RelistAwareInformerEventSource(
-        InformerEventSourceConfiguration<R> configuration, EventSourceContext<P> context) {
-      super(configuration, context);
+    RelistAwareInformerEventSource(InformerEventSourceConfiguration<R> configuration) {
+      super(configuration);
     }
 
     @Override

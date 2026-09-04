@@ -22,7 +22,7 @@
   <parent>
     <groupId>io.javaoperatorsdk</groupId>
     <artifactId>sample-operators</artifactId>
-    <version>5.5.2-SNAPSHOT</version>
+    <version>5.6.1-SNAPSHOT</version>
   </parent>
 
   <artifactId>sample-operations</artifactId>
@@ -66,7 +66,7 @@
     <dependency>
       <groupId>org.yaml</groupId>
       <artifactId>snakeyaml</artifactId>
-      <version>2.6</version>
+      <version>2.7</version>
     </dependency>
     <dependency>
       <groupId>org.apache.logging.log4j</groupId>

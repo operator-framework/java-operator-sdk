@@ -15,6 +15,7 @@
  */
 package io.javaoperatorsdk.operator.processing.dependent.kubernetes;
 
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
@@ -51,6 +52,15 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
     implements ConfiguredDependentResource<KubernetesDependentResourceConfig<R>> {
 
   private static final Logger log = LoggerFactory.getLogger(KubernetesDependentResource.class);
+
+  /**
+   * Annotation used to record the API version the operator applied to this resource, when {@link
+   * KubernetesDependentResourceConfig#detectApiVersionChange()} is enabled.
+   *
+   * @see KubernetesDependent#detectApiVersionChange()
+   */
+  public static final String LAST_APPLIED_API_VERSION_ANNOTATION_KEY =
+      "javaoperatorsdk.io/last-applied-api-version";
 
   private final boolean garbageCollected = this instanceof GarbageCollected;
   private KubernetesDependentResourceConfig<R> kubernetesDependentResourceConfig;
@@ -160,6 +170,12 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
 
   protected void addMetadata(
       boolean forMatch, R actualResource, final R target, P primary, Context<P> context) {
+    if (kubernetesDependentResourceConfig != null
+        && kubernetesDependentResourceConfig.detectApiVersionChange()) {
+      // desired resources might expose a null or immutable annotations map (e.g. Map.of(...));
+      // make sure it's a mutable one before this method or its callees write to it
+      ensureMutableAnnotations(target);
+    }
     if (forMatch) { // keep the current previous annotation
       String actual =
           actualResource
@@ -173,7 +189,34 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
         annotations.remove(InformerEventSource.PREVIOUS_ANNOTATION_KEY);
       }
     }
+    addLastAppliedApiVersion(target);
     addReferenceHandlingMetadata(target, primary);
+  }
+
+  private static void ensureMutableAnnotations(HasMetadata target) {
+    var metadata = target.getMetadata();
+    metadata.setAnnotations(
+        new LinkedHashMap<>(Optional.ofNullable(metadata.getAnnotations()).orElseGet(Map::of)));
+  }
+
+  /**
+   * When {@link KubernetesDependentResourceConfig#detectApiVersionChange()} is enabled, marks the
+   * target resource with the API version the operator is currently applying. Comparing this marker
+   * with the one recorded on the actual resource lets the regular matching logic detect a mismatch,
+   * without ever inspecting the actual, potentially unreliable, stored API version.
+   */
+  private void addLastAppliedApiVersion(R target) {
+    if (kubernetesDependentResourceConfig == null
+        || !kubernetesDependentResourceConfig.detectApiVersionChange()) {
+      return;
+    }
+    var apiVersion = target.getApiVersion();
+    if (apiVersion != null) {
+      target
+          .getMetadata()
+          .getAnnotations()
+          .put(LAST_APPLIED_API_VERSION_ANNOTATION_KEY, apiVersion);
+    }
   }
 
   protected boolean useSSA(Context<P> context) {
@@ -220,7 +263,7 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
       configBuilder.updateFrom(kubernetesDependentResourceConfig.informerConfig());
     }
 
-    var es = new InformerEventSource<>(configBuilder.build(), context);
+    var es = new InformerEventSource<R, P>(configBuilder.build());
     setEventSource(es);
     return eventSource().orElseThrow();
   }

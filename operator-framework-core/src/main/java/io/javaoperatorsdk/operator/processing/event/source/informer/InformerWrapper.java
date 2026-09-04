@@ -15,12 +15,12 @@
  */
 package io.javaoperatorsdk.operator.processing.event.source.informer;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
@@ -30,125 +30,39 @@ import org.slf4j.LoggerFactory;
 
 import io.fabric8.kubernetes.api.model.GenericKubernetesResource;
 import io.fabric8.kubernetes.api.model.HasMetadata;
-import io.fabric8.kubernetes.client.informers.ExceptionHandler;
 import io.fabric8.kubernetes.client.informers.ResourceEventHandler;
 import io.fabric8.kubernetes.client.informers.SharedIndexInformer;
 import io.fabric8.kubernetes.client.informers.cache.Cache;
-import io.javaoperatorsdk.operator.OperatorException;
 import io.javaoperatorsdk.operator.ReconcilerUtilsInternal;
-import io.javaoperatorsdk.operator.api.config.ConfigurationService;
 import io.javaoperatorsdk.operator.health.InformerHealthIndicator;
 import io.javaoperatorsdk.operator.health.Status;
-import io.javaoperatorsdk.operator.processing.LifecycleAware;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
 import io.javaoperatorsdk.operator.processing.event.source.IndexerResourceCache;
+import io.javaoperatorsdk.operator.processing.event.source.informer.pool.InformerClassifier;
 
 class InformerWrapper<T extends HasMetadata>
-    implements LifecycleAware, IndexerResourceCache<T>, InformerHealthIndicator {
+    implements IndexerResourceCache<T>, InformerHealthIndicator {
 
   private static final Logger log = LoggerFactory.getLogger(InformerWrapper.class);
 
   private final SharedIndexInformer<T> informer;
   private final Cache<T> cache;
   private final String namespaceIdentifier;
-  private final ConfigurationService configurationService;
+  private final InformerClassifier<T> informerClassifier;
+  private final String indexNamePrefix;
+  private final Set<String> registeredIndexNames = ConcurrentHashMap.newKeySet();
 
   public InformerWrapper(
       SharedIndexInformer<T> informer,
-      ConfigurationService configurationService,
-      String namespaceIdentifier) {
+      String namespaceIdentifier,
+      InformerClassifier<T> classifier,
+      String controllerName,
+      String eventSourceName) {
     this.informer = informer;
     this.namespaceIdentifier = namespaceIdentifier;
     this.cache = (Cache<T>) informer.getStore();
-    this.configurationService = configurationService;
-  }
-
-  @Override
-  public void start() throws OperatorException {
-    try {
-
-      // register stopped handler if we have one defined
-      configurationService
-          .getInformerStoppedHandler()
-          .ifPresent(
-              ish -> {
-                final var stopped = informer.stopped();
-                if (stopped != null) {
-                  stopped.handle(
-                      (res, ex) -> {
-                        ish.onStop(informer, ex);
-                        return null;
-                      });
-                } else {
-                  final var apiTypeClass = informer.getApiTypeClass();
-                  final var fullResourceName = HasMetadata.getFullResourceName(apiTypeClass);
-                  final var version = HasMetadata.getVersion(apiTypeClass);
-                  throw new IllegalStateException(
-                      "Cannot retrieve 'stopped' callback to listen to informer stopping for"
-                          + " informer for "
-                          + fullResourceName
-                          + "/"
-                          + version);
-                }
-              });
-      if (!configurationService.stopOnInformerErrorDuringStartup()) {
-        informer.exceptionHandler((b, t) -> !ExceptionHandler.isDeserializationException(t));
-      }
-      // change thread name for easier debugging
-      final var thread = Thread.currentThread();
-      final var name = thread.getName();
-      try {
-        thread.setName(informerInfo() + " " + thread.getId());
-        final var resourceName = informer.getApiTypeClass().getSimpleName();
-        log.debug(
-            "Starting informer for namespace: {} resource: {}", namespaceIdentifier, resourceName);
-        var start = informer.start();
-        // note that in case we don't put here timeout and stopOnInformerErrorDuringStartup is
-        // false, and there is a rbac issue the get never returns; therefore operator never really
-        // starts
-        log.trace(
-            "Waiting informer to start namespace: {} resource: {}",
-            namespaceIdentifier,
-            resourceName);
-        start
-            .toCompletableFuture()
-            .get(configurationService.cacheSyncTimeout().toMillis(), TimeUnit.MILLISECONDS);
-        log.debug(
-            "Started informer for namespace: {} resource: {}", namespaceIdentifier, resourceName);
-      } catch (TimeoutException | ExecutionException e) {
-        if (configurationService.stopOnInformerErrorDuringStartup()) {
-          log.error("Informer startup error. Operator will be stopped. Informer: {}", informer, e);
-          throw new OperatorException(e);
-        } else {
-          log.warn("Informer startup error. Will periodically retry. Informer: {}", informer, e);
-        }
-      } catch (InterruptedException e) {
-        thread.interrupt();
-        throw new IllegalStateException(e);
-      } finally {
-        // restore original name
-        thread.setName(name);
-      }
-
-    } catch (Exception e) {
-      ReconcilerUtilsInternal.handleKubernetesClientException(
-          e, HasMetadata.getFullResourceName(informer.getApiTypeClass()));
-      throw new OperatorException(
-          "Couldn't start informer for " + versionedFullResourceName() + " resources", e);
-    }
-  }
-
-  private String versionedFullResourceName() {
-    final var apiTypeClass = informer.getApiTypeClass();
-    if (apiTypeClass.isAssignableFrom(GenericKubernetesResource.class)) {
-      return GenericKubernetesResource.class.getSimpleName();
-    }
-    return ReconcilerUtilsInternal.getResourceTypeNameWithVersion(apiTypeClass);
-  }
-
-  @Override
-  public void stop() throws OperatorException {
-    informer.stop();
+    this.informerClassifier = classifier;
+    this.indexNamePrefix = "josdk/" + controllerName + "/" + eventSourceName + "/";
   }
 
   @Override
@@ -187,12 +101,42 @@ class InformerWrapper<T extends HasMetadata>
 
   @Override
   public void addIndexers(Map<String, Function<T, List<String>>> indexers) {
-    informer.getIndexer().addIndexers(indexers);
+    Map<String, Function<T, List<String>>> qualified = new HashMap<>();
+    indexers.forEach((name, indexer) -> qualified.put(qualify(name), indexer));
+    informer.getIndexer().addIndexers(qualified);
+    registeredIndexNames.addAll(qualified.keySet());
+  }
+
+  /**
+   * Removes the indexers this event source added, to be called when its informer is released. A
+   * shared informer outlives the event sources that stop using it, so without this its indexer
+   * would keep both the index and the (possibly capturing) index function of every event source
+   * that ever used it, and re-registering the same event source later would be rejected as a name
+   * conflict.
+   */
+  void removeIndexers() {
+    registeredIndexNames.forEach(name -> informer.getIndexer().removeIndexer(name));
+    registeredIndexNames.clear();
   }
 
   @Override
   public List<T> byIndex(String indexName, String indexKey) {
-    return informer.getIndexer().byIndex(indexName, indexKey);
+    return informer.getIndexer().byIndex(qualify(indexName), indexKey);
+  }
+
+  /**
+   * The informer can be shared by event sources of several controllers, while its indexer is a
+   * single namespace of index names: two event sources registering the same index name on it would
+   * be rejected by the client, and one could read the other's index. Names are therefore qualified
+   * with the event source that registered them.
+   *
+   * <p>This stays invisible to callers, who keep using their own names, but only for as long as
+   * this class remains the only place that talks to {@link SharedIndexInformer#getIndexer()}:
+   * adding, reading and removing all have to go through here so that the qualification stays
+   * symmetric.
+   */
+  private String qualify(String indexName) {
+    return indexNamePrefix + indexName;
   }
 
   @Override
@@ -201,7 +145,15 @@ class InformerWrapper<T extends HasMetadata>
   }
 
   private String informerInfo() {
-    return "InformerWrapper [" + versionedFullResourceName() + "]";
+    return "InformerWrapper [ " + versionedFullResourceName() + " ]";
+  }
+
+  private String versionedFullResourceName() {
+    final var apiTypeClass = informer.getApiTypeClass();
+    if (GenericKubernetesResource.class.isAssignableFrom(apiTypeClass)) {
+      return GenericKubernetesResource.class.getSimpleName();
+    }
+    return ReconcilerUtilsInternal.getResourceTypeNameWithVersion(apiTypeClass);
   }
 
   @Override
@@ -236,5 +188,13 @@ class InformerWrapper<T extends HasMetadata>
   @Override
   public String getTargetNamespace() {
     return namespaceIdentifier;
+  }
+
+  public InformerClassifier<T> getClassifier() {
+    return informerClassifier;
+  }
+
+  public SharedIndexInformer<T> getInformer() {
+    return informer;
   }
 }

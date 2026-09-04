@@ -141,8 +141,7 @@ public class ExternalStateReconciler
         new InformerEventSource<>(
             InformerEventSourceConfiguration.from(
                     ConfigMap.class, ExternalStateCustomResource.class)
-                .build(),
-            context);
+                .build());
     configMapEventSource.setEventSourcePriority(EventSourceStartPriority.RESOURCE_STATE_LOADER);
 
     final PerResourcePollingEventSource.ResourceFetcher<

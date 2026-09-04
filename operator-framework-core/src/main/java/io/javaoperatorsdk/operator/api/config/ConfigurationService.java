@@ -35,8 +35,10 @@ import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClientBuilder;
 import io.fabric8.kubernetes.client.utils.KubernetesSerialization;
 import io.javaoperatorsdk.operator.api.event.DefaultEventRecorder;
+import io.javaoperatorsdk.operator.api.event.EventRecorder;
 import io.javaoperatorsdk.operator.api.monitoring.Metrics;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
+import io.javaoperatorsdk.operator.api.reconciler.Experimental;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResourceFactory;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependent;
@@ -44,6 +46,8 @@ import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDep
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependentResourceConfig;
 import io.javaoperatorsdk.operator.processing.dependent.workflow.ManagedWorkflowFactory;
 import io.javaoperatorsdk.operator.processing.event.source.controller.ControllerEventSource;
+import io.javaoperatorsdk.operator.processing.event.source.informer.pool.DefaultInformerPool;
+import io.javaoperatorsdk.operator.processing.event.source.informer.pool.InformerPool;
 
 /** An interface from which to retrieve configuration information. */
 public interface ConfigurationService {
@@ -293,6 +297,24 @@ public interface ConfigurationService {
   }
 
   /**
+   * The {@link EventRecorder} the controllers of the operator record their Kubernetes events
+   * through, to plug in a custom implementation, for example one that assembles events differently
+   * by extending {@link DefaultEventRecorder}, or one that records them somewhere else entirely.
+   *
+   * <p>When empty, which is the default, every controller gets a {@link DefaultEventRecorder} of
+   * its own. A recorder configured here is shared by all controllers of the operator instead, which
+   * is why the reconciliation an event is recorded from is passed to it per call rather than
+   * configured on it: implementations have to be stateless and thread safe.
+   *
+   * @return the event recorder to use for the whole operator, or an empty optional to let each
+   *     controller use its own default one
+   */
+  @Experimental(Experimental.API_MIGHT_CHANGE)
+  default Optional<EventRecorder> eventRecorder() {
+    return Optional.empty();
+  }
+
+  /**
    * if true, operator stops if there are some issues with informers {@link
    * io.javaoperatorsdk.operator.processing.event.source.informer.InformerEventSource} or {@link
    * ControllerEventSource} on startup. Other event sources may also respect this flag.
@@ -493,5 +515,28 @@ public interface ConfigurationService {
    */
   default boolean cloneSecondaryResourcesWhenGettingFromCache() {
     return false;
+  }
+
+  /**
+   * The informer pool used to create and (when using the default, sharing pool) share the informers
+   * backing the event sources of all controllers managed by this {@code ConfigurationService}.
+   *
+   * <p><strong>Implementations must return the same instance on every call.</strong> The pool is
+   * effectively a per-{@code ConfigurationService} singleton: controllers share informers only if
+   * they resolve the same pool, and reference counting / informer shutdown are only correct if
+   * {@code getInformer} and {@code releaseInformer} operate on that same instance. This is
+   * intentionally not a {@code default} method, since a {@code default} could not cache the result
+   * and would hand out a fresh (unshared) pool on each call; {@link AbstractConfigurationService}
+   * provides a cached implementation backed by the default sharing pool.
+   *
+   * @return the informer pool for this configuration service
+   */
+  @Experimental(
+      "Only the configuration API around informer pooling could still change in a"
+          + " non-backwards-compatible way, the pooling itself is prod ready.")
+  default InformerPool informerPool() {
+    var pool = new DefaultInformerPool();
+    pool.setConfigurationService(this);
+    return pool;
   }
 }

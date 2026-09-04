@@ -33,6 +33,8 @@ import io.fabric8.kubernetes.api.model.EventBuilder;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.ObjectReference;
 import io.fabric8.kubernetes.api.model.ObjectReferenceBuilder;
+import io.javaoperatorsdk.operator.api.config.LeaderElectionConfiguration;
+import io.javaoperatorsdk.operator.api.reconciler.Context;
 
 import static java.util.Objects.requireNonNullElse;
 
@@ -71,50 +73,46 @@ public class DefaultEventRecorder implements EventRecorder {
 
   private static final int IDENTITY_HASH_LENGTH = 32;
 
-  private final String reportingController;
-  private final String reportingInstance;
-  private final String clusterScopedEventNamespace;
   private final EventSink sink;
 
-  public DefaultEventRecorder(
-      String reportingController, String reportingInstance, EventSink sink) {
-    this(reportingController, reportingInstance, CLUSTER_SCOPED_EVENT_NAMESPACE, sink);
-  }
-
-  public DefaultEventRecorder(
-      String reportingController,
-      String reportingInstance,
-      String clusterScopedEventNamespace,
-      EventSink sink) {
-    this.reportingController = reportingController;
-    this.reportingInstance = reportingInstance;
-    this.clusterScopedEventNamespace = clusterScopedEventNamespace;
+  public DefaultEventRecorder(EventSink sink) {
     this.sink = sink;
   }
 
   /**
    * The instance name to report events under, when it is not otherwise configured. Uses the host
    * name, which for an operator running in a pod is the pod name.
+   *
+   * <p>Resolved once and cached: it cannot change over the life of the process, and looking the
+   * host name up can hit the name service, which is not something to do on every recorded event.
    */
   public static String defaultReportingInstance() {
-    var fromEnv = System.getenv("HOSTNAME");
-    if (fromEnv != null && !fromEnv.isBlank()) {
-      return fromEnv;
-    }
-    try {
-      return InetAddress.getLocalHost().getHostName();
-    } catch (UnknownHostException e) {
-      log.debug("Could not determine host name to report events under", e);
-      return "unknown";
+    return DefaultReportingInstance.VALUE;
+  }
+
+  private static final class DefaultReportingInstance {
+    private static final String VALUE = resolve();
+
+    private static String resolve() {
+      var fromEnv = System.getenv("HOSTNAME");
+      if (fromEnv != null && !fromEnv.isBlank()) {
+        return fromEnv;
+      }
+      try {
+        return InetAddress.getLocalHost().getHostName();
+      } catch (UnknownHostException e) {
+        log.debug("Could not determine host name to report events under", e);
+        return "unknown";
+      }
     }
   }
 
   @Override
-  public void record(HasMetadata regarding, EventRecord event) {
-    Objects.requireNonNull(regarding, "the object the event is about must not be null");
+  public void record(EventRecord event, Context<?> context) {
+    Objects.requireNonNull(context, "the context of the reconciliation must not be null");
     Objects.requireNonNull(event, "event must not be null");
     try {
-      sink.emit(toEvent(regarding, event));
+      sink.emit(toEvent(context, event), context);
     } catch (Exception e) {
       // recording an event must never break the caller: a controller that fails to reconcile
       // because it could not write an event is strictly worse than one that records nothing
@@ -122,26 +120,28 @@ public class DefaultEventRecorder implements EventRecorder {
           "Could not record {} event with reason {} for resource {} in namespace {}",
           event.type(),
           event.reason(),
-          regarding.getMetadata().getName(),
-          regarding.getMetadata().getNamespace(),
+          context.getPrimaryResource().getMetadata().getName(),
+          context.getPrimaryResource().getMetadata().getNamespace(),
           e);
     }
   }
 
   @Override
-  public ResourceEventRecorder forResource(HasMetadata regarding) {
-    Objects.requireNonNull(regarding, "the object events will be about must not be null");
-    return new BoundEventRecorder(this, regarding);
+  public ResourceEventRecorder forContext(Context<?> context) {
+    Objects.requireNonNull(context, "the context events will be recorded from must not be null");
+    return new BoundEventRecorder(this, context);
   }
 
-  protected Event toEvent(HasMetadata regarding, EventRecord record) {
+  protected Event toEvent(Context<?> context, EventRecord record) {
+    var controllerName = context.getControllerConfiguration().getName();
+    var regarding = context.getPrimaryResource();
     var now = Instant.now().truncatedTo(ChronoUnit.SECONDS).toString();
     var involvedObject = objectReferenceFor(regarding);
     var builder =
         new EventBuilder()
             .withNewMetadata()
-            .withName(eventName(regarding, record))
-            .withNamespace(eventNamespace(regarding))
+            .withName(eventName(regarding, record, controllerName))
+            .withNamespace(eventNamespace(regarding, context))
             .withLabels(record.labels())
             .withAnnotations(record.annotations())
             .endMetadata()
@@ -152,19 +152,33 @@ public class DefaultEventRecorder implements EventRecorder {
             .withFirstTimestamp(now)
             .withLastTimestamp(now)
             .withCount(1)
-            .withReportingComponent(record.reportingComponent().orElse(reportingController))
-            .withReportingInstance(reportingInstance)
+            .withReportingComponent(record.reportingComponent().orElse(controllerName))
+            .withReportingInstance(
+                context
+                    .getControllerConfiguration()
+                    .getConfigurationService()
+                    .getLeaderElectionConfiguration()
+                    .flatMap(LeaderElectionConfiguration::getIdentity)
+                    .orElseGet(DefaultEventRecorder::defaultReportingInstance))
             // the deprecated source is still what kubectl renders in the "From" column
             .withNewSource()
-            .withComponent(record.reportingComponent().orElse(reportingController))
+            .withComponent(record.reportingComponent().orElse(controllerName))
             .endSource();
     record.action().ifPresent(builder::withAction);
     return builder.build();
   }
 
-  private String eventNamespace(HasMetadata regarding) {
+  private String eventNamespace(HasMetadata regarding, Context<?> context) {
     var namespace = regarding.getMetadata().getNamespace();
-    return namespace == null ? clusterScopedEventNamespace : namespace;
+    if (namespace != null) {
+      return namespace;
+    }
+    return requireNonNullElse(
+        context
+            .getControllerConfiguration()
+            .getConfigurationService()
+            .clusterScopedEventNamespace(),
+        CLUSTER_SCOPED_EVENT_NAMESPACE);
   }
 
   /**
@@ -177,7 +191,7 @@ public class DefaultEventRecorder implements EventRecorder {
    * <p>The object is identified by its uid, with the kind as a fallback for objects that do not
    * have one yet, such as a dependent resource that has only been built so far.
    */
-  private String eventName(HasMetadata regarding, EventRecord record) {
+  private String eventName(HasMetadata regarding, EventRecord record, String reportingController) {
     var metadata = regarding.getMetadata();
     var identity =
         String.join(
@@ -234,22 +248,22 @@ public class DefaultEventRecorder implements EventRecorder {
         .build();
   }
 
-  private record BoundEventRecorder(EventRecorder delegate, HasMetadata regarding)
+  private record BoundEventRecorder(EventRecorder delegate, Context<?> context)
       implements ResourceEventRecorder {
 
     @Override
     public void normal(String reason, String message) {
-      record(EventRecord.normal(reason, message));
+      delegate.record(EventRecord.normal(reason, message), context);
     }
 
     @Override
     public void warn(String reason, String message) {
-      record(EventRecord.warning(reason, message));
+      delegate.record(EventRecord.warning(reason, message), context);
     }
 
     @Override
     public void record(EventRecord event) {
-      delegate.record(regarding, event);
+      delegate.record(event, context);
     }
   }
 }

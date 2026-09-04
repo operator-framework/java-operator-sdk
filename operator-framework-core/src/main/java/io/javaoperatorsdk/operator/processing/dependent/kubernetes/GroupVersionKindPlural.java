@@ -53,10 +53,11 @@ public class GroupVersionKindPlural extends GroupVersionKind {
 
   @Override
   protected boolean specificEquals(GroupVersionKind that) {
-    if (plural == null) {
-      return true;
-    }
-    return that instanceof GroupVersionKindPlural gvkp && gvkp.plural.equals(plural);
+    // a GroupVersionKind that is not plural-aware carries no plural form, which is the same as an
+    // unspecified one: that keeps this consistent with hashCode(), which only mixes the plural in
+    // when it is present
+    final var thatPlural = that instanceof GroupVersionKindPlural gvkp ? gvkp.plural : null;
+    return Objects.equals(plural, thatPlural);
   }
 
   @Override

@@ -4,10 +4,15 @@ env:
 on:
   release:
     types: [ released ]
+
+permissions:
+  contents: read
+
 jobs:
 
   prepare-release:
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     env:
       tmp_version_branch: ''
       RAW_TAG: ${{ github.event.release.tag_name }}
@@ -32,31 +37,66 @@ jobs:
           echo "Setting version_branch to v4"
           echo "tmp_version_branch=v4" >> "$GITHUB_ENV"
       - if: ${{ startsWith(github.event.release.tag_name, 'v5.' ) }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RAW_TAG: ${{ github.event.release.tag_name }}
         run: |
           RELEASE_VERSION="${RAW_TAG#v}"
           RELEASE_MAJOR_MINOR=$(echo "$RELEASE_VERSION" | cut -d. -f1-2)
 
-          MAIN_POM_VERSION=$(curl -fsSL "https://raw.githubusercontent.com/${{ github.repository }}/main/pom.xml" | yq -p xml '.project.version')
-          if [ -z "$MAIN_POM_VERSION" ]; then
-            echo "Failed to determine main branch POM version"
+          # Reject anything that is not a bare major.minor. A tag such as
+          # "v5.3/rc" would otherwise derive the branch "5.3/rc.x", whose slash
+          # splits the API URL path into a non-existent endpoint, and the
+          # resulting 404 would quietly select main.
+          if ! printf '%s' "$RELEASE_MAJOR_MINOR" | grep -Eq '^[0-9]+\.[0-9]+$'; then
+            echo "Cannot derive a release stream from tag '${RAW_TAG}'"
             exit 1
           fi
-          MAIN_MAJOR_MINOR=$(echo "$MAIN_POM_VERSION" | cut -d. -f1-2)
+          MAINTENANCE_BRANCH="${RELEASE_MAJOR_MINOR}.x"
 
+          # A maintenance branch (e.g. 5.3.x) exists only for streams no longer
+          # developed on main, so its absence means main is the stream being
+          # released. Main's pom cannot be used to identify the stream: it carries
+          # the 999-SNAPSHOT sentinel version.
           echo "Release tag major.minor: $RELEASE_MAJOR_MINOR"
-          echo "Main branch major.minor: $MAIN_MAJOR_MINOR"
 
-          if [ "$RELEASE_MAJOR_MINOR" = "$MAIN_MAJOR_MINOR" ]; then
-            echo "Setting version_branch to main"
-            echo "tmp_version_branch=main" >> "$GITHUB_ENV"
-          else
-            echo "Setting version_branch to ${RELEASE_MAJOR_MINOR}.x"
-            echo "tmp_version_branch=${RELEASE_MAJOR_MINOR}.x" >> "$GITHUB_ENV"
+          # Only 404 means "no such branch". Any other outcome is a lookup failure
+          # and must abort: silently falling back to main would release the wrong
+          # stream. Timeouts are bounded so a network stall fails fast.
+          CURL_EXIT=0
+          HTTP_STATUS=$(curl -sS -o /dev/null -w '%{http_code}' \
+            --connect-timeout 10 --max-time 30 \
+            --retry 3 --retry-delay 2 --retry-all-errors \
+            -H "Authorization: Bearer ${GH_TOKEN}" \
+            -H "Accept: application/vnd.github+json" \
+            -H "X-GitHub-Api-Version: 2022-11-28" \
+            "${{ github.api_url }}/repos/${{ github.repository }}/branches/${MAINTENANCE_BRANCH}") || CURL_EXIT=$?
+
+          if [ "$CURL_EXIT" -ne 0 ]; then
+            echo "Branch lookup for ${MAINTENANCE_BRANCH} failed (curl exit ${CURL_EXIT})"
+            exit 1
           fi
+
+          case "$HTTP_STATUS" in
+            200)
+              echo "Setting version_branch to ${MAINTENANCE_BRANCH}"
+              echo "tmp_version_branch=${MAINTENANCE_BRANCH}" >> "$GITHUB_ENV"
+              ;;
+            404)
+              echo "No ${MAINTENANCE_BRANCH} branch, setting version_branch to main"
+              echo "tmp_version_branch=main" >> "$GITHUB_ENV"
+              ;;
+            *)
+              echo "Could not determine whether ${MAINTENANCE_BRANCH} exists (HTTP ${HTTP_STATUS})"
+              exit 1
+              ;;
+          esac
       - if: ${{ env.tmp_version_branch == '' }}
         name: Fail if version_branch is not set
+        env:
+          RAW_TAG: ${{ github.event.release.tag_name }}
         run: |
-          echo "Failed to find appropriate branch to release $RAW_TAG from"
+          echo "Failed to find appropriate branch to release ${RAW_TAG} from"
           exit 1
       - id: set-version-branch
         name: Set version_branch if matched
@@ -67,6 +107,7 @@ jobs:
 
   release-sdk:
     needs: prepare-release
+    # The reusable workflow commits and pushes the SNAPSHOT version bump.
     permissions:
       contents: write
     uses: ./.github/workflows/release-project-in-dir.yml

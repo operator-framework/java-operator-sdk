@@ -17,18 +17,26 @@ package io.javaoperatorsdk.operator.api.event;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 import org.junit.jupiter.api.Test;
 
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.ConfigMapBuilder;
 import io.fabric8.kubernetes.api.model.Event;
+import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.Namespace;
 import io.fabric8.kubernetes.api.model.NamespaceBuilder;
+import io.javaoperatorsdk.operator.api.config.ConfigurationService;
+import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
+import io.javaoperatorsdk.operator.api.reconciler.Context;
 
+import static io.javaoperatorsdk.operator.api.config.LeaderElectionConfigurationBuilder.aLeaderElectionConfiguration;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatIllegalArgumentException;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 class DefaultEventRecorderTest {
 
@@ -37,11 +45,11 @@ class DefaultEventRecorderTest {
 
   private final List<Event> emitted = new ArrayList<>();
   private final DefaultEventRecorder recorder =
-      new DefaultEventRecorder(CONTROLLER, INSTANCE, emitted::add);
+      new DefaultEventRecorder((event, context) -> emitted.add(event));
 
   @Test
   void fillsInEverythingDerivableFromTheControllerAndTheInvolvedObject() {
-    recorder.record(configMap(), EventRecord.warning("Failed", "could not do the thing"));
+    recorder.record(EventRecord.warning("Failed", "could not do the thing"), context(configMap()));
 
     assertThat(emitted).hasSize(1);
     var event = emitted.get(0);
@@ -64,8 +72,34 @@ class DefaultEventRecorderTest {
   }
 
   @Test
+  void takesTheReportingControllerFromTheControllerConfigurationOfTheContext() {
+    var context = context(configMap());
+    when(context.getControllerConfiguration().getName()).thenReturn("othercontroller");
+
+    recorder.record(EventRecord.normal("Created", "created"), context);
+
+    assertThat(emitted.get(0).getReportingComponent()).isEqualTo("othercontroller");
+    assertThat(emitted.get(0).getSource().getComponent()).isEqualTo("othercontroller");
+  }
+
+  @Test
+  void fallsBackToTheHostNameWhenLeaderElectionConfiguresNoIdentity() {
+    var context = context(configMap());
+    when(context
+            .getControllerConfiguration()
+            .getConfigurationService()
+            .getLeaderElectionConfiguration())
+        .thenReturn(Optional.empty());
+
+    recorder.record(EventRecord.normal("Created", "created"), context);
+
+    assertThat(emitted.get(0).getReportingInstance())
+        .isEqualTo(DefaultEventRecorder.defaultReportingInstance());
+  }
+
+  @Test
   void createsTheEventInTheNamespaceOfTheInvolvedObject() {
-    recorder.record(configMap(), EventRecord.normal("Created", "created"));
+    recorder.record(EventRecord.normal("Created", "created"), context(configMap()));
 
     assertThat(emitted.get(0).getMetadata().getNamespace()).isEqualTo("ns1");
     assertThat(emitted.get(0).getMetadata().getName()).startsWith("test1.");
@@ -73,7 +107,7 @@ class DefaultEventRecorderTest {
 
   @Test
   void recordsEventsForClusterScopedObjectsInTheDefaultNamespace() {
-    recorder.record(clusterScoped(), EventRecord.normal("Created", "created"));
+    recorder.record(EventRecord.normal("Created", "created"), context(clusterScoped()));
 
     assertThat(emitted.get(0).getMetadata().getNamespace())
         .isEqualTo(DefaultEventRecorder.CLUSTER_SCOPED_EVENT_NAMESPACE);
@@ -82,18 +116,15 @@ class DefaultEventRecorderTest {
 
   @Test
   void clusterScopedEventNamespaceCanBeOverridden() {
-    var configured = new DefaultEventRecorder(CONTROLLER, INSTANCE, "operator-ns", emitted::add);
-
-    configured.record(clusterScoped(), EventRecord.normal("Created", "created"));
+    recorder.record(
+        EventRecord.normal("Created", "created"), context(clusterScoped(), "operator-ns"));
 
     assertThat(emitted.get(0).getMetadata().getNamespace()).isEqualTo("operator-ns");
   }
 
   @Test
   void anOverriddenClusterScopedNamespaceDoesNotAffectNamespacedResources() {
-    var configured = new DefaultEventRecorder(CONTROLLER, INSTANCE, "operator-ns", emitted::add);
-
-    configured.record(configMap(), EventRecord.normal("Created", "created"));
+    recorder.record(EventRecord.normal("Created", "created"), context(configMap(), "operator-ns"));
 
     assertThat(emitted.get(0).getMetadata().getNamespace()).isEqualTo("ns1");
   }
@@ -101,13 +132,13 @@ class DefaultEventRecorderTest {
   @Test
   void perEventReportingComponentOverridesTheControllerName() {
     recorder.record(
-        configMap(),
         EventRecord.builder()
             .reason("Submitted")
             .message("submitted")
             .reportingComponent("JobManagerDeployment")
             .action("Submit")
-            .build());
+            .build(),
+        context(configMap()));
 
     assertThat(emitted.get(0).getReportingComponent()).isEqualTo("JobManagerDeployment");
     assertThat(emitted.get(0).getSource().getComponent()).isEqualTo("JobManagerDeployment");
@@ -119,13 +150,13 @@ class DefaultEventRecorderTest {
   @Test
   void passesLabelsAndAnnotationsThrough() {
     recorder.record(
-        configMap(),
         EventRecord.builder()
             .reason("Scaling")
             .message("scaling up")
             .label("group", "autoscaler")
             .annotation("recommendation", "4")
-            .build());
+            .build(),
+        context(configMap()));
 
     assertThat(emitted.get(0).getMetadata().getLabels()).containsEntry("group", "autoscaler");
     assertThat(emitted.get(0).getMetadata().getAnnotations()).containsEntry("recommendation", "4");
@@ -135,19 +166,29 @@ class DefaultEventRecorderTest {
   void aFailingSinkNeverFailsTheCaller() {
     var failing =
         new DefaultEventRecorder(
-            CONTROLLER,
-            INSTANCE,
-            event -> {
+            (event, context) -> {
               throw new RuntimeException("API server said no");
             });
 
-    assertThatCode(() -> failing.record(configMap(), EventRecord.normal("Created", "created")))
+    assertThatCode(
+            () -> failing.record(EventRecord.normal("Created", "created"), context(configMap())))
         .doesNotThrowAnyException();
   }
 
   @Test
-  void boundRecorderRecordsAboutTheBoundObject() {
-    var bound = recorder.forResource(configMap());
+  void passesTheContextOnToTheSink() {
+    var contexts = new ArrayList<Context<?>>();
+    var recording = new DefaultEventRecorder((event, context) -> contexts.add(context));
+    var context = context(configMap());
+
+    recording.record(EventRecord.normal("Created", "created"), context);
+
+    assertThat(contexts).containsExactly(context);
+  }
+
+  @Test
+  void boundRecorderRecordsAboutThePrimaryResourceOfTheBoundContext() {
+    var bound = recorder.forContext(context(configMap()));
 
     bound.normal("Created", "created");
     bound.warn("Failed", "failed");
@@ -170,7 +211,7 @@ class DefaultEventRecorderTest {
             .endMetadata()
             .build();
 
-    recorder.record(configMap, EventRecord.normal("Created", "created"));
+    recorder.record(EventRecord.normal("Created", "created"), context(configMap));
 
     var name = emitted.get(0).getMetadata().getName();
     assertThat(name).hasSizeLessThanOrEqualTo(253);
@@ -187,7 +228,7 @@ class DefaultEventRecorderTest {
 
   @Test
   void namesEventsWithADnsSafeHashSuffix() {
-    recorder.record(configMap(), EventRecord.normal("Created", "created"));
+    recorder.record(EventRecord.normal("Created", "created"), context(configMap()));
 
     assertThat(emitted.get(0).getMetadata().getName()).matches("test1\\.[0-9a-f]{32}");
   }
@@ -200,12 +241,41 @@ class DefaultEventRecorderTest {
     // name and the sink would take the second for a repeat of the first and drop it.
     assertThat("Aa".hashCode()).isEqualTo("BB".hashCode());
 
-    recorder.record(configMap(), EventRecord.warning("Failed", "Aa"));
-    recorder.record(configMap(), EventRecord.warning("Failed", "BB"));
+    recorder.record(EventRecord.warning("Failed", "Aa"), context(configMap()));
+    recorder.record(EventRecord.warning("Failed", "BB"), context(configMap()));
 
     assertThat(emitted).hasSize(2);
     assertThat(emitted.get(0).getMetadata().getName())
         .isNotEqualTo(emitted.get(1).getMetadata().getName());
+  }
+
+  Context<?> context(HasMetadata primaryResource) {
+    return context(primaryResource, DefaultEventRecorder.CLUSTER_SCOPED_EVENT_NAMESPACE);
+  }
+
+  /**
+   * The recorder reads everything it does not get from the {@link EventRecord} off the context: the
+   * primary resource the event is about, the name of the controller the event is attributed to, and
+   * the configuration service the reporting instance and the cluster scoped event namespace come
+   * from.
+   */
+  @SuppressWarnings({"unchecked", "rawtypes"})
+  Context<?> context(HasMetadata primaryResource, String clusterScopedEventNamespace) {
+    var configurationService = mock(ConfigurationService.class);
+    when(configurationService.getLeaderElectionConfiguration())
+        .thenReturn(
+            Optional.of(aLeaderElectionConfiguration("lease").withIdentity(INSTANCE).build()));
+    when(configurationService.clusterScopedEventNamespace())
+        .thenReturn(clusterScopedEventNamespace);
+
+    ControllerConfiguration controllerConfiguration = mock(ControllerConfiguration.class);
+    when(controllerConfiguration.getName()).thenReturn(CONTROLLER);
+    when(controllerConfiguration.getConfigurationService()).thenReturn(configurationService);
+
+    Context context = mock(Context.class);
+    when(context.getPrimaryResource()).thenReturn(primaryResource);
+    when(context.getControllerConfiguration()).thenReturn(controllerConfiguration);
+    return context;
   }
 
   ConfigMap configMap() {

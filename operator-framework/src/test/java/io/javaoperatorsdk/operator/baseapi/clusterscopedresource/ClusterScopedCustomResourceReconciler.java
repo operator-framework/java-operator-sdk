@@ -79,14 +79,13 @@ public class ClusterScopedCustomResourceReconciler
   public List<EventSource<?, ClusterScopedCustomResource>> prepareEventSources(
       EventSourceContext<ClusterScopedCustomResource> context) {
     var ies =
-        new InformerEventSource<>(
+        new InformerEventSource<ConfigMap, ClusterScopedCustomResource>(
             InformerEventSourceConfiguration.from(
                     ConfigMap.class, ClusterScopedCustomResource.class)
                 .withSecondaryToPrimaryMapper(
                     Mappers.fromOwnerReferences(context.getPrimaryResourceClass(), true))
                 .withLabelSelector(TEST_LABEL_KEY + "=" + TEST_LABEL_VALUE)
-                .build(),
-            context);
+                .build());
     return List.of(ies);
   }
 }

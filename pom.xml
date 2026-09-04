@@ -21,7 +21,7 @@
 
   <groupId>io.javaoperatorsdk</groupId>
   <artifactId>java-operator-sdk</artifactId>
-  <version>5.5.2-SNAPSHOT</version>
+  <version>5.6.1-SNAPSHOT</version>
   <packaging>pom</packaging>
   <name>Operator SDK for Java</name>
   <description>Java SDK for implementing Kubernetes operators</description>
@@ -77,6 +77,7 @@
     <mokito.version>5.23.0</mokito.version>
     <commons-lang3.version>3.20.0</commons-lang3.version>
     <compile-testing.version>0.23.0</compile-testing.version>
+    <javapoet.version>1.13.0</javapoet.version>
     <assertj.version>3.27.7</assertj.version>
     <awaitility.version>4.3.0</awaitility.version>
     <spring-boot.version>2.7.3</spring-boot.version>
@@ -87,8 +88,8 @@
     <java.diff.version>4.17</java.diff.version>
 
     <fmt-maven-plugin.version>2.11</fmt-maven-plugin.version>
-    <maven-compiler-plugin.version>3.15.0</maven-compiler-plugin.version>
-    <maven-surefire-plugin.version>3.5.6</maven-surefire-plugin.version>
+    <maven-compiler-plugin.version>3.16.0</maven-compiler-plugin.version>
+    <maven-surefire-plugin.version>3.6.0</maven-surefire-plugin.version>
     <central-publishing-maven-plugin.version>0.11.0</central-publishing-maven-plugin.version>
     <maven-javadoc-plugin.version>3.12.0</maven-javadoc-plugin.version>
     <maven-resources-plugin.version>3.5.0</maven-resources-plugin.version>
@@ -101,7 +102,7 @@
     <maven-install-plugin.version>3.1.4</maven-install-plugin.version>
     <git-commit-id-maven-plugin.version>10.0.0</git-commit-id-maven-plugin.version>
     <jib-maven-plugin.version>3.5.2</jib-maven-plugin.version>
-    <spotless.version>3.9.0</spotless.version>
+    <spotless.version>3.8.0</spotless.version>
     <spotbugs-maven-plugin.version>4.10.4.0</spotbugs-maven-plugin.version>
   </properties>
 
@@ -146,6 +147,11 @@
         <groupId>io.micrometer</groupId>
         <artifactId>micrometer-core</artifactId>
         <version>${micrometer-core.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>com.squareup</groupId>
+        <artifactId>javapoet</artifactId>
+        <version>${javapoet.version}</version>
       </dependency>
       <dependency>
         <groupId>org.awaitility</groupId>

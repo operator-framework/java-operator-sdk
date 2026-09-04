@@ -76,18 +76,14 @@ public interface InformerEventSourceConfiguration<R extends HasMetadata> extends
 
   <P extends HasMetadata> PrimaryToSecondaryMapper<P> getPrimaryToSecondaryMapper();
 
+  /**
+   * @deprecated use {@link InformerConfiguration#getResourceGroupVersionKind()}
+   */
+  @Deprecated(forRemoval = true)
   Optional<GroupVersionKind> getGroupVersionKind();
 
   default String name() {
     return getInformerConfig().getName();
-  }
-
-  /**
-   * Optional, specific kubernetes client, typically to connect to a different cluster than the rest
-   * of the operator. Note that this is solely for multi cluster support.
-   */
-  default Optional<KubernetesClient> getKubernetesClient() {
-    return Optional.empty();
   }
 
   class DefaultInformerEventSourceConfiguration<R extends HasMetadata>
@@ -167,7 +163,7 @@ public interface InformerEventSourceConfiguration<R extends HasMetadata> extends
       this.resourceClass = resourceClass;
       this.groupVersionKind = groupVersionKind;
       this.primaryResourceClass = primaryResourceClass;
-      this.config = InformerConfiguration.builder(resourceClass);
+      this.config = InformerConfiguration.builder(resourceClass, groupVersionKind);
     }
 
     public Builder<R> withName(String name) {

@@ -17,6 +17,7 @@ package io.javaoperatorsdk.operator.api.config.informer;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.Objects;
 
 public class FieldSelector {
   private final List<Field> fields;
@@ -37,5 +38,22 @@ public class FieldSelector {
     public Field(String path, String value) {
       this(path, value, false);
     }
+  }
+
+  @Override
+  public boolean equals(Object o) {
+    if (o == null || getClass() != o.getClass()) return false;
+    FieldSelector that = (FieldSelector) o;
+    return Objects.equals(fields, that.fields);
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hashCode(fields);
+  }
+
+  @Override
+  public String toString() {
+    return "FieldSelector{" + "fields=" + fields + '}';
   }
 }

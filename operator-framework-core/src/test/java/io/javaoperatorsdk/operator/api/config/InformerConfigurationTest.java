@@ -16,11 +16,13 @@
 package io.javaoperatorsdk.operator.api.config;
 
 import java.util.Collections;
+import java.util.List;
 import java.util.Set;
 
 import org.junit.jupiter.api.Test;
 
 import io.fabric8.kubernetes.api.model.ConfigMap;
+import io.javaoperatorsdk.operator.api.config.informer.FieldSelector;
 import io.javaoperatorsdk.operator.api.config.informer.InformerConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.Constants;
 
@@ -77,6 +79,37 @@ class InformerConfigurationTest {
   void nullShardSelectorByDefault() {
     final var informerConfig = InformerConfiguration.builder(ConfigMap.class).build();
     assertNull(informerConfig.getShardSelector());
+  }
+
+  @Test
+  void nullFieldSelectorByDefault() {
+    final var informerConfig = InformerConfiguration.builder(ConfigMap.class).build();
+    assertNull(informerConfig.getFieldSelector());
+  }
+
+  @Test
+  void emptyFieldSelectorIsNormalizedToNoFieldSelector() {
+    // the annotation path always builds a FieldSelector (@Informer#fieldSelector defaults to {})
+    // while the programmatic path leaves it null. An empty selector filters nothing, so the two
+    // must not get classifiers that disagree and therefore refuse to share an informer
+    assertNull(
+        InformerConfiguration.builder(ConfigMap.class)
+            .withFieldSelector(new FieldSelector(List.of()))
+            .build()
+            .getFieldSelector());
+    assertNull(
+        InformerConfiguration.builder(ConfigMap.class)
+            .withFieldSelector(new FieldSelector())
+            .build()
+            .getFieldSelector());
+  }
+
+  @Test
+  void fieldSelectorIsSetOnBuilderWhenNotEmpty() {
+    final var fieldSelector = new FieldSelector(new FieldSelector.Field("metadata.name", "foo"));
+    final var informerConfig =
+        InformerConfiguration.builder(ConfigMap.class).withFieldSelector(fieldSelector).build();
+    assertEquals(fieldSelector, informerConfig.getFieldSelector());
   }
 
   @Test
