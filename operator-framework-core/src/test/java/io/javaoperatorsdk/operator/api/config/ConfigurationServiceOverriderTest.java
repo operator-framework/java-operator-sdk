@@ -16,6 +16,7 @@
 package io.javaoperatorsdk.operator.api.config;
 
 import java.time.Duration;
+import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadPoolExecutor;
@@ -24,6 +25,7 @@ import org.junit.jupiter.api.Test;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.api.monitoring.Metrics;
+import io.javaoperatorsdk.operator.api.reconciler.dependent.DesiredStateAspect;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
@@ -117,5 +119,37 @@ class ConfigurationServiceOverriderTest {
         .isEqualTo(13);
     assertThat(((ThreadPoolExecutor) overridden.getWorkflowExecutorService()).getMaximumPoolSize())
         .isEqualTo(14);
+  }
+
+  @Test
+  void desiredStateAspectsAreEmptyByDefaultAndCanBeOverridden() {
+    assertThat(config.desiredStateAspects()).isEmpty();
+
+    final DesiredStateAspect first = (desired, dependentResource, context) -> {};
+    final DesiredStateAspect second = (desired, dependentResource, context) -> {};
+
+    assertThat(
+            new ConfigurationServiceOverrider(config)
+                .withDesiredStateAspects(List.of(first, second))
+                .build()
+                .desiredStateAspects())
+        .containsExactly(first, second);
+  }
+
+  @Test
+  void desiredStateAspectsCanBeAppendedToAlreadyConfiguredOnes() {
+    final DesiredStateAspect first = (desired, dependentResource, context) -> {};
+    final DesiredStateAspect second = (desired, dependentResource, context) -> {};
+    final DesiredStateAspect third = (desired, dependentResource, context) -> {};
+
+    final var configWithAspect =
+        new ConfigurationServiceOverrider(config).withDesiredStateAspects(List.of(first)).build();
+
+    assertThat(
+            new ConfigurationServiceOverrider(configWithAspect)
+                .addDesiredStateAspects(second, third)
+                .build()
+                .desiredStateAspects())
+        .containsExactly(first, second, third);
   }
 }

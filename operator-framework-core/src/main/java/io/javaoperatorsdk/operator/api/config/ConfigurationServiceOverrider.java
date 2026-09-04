@@ -16,6 +16,8 @@
 package io.javaoperatorsdk.operator.api.config;
 
 import java.time.Duration;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
@@ -29,6 +31,7 @@ import io.fabric8.kubernetes.client.KubernetesClient;
 import io.javaoperatorsdk.operator.Operator;
 import io.javaoperatorsdk.operator.api.monitoring.Metrics;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResourceFactory;
+import io.javaoperatorsdk.operator.api.reconciler.dependent.DesiredStateAspect;
 
 @SuppressWarnings({"unused", "UnusedReturnValue"})
 public class ConfigurationServiceOverrider {
@@ -54,6 +57,7 @@ public class ConfigurationServiceOverrider {
   private Set<Class<? extends HasMetadata>> defaultNonSSAResource;
   private Boolean useSSAToPatchPrimaryResource;
   private Boolean cloneSecondaryResourcesWhenGettingFromCache;
+  private List<DesiredStateAspect> desiredStateAspects;
 
   @SuppressWarnings("rawtypes")
   private DependentResourceFactory dependentResourceFactory;
@@ -187,6 +191,38 @@ public class ConfigurationServiceOverrider {
   public ConfigurationServiceOverrider withCloneSecondaryResourcesWhenGettingFromCache(
       boolean value) {
     this.cloneSecondaryResourcesWhenGettingFromCache = value;
+    return this;
+  }
+
+  /**
+   * Replaces the {@link DesiredStateAspect}s applied to the desired state of all the Kubernetes
+   * dependent resources managed by the operator by the specified ones.
+   *
+   * @param desiredStateAspects the aspects to apply, in the order in which they should be applied
+   * @return this {@link ConfigurationServiceOverrider} for chained customization
+   * @since 5.6.0
+   */
+  public ConfigurationServiceOverrider withDesiredStateAspects(
+      List<DesiredStateAspect> desiredStateAspects) {
+    this.desiredStateAspects = new ArrayList<>(desiredStateAspects);
+    return this;
+  }
+
+  /**
+   * Appends the specified {@link DesiredStateAspect}s to the already configured ones, which are the
+   * ones configured on the overridden {@link ConfigurationService} unless {@link
+   * #withDesiredStateAspects(List)} was called on this overrider first.
+   *
+   * @param desiredStateAspects the aspects to append, in the order in which they should be applied
+   * @return this {@link ConfigurationServiceOverrider} for chained customization
+   * @since 5.6.0
+   */
+  public ConfigurationServiceOverrider addDesiredStateAspects(
+      DesiredStateAspect... desiredStateAspects) {
+    if (this.desiredStateAspects == null) {
+      this.desiredStateAspects = new ArrayList<>(original.desiredStateAspects());
+    }
+    this.desiredStateAspects.addAll(List.of(desiredStateAspects));
     return this;
   }
 
@@ -329,6 +365,12 @@ public class ConfigurationServiceOverrider {
         return overriddenValueOrDefault(
             cloneSecondaryResourcesWhenGettingFromCache,
             ConfigurationService::cloneSecondaryResourcesWhenGettingFromCache);
+      }
+
+      @Override
+      public List<DesiredStateAspect> desiredStateAspects() {
+        return overriddenValueOrDefault(
+            desiredStateAspects, ConfigurationService::desiredStateAspects);
       }
     };
   }
