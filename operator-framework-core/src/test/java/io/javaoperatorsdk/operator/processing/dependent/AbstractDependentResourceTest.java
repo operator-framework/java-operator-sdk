@@ -15,6 +15,7 @@
  */
 package io.javaoperatorsdk.operator.processing.dependent;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 
@@ -23,8 +24,12 @@ import org.junit.jupiter.api.Test;
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.ConfigMapBuilder;
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
+import io.javaoperatorsdk.operator.api.config.ConfigurationService;
+import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.DefaultContext;
+import io.javaoperatorsdk.operator.api.reconciler.dependent.DesiredStateAspect;
+import io.javaoperatorsdk.operator.processing.Controller;
 import io.javaoperatorsdk.operator.sample.simple.TestCustomResource;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -37,7 +42,18 @@ class AbstractDependentResourceTest {
   private static final DefaultContext<TestCustomResource> CONTEXT = createContext(PRIMARY);
 
   private static DefaultContext<TestCustomResource> createContext(TestCustomResource primary) {
-    return new DefaultContext<>(mock(), mock(), primary, false, false);
+    return createContext(primary, List.of());
+  }
+
+  private static DefaultContext<TestCustomResource> createContext(
+      TestCustomResource primary, List<DesiredStateAspect> aspects) {
+    final ConfigurationService configurationService = mock();
+    when(configurationService.desiredStateAspects()).thenReturn(aspects);
+    final ControllerConfiguration<TestCustomResource> controllerConfiguration = mock();
+    when(controllerConfiguration.getConfigurationService()).thenReturn(configurationService);
+    final Controller<TestCustomResource> controller = mock();
+    when(controller.getConfiguration()).thenReturn(controllerConfiguration);
+    return new DefaultContext<>(mock(), controller, primary, false, false);
   }
 
   @Test
@@ -99,6 +115,35 @@ class AbstractDependentResourceTest {
     context.getOrComputeDesiredStateFor(
         testDependentResource, p -> testDependentResource.desired(p, context));
     assertEquals(1, testDependentResource.desiredCallCount);
+  }
+
+  @Test
+  void appliesConfiguredDesiredStateAspectsInOrderAndOnlyOnce() {
+    final var testDependentResource = new DesiredCallCountCheckingDR();
+    final var primary = new TestCustomResource();
+    final var spec = primary.getSpec();
+    spec.setConfigMapName("foo");
+    spec.setKey("key");
+    spec.setValue("value");
+    final var context =
+        createContext(
+            primary,
+            List.of(
+                (desired, dependentResource, ctx) -> {
+                  assertSame(testDependentResource, dependentResource);
+                  assertSame(primary, ctx.getPrimaryResource());
+                  desired.getMetadata().getLabels().put("aspect", "first");
+                },
+                (desired, dependentResource, ctx) ->
+                    desired.getMetadata().getLabels().put("aspect", "second")));
+
+    final var created = testDependentResource.reconcile(primary, context).getSingleResource();
+    assertEquals("second", created.orElseThrow().getMetadata().getLabels().get("aspect"));
+
+    // desired state is cached, aspects should therefore not be applied again
+    created.orElseThrow().getMetadata().getLabels().remove("aspect");
+    testDependentResource.reconcile(primary, context);
+    assertNull(created.orElseThrow().getMetadata().getLabels().get("aspect"));
   }
 
   private ConfigMap configMap() {
