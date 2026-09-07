@@ -211,6 +211,13 @@ class ConfigurationServiceOverriderTest {
         .isEqualTo(14);
   }
 
+  @Test
+  void virtualThreadsAreDisabledByDefaultAndCanBeOverridden() {
+    assertThat(config.useVirtualThreads()).isFalse();
+    assertThat(new ConfigurationServiceOverrider(config).withUseVirtualThreads(true).build())
+        .returns(true, ConfigurationService::useVirtualThreads);
+  }
+
   @SuppressWarnings("rawtypes")
   @Test
   void dependentResourceFactoryDefaultsToTheSharedOneAndCanBeOverridden() {
