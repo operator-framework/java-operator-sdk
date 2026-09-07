@@ -75,14 +75,17 @@ public class DefaultEventRecorder implements EventRecorder {
 
   private final EventSink sink;
   private final EventKeyStrategy keyStrategy;
+  private final boolean ownerReference;
 
   public DefaultEventRecorder(EventSink sink) {
-    this(sink, EventKeyStrategy.none());
+    this(sink, EventKeyStrategy.none(), false);
   }
 
-  private DefaultEventRecorder(EventSink sink, EventKeyStrategy keyStrategy) {
+  private DefaultEventRecorder(
+      EventSink sink, EventKeyStrategy keyStrategy, boolean ownerReference) {
     this.sink = sink;
     this.keyStrategy = keyStrategy;
+    this.ownerReference = ownerReference;
   }
 
   public static Builder builder(EventSink sink) {
@@ -94,6 +97,7 @@ public class DefaultEventRecorder implements EventRecorder {
 
     private final EventSink sink;
     private EventKeyStrategy keyStrategy = EventKeyStrategy.none();
+    private boolean ownerReference = false;
 
     private Builder(EventSink sink) {
       this.sink = Objects.requireNonNull(sink, "sink must not be null");
@@ -108,8 +112,21 @@ public class DefaultEventRecorder implements EventRecorder {
       return this;
     }
 
+    /**
+     * When set, recorded events carry an {@code ownerReference} to the object they are about. The
+     * reference expresses ownership for tooling that reads it; note that the Kubernetes garbage
+     * collector ignores events, so it does not cause cascade deletion, events expire through the
+     * event TTL either way. Records can override this per event via {@link
+     * EventRecord.Builder#ownedByRegarding(boolean)}. The reference is only set when the object
+     * already has a uid.
+     */
+    public Builder ownerReference(boolean ownerReference) {
+      this.ownerReference = ownerReference;
+      return this;
+    }
+
     public DefaultEventRecorder build() {
-      return new DefaultEventRecorder(sink, keyStrategy);
+      return new DefaultEventRecorder(sink, keyStrategy, ownerReference);
     }
   }
 
@@ -198,6 +215,23 @@ public class DefaultEventRecorder implements EventRecorder {
             .withNewSource()
             .withComponent(record.reportingComponent().orElse(controllerName))
             .endSource();
+    boolean ownedByRegarding = record.ownedByRegarding().orElse(ownerReference);
+    if (ownedByRegarding && regarding.getMetadata().getUid() == null) {
+      log.debug(
+          "Not setting the owner reference on the event about {}: the object has no uid yet",
+          regarding.getMetadata().getName());
+    }
+    if (ownedByRegarding && regarding.getMetadata().getUid() != null) {
+      builder
+          .editMetadata()
+          .addNewOwnerReference()
+          .withApiVersion(regarding.getApiVersion())
+          .withKind(regarding.getKind())
+          .withName(regarding.getMetadata().getName())
+          .withUid(regarding.getMetadata().getUid())
+          .endOwnerReference()
+          .endMetadata();
+    }
     record.action().ifPresent(builder::withAction);
     return builder.build();
   }

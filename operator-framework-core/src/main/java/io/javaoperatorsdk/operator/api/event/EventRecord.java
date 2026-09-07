@@ -33,6 +33,7 @@ public final class EventRecord {
   private final String reason;
   private final String message;
   private final String key;
+  private final Boolean ownedByRegarding;
   private final String action;
   private final String reportingComponent;
   private final Map<String, String> labels;
@@ -47,6 +48,7 @@ public final class EventRecord {
     this.reportingComponent = builder.reportingComponent;
     this.labels = Map.copyOf(builder.labels);
     this.annotations = Map.copyOf(builder.annotations);
+    this.ownedByRegarding = builder.ownedByRegarding;
   }
 
   public static Builder builder() {
@@ -81,6 +83,14 @@ public final class EventRecord {
    */
   public Optional<String> key() {
     return Optional.ofNullable(key);
+  }
+
+  /**
+   * Whether the recorded event carries an {@code ownerReference} to the object it is about. When
+   * empty, the recorder's own setting applies.
+   */
+  public Optional<Boolean> ownedByRegarding() {
+    return Optional.ofNullable(ownedByRegarding);
   }
 
   /**
@@ -120,6 +130,7 @@ public final class EventRecord {
     private String reason;
     private String message;
     private String key;
+    private Boolean ownedByRegarding;
     private String action;
     private String reportingComponent;
     private final Map<String, String> labels = new HashMap<>();
@@ -145,6 +156,15 @@ public final class EventRecord {
     /** Sets the key identifying this event, see {@link EventRecord#key()}. */
     public Builder key(String key) {
       this.key = key;
+      return this;
+    }
+
+    /**
+     * Sets whether this event is owned by the object it is about, see {@link
+     * EventRecord#ownedByRegarding()}.
+     */
+    public Builder ownedByRegarding(boolean ownedByRegarding) {
+      this.ownedByRegarding = ownedByRegarding;
       return this;
     }
 

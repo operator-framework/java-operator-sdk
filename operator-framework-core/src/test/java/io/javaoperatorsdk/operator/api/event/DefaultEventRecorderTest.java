@@ -320,6 +320,68 @@ class DefaultEventRecorderTest {
         .isNotEqualTo(emitted.get(1).getMetadata().getName());
   }
 
+  @Test
+  void setsTheOwnerReferenceToTheInvolvedObjectWhenOwningEventsByRegarding() {
+    var recorder =
+        DefaultEventRecorder.builder((event, context) -> emitted.add(event))
+            .ownerReference(true)
+            .build();
+
+    recorder.record(EventRecord.normal("Created", "created"), context(configMap()));
+
+    assertThat(emitted.get(0).getMetadata().getOwnerReferences())
+        .singleElement()
+        .satisfies(
+            owner -> {
+              assertThat(owner.getApiVersion()).isEqualTo("v1");
+              assertThat(owner.getKind()).isEqualTo("ConfigMap");
+              assertThat(owner.getName()).isEqualTo("test1");
+              assertThat(owner.getUid()).isEqualTo("uid-1");
+            });
+  }
+
+  @Test
+  void carriesNoOwnerReferenceByDefault() {
+    recorder.record(EventRecord.normal("Created", "created"), context(configMap()));
+
+    assertThat(emitted.get(0).getMetadata().getOwnerReferences()).isEmpty();
+  }
+
+  @Test
+  void letsARecordOptOutOfTheRecorderLevelOwnerReference() {
+    var recorder =
+        DefaultEventRecorder.builder((event, context) -> emitted.add(event))
+            .ownerReference(true)
+            .build();
+
+    recorder.record(
+        EventRecord.builder().reason("Created").message("created").ownedByRegarding(false).build(),
+        context(configMap()));
+
+    assertThat(emitted.get(0).getMetadata().getOwnerReferences()).isEmpty();
+  }
+
+  @Test
+  void letsARecordOptIntoTheOwnerReferenceOnItsOwn() {
+    recorder.record(
+        EventRecord.builder().reason("Created").message("created").ownedByRegarding(true).build(),
+        context(configMap()));
+
+    assertThat(emitted.get(0).getMetadata().getOwnerReferences()).hasSize(1);
+  }
+
+  @Test
+  void setsNoOwnerReferenceWhenTheRegardingObjectHasNoUidYet() {
+    var withoutUid = configMap();
+    withoutUid.getMetadata().setUid(null);
+
+    recorder.record(
+        EventRecord.builder().reason("Created").message("created").ownedByRegarding(true).build(),
+        context(withoutUid));
+
+    assertThat(emitted.get(0).getMetadata().getOwnerReferences()).isEmpty();
+  }
+
   Context<?> context(HasMetadata primaryResource) {
     return context(primaryResource, DefaultEventRecorder.CLUSTER_SCOPED_EVENT_NAMESPACE);
   }
