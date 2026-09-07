@@ -74,9 +74,43 @@ public class DefaultEventRecorder implements EventRecorder {
   private static final int IDENTITY_HASH_LENGTH = 32;
 
   private final EventSink sink;
+  private final EventKeyStrategy keyStrategy;
 
   public DefaultEventRecorder(EventSink sink) {
+    this(sink, EventKeyStrategy.none());
+  }
+
+  private DefaultEventRecorder(EventSink sink, EventKeyStrategy keyStrategy) {
     this.sink = sink;
+    this.keyStrategy = keyStrategy;
+  }
+
+  public static Builder builder(EventSink sink) {
+    return new Builder(sink);
+  }
+
+  /** Builder for {@link DefaultEventRecorder}. */
+  public static final class Builder {
+
+    private final EventSink sink;
+    private EventKeyStrategy keyStrategy = EventKeyStrategy.none();
+
+    private Builder(EventSink sink) {
+      this.sink = Objects.requireNonNull(sink, "sink must not be null");
+    }
+
+    /**
+     * The strategy deriving the default aggregation key of records that do not set one, see {@link
+     * EventKeyStrategy}.
+     */
+    public Builder keyStrategy(EventKeyStrategy keyStrategy) {
+      this.keyStrategy = Objects.requireNonNull(keyStrategy, "keyStrategy must not be null");
+      return this;
+    }
+
+    public DefaultEventRecorder build() {
+      return new DefaultEventRecorder(sink, keyStrategy);
+    }
   }
 
   /**
@@ -184,9 +218,10 @@ public class DefaultEventRecorder implements EventRecorder {
   /**
    * Names events {@code <object name>.<hash>}, following the convention of the Go client, hashing
    * everything that makes two events the same event: the object, the type, the reason, the
-   * reporting component and, unless the record sets a {@link EventRecord#key()}, the message. The
-   * name is therefore stable across occurrences, which is what lets the sink recognise a repeat,
-   * and stays so across operator restarts and between replicas, unlike a name remembered in memory.
+   * reporting component and, unless the record sets a {@link EventRecord#key()} or the recorder is
+   * built with a default {@link EventKeyStrategy}, the message. The name is therefore stable across
+   * occurrences, which is what lets the sink recognise a repeat, and stays so across operator
+   * restarts and between replicas, unlike a name remembered in memory.
    *
    * <p>The object is identified by its uid, with the kind as a fallback for objects that do not
    * have one yet, such as a dependent resource that has only been built so far.
@@ -201,7 +236,10 @@ public class DefaultEventRecorder implements EventRecorder {
             record.type().value(),
             record.reason(),
             record.reportingComponent().orElse(reportingController),
-            record.key().orElseGet(() -> requireNonNullElse(record.message(), "")));
+            record
+                .key()
+                .or(() -> keyStrategy.keyFor(regarding, record))
+                .orElseGet(() -> requireNonNullElse(record.message(), "")));
 
     var suffix = "." + identityDigest(identity);
     var prefix = metadata.getName();

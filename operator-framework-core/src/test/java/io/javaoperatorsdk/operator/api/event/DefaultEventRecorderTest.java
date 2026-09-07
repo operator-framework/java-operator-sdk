@@ -227,6 +227,14 @@ class DefaultEventRecorderTest {
   }
 
   @Test
+  void alwaysDerivesTheSameDefaultNameForTheSameEvent() {
+    recorder.record(EventRecord.normal("Created", "created"), context(configMap()));
+
+    assertThat(emitted.get(0).getMetadata().getName())
+        .isEqualTo("test1.3c699548f37ff9cd6d2a786f64a27228");
+  }
+
+  @Test
   void namesEventsWithADnsSafeHashSuffix() {
     recorder.record(EventRecord.normal("Created", "created"), context(configMap()));
 
@@ -249,6 +257,69 @@ class DefaultEventRecorderTest {
         .isNotEqualTo(emitted.get(1).getMetadata().getName());
   }
 
+  @Test
+  void takesTheMessageOutOfTheEventIdentityWithADefaultKeyStrategy() {
+    var recorder =
+        DefaultEventRecorder.builder((event, context) -> emitted.add(event))
+            .keyStrategy(EventKeyStrategy.byReason())
+            .build();
+    var context = context(configMap());
+
+    recorder.record(EventRecord.warning("Failed", "first message"), context);
+    recorder.record(EventRecord.warning("Failed", "second message"), context);
+
+    assertThat(emitted.get(0).getMetadata().getName())
+        .isEqualTo(emitted.get(1).getMetadata().getName());
+  }
+
+  @Test
+  void prefersThePerRecordKeyOverTheDefaultKeyStrategy() {
+    var recorder =
+        DefaultEventRecorder.builder((event, context) -> emitted.add(event))
+            .keyStrategy(EventKeyStrategy.byReason())
+            .build();
+    var context = context(configMap());
+
+    recorder.record(EventRecord.warning("Failed", "message"), context);
+    recorder.record(
+        EventRecord.builder()
+            .type(EventType.WARNING)
+            .reason("Failed")
+            .message("message")
+            .key("another aggregate")
+            .build(),
+        context);
+
+    assertThat(emitted.get(0).getMetadata().getName())
+        .isNotEqualTo(emitted.get(1).getMetadata().getName());
+  }
+
+  @Test
+  void keepsTheMessageInTheEventIdentityWithoutADefaultKeyStrategy() {
+    var context = context(configMap());
+
+    recorder.record(EventRecord.warning("Failed", "first message"), context);
+    recorder.record(EventRecord.warning("Failed", "second message"), context);
+
+    assertThat(emitted.get(0).getMetadata().getName())
+        .isNotEqualTo(emitted.get(1).getMetadata().getName());
+  }
+
+  @Test
+  void keepsEventsWithTheSameReasonButDifferentTypesApartUnderByReason() {
+    var recorder =
+        DefaultEventRecorder.builder((event, context) -> emitted.add(event))
+            .keyStrategy(EventKeyStrategy.byReason())
+            .build();
+    var context = context(configMap());
+
+    recorder.record(EventRecord.normal("Flipped", "message"), context);
+    recorder.record(EventRecord.warning("Flipped", "message"), context);
+
+    assertThat(emitted.get(0).getMetadata().getName())
+        .isNotEqualTo(emitted.get(1).getMetadata().getName());
+  }
+
   Context<?> context(HasMetadata primaryResource) {
     return context(primaryResource, DefaultEventRecorder.CLUSTER_SCOPED_EVENT_NAMESPACE);
   }
@@ -259,7 +330,7 @@ class DefaultEventRecorderTest {
    * the configuration service the reporting instance and the cluster scoped event namespace come
    * from.
    */
-  @SuppressWarnings({"unchecked", "rawtypes"})
+  @SuppressWarnings("rawtypes")
   Context<?> context(HasMetadata primaryResource, String clusterScopedEventNamespace) {
     var configurationService = mock(ConfigurationService.class);
     when(configurationService.getLeaderElectionConfiguration())
