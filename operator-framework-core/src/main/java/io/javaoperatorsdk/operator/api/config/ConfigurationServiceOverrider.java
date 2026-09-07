@@ -50,6 +50,7 @@ public class ConfigurationServiceOverrider {
   private KubernetesClient client;
   private ExecutorService executorService;
   private ExecutorService workflowExecutorService;
+  private Boolean useVirtualThreads;
   private LeaderElectionConfiguration leaderElectionConfiguration;
   private String clusterScopedEventNamespace;
   private EventRecorder eventRecorder;
@@ -116,6 +117,19 @@ public class ConfigurationServiceOverrider {
   public ConfigurationServiceOverrider withWorkflowExecutorService(
       ExecutorService workflowExecutorService) {
     this.workflowExecutorService = workflowExecutorService;
+    return this;
+  }
+
+  /**
+   * Makes the framework run the tasks it executes concurrently on virtual threads instead of
+   * platform threads. Requires Java 21 or later at runtime, see {@link
+   * ConfigurationService#useVirtualThreads()} for the details.
+   *
+   * @param useVirtualThreads {@code true} to use virtual threads
+   * @return this {@link ConfigurationServiceOverrider} for chained customization
+   */
+  public ConfigurationServiceOverrider withUseVirtualThreads(boolean useVirtualThreads) {
+    this.useVirtualThreads = useVirtualThreads;
     return this;
   }
 
@@ -320,6 +334,11 @@ public class ConfigurationServiceOverrider {
       @Override
       public boolean closeClientOnStop() {
         return overriddenValueOrDefault(closeClientOnStop, ConfigurationService::closeClientOnStop);
+      }
+
+      @Override
+      public boolean useVirtualThreads() {
+        return overriddenValueOrDefault(useVirtualThreads, ConfigurationService::useVirtualThreads);
       }
 
       @Override

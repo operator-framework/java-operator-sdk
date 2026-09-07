@@ -50,6 +50,37 @@ public class ExecutorServiceManager {
   }
 
   /**
+   * Creates the executor service used to run a bounded number of tasks concurrently, either backed
+   * by virtual threads or by a fixed size pool of platform threads. The concurrency limit is
+   * enforced in both cases.
+   *
+   * @param maxConcurrency the maximal number of tasks executed at the same time
+   * @param useVirtualThreads whether virtual threads should be used, see {@link
+   *     ConfigurationService#useVirtualThreads()}
+   * @return the created {@link ExecutorService}
+   */
+  public static ExecutorService newBoundedExecutorService(
+      int maxConcurrency, boolean useVirtualThreads) {
+    return VirtualThreads.shouldUse(useVirtualThreads)
+        ? VirtualThreads.newBoundedVirtualThreadExecutor(maxConcurrency)
+        : Executors.newFixedThreadPool(maxConcurrency);
+  }
+
+  /**
+   * Creates the executor service used to run an unbounded number of tasks concurrently, either
+   * backed by virtual threads or by a cached pool of platform threads.
+   *
+   * @param useVirtualThreads whether virtual threads should be used, see {@link
+   *     ConfigurationService#useVirtualThreads()}
+   * @return the created {@link ExecutorService}
+   */
+  public static ExecutorService newUnboundedExecutorService(boolean useVirtualThreads) {
+    return VirtualThreads.shouldUse(useVirtualThreads)
+        ? VirtualThreads.newVirtualThreadPerTaskExecutor()
+        : Executors.newCachedThreadPool();
+  }
+
+  /**
    * Uses cachingExecutorService from this manager. Use this only for tasks, that don't have dynamic
    * nature, in sense that won't grow with the number of inputs (thus kubernetes resources)
    *
@@ -135,7 +166,8 @@ public class ExecutorServiceManager {
   public synchronized void start(ConfigurationService configurationService) {
     if (!started) {
       this.configurationService = configurationService; // used to lazy init workflow executor
-      this.cachingExecutorService = Executors.newCachedThreadPool();
+      this.cachingExecutorService =
+          newUnboundedExecutorService(configurationService.useVirtualThreads());
       this.scheduledExecutorService = Executors.newScheduledThreadPool(0);
       this.executor = new InstrumentedExecutorService(configurationService.getExecutorService());
       started = true;

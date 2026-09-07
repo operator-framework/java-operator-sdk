@@ -20,7 +20,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.function.Consumer;
 
 import org.slf4j.Logger;
@@ -229,6 +228,34 @@ public interface ConfigurationService {
   }
 
   /**
+   * Whether the framework should run the tasks it executes concurrently &mdash; reconciliations,
+   * dependent workflows and internal housekeeping such as starting the informers &mdash; on virtual
+   * threads instead of platform threads.
+   *
+   * <p>Virtual threads make blocking operations, which is essentially all a reconciler does while
+   * talking to the Kubernetes API server or to external systems, much cheaper. Enabling them does
+   * <em>not</em> lift the configured concurrency limits: {@link #concurrentReconciliationThreads()}
+   * and {@link #concurrentWorkflowExecutorThreads()} still cap how many reconciliations,
+   * respectively dependent resources, are processed at the same time, they just aren't backed by a
+   * pool of platform threads anymore. Since virtual threads are cheap, those limits can be set
+   * considerably higher than what would be reasonable for platform threads.
+   *
+   * <p>Requires Java 21 or later at runtime. When enabled on an older JVM, a warning is logged and
+   * platform threads are used, so that the same configuration works regardless of the Java version
+   * the operator runs on.
+   *
+   * <p>Note that this only affects the executors created by the framework: a custom {@link
+   * ExecutorService} provided through {@link #getExecutorService()} or {@link
+   * #getWorkflowExecutorService()} is used as is.
+   *
+   * @return {@code true} to use virtual threads, {@code false} (default) to use platform threads
+   * @since 5.7.0
+   */
+  default boolean useVirtualThreads() {
+    return false;
+  }
+
+  /**
    * Override to provide a custom {@link ExecutorService} implementation to change how threads
    * handle concurrent reconciliations
    *
@@ -236,7 +263,8 @@ public interface ConfigurationService {
    *     processing
    */
   default ExecutorService getExecutorService() {
-    return Executors.newFixedThreadPool(concurrentReconciliationThreads());
+    return ExecutorServiceManager.newBoundedExecutorService(
+        concurrentReconciliationThreads(), useVirtualThreads());
   }
 
   /**
@@ -246,7 +274,8 @@ public interface ConfigurationService {
    * @return the {@link ExecutorService} implementation to use for dependent workflow processing
    */
   default ExecutorService getWorkflowExecutorService() {
-    return Executors.newFixedThreadPool(concurrentWorkflowExecutorThreads());
+    return ExecutorServiceManager.newBoundedExecutorService(
+        concurrentWorkflowExecutorThreads(), useVirtualThreads());
   }
 
   /**

@@ -93,6 +93,7 @@ class ConfigLoaderTest {
     values.put("josdk.dependent-resources.ssa-based-create-update-match", false);
     values.put("josdk.use-ssa-to-patch-primary-resource", false);
     values.put("josdk.clone-secondary-resources-when-getting-from-cache", true);
+    values.put("josdk.use-virtual-threads", true);
     var loader = new ConfigLoader(mapProvider(values));
 
     var base = new BaseConfigurationService(null);
@@ -105,6 +106,7 @@ class ConfigLoaderTest {
     assertThat(result.ssaBasedCreateUpdateMatchForDependentResources()).isFalse();
     assertThat(result.useSSAToPatchPrimaryResource()).isFalse();
     assertThat(result.cloneSecondaryResourcesWhenGettingFromCache()).isTrue();
+    assertThat(result.useVirtualThreads()).isTrue();
   }
 
   @Test
