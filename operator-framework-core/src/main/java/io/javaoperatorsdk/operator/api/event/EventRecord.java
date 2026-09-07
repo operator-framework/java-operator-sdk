@@ -32,6 +32,7 @@ public final class EventRecord {
   private final EventType type;
   private final String reason;
   private final String message;
+  private final String name;
   private final String key;
   private final Boolean ownedByRegarding;
   private final String action;
@@ -43,6 +44,7 @@ public final class EventRecord {
     this.type = builder.type;
     this.reason = builder.reason;
     this.message = builder.message;
+    this.name = builder.name;
     this.key = builder.key;
     this.action = builder.action;
     this.reportingComponent = builder.reportingComponent;
@@ -78,8 +80,20 @@ public final class EventRecord {
   }
 
   /**
+   * The name of the recorded event, overriding the recorder's naming. The name is the aggregation
+   * identity and must be a valid RFC 1123 DNS subdomain, see {@link EventNamingStrategy}; an
+   * invalid name falls back to the default name. A blank name is treated as unset.
+   */
+  public Optional<String> name() {
+    return Optional.ofNullable(name);
+  }
+
+  /**
    * Identifies this event among the events about the same object, so that repeated occurrences
    * resolve to the same event rather than to one event each.
+   *
+   * <p>The key is ignored when the record sets a {@link #name()} or the recorder's naming strategy
+   * resolves one: the name is then the aggregation identity on its own.
    */
   public Optional<String> key() {
     return Optional.ofNullable(key);
@@ -129,6 +143,7 @@ public final class EventRecord {
     private EventType type = EventType.NORMAL;
     private String reason;
     private String message;
+    private String name;
     private String key;
     private Boolean ownedByRegarding;
     private String action;
@@ -150,6 +165,12 @@ public final class EventRecord {
 
     public Builder message(String message) {
       this.message = message;
+      return this;
+    }
+
+    /** Sets the name of the recorded event, see {@link EventRecord#name()}. */
+    public Builder name(String name) {
+      this.name = name;
       return this;
     }
 

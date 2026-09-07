@@ -382,6 +382,142 @@ class DefaultEventRecorderTest {
     assertThat(emitted.get(0).getMetadata().getOwnerReferences()).isEmpty();
   }
 
+  @Test
+  void namesTheEventAfterThePerRecordNameWhenOneIsSet() {
+    recorder.record(
+        EventRecord.builder().reason("Created").message("created").name("my-event-name").build(),
+        context(configMap()));
+
+    assertThat(emitted.get(0).getMetadata().getName()).isEqualTo("my-event-name");
+  }
+
+  @Test
+  void namesEventsThroughTheNamingStrategy() {
+    var recorder =
+        DefaultEventRecorder.builder((event, context) -> emitted.add(event))
+            .namingStrategy(
+                (regarding, record) ->
+                    Optional.of(regarding.getMetadata().getName() + "-" + record.reason()))
+            .build();
+
+    recorder.record(EventRecord.warning("failed", "first"), context(configMap()));
+    recorder.record(EventRecord.warning("failed", "second"), context(configMap()));
+
+    assertThat(emitted)
+        .allSatisfy(event -> assertThat(event.getMetadata().getName()).isEqualTo("test1-failed"));
+  }
+
+  @Test
+  void fallsBackToTheIdentityHashNameWhenTheNamingStrategyResolvesNothing() {
+    var recorder =
+        DefaultEventRecorder.builder((event, context) -> emitted.add(event))
+            .namingStrategy((regarding, record) -> Optional.empty())
+            .build();
+
+    recorder.record(EventRecord.warning("Failed", "message"), context(configMap()));
+
+    assertThat(emitted.get(0).getMetadata().getName())
+        .startsWith("test1.")
+        .hasSize("test1.".length() + 32);
+  }
+
+  @Test
+  void truncatesSuppliedNamesToTheKubernetesNameLengthLimit() {
+    recorder.record(
+        EventRecord.builder().reason("Created").message("created").name("a".repeat(300)).build(),
+        context(configMap()));
+
+    assertThat(emitted.get(0).getMetadata().getName()).hasSize(253);
+  }
+
+  @Test
+  void stripsTrailingSeparatorsFromTruncatedNames() {
+    recorder.record(
+        EventRecord.builder()
+            .reason("Created")
+            .message("created")
+            .name("a".repeat(252) + "." + "b".repeat(47))
+            .build(),
+        context(configMap()));
+    recorder.record(
+        EventRecord.builder()
+            .reason("Created")
+            .message("created")
+            .name("b".repeat(252) + "-" + "c".repeat(47))
+            .build(),
+        context(configMap()));
+
+    assertThat(emitted.get(0).getMetadata().getName()).isEqualTo("a".repeat(252));
+    assertThat(emitted.get(1).getMetadata().getName()).isEqualTo("b".repeat(252));
+  }
+
+  @Test
+  void treatsABlankNameAsUnset() {
+    var recorder =
+        DefaultEventRecorder.builder((event, context) -> emitted.add(event))
+            .namingStrategy((regarding, record) -> Optional.of("strategy-name"))
+            .build();
+
+    recorder.record(
+        EventRecord.builder().reason("Created").message("created").name("").build(),
+        context(configMap()));
+
+    assertThat(emitted.get(0).getMetadata().getName()).isEqualTo("strategy-name");
+  }
+
+  @Test
+  void fallsBackToTheIdentityHashNameWhenEveryNameIsBlank() {
+    var recorder =
+        DefaultEventRecorder.builder((event, context) -> emitted.add(event))
+            .namingStrategy((regarding, record) -> Optional.of(" "))
+            .build();
+
+    recorder.record(
+        EventRecord.builder().reason("Created").message("created").name("").build(),
+        context(configMap()));
+
+    assertThat(emitted.get(0).getMetadata().getName()).matches("test1\\.[0-9a-f]{32}");
+  }
+
+  @Test
+  void fallsBackToTheIdentityHashNameWhenTruncationLeavesNothing() {
+    recorder.record(
+        EventRecord.builder().reason("Created").message("created").name(".".repeat(300)).build(),
+        context(configMap()));
+
+    assertThat(emitted.get(0).getMetadata().getName()).matches("test1\\.[0-9a-f]{32}");
+  }
+
+  @Test
+  void fallsBackToTheIdentityHashNameWhenTheSuppliedNameIsInvalid() {
+    recorder.record(
+        EventRecord.builder().reason("Created").message("created").name("Status").build(),
+        context(configMap()));
+    recorder.record(
+        EventRecord.builder().reason("Created").message("created").name("status_name").build(),
+        context(configMap()));
+
+    assertThat(emitted)
+        .allSatisfy(
+            event -> assertThat(event.getMetadata().getName()).matches("test1\\.[0-9a-f]{32}"));
+  }
+
+  @Test
+  void aFailingNamingStrategyNeverFailsTheCaller() {
+    var recorder =
+        DefaultEventRecorder.builder((event, context) -> emitted.add(event))
+            .namingStrategy(
+                (regarding, record) -> {
+                  throw new RuntimeException("cannot derive a name");
+                })
+            .build();
+
+    assertThatCode(
+            () -> recorder.record(EventRecord.normal("Created", "created"), context(configMap())))
+        .doesNotThrowAnyException();
+    assertThat(emitted).isEmpty();
+  }
+
   Context<?> context(HasMetadata primaryResource) {
     return context(primaryResource, DefaultEventRecorder.CLUSTER_SCOPED_EVENT_NAMESPACE);
   }
