@@ -83,6 +83,10 @@ public class ConfigLoader {
               Boolean.class,
               ConfigurationServiceOverrider::withCloseClientOnStop),
           new ConfigBinding<>(
+              "use-virtual-threads",
+              Boolean.class,
+              ConfigurationServiceOverrider::withUseVirtualThreads),
+          new ConfigBinding<>(
               "informer.stop-on-error-during-startup",
               Boolean.class,
               ConfigurationServiceOverrider::withStopOnInformerErrorDuringStartup),
