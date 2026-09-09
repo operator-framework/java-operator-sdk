@@ -24,7 +24,7 @@ jobs:
       release_sha: ${{ steps.resolve-sha.outputs.commit }}
     steps:
       - name: Checkout "${{ inputs.version_branch }}" branch
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           ref: "${{ inputs.version_branch }}"
 
@@ -33,7 +33,7 @@ jobs:
         run: echo "commit=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
 
       - name: Set up Java and Maven
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v6
         with:
           java-version: 17
           distribution: temurin
@@ -113,12 +113,12 @@ jobs:
     if: "!contains(inputs.release_tag, 'RC')"
     steps:
       - name: Checkout "${{ inputs.version_branch }}" branch
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           ref: "${{ inputs.version_branch }}"
 
       - name: Set up Java and Maven
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v6
         with:
           java-version: 17
           distribution: temurin
