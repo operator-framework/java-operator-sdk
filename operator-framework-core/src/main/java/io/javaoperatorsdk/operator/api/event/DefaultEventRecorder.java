@@ -24,6 +24,7 @@ import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.HexFormat;
 import java.util.Objects;
+import java.util.regex.Pattern;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -48,10 +49,11 @@ import static java.util.Objects.requireNonNullElse;
  * can be overridden, see {@link
  * io.javaoperatorsdk.operator.api.config.ConfigurationService#clusterScopedEventNamespace()}.
  *
- * <p>Events are named deterministically, after the object they are about plus a hash of everything
- * that identifies the event, so that recording the same event again resolves to the event already
- * recorded for it. Repeat occurrences are then counted on that event rather than recorded as copies
- * of it, see {@link DefaultEventSink}.
+ * <p>By default, events are named deterministically, after the object they are about plus a hash of
+ * everything that identifies the event, so that recording the same event again resolves to the
+ * event already recorded for it. Repeat occurrences are then counted on that event rather than
+ * recorded as copies of it, see {@link DefaultEventSink}. How events aggregate, how they are named
+ * and whether they carry an owner reference can be configured, see {@link #builder(EventSink)}.
  */
 public class DefaultEventRecorder implements EventRecorder {
 
@@ -73,10 +75,79 @@ public class DefaultEventRecorder implements EventRecorder {
 
   private static final int IDENTITY_HASH_LENGTH = 32;
 
+  /** What the API server accepts as an object name, see RFC 1123 on DNS subdomains. */
+  private static final Pattern RFC_1123_SUBDOMAIN =
+      Pattern.compile("[a-z0-9]([-a-z0-9]*[a-z0-9])?(\\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*");
+
   private final EventSink sink;
+  private final EventNamingStrategy namingStrategy;
+  private final EventKeyStrategy keyStrategy;
+  private final boolean ownerReference;
 
   public DefaultEventRecorder(EventSink sink) {
+    this(sink, EventNamingStrategy.none(), EventKeyStrategy.none(), false);
+  }
+
+  private DefaultEventRecorder(
+      EventSink sink,
+      EventNamingStrategy namingStrategy,
+      EventKeyStrategy keyStrategy,
+      boolean ownerReference) {
     this.sink = sink;
+    this.namingStrategy = namingStrategy;
+    this.keyStrategy = keyStrategy;
+    this.ownerReference = ownerReference;
+  }
+
+  public static Builder builder(EventSink sink) {
+    return new Builder(sink);
+  }
+
+  /** Builder for {@link DefaultEventRecorder}. */
+  public static final class Builder {
+
+    private final EventSink sink;
+    private EventNamingStrategy namingStrategy = EventNamingStrategy.none();
+    private EventKeyStrategy keyStrategy = EventKeyStrategy.none();
+    private boolean ownerReference = false;
+
+    private Builder(EventSink sink) {
+      this.sink = Objects.requireNonNull(sink, "sink must not be null");
+    }
+
+    /** The strategy naming recorded events, see {@link EventNamingStrategy}. */
+    public Builder namingStrategy(EventNamingStrategy namingStrategy) {
+      this.namingStrategy =
+          Objects.requireNonNull(namingStrategy, "namingStrategy must not be null");
+      return this;
+    }
+
+    /**
+     * The strategy deriving the default aggregation key of records that do not set one, see {@link
+     * EventKeyStrategy}. The key is ignored for events whose name is set by the record or resolved
+     * by the naming strategy, see {@link EventNamingStrategy}.
+     */
+    public Builder keyStrategy(EventKeyStrategy keyStrategy) {
+      this.keyStrategy = Objects.requireNonNull(keyStrategy, "keyStrategy must not be null");
+      return this;
+    }
+
+    /**
+     * When set, recorded events carry an {@code ownerReference} to the object they are about. The
+     * reference expresses ownership for tooling that reads it; note that the Kubernetes garbage
+     * collector ignores events, so it does not cause cascade deletion, events expire through the
+     * event TTL either way. Records can override this per event via {@link
+     * EventRecord.Builder#ownedByRegarding(boolean)}. The reference is only set when the object
+     * already has a uid.
+     */
+    public Builder ownerReference(boolean ownerReference) {
+      this.ownerReference = ownerReference;
+      return this;
+    }
+
+    public DefaultEventRecorder build() {
+      return new DefaultEventRecorder(sink, namingStrategy, keyStrategy, ownerReference);
+    }
   }
 
   /**
@@ -111,14 +182,17 @@ public class DefaultEventRecorder implements EventRecorder {
   public void record(EventRecord event, Context<?> context) {
     Objects.requireNonNull(context, "the context of the reconciliation must not be null");
     Objects.requireNonNull(event, "event must not be null");
+    Event assembled = null;
     try {
-      sink.emit(toEvent(context, event), context);
+      assembled = toEvent(context, event);
+      sink.emit(assembled, context);
     } catch (Exception e) {
       // recording an event must never break the caller: a controller that fails to reconcile
       // because it could not write an event is strictly worse than one that records nothing
       log.warn(
-          "Could not record {} event with reason {} for resource {} in namespace {}",
+          "Could not record {} event named {} with reason {} for resource {} in namespace {}",
           event.type(),
+          assembled != null ? assembled.getMetadata().getName() : "unknown",
           event.reason(),
           context.getPrimaryResource().getMetadata().getName(),
           context.getPrimaryResource().getMetadata().getNamespace(),
@@ -164,6 +238,23 @@ public class DefaultEventRecorder implements EventRecorder {
             .withNewSource()
             .withComponent(record.reportingComponent().orElse(controllerName))
             .endSource();
+    boolean ownedByRegarding = record.ownedByRegarding().orElse(ownerReference);
+    if (ownedByRegarding && regarding.getMetadata().getUid() == null) {
+      log.debug(
+          "Not setting the owner reference on the event about {}: the object has no uid yet",
+          regarding.getMetadata().getName());
+    }
+    if (ownedByRegarding && regarding.getMetadata().getUid() != null) {
+      builder
+          .editMetadata()
+          .addNewOwnerReference()
+          .withApiVersion(regarding.getApiVersion())
+          .withKind(regarding.getKind())
+          .withName(regarding.getMetadata().getName())
+          .withUid(regarding.getMetadata().getUid())
+          .endOwnerReference()
+          .endMetadata();
+    }
     record.action().ifPresent(builder::withAction);
     return builder.build();
   }
@@ -181,17 +272,56 @@ public class DefaultEventRecorder implements EventRecorder {
         CLUSTER_SCOPED_EVENT_NAMESPACE);
   }
 
+  private String eventName(HasMetadata regarding, EventRecord record, String reportingController) {
+    return record
+        .name()
+        .filter(name -> !name.isBlank())
+        .or(() -> namingStrategy.nameFor(regarding, record).filter(name -> !name.isBlank()))
+        .map(DefaultEventRecorder::truncateToMaxNameLength)
+        .filter(DefaultEventRecorder::isValidEventName)
+        .orElseGet(() -> identityHashName(regarding, record, reportingController));
+  }
+
+  private static boolean isValidEventName(String name) {
+    if (RFC_1123_SUBDOMAIN.matcher(name).matches()) {
+      return true;
+    }
+    log.warn(
+        "Falling back to the default event name: {} is not a valid RFC 1123 DNS subdomain", name);
+    return false;
+  }
+
+  private static String truncateToMaxNameLength(String name) {
+    if (name.length() <= MAX_NAME_LENGTH) {
+      return name;
+    }
+    var truncated = name.substring(0, MAX_NAME_LENGTH);
+    while (truncated.endsWith("-") || truncated.endsWith(".")) {
+      truncated = truncated.substring(0, truncated.length() - 1);
+    }
+    log.warn(
+        "Truncated the name of event {} to {} to stay within the Kubernetes name limit",
+        name,
+        truncated);
+    return truncated;
+  }
+
   /**
    * Names events {@code <object name>.<hash>}, following the convention of the Go client, hashing
    * everything that makes two events the same event: the object, the type, the reason, the
-   * reporting component and, unless the record sets a {@link EventRecord#key()}, the message. The
-   * name is therefore stable across occurrences, which is what lets the sink recognise a repeat,
-   * and stays so across operator restarts and between replicas, unlike a name remembered in memory.
+   * reporting component and, unless the record sets a {@link EventRecord#key()} or the recorder is
+   * built with a default {@link EventKeyStrategy}, the message. The name is therefore stable across
+   * occurrences, which is what lets the sink recognise a repeat, and stays so across operator
+   * restarts and between replicas, unlike a name remembered in memory.
    *
    * <p>The object is identified by its uid, with the kind as a fallback for objects that do not
    * have one yet, such as a dependent resource that has only been built so far.
+   *
+   * <p>This is the fallback when the record does not set a name and the naming strategy resolves to
+   * nothing, see {@link EventNamingStrategy}.
    */
-  private String eventName(HasMetadata regarding, EventRecord record, String reportingController) {
+  private String identityHashName(
+      HasMetadata regarding, EventRecord record, String reportingController) {
     var metadata = regarding.getMetadata();
     var identity =
         String.join(
@@ -201,7 +331,10 @@ public class DefaultEventRecorder implements EventRecorder {
             record.type().value(),
             record.reason(),
             record.reportingComponent().orElse(reportingController),
-            record.key().orElseGet(() -> requireNonNullElse(record.message(), "")));
+            record
+                .key()
+                .or(() -> keyStrategy.keyFor(regarding, record))
+                .orElseGet(() -> requireNonNullElse(record.message(), "")));
 
     var suffix = "." + identityDigest(identity);
     var prefix = metadata.getName();
