@@ -32,7 +32,9 @@ public final class EventRecord {
   private final EventType type;
   private final String reason;
   private final String message;
+  private final String name;
   private final String key;
+  private final Boolean ownedByRegarding;
   private final String action;
   private final String reportingComponent;
   private final Map<String, String> labels;
@@ -42,11 +44,13 @@ public final class EventRecord {
     this.type = builder.type;
     this.reason = builder.reason;
     this.message = builder.message;
+    this.name = builder.name;
     this.key = builder.key;
     this.action = builder.action;
     this.reportingComponent = builder.reportingComponent;
     this.labels = Map.copyOf(builder.labels);
     this.annotations = Map.copyOf(builder.annotations);
+    this.ownedByRegarding = builder.ownedByRegarding;
   }
 
   public static Builder builder() {
@@ -76,11 +80,31 @@ public final class EventRecord {
   }
 
   /**
+   * The name of the recorded event, overriding the recorder's naming. The name is the aggregation
+   * identity and must be a valid RFC 1123 DNS subdomain, see {@link EventNamingStrategy}; an
+   * invalid name falls back to the default name. A blank name is treated as unset.
+   */
+  public Optional<String> name() {
+    return Optional.ofNullable(name);
+  }
+
+  /**
    * Identifies this event among the events about the same object, so that repeated occurrences
    * resolve to the same event rather than to one event each.
+   *
+   * <p>The key is ignored when the record sets a {@link #name()} or the recorder's naming strategy
+   * resolves one: the name is then the aggregation identity on its own.
    */
   public Optional<String> key() {
     return Optional.ofNullable(key);
+  }
+
+  /**
+   * Whether the recorded event carries an {@code ownerReference} to the object it is about. When
+   * empty, the recorder's own setting applies.
+   */
+  public Optional<Boolean> ownedByRegarding() {
+    return Optional.ofNullable(ownedByRegarding);
   }
 
   /**
@@ -119,7 +143,9 @@ public final class EventRecord {
     private EventType type = EventType.NORMAL;
     private String reason;
     private String message;
+    private String name;
     private String key;
+    private Boolean ownedByRegarding;
     private String action;
     private String reportingComponent;
     private final Map<String, String> labels = new HashMap<>();
@@ -142,9 +168,24 @@ public final class EventRecord {
       return this;
     }
 
+    /** Sets the name of the recorded event, see {@link EventRecord#name()}. */
+    public Builder name(String name) {
+      this.name = name;
+      return this;
+    }
+
     /** Sets the key identifying this event, see {@link EventRecord#key()}. */
     public Builder key(String key) {
       this.key = key;
+      return this;
+    }
+
+    /**
+     * Sets whether this event is owned by the object it is about, see {@link
+     * EventRecord#ownedByRegarding()}.
+     */
+    public Builder ownedByRegarding(boolean ownedByRegarding) {
+      this.ownedByRegarding = ownedByRegarding;
       return this;
     }
 
