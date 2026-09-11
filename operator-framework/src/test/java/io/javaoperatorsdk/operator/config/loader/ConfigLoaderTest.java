@@ -30,6 +30,7 @@ import io.javaoperatorsdk.operator.api.config.BaseConfigurationService;
 import io.javaoperatorsdk.operator.api.config.ConfigurationService;
 import io.javaoperatorsdk.operator.api.config.ConfigurationServiceOverrider;
 import io.javaoperatorsdk.operator.api.config.ControllerConfigurationOverrider;
+import io.javaoperatorsdk.operator.api.reconciler.Constants;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
@@ -218,6 +219,7 @@ class ConfigLoaderTest {
             "josdk.controller.ctrl.informer.label-selector",
             "josdk.controller.ctrl.informer.shard-selector",
             "josdk.controller.ctrl.informer.list-limit",
+            "josdk.controller.ctrl.namespaces",
             "josdk.controller.ctrl.rate-limiter.refresh-period",
             "josdk.controller.ctrl.rate-limiter.limit-for-period");
   }
@@ -556,6 +558,113 @@ class ConfigLoaderTest {
 
     assertThat(alphaRetry.getMaxAttempts()).isEqualTo(4);
     assertThat(betaRetry.getMaxAttempts()).isEqualTo(9);
+  }
+
+  // -- watched namespaces -----------------------------------------------------
+
+  private static Set<String> applyAndGetNamespaces(
+      java.util.function.Consumer<
+              io.javaoperatorsdk.operator.api.config.ControllerConfigurationOverrider<
+                  io.fabric8.kubernetes.api.model.ConfigMap>>
+          consumer) {
+    var overrider =
+        io.javaoperatorsdk.operator.api.config.ControllerConfigurationOverrider.override(
+            baseControllerConfig());
+    consumer.accept(overrider);
+    return overrider.build().getInformerConfig().getNamespaces();
+  }
+
+  @Test
+  void namespacesAreLeftUntouchedWhenPropertyIsAbsent() {
+    var loader = new ConfigLoader(mapProvider(Map.of()));
+    assertThat(applyAndGetNamespaces(loader.applyControllerConfigs("ctrl")))
+        .isEqualTo(Constants.DEFAULT_NAMESPACES_SET);
+  }
+
+  @Test
+  void singleNamespaceIsApplied() {
+    var loader = new ConfigLoader(mapProvider(Map.of("josdk.controller.ctrl.namespaces", "foo")));
+    assertThat(applyAndGetNamespaces(loader.applyControllerConfigs("ctrl")))
+        .containsExactlyInAnyOrder("foo");
+  }
+
+  @Test
+  void commaSeparatedNamespacesAreApplied() {
+    var loader =
+        new ConfigLoader(mapProvider(Map.of("josdk.controller.ctrl.namespaces", "foo,bar,baz")));
+    assertThat(applyAndGetNamespaces(loader.applyControllerConfigs("ctrl")))
+        .containsExactlyInAnyOrder("foo", "bar", "baz");
+  }
+
+  @Test
+  void namespacesAreTrimmedAndBlankEntriesIgnored() {
+    var loader =
+        new ConfigLoader(mapProvider(Map.of("josdk.controller.ctrl.namespaces", " foo , ,bar ,")));
+    assertThat(applyAndGetNamespaces(loader.applyControllerConfigs("ctrl")))
+        .containsExactlyInAnyOrder("foo", "bar");
+  }
+
+  @Test
+  void watchAllNamespacesCanBeRequestedExplicitly() {
+    var loader =
+        new ConfigLoader(
+            mapProvider(
+                Map.of("josdk.controller.ctrl.namespaces", Constants.WATCH_ALL_NAMESPACES)));
+    var overrider =
+        io.javaoperatorsdk.operator.api.config.ControllerConfigurationOverrider.override(
+            baseControllerConfig());
+    loader
+        .<io.fabric8.kubernetes.api.model.ConfigMap>applyControllerConfigs("ctrl")
+        .accept(overrider);
+    assertThat(overrider.build().getInformerConfig().watchAllNamespaces()).isTrue();
+  }
+
+  @Test
+  void watchCurrentNamespaceCanBeRequested() {
+    var loader =
+        new ConfigLoader(
+            mapProvider(
+                Map.of("josdk.controller.ctrl.namespaces", Constants.WATCH_CURRENT_NAMESPACE)));
+    var overrider =
+        io.javaoperatorsdk.operator.api.config.ControllerConfigurationOverrider.override(
+            baseControllerConfig());
+    loader
+        .<io.fabric8.kubernetes.api.model.ConfigMap>applyControllerConfigs("ctrl")
+        .accept(overrider);
+    assertThat(overrider.build().getInformerConfig().watchCurrentNamespace()).isTrue();
+  }
+
+  @Test
+  void specialNamespaceValueCannotBeCombinedWithOthers() {
+    var loader =
+        new ConfigLoader(
+            mapProvider(
+                Map.of(
+                    "josdk.controller.ctrl.namespaces", Constants.WATCH_ALL_NAMESPACES + ",foo")));
+    assertThatExceptionOfType(IllegalArgumentException.class)
+        .isThrownBy(() -> loader.applyControllerConfigs("ctrl"))
+        .withMessageContaining("josdk.controller.ctrl.namespaces");
+  }
+
+  @Test
+  void blankNamespacesValueIsRejected() {
+    var loader = new ConfigLoader(mapProvider(Map.of("josdk.controller.ctrl.namespaces", " , ")));
+    assertThatExceptionOfType(IllegalArgumentException.class)
+        .isThrownBy(() -> loader.applyControllerConfigs("ctrl"))
+        .withMessageContaining("at least one namespace");
+  }
+
+  @Test
+  void namespacesAreIsolatedPerControllerName() {
+    var values = new HashMap<String, Object>();
+    values.put("josdk.controller.alpha.namespaces", "alpha-ns");
+    values.put("josdk.controller.beta.namespaces", "beta-ns1,beta-ns2");
+    var loader = new ConfigLoader(mapProvider(values));
+
+    assertThat(applyAndGetNamespaces(loader.applyControllerConfigs("alpha")))
+        .containsExactlyInAnyOrder("alpha-ns");
+    assertThat(applyAndGetNamespaces(loader.applyControllerConfigs("beta")))
+        .containsExactlyInAnyOrder("beta-ns1", "beta-ns2");
   }
 
   private static boolean isTypeCompatible(Class<?> methodParam, Class<?> bindingType) {
