@@ -35,6 +35,10 @@ public class TriggerReconcilerOnAllEventReconciler
   public static final String ADDITIONAL_FINALIZER = "all.event.mode/finalizer2";
   public static final String NO_MORE_EXCEPTION_ANNOTATION_KEY = "no.more.exception";
 
+  // safety net so a missing event does not block the reconciler thread forever, the test assertions
+  // fail long before this elapses
+  private static final long MAX_WAIT_FOR_SUPERSEDING_EVENT_MILLIS = 30_000;
+
   private static final Logger log =
       LoggerFactory.getLogger(TriggerReconcilerOnAllEventReconciler.class);
 
@@ -47,6 +51,7 @@ public class TriggerReconcilerOnAllEventReconciler
   private volatile boolean waitAfterFirstRetry = false;
   private volatile boolean continuerOnRetryWait = false;
   private volatile boolean waiting = false;
+  private volatile boolean alreadyWaitedAfterFirstRetry = false;
 
   // control flag to throw an exception on first delete event
   private volatile boolean isFirstDeleteEvent = true;
@@ -79,10 +84,24 @@ public class TriggerReconcilerOnAllEventReconciler
     }
 
     if (waitAfterFirstRetry
+        && !alreadyWaitedAfterFirstRetry
         && context.getRetryInfo().isPresent()
         && context.getRetryInfo().orElseThrow().getAttemptCount() == 1) {
+      // The reconciliation triggered by the superseding event below reuses the same retry
+      // execution, so its attempt count is still 1. Wait only on the very first one, otherwise that
+      // follow-up reconciliation would block here too and never be released.
+      alreadyWaitedAfterFirstRetry = true;
       waiting = true;
-      while (!continuerOnRetryWait) {
+      // Releasing on continuerOnRetryWait alone is racy: the test sets that flag right after the
+      // update call returns, but the update event still has to travel back through the informer.
+      // If this reconciliation failed before the event was registered, the framework would treat
+      // the failure as a plain retry (consuming the last attempt) instead of instantly
+      // re-triggering because of a superseding event. isNextReconciliationImminent() reflects
+      // exactly the state (event marked as received) the framework checks after this
+      // reconciliation fails, and it cannot be unset while this reconciliation is in progress.
+      var waitUntil = System.currentTimeMillis() + MAX_WAIT_FOR_SUPERSEDING_EVENT_MILLIS;
+      while ((!continuerOnRetryWait || !context.isNextReconciliationImminent())
+          && System.currentTimeMillis() < waitUntil) {
         Thread.sleep(50);
       }
       waiting = false;
