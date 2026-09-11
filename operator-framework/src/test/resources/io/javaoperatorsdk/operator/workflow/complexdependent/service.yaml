@@ -17,16 +17,16 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: mongo-template
+  name: service-template
   labels:
-    app.kubernetes.io/name: mongo-template
+    app.kubernetes.io/name: service-template
     app.kubernetes.io/component: first-or-second
 spec:
   type: ClusterIP
   selector:
-    app.kubernetes.io/name: mongo-template
+    app.kubernetes.io/name: service-template
   clusterIP: None
   ports:
-    - name: mongodb
-      port: 27017
-      targetPort: 27017
+    - name: web
+      port: 80
+      targetPort: 80

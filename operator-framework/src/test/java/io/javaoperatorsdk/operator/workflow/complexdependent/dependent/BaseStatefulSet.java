@@ -49,11 +49,6 @@ public abstract class BaseStatefulSet extends BaseDependentResource<StatefulSet>
         .editTemplate()
         .withMetadata(metadata)
         .endTemplate()
-        .editFirstVolumeClaimTemplate()
-        .editMetadata()
-        .withLabels(Map.of(K8S_NAME, name))
-        .endMetadata()
-        .endVolumeClaimTemplate()
         .endSpec()
         .build();
   }
