@@ -331,6 +331,9 @@ public class ConfigLoader {
     if (value.isEmpty()) {
       return null;
     }
+    if (value.get().isBlank()) {
+      return null;
+    }
 
     final var namespaces =
         Arrays.stream(value.get().split(NAMESPACES_SEPARATOR))

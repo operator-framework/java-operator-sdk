@@ -434,12 +434,9 @@ class ConfigLoaderTest {
 
   private static io.javaoperatorsdk.operator.processing.retry.GenericRetry applyAndGetRetry(
       java.util.function.Consumer<
-              io.javaoperatorsdk.operator.api.config.ControllerConfigurationOverrider<
-                  io.fabric8.kubernetes.api.model.ConfigMap>>
+              ControllerConfigurationOverrider<io.fabric8.kubernetes.api.model.ConfigMap>>
           consumer) {
-    var overrider =
-        io.javaoperatorsdk.operator.api.config.ControllerConfigurationOverrider.override(
-            baseControllerConfig());
+    var overrider = ControllerConfigurationOverrider.override(baseControllerConfig());
     consumer.accept(overrider);
     return (io.javaoperatorsdk.operator.processing.retry.GenericRetry) overrider.build().getRetry();
   }
@@ -448,9 +445,7 @@ class ConfigLoaderTest {
   void retryIsNotConfiguredWhenNoRetryPropertiesPresent() {
     var loader = new ConfigLoader(mapProvider(Map.of()));
     var consumer = loader.<io.fabric8.kubernetes.api.model.ConfigMap>applyControllerConfigs("ctrl");
-    var overrider =
-        io.javaoperatorsdk.operator.api.config.ControllerConfigurationOverrider.override(
-            baseControllerConfig());
+    var overrider = ControllerConfigurationOverrider.override(baseControllerConfig());
     consumer.accept(overrider);
     // no retry property set → retry stays at the controller's default (null or unchanged)
     var result = overrider.build();
@@ -564,12 +559,9 @@ class ConfigLoaderTest {
 
   private static Set<String> applyAndGetNamespaces(
       java.util.function.Consumer<
-              io.javaoperatorsdk.operator.api.config.ControllerConfigurationOverrider<
-                  io.fabric8.kubernetes.api.model.ConfigMap>>
+              ControllerConfigurationOverrider<io.fabric8.kubernetes.api.model.ConfigMap>>
           consumer) {
-    var overrider =
-        io.javaoperatorsdk.operator.api.config.ControllerConfigurationOverrider.override(
-            baseControllerConfig());
+    var overrider = ControllerConfigurationOverrider.override(baseControllerConfig());
     consumer.accept(overrider);
     return overrider.build().getInformerConfig().getNamespaces();
   }
@@ -610,9 +602,7 @@ class ConfigLoaderTest {
         new ConfigLoader(
             mapProvider(
                 Map.of("josdk.controller.ctrl.namespaces", Constants.WATCH_ALL_NAMESPACES)));
-    var overrider =
-        io.javaoperatorsdk.operator.api.config.ControllerConfigurationOverrider.override(
-            baseControllerConfig());
+    var overrider = ControllerConfigurationOverrider.override(baseControllerConfig());
     loader
         .<io.fabric8.kubernetes.api.model.ConfigMap>applyControllerConfigs("ctrl")
         .accept(overrider);
@@ -625,9 +615,7 @@ class ConfigLoaderTest {
         new ConfigLoader(
             mapProvider(
                 Map.of("josdk.controller.ctrl.namespaces", Constants.WATCH_CURRENT_NAMESPACE)));
-    var overrider =
-        io.javaoperatorsdk.operator.api.config.ControllerConfigurationOverrider.override(
-            baseControllerConfig());
+    var overrider = ControllerConfigurationOverrider.override(baseControllerConfig());
     loader
         .<io.fabric8.kubernetes.api.model.ConfigMap>applyControllerConfigs("ctrl")
         .accept(overrider);
