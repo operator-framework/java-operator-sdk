@@ -16,9 +16,12 @@
 package io.javaoperatorsdk.operator.config.loader;
 
 import java.time.Duration;
+import java.util.Arrays;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Consumer;
+import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -27,6 +30,7 @@ import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.api.config.ConfigurationServiceOverrider;
 import io.javaoperatorsdk.operator.api.config.ControllerConfigurationOverrider;
 import io.javaoperatorsdk.operator.api.config.LeaderElectionConfigurationBuilder;
+import io.javaoperatorsdk.operator.api.config.informer.InformerConfiguration;
 import io.javaoperatorsdk.operator.config.loader.provider.AggregatePriorityListConfigProvider;
 import io.javaoperatorsdk.operator.config.loader.provider.EnvVarConfigProvider;
 import io.javaoperatorsdk.operator.config.loader.provider.PropertiesConfigProvider;
@@ -133,6 +137,14 @@ public class ConfigLoader {
   static final String RATE_LIMITER_LIMIT_FOR_PERIOD_SUFFIX = "rate-limiter.limit-for-period";
 
   // ---------------------------------------------------------------------------
+  // Controller-level watched namespaces property suffix. Not a plain binding since the value is a
+  // set of namespaces, expressed as a comma-separated list.
+  // ---------------------------------------------------------------------------
+  static final String NAMESPACES_SUFFIX = "namespaces";
+
+  private static final String NAMESPACES_SEPARATOR = ",";
+
+  // ---------------------------------------------------------------------------
   // Controller-level (ControllerConfigurationOverrider) bindings
   // The key used at runtime is built as:
   //   CONTROLLER_KEY_PREFIX + controllerName + "." + <suffix>
@@ -226,6 +238,10 @@ public class ConfigLoader {
         (List<ConfigBinding<ControllerConfigurationOverrider<R>, ?>>) (List<?>) CONTROLLER_BINDINGS;
     Consumer<ControllerConfigurationOverrider<R>> consumer = buildConsumer(bindings, prefix);
 
+    Consumer<ControllerConfigurationOverrider<R>> namespacesStep = buildNamespacesConsumer(prefix);
+    if (namespacesStep != null) {
+      consumer = consumer.andThen(namespacesStep);
+    }
     Consumer<ControllerConfigurationOverrider<R>> retryStep = buildRetryConsumer(prefix);
     if (retryStep != null) {
       consumer = consumer == null ? retryStep : consumer.andThen(retryStep);
@@ -294,6 +310,48 @@ public class ConfigLoader {
           new LinearRateLimiter(
               refreshPeriod.orElse(LinearRateLimiter.DEFAULT_REFRESH_PERIOD), limitForPeriod.get());
       overrider.withRateLimiter(rateLimiter);
+    };
+  }
+
+  /**
+   * If the {@code namespaces} property is present, returns a {@link Consumer} that sets the
+   * namespaces watched by the controller to the comma-separated list it holds. Entries are trimmed
+   * and blank ones are ignored. The special values {@link
+   * io.javaoperatorsdk.operator.api.reconciler.Constants#WATCH_ALL_NAMESPACES} and {@link
+   * io.javaoperatorsdk.operator.api.reconciler.Constants#WATCH_CURRENT_NAMESPACE} are supported but
+   * can only be used on their own. Returns {@code null} when the property is not present.
+   *
+   * @throws IllegalArgumentException if the property is present but does not resolve to a valid set
+   *     of namespaces
+   */
+  private <R extends HasMetadata>
+      Consumer<ControllerConfigurationOverrider<R>> buildNamespacesConsumer(String prefix) {
+    final var key = prefix + NAMESPACES_SUFFIX;
+    final var value = configProvider.getValue(key, String.class);
+    if (value.isEmpty()) {
+      return null;
+    }
+    if (value.get().isBlank()) {
+      return null;
+    }
+
+    final var namespaces =
+        Arrays.stream(value.get().split(NAMESPACES_SEPARATOR))
+            .map(String::trim)
+            .filter(namespace -> !namespace.isEmpty())
+            .collect(Collectors.toCollection(LinkedHashSet::new));
+    if (namespaces.isEmpty()) {
+      throw new IllegalArgumentException(key + " must list at least one namespace");
+    }
+    try {
+      InformerConfiguration.failIfNotValid(namespaces);
+    } catch (IllegalArgumentException e) {
+      throw new IllegalArgumentException("Invalid value for " + key + ": " + value.get(), e);
+    }
+
+    return overrider -> {
+      log.debug("Found config property: {} = {}", key, value.get());
+      overrider.settingNamespaces(namespaces);
     };
   }
 

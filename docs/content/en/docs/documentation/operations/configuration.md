@@ -40,7 +40,9 @@ operator.register(reconciler, configOverrider ->
 ## Dynamically Changing Target Namespaces
 
 A controller can be configured to watch a specific set of namespaces in addition of the
-namespace in which it is currently deployed or the whole cluster. The framework supports
+namespace in which it is currently deployed or the whole cluster. The initial set can be provided
+programmatically, via the `@Informer` annotation, or read from an external configuration source (see
+[the `namespaces` property](#watched-namespaces)). The framework supports
 dynamically changing the list of these namespaces while the operator is running.
 When a reconciler is registered, an instance of
 [`RegisteredController`](https://github.com/java-operator-sdk/java-operator-sdk/blob/ec37025a15046d8f409c77616110024bf32c3416/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/RegisteredController.java#L5)
@@ -348,6 +350,31 @@ All controller-level keys are prefixed with `josdk.controller.<controller-name>.
 | `josdk.controller.<name>.max-reconciliation-interval` | `Duration` | Maximum interval between reconciliations even without events |
 | `josdk.controller.<name>.field-manager` | `String` | Field manager name used for SSA operations |
 | `josdk.controller.<name>.trigger-reconciler-on-all-events` | `Boolean` | Trigger reconciliation on every event, not only meaningful changes |
+
+#### Watched Namespaces
+
+| Key | Type | Description |
+|---|---|---|
+| `josdk.controller.<name>.namespaces` | `String` | Comma-separated list of namespaces the controller watches |
+
+Entries are trimmed and blank ones are ignored, so `ns1, ns2` and `ns1,ns2` are equivalent. Instead
+of a list of namespaces, the value can also be one of the two special values below, which have to be
+used on their own — combining them with a namespace name is an error:
+
+| Value | Meaning |
+|---|---|
+| `JOSDK_ALL_NAMESPACES` | Watch the whole cluster (the default) |
+| `JOSDK_WATCH_CURRENT` | Watch only the namespace the operator is deployed in |
+
+Setting this property is equivalent to calling `settingNamespaces` on
+`ControllerConfigurationOverrider` and therefore replaces, rather than extends, the namespaces
+configured via the `@Informer` annotation. The set of watched namespaces can still be changed while
+the operator is running, see
+[Dynamically Changing Target Namespaces](#dynamically-changing-target-namespaces).
+
+```properties
+josdk.controller.mycontroller.namespaces=team-a,team-b
+```
 
 #### Informer
 
