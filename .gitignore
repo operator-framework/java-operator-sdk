@@ -17,6 +17,6 @@ target/
 .aider*
 
 docs/content/en/docs/testindex/
-.claude/
+.claude/settings.local.json
 .DS_Store
 
