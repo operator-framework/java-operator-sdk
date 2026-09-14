@@ -143,4 +143,49 @@ class ConfigLoaderIT {
       return resource;
     }
   }
+
+  // ---------------------------------------------------------------------------
+  // Controller-level watched namespaces
+  // ---------------------------------------------------------------------------
+
+  @Nested
+  class ControllerNamespacesProperty {
+
+    // controller name is the lower-cased simple class name by default
+    static final String CTRL_NAME = ConfigLoaderTestReconciler.class.getSimpleName().toLowerCase();
+
+    /**
+     * Verifies that {@code josdk.controller.<name>.namespaces} read by {@link ConfigLoader}
+     * replaces the default "watch all namespaces" setting of the registered controller.
+     */
+    @RegisterExtension
+    LocallyRunOperatorExtension operator =
+        LocallyRunOperatorExtension.builder()
+            .withReconciler(
+                new ConfigLoaderTestReconciler(0),
+                (Consumer<ControllerConfigurationOverrider>)
+                    (Consumer<?>)
+                        new ConfigLoader(
+                                mapProvider(
+                                    Map.of(
+                                        "josdk.controller." + CTRL_NAME + ".namespaces",
+                                        "default, kube-public")))
+                            .applyControllerConfigs(CTRL_NAME))
+            .build();
+
+    @Test
+    void watchedNamespacesAreAppliedFromConfigLoader() {
+      var informerConfig =
+          operator
+              .getOperator()
+              .getRegisteredController(CTRL_NAME)
+              .orElseThrow()
+              .getConfiguration()
+              .getInformerConfig();
+
+      assertThat(informerConfig.getNamespaces())
+          .containsExactlyInAnyOrder("default", "kube-public");
+      assertThat(informerConfig.watchAllNamespaces()).isFalse();
+    }
+  }
 }
