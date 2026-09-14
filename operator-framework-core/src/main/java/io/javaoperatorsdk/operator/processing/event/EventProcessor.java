@@ -508,7 +508,7 @@ public class EventProcessor<P extends HasMetadata> implements EventHandler, Life
     handleAlreadyMarkedEvents();
   }
 
-  public boolean isNextReconciliationImminent(ResourceID resourceID) {
+  public synchronized boolean isNextReconciliationImminent(ResourceID resourceID)
     return isNextReconciliationImminent(resourceStateManager.getOrCreate(resourceID));
   }
 
