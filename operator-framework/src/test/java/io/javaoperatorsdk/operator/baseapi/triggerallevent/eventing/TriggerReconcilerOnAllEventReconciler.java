@@ -96,9 +96,9 @@ public class TriggerReconcilerOnAllEventReconciler
       // update call returns, but the update event still has to travel back through the informer.
       // If this reconciliation failed before the event was registered, the framework would treat
       // the failure as a plain retry (consuming the last attempt) instead of instantly
-      // re-triggering because of a superseding event. isNextReconciliationImminent() reflects
-      // exactly the state (event marked as received) the framework checks after this
-      // reconciliation fails, and it cannot be unset while this reconciliation is in progress.
+      // re-triggering because of a superseding event. isNextReconciliationImminent() reports the
+      // same condition the framework evaluates after this reconciliation fails, and it cannot be
+      // unset while this reconciliation is in progress.
       var waitUntil = System.currentTimeMillis() + MAX_WAIT_FOR_SUPERSEDING_EVENT_MILLIS;
       while ((!continuerOnRetryWait || !context.isNextReconciliationImminent())
           && System.currentTimeMillis() < waitUntil) {

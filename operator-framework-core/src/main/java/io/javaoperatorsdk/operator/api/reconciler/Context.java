@@ -253,6 +253,10 @@ public interface Context<P extends HasMetadata> {
    * reconciliation is already scheduled, which would in turn trigger another status update, thus
    * rendering the current one moot.
    *
+   * <p>This holds regardless of whether the current reconciliation succeeds or throws, so with
+   * {@link ControllerConfiguration#triggerReconcilerOnAllEvents()} it also covers an event that
+   * arrived after a delete event.
+   *
    * @return {@code true} is another reconciliation is already scheduled, {@code false} otherwise
    */
   boolean isNextReconciliationImminent();

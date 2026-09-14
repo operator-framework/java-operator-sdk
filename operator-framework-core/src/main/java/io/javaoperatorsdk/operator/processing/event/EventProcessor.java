@@ -380,9 +380,7 @@ public class EventProcessor<P extends HasMetadata> implements EventHandler, Life
       ExecutionScope<P> executionScope, Exception exception, boolean errorHandledByReconciler) {
     final var state = getOrInitRetryExecution(executionScope);
     var resourceID = state.getId();
-    boolean eventPresent =
-        state.eventPresent()
-            || (triggerOnAllEvents() && state.isAdditionalEventPresentAfterDeleteEvent());
+    boolean eventPresent = nextReconciliationImminent(state);
     state.markEventReceived();
     retryAwareErrorLogging(
         state.getRetry(), eventPresent, errorHandledByReconciler, exception, executionScope);
@@ -511,7 +509,19 @@ public class EventProcessor<P extends HasMetadata> implements EventHandler, Life
   }
 
   public boolean isNextReconciliationImminent(ResourceID resourceID) {
-    return resourceStateManager.getOrCreate(resourceID).eventPresent();
+    return nextReconciliationImminent(resourceStateManager.getOrCreate(resourceID));
+  }
+
+  /**
+   * An event that arrives after a delete event is tracked in a dedicated state, so {@link
+   * ResourceState#eventPresent()} alone does not cover it. Such an event triggers a new
+   * reconciliation right after the current one, both when it succeeds (see {@link
+   * #eventProcessingFinished}) and when it fails (see {@link #handleRetryOnException}), so it has
+   * to be reported as imminent too.
+   */
+  private boolean nextReconciliationImminent(ResourceState state) {
+    return state.eventPresent()
+        || (triggerOnAllEvents() && state.isAdditionalEventPresentAfterDeleteEvent());
   }
 
   private void handleAlreadyMarkedEvents() {
