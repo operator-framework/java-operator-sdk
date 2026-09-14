@@ -31,6 +31,7 @@ import io.javaoperatorsdk.operator.ReconcilerUtilsInternal;
 import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.event.ResourceEventRecorder;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
+import io.javaoperatorsdk.operator.api.reconciler.dependent.DesiredStateAspect;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.managed.DefaultManagedWorkflowAndDependentResourceContext;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.managed.ManagedWorkflowAndDependentResourceContext;
 import io.javaoperatorsdk.operator.processing.Controller;
@@ -258,6 +259,25 @@ public class DefaultContext<P extends HasMetadata> implements Context<P> {
       DependentResource<R, P> dependentResource, Function<P, R> desiredStateComputer) {
     return (R)
         desiredStates.computeIfAbsent(
-            dependentResource, ignored -> desiredStateComputer.apply(getPrimaryResource()));
+            dependentResource,
+            ignored -> {
+              final var desired = desiredStateComputer.apply(getPrimaryResource());
+              applyDesiredStateAspects(desired, dependentResource);
+              return desired;
+            });
+  }
+
+  /**
+   * Applies the globally configured {@link DesiredStateAspect}s, in configuration order, to the
+   * freshly computed desired state. Aspects only apply to Kubernetes resources, external dependent
+   * resources are therefore left untouched.
+   */
+  private void applyDesiredStateAspects(Object desired, DependentResource<?, P> dependentResource) {
+    if (desired instanceof HasMetadata hasMetadata) {
+      controllerConfiguration
+          .getConfigurationService()
+          .desiredStateAspects()
+          .forEach(aspect -> aspect.apply(hasMetadata, dependentResource, this));
+    }
   }
 }

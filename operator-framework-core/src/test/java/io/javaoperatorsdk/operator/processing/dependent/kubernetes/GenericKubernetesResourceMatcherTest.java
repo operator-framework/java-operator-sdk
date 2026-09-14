@@ -15,6 +15,7 @@
  */
 package io.javaoperatorsdk.operator.processing.dependent.kubernetes;
 
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
@@ -27,12 +28,16 @@ import io.fabric8.kubernetes.api.model.apps.DeploymentStatusBuilder;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.javaoperatorsdk.operator.MockKubernetesClient;
 import io.javaoperatorsdk.operator.ReconcilerUtilsInternal;
+import io.javaoperatorsdk.operator.api.config.ConfigurationService;
+import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.DefaultContext;
+import io.javaoperatorsdk.operator.processing.Controller;
 
 import static io.javaoperatorsdk.operator.processing.dependent.kubernetes.GenericKubernetesResourceMatcher.match;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 @SuppressWarnings({"unchecked"})
 class GenericKubernetesResourceMatcherTest {
@@ -47,7 +52,18 @@ class GenericKubernetesResourceMatcherTest {
     }
 
     public TestContext(HasMetadata primary) {
-      super(mock(), mock(), primary, false, false);
+      super(mock(), mockController(), primary, false, false);
+    }
+
+    @SuppressWarnings("rawtypes")
+    private static Controller mockController() {
+      final ConfigurationService configurationService = mock();
+      when(configurationService.desiredStateAspects()).thenReturn(List.of());
+      final ControllerConfiguration controllerConfiguration = mock();
+      when(controllerConfiguration.getConfigurationService()).thenReturn(configurationService);
+      final Controller controller = mock();
+      when(controller.getConfiguration()).thenReturn(controllerConfiguration);
+      return controller;
     }
 
     @Override
