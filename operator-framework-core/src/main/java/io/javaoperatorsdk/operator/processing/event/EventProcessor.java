@@ -380,7 +380,7 @@ public class EventProcessor<P extends HasMetadata> implements EventHandler, Life
       ExecutionScope<P> executionScope, Exception exception, boolean errorHandledByReconciler) {
     final var state = getOrInitRetryExecution(executionScope);
     var resourceID = state.getId();
-    boolean eventPresent = nextReconciliationImminent(state);
+    boolean eventPresent = isNextReconciliationImminent(state);
     state.markEventReceived();
     retryAwareErrorLogging(
         state.getRetry(), eventPresent, errorHandledByReconciler, exception, executionScope);
@@ -509,7 +509,7 @@ public class EventProcessor<P extends HasMetadata> implements EventHandler, Life
   }
 
   public boolean isNextReconciliationImminent(ResourceID resourceID) {
-    return nextReconciliationImminent(resourceStateManager.getOrCreate(resourceID));
+    return isNextReconciliationImminent(resourceStateManager.getOrCreate(resourceID));
   }
 
   /**
@@ -519,7 +519,7 @@ public class EventProcessor<P extends HasMetadata> implements EventHandler, Life
    * #eventProcessingFinished}) and when it fails (see {@link #handleRetryOnException}), so it has
    * to be reported as imminent too.
    */
-  private boolean nextReconciliationImminent(ResourceState state) {
+  private boolean isNextReconciliationImminent(ResourceState state) {
     return state.eventPresent()
         || (triggerOnAllEvents() && state.isAdditionalEventPresentAfterDeleteEvent());
   }
