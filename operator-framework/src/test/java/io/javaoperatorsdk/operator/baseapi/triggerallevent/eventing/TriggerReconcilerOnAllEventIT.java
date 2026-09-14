@@ -192,14 +192,16 @@ public class TriggerReconcilerOnAllEventIT {
     await()
         .untilAsserted(
             () -> {
-              assertThat(reconciler.isWaiting());
+              assertThat(reconciler.isWaiting()).isTrue();
             });
 
     // trigger reconciliation while waiting in reconciler
     res = getResource();
     res.getMetadata().getAnnotations().put("my-annotation", "true");
     extension.update(res);
-    // continue reconciliation
+    // continue reconciliation; the reconciler additionally waits until the framework actually
+    // registered the event above, otherwise the failure below would consume a retry attempt
+    // instead of being instantly re-triggered by the superseding event
     reconciler.setContinuerOnRetryWait(true);
 
     await()
