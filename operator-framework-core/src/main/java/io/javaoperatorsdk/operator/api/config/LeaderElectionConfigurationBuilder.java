@@ -81,11 +81,26 @@ public final class LeaderElectionConfigurationBuilder {
             + " instead");
   }
 
+  /**
+   * Builds the configuration with {@code exitOnStopLeading} set to {@value
+   * LeaderElectionConfiguration#EXIT_ON_STOP_LEADING_DEFAULT_VALUE}, meaning that the process exits
+   * when this instance stops leading outside of a graceful shutdown, so that another replica can
+   * take over without two instances reconciling in parallel.
+   */
   public LeaderElectionConfiguration build() {
-    return buildForTest(false);
+    return build(EXIT_ON_STOP_LEADING_DEFAULT_VALUE);
   }
 
+  /**
+   * Same as {@link #build()}, but allows turning off the exit on stop leading behavior. This should
+   * only be used for testing purposes, since without exiting, two instances might reconcile the
+   * same resources in parallel.
+   */
   public LeaderElectionConfiguration buildForTest(boolean exitOnStopLeading) {
+    return build(exitOnStopLeading);
+  }
+
+  private LeaderElectionConfiguration build(boolean exitOnStopLeading) {
     return new LeaderElectionConfiguration(
         leaseName,
         leaseNamespace,

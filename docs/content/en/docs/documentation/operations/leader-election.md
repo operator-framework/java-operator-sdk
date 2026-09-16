@@ -44,7 +44,16 @@ See details under [configurations](configuration.md) page.
    the lease.
 2. Once leadership is acquired, event processing begins normally.
 3. If leadership is lost (e.g. the leader pod becomes unresponsive), another instance acquires the lease
-   and takes over reconciliation. The instance that lost the lead is terminated (`System.exit()`)
+   and takes over reconciliation. The instance that lost the lead is terminated (`System.exit(1)`), so
+   that it is restarted by Kubernetes and no two instances reconcile the same resources in parallel.
+   This does not happen on a graceful shutdown (`Operator.stop()`), only when the lead is lost while
+   the operator is running.
+
+{{% alert title="Note" color="primary" %}}
+Exiting on lost leadership is always on in production. `LeaderElectionConfigurationBuilder` exposes
+`buildForTest(boolean exitOnStopLeading)` to turn it off, but as the name says this is only meant for
+tests, where terminating the JVM would kill the test run.
+{{% /alert %}}
 
 ### Identity and Namespace Inference
 

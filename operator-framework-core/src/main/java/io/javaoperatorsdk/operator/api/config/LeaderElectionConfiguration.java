@@ -25,6 +25,7 @@ public class LeaderElectionConfiguration {
   public static final Duration LEASE_DURATION_DEFAULT_VALUE = Duration.ofSeconds(15);
   public static final Duration RENEW_DEADLINE_DEFAULT_VALUE = Duration.ofSeconds(10);
   public static final Duration RETRY_PERIOD_DEFAULT_VALUE = Duration.ofSeconds(2);
+  public static final boolean EXIT_ON_STOP_LEADING_DEFAULT_VALUE = true;
 
   private final String leaseName;
   private final String leaseNamespace;
@@ -50,7 +51,7 @@ public class LeaderElectionConfiguration {
         RETRY_PERIOD_DEFAULT_VALUE,
         identity,
         null,
-        true);
+        EXIT_ON_STOP_LEADING_DEFAULT_VALUE);
   }
 
   /**
@@ -79,7 +80,15 @@ public class LeaderElectionConfiguration {
       Duration leaseDuration,
       Duration renewDeadline,
       Duration retryPeriod) {
-    this(leaseName, leaseNamespace, leaseDuration, renewDeadline, retryPeriod, null, null, true);
+    this(
+        leaseName,
+        leaseNamespace,
+        leaseDuration,
+        renewDeadline,
+        retryPeriod,
+        null,
+        null,
+        EXIT_ON_STOP_LEADING_DEFAULT_VALUE);
   }
 
   /**
@@ -133,6 +142,12 @@ public class LeaderElectionConfiguration {
     return Optional.ofNullable(leaderCallbacks);
   }
 
+  /**
+   * Whether the process should exit (via {@code System.exit(1)}) when this instance stops leading
+   * outside of a graceful shutdown. Defaults to {@value #EXIT_ON_STOP_LEADING_DEFAULT_VALUE};
+   * {@code false} is only meant for testing purposes, see {@link
+   * LeaderElectionConfigurationBuilder#buildForTest(boolean)}.
+   */
   public boolean isExitOnStopLeading() {
     return exitOnStopLeading;
   }
