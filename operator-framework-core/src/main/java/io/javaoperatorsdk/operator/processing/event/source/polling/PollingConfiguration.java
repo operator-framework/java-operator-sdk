@@ -17,24 +17,40 @@ package io.javaoperatorsdk.operator.processing.event.source.polling;
 
 import java.time.Duration;
 import java.util.Objects;
+import java.util.concurrent.ScheduledExecutorService;
 
 import io.javaoperatorsdk.operator.processing.ResourceIDMapper;
 
+/**
+ * @param executorService the executor to run the polls on, {@code null} (the default) to run them
+ *     on the executor the operator shares between all its scheduled tasks
+ */
 public record PollingConfiguration<R, ID>(
     String name,
     PollingEventSource.GenericResourceFetcher<R> genericResourceFetcher,
     Duration period,
-    ResourceIDMapper<R, ID> resourceIDMapper) {
+    ResourceIDMapper<R, ID> resourceIDMapper,
+    ScheduledExecutorService executorService) {
 
   public PollingConfiguration(
       String name,
       PollingEventSource.GenericResourceFetcher<R> genericResourceFetcher,
       Duration period,
       ResourceIDMapper<R, ID> resourceIDMapper) {
+    this(name, genericResourceFetcher, period, resourceIDMapper, null);
+  }
+
+  public PollingConfiguration(
+      String name,
+      PollingEventSource.GenericResourceFetcher<R> genericResourceFetcher,
+      Duration period,
+      ResourceIDMapper<R, ID> resourceIDMapper,
+      ScheduledExecutorService executorService) {
     this.name = name;
     this.genericResourceFetcher = Objects.requireNonNull(genericResourceFetcher);
     this.period = period;
     this.resourceIDMapper =
         resourceIDMapper == null ? ResourceIDMapper.resourceIdProviderMapper() : resourceIDMapper;
+    this.executorService = executorService;
   }
 }

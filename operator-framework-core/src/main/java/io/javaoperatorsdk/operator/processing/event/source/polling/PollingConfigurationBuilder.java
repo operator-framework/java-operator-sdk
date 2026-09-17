@@ -16,6 +16,7 @@
 package io.javaoperatorsdk.operator.processing.event.source.polling;
 
 import java.time.Duration;
+import java.util.concurrent.ScheduledExecutorService;
 
 import io.javaoperatorsdk.operator.processing.ResourceIDMapper;
 
@@ -24,6 +25,7 @@ public final class PollingConfigurationBuilder<R, ID> {
   private final PollingEventSource.GenericResourceFetcher<R> genericResourceFetcher;
   private ResourceIDMapper<R, ID> resourceIDMapper;
   private String name;
+  private ScheduledExecutorService executorService;
 
   public PollingConfigurationBuilder(
       PollingEventSource.GenericResourceFetcher<R> fetcher, Duration period) {
@@ -42,7 +44,23 @@ public final class PollingConfigurationBuilder<R, ID> {
     return this;
   }
 
+  /**
+   * Runs the polls on the specified executor instead of the one the operator shares between all its
+   * scheduled tasks. Note that an explicitly provided executor is not managed by the operator: it
+   * is the caller's responsibility to shut it down.
+   *
+   * @param executorService the executor to run the polls on
+   * @return this builder for chained customization
+   * @since 5.6.0
+   */
+  public PollingConfigurationBuilder<R, ID> withExecutorService(
+      ScheduledExecutorService executorService) {
+    this.executorService = executorService;
+    return this;
+  }
+
   public PollingConfiguration<R, ID> build() {
-    return new PollingConfiguration<>(name, genericResourceFetcher, period, resourceIDMapper);
+    return new PollingConfiguration<>(
+        name, genericResourceFetcher, period, resourceIDMapper, executorService);
   }
 }
