@@ -79,6 +79,14 @@ public class ConfigLoader {
               Integer.class,
               ConfigurationServiceOverrider::withConcurrentWorkflowExecutorThreads),
           new ConfigBinding<>(
+              "scheduled-tasks.concurrent-threads",
+              Integer.class,
+              ConfigurationServiceOverrider::withConcurrentScheduledTaskThreads),
+          new ConfigBinding<>(
+              "retry-and-reschedule.concurrent-threads",
+              Integer.class,
+              ConfigurationServiceOverrider::withConcurrentRetryAndRescheduleThreads),
+          new ConfigBinding<>(
               "close-client-on-stop",
               Boolean.class,
               ConfigurationServiceOverrider::withCloseClientOnStop),

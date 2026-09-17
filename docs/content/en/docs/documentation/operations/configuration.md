@@ -281,6 +281,13 @@ All operator-level keys are prefixed with `josdk.`.
 |---|---|---|
 | `josdk.workflow.executor-threads` | `Integer` | Thread pool size for workflow execution |
 
+#### Scheduled Tasks
+
+| Key | Type | Description |
+|---|---|---|
+| `josdk.scheduled-tasks.concurrent-threads` | `Integer` | Thread pool size for the operator's scheduled tasks, i.e. the polling event sources |
+| `josdk.retry-and-reschedule.concurrent-threads` | `Integer` | Thread pool size for triggering retried and rescheduled reconciliations |
+
 #### Informer
 
 | Key | Type | Description |
