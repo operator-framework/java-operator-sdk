@@ -168,6 +168,8 @@ public class ExecutorServiceManager {
       this.configurationService = configurationService; // used to lazy init workflow executor
       this.cachingExecutorService =
           newUnboundedExecutorService(configurationService.useVirtualThreads());
+      // stays on platform threads even when virtual threads are requested: there is no virtual
+      // thread backed ScheduledExecutorService in the JDK, see VirtualThreads
       this.scheduledExecutorService = Executors.newScheduledThreadPool(0);
       this.executor = new InstrumentedExecutorService(configurationService.getExecutorService());
       started = true;
