@@ -202,6 +202,11 @@ public interface ConfigurationService {
    * The number of threads the operator can spin out to dispatch reconciliation requests to
    * reconcilers with the default executors
    *
+   * <p>This is a concurrency limit and applies regardless of whether the default executor is backed
+   * by platform or by virtual threads, see {@link #useVirtualThreads()}: with virtual threads it
+   * caps how many reconciliations run at the same time rather than the size of a thread pool. Since
+   * virtual threads are cheap, the limit can be set considerably higher when they are enabled.
+   *
    * @return the number of concurrent reconciliation threads
    */
   default int concurrentReconciliationThreads() {
@@ -211,6 +216,12 @@ public interface ConfigurationService {
   /**
    * Number of threads the operator can spin out to be used in the workflows with the default
    * executor.
+   *
+   * <p>This is a concurrency limit and applies regardless of whether the default executor is backed
+   * by platform or by virtual threads, see {@link #useVirtualThreads()}: with virtual threads it
+   * caps how many dependent resources are processed at the same time rather than the size of a
+   * thread pool. Since virtual threads are cheap, the limit can be set considerably higher when
+   * they are enabled.
    *
    * @return the maximum number of concurrent workflow threads
    */
