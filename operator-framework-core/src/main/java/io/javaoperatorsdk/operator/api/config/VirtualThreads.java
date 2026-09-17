@@ -39,6 +39,14 @@ import io.javaoperatorsdk.operator.OperatorException;
  * <p>The SDK is compiled for Java 17, in which virtual threads don't exist yet, so {@code
  * Executors.newVirtualThreadPerTaskExecutor()} is looked up reflectively and is only available when
  * the operator actually runs on Java 21 or later.
+ *
+ * <p>There is intentionally no scheduled variant here: the JDK provides no virtual thread backed
+ * {@link java.util.concurrent.ScheduledExecutorService}, scheduling was deliberately left out of
+ * virtual threads (the Loom runtime itself uses a platform thread scheduler to unpark timed out
+ * virtual threads). Running scheduled tasks on virtual threads would mean keeping a platform thread
+ * scheduler purely for the timing and handing each fired task off to a virtual thread executor,
+ * which the SDK doesn't do, so {@link ExecutorServiceManager#scheduledExecutorService()} is always
+ * backed by platform threads.
  */
 final class VirtualThreads {
 
