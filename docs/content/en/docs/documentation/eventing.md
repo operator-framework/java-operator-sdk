@@ -222,6 +222,28 @@ is similar to `PerResourcePollingEventSource` except that, contrary to that even
 doesn't poll a specific API separately per resource, but periodically and independently of
 actually observed primary resources.
 
+#### Threading of the polling event sources
+
+Both polling event sources schedule their polls on an executor the operator shares between all of
+its polling event sources. A poll therefore only starts once one of that executor's threads is
+free, so if your operator registers many polling event sources, or if fetching your external
+resources is slow, size the pool accordingly with
+`ConfigurationServiceOverrider.withConcurrentScheduledTaskThreads` (4 threads by default):
+
+```java
+Operator operator = new Operator(overrider -> overrider.withConcurrentScheduledTaskThreads(20));
+```
+
+Retried and rescheduled reconciliations are triggered on a separate executor, so a slow poll can
+never delay them. It is sized with `withConcurrentRetryAndRescheduleThreads` (2 threads by
+default); few threads are needed there since triggering a reconciliation only enqueues an event
+for one of the reconciliation threads to pick up.
+
+Use `ConfigurationServiceOverrider.withScheduledExecutorService` to replace the polling executor
+altogether, or the `withExecutorService` method of the event source's own configuration builder to
+poll a single event source on an executor of its own. An executor provided that way is not managed
+by the operator: it is your responsibility to shut it down.
+
 #### Inbound event sources
 
 [SimpleInboundEventSource](https://github.com/operator-framework/java-operator-sdk/blob/main/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/processing/event/source/inbound/SimpleInboundEventSource.java)

@@ -30,14 +30,19 @@ class ExecutorServiceManagerTest {
     ConfigurationService configurationService = new BaseConfigurationService();
     var manager = configurationService.getExecutorServiceManager();
     var scheduled = manager.scheduledExecutorService();
+    var retryAndReschedule = manager.retryAndRescheduleExecutorService();
 
     try {
       assertThat(scheduled.isShutdown()).isFalse();
+      assertThat(retryAndReschedule.isShutdown()).isFalse();
+      // retries are triggered on an executor of their own so that a slow poll can't delay them
+      assertThat(retryAndReschedule).isNotSameAs(scheduled);
     } finally {
       manager.stop(SHUTDOWN_TIMEOUT);
     }
 
     assertThat(scheduled.isShutdown()).isTrue();
+    assertThat(retryAndReschedule.isShutdown()).isTrue();
   }
 
   @Test
@@ -53,6 +58,7 @@ class ExecutorServiceManagerTest {
     assertThat(manager.reconcileExecutorService().isShutdown()).isFalse();
     assertThat(manager.cachingExecutorService().isShutdown()).isFalse();
     assertThat(manager.scheduledExecutorService().isShutdown()).isFalse();
+    assertThat(manager.retryAndRescheduleExecutorService().isShutdown()).isFalse();
 
     manager.stop(SHUTDOWN_TIMEOUT);
   }
