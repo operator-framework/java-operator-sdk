@@ -85,6 +85,30 @@ class ConfigLoaderTest {
   }
 
   @Test
+  void applyConfigsAppliesConcurrentScheduledTaskThreads() {
+    var loader =
+        new ConfigLoader(mapProvider(Map.of("josdk.scheduled-tasks.concurrent-threads", 8)));
+
+    var base = new BaseConfigurationService(null);
+    var result =
+        ConfigurationService.newOverriddenConfigurationService(base, loader.applyConfigs());
+
+    assertThat(result.concurrentScheduledTaskThreads()).isEqualTo(8);
+  }
+
+  @Test
+  void applyConfigsAppliesConcurrentRetryAndRescheduleThreads() {
+    var loader =
+        new ConfigLoader(mapProvider(Map.of("josdk.retry-and-reschedule.concurrent-threads", 6)));
+
+    var base = new BaseConfigurationService(null);
+    var result =
+        ConfigurationService.newOverriddenConfigurationService(base, loader.applyConfigs());
+
+    assertThat(result.concurrentRetryAndRescheduleThreads()).isEqualTo(6);
+  }
+
+  @Test
   void applyConfigsAppliesBooleanFlags() {
     var values = new HashMap<String, Object>();
     values.put("josdk.check-crd", true);

@@ -20,6 +20,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.ThreadPoolExecutor;
 
 import org.junit.jupiter.api.Test;
@@ -115,6 +116,64 @@ class ConfigurationServiceOverriderTest {
     assertNotEquals(config.getInformerStoppedHandler(), overridden.getInformerStoppedHandler());
     assertNotEquals(
         config.reconciliationTerminationTimeout(), overridden.reconciliationTerminationTimeout());
+  }
+
+  @Test
+  void scheduledExecutorCanBeOverridden() {
+    final var scheduledExecutorService = Executors.newScheduledThreadPool(1);
+    final var retryExecutorService = Executors.newScheduledThreadPool(1);
+    try {
+      final var overridden =
+          new ConfigurationServiceOverrider(config)
+              .withConcurrentScheduledTaskThreads(7)
+              .withScheduledExecutorService(scheduledExecutorService)
+              .withConcurrentRetryAndRescheduleThreads(5)
+              .withRetryAndRescheduleExecutorService(retryExecutorService)
+              .build();
+
+      assertThat(overridden.concurrentScheduledTaskThreads()).isEqualTo(7);
+      assertThat(overridden.getScheduledExecutorService()).isSameAs(scheduledExecutorService);
+      assertThat(overridden.concurrentRetryAndRescheduleThreads()).isEqualTo(5);
+      assertThat(overridden.getRetryAndRescheduleExecutorService()).isSameAs(retryExecutorService);
+    } finally {
+      scheduledExecutorService.shutdownNow();
+      retryExecutorService.shutdownNow();
+    }
+  }
+
+  @Test
+  void scheduledExecutorDefaultsToADaemonPoolOfTheConfiguredSize() {
+    final var overridden =
+        (ScheduledThreadPoolExecutor)
+            new ConfigurationServiceOverrider(config)
+                .withConcurrentScheduledTaskThreads(3)
+                .build()
+                .getScheduledExecutorService();
+
+    try {
+      assertThat(overridden.getCorePoolSize()).isEqualTo(3);
+      // scheduled tasks must not delay the termination of the operator, nor keep the JVM alive
+      assertThat(overridden.getExecuteExistingDelayedTasksAfterShutdownPolicy()).isFalse();
+      assertThat(overridden.getThreadFactory().newThread(() -> {}).isDaemon()).isTrue();
+    } finally {
+      overridden.shutdownNow();
+    }
+  }
+
+  @Test
+  void retryAndRescheduleExecutorIsSeparateFromTheScheduledTaskOne() {
+    final var scheduled = config.getScheduledExecutorService();
+    final var retryAndReschedule = config.getRetryAndRescheduleExecutorService();
+
+    try {
+      // a slow poll on the scheduled task executor must not be able to delay a retry
+      assertThat(retryAndReschedule).isNotSameAs(scheduled);
+      assertThat(((ScheduledThreadPoolExecutor) retryAndReschedule).getCorePoolSize())
+          .isEqualTo(ConfigurationService.DEFAULT_RETRY_AND_RESCHEDULE_THREADS_NUMBER);
+    } finally {
+      scheduled.shutdownNow();
+      retryAndReschedule.shutdownNow();
+    }
   }
 
   @Test

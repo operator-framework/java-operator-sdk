@@ -26,6 +26,11 @@ import java.util.Arrays;
 import java.util.Date;
 import java.util.Optional;
 import java.util.Properties;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
+import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.atomic.AtomicLong;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -100,6 +105,49 @@ public class Utils {
       value = defaultValue;
     }
     return value;
+  }
+
+  /**
+   * Creates a {@link ThreadFactory} producing daemon threads named after the specified prefix.
+   * Daemon threads don't keep the JVM alive if the {@link io.javaoperatorsdk.operator.Operator} is
+   * never stopped, and naming them makes the pool they belong to identifiable in thread dumps.
+   *
+   * @param namePrefix the prefix the created threads are named after
+   * @return a {@link ThreadFactory} creating named daemon threads
+   * @since 5.6.0
+   */
+  public static ThreadFactory daemonThreadFactory(String namePrefix) {
+    final var defaultThreadFactory = Executors.defaultThreadFactory();
+    final var counter = new AtomicLong();
+    return runnable -> {
+      final var thread = defaultThreadFactory.newThread(runnable);
+      thread.setName(namePrefix + "-" + counter.incrementAndGet());
+      thread.setDaemon(true);
+      return thread;
+    };
+  }
+
+  /**
+   * Creates the kind of {@link ScheduledExecutorService} the operator runs its scheduled (i.e.
+   * periodic or delayed) tasks on: one whose threads are daemon threads named after the specified
+   * prefix, and which doesn't let the tasks that were scheduled for later delay its shutdown.
+   *
+   * @param corePoolSize the number of threads to keep in the pool
+   * @param threadNamePrefix the prefix the threads of the pool are named after
+   * @return a {@link ScheduledExecutorService} to run scheduled tasks on
+   * @since 5.6.0
+   */
+  public static ScheduledExecutorService daemonScheduledThreadPool(
+      int corePoolSize, String threadNamePrefix) {
+    final var executor =
+        new ScheduledThreadPoolExecutor(corePoolSize, daemonThreadFactory(threadNamePrefix));
+    // tasks that are scheduled far out (a reconciliation rescheduled in an hour, say) would
+    // otherwise keep the pool from terminating until the graceful shutdown timeout expires
+    executor.setExecuteExistingDelayedTasksAfterShutdownPolicy(false);
+    // cancelled tasks are frequent (every retry that is superseded by a new event cancels one) and
+    // would otherwise be retained until their delay elapses
+    executor.setRemoveOnCancelPolicy(true);
+    return executor;
   }
 
   @SuppressWarnings("unused")
