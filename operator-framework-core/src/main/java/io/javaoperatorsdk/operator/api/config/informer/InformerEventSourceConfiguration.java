@@ -292,6 +292,11 @@ public interface InformerEventSourceConfiguration<R extends HasMetadata> extends
       return this;
     }
 
+    public Builder<R> withoutNamespaceIndex(boolean withoutNamespaceIndex) {
+      config.withoutNamespaceIndex(withoutNamespaceIndex);
+      return this;
+    }
+
     @Deprecated(forRemoval = true)
     public Builder<R> withGhostResourceCacheCheckInterval(
         Duration ghostResourceCacheCheckInterval) {
@@ -317,6 +322,7 @@ public interface InformerEventSourceConfiguration<R extends HasMetadata> extends
             .withGenericFilter(informerConfig.getGenericFilter())
             .withInformerListLimit(informerConfig.getInformerListLimit())
             .withComparableResourceVersions(informerConfig.isComparableResourceVersions())
+            .withoutNamespaceIndex(informerConfig.isWithoutNamespaceIndex())
             .withFieldSelector(informerConfig.getFieldSelector());
       }
     }
