@@ -142,7 +142,7 @@ class WorkflowReconcileExecutor<P extends HasMetadata> extends AbstractWorkflowE
     var dependents = dependentResourceNode.getParents();
     return dependents.stream()
         .allMatch(
-            d -> alreadyVisited(d) && isReady(d) && !isInError(d) && !postDeleteConditionNotMet(d));
+            d -> alreadyVisited(d) && isReady(d) && !isInError(d) && postDeleteConditionMet(d));
   }
 
   private class NodeReconcileExecutor<R> extends NodeExecutor<R, P> {

@@ -92,8 +92,8 @@ abstract class AbstractWorkflowExecutor<P extends HasMetadata> {
     return getResultFlagFor(dependentResourceNode, BaseWorkflowResult.DetailBuilder::isVisited);
   }
 
-  protected boolean postDeleteConditionNotMet(DependentResourceNode<?, P> drn) {
-    return getResultFlagFor(drn, BaseWorkflowResult.DetailBuilder::hasPostDeleteConditionNotMet);
+  protected boolean postDeleteConditionMet(DependentResourceNode<?, P> drn) {
+    return !getResultFlagFor(drn, BaseWorkflowResult.DetailBuilder::hasPostDeleteConditionNotMet);
   }
 
   protected boolean isMarkedForDelete(DependentResourceNode<?, P> drn) {
