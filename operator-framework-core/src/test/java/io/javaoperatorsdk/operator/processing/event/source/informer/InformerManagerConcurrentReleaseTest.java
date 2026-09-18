@@ -52,7 +52,7 @@ import static org.mockito.Mockito.when;
  * InformerManager#changeNamespaces(Set)} can run concurrently, so removing the source from the
  * manager has to be what claims the right to release it.
  */
-@SuppressWarnings({"rawtypes", "unchecked"})
+@SuppressWarnings("unchecked")
 class InformerManagerConcurrentReleaseTest {
 
   private static final String NAMESPACE = "ns1";
@@ -94,6 +94,9 @@ class InformerManagerConcurrentReleaseTest {
     pool.proceed.countDown();
     namespaceChange.join(TimeUnit.SECONDS.toMillis(5));
 
+    assertThat(pool.proceededInTime)
+        .as("the blocked release must be let through, otherwise the paths never interleaved")
+        .isTrue();
     assertThat(pool.releaseCount.get())
         .as("the same namespace must not be released twice")
         .isEqualTo(1);
@@ -114,7 +117,7 @@ class InformerManagerConcurrentReleaseTest {
   /** Has to match what the manager builds for {@link #NAMESPACE} so it hits the same pool entry. */
   private InformerClassifier<Deployment> classifier() {
     return new InformerClassifier<>(
-        clientMock, null, null, NAMESPACE, Deployment.class, null, null, null, null);
+        clientMock, null, null, NAMESPACE, Deployment.class, null, null, null, null, false);
   }
 
   /** Blocks inside the first release so the two teardown paths can be interleaved on purpose. */
@@ -124,6 +127,7 @@ class InformerManagerConcurrentReleaseTest {
     private final CountDownLatch proceed = new CountDownLatch(1);
     private final AtomicInteger releaseCount = new AtomicInteger();
     private final AtomicBoolean blockNextRelease = new AtomicBoolean(true);
+    private final AtomicBoolean proceededInTime = new AtomicBoolean();
 
     @Override
     public <R extends HasMetadata> Optional<SharedIndexInformer<R>> releaseInformer(
@@ -134,7 +138,7 @@ class InformerManagerConcurrentReleaseTest {
       if (blockNextRelease.compareAndSet(true, false)) {
         enteredRelease.countDown();
         try {
-          proceed.await(5, TimeUnit.SECONDS);
+          proceededInTime.set(proceed.await(5, TimeUnit.SECONDS));
         } catch (InterruptedException e) {
           Thread.currentThread().interrupt();
         }

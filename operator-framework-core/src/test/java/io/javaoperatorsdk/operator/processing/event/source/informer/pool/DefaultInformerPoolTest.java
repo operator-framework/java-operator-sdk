@@ -89,10 +89,10 @@ class DefaultInformerPoolTest {
   void sharesInformerWhenClassifiersDifferOnlyByListLimit() {
     var withLimit100 =
         new InformerClassifier<>(
-            client, null, null, "default", TestCustomResource.class, null, null, 100L, null);
+            client, null, null, "default", TestCustomResource.class, null, null, 100L, null, false);
     var withLimit200 =
         new InformerClassifier<>(
-            client, null, null, "default", TestCustomResource.class, null, null, 200L, null);
+            client, null, null, "default", TestCustomResource.class, null, null, 200L, null, false);
 
     var first = pool.getInformer(CONTROLLER, ES_NAME, withLimit100);
     var second = pool.getInformer("other-controller", "other-es", withLimit200);
@@ -149,6 +149,6 @@ class DefaultInformerPoolTest {
   private InformerClassifier<TestCustomResource> classifier(
       KubernetesClient forClient, String namespace) {
     return new InformerClassifier<>(
-        forClient, null, null, namespace, TestCustomResource.class, null, null, null, null);
+        forClient, null, null, namespace, TestCustomResource.class, null, null, null, null, false);
   }
 }
