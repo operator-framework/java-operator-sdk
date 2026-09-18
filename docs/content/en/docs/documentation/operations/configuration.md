@@ -356,6 +356,7 @@ All controller-level keys are prefixed with `josdk.controller.<controller-name>.
 | `josdk.controller.<name>.informer.label-selector` | `String` | Label selector for the primary resource informer (alias for `label-selector`) |
 | `josdk.controller.<name>.informer.shard-selector` | `String` | Shard selector for the primary resource informer (alias for `shard-selector`) |
 | `josdk.controller.<name>.informer.list-limit` | `Long` | Page size for paginated informer list requests; omit for no pagination |
+| `josdk.controller.<name>.informer.without-namespace-index` | `Boolean` | Removes the namespace index the informer maintains; defaults to `false`. See [Removing the Namespace Index](../eventing#removing-the-namespace-index) |
 
 #### Retry
 

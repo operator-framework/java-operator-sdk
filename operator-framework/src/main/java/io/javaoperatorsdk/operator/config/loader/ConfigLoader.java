@@ -170,7 +170,11 @@ public class ConfigLoader {
           new ConfigBinding<>(
               "informer.list-limit",
               Long.class,
-              ControllerConfigurationOverrider::withInformerListLimit));
+              ControllerConfigurationOverrider::withInformerListLimit),
+          new ConfigBinding<>(
+              "informer.without-namespace-index",
+              Boolean.class,
+              ControllerConfigurationOverrider::withoutNamespaceIndex));
 
   private final ConfigProvider configProvider;
 
@@ -228,7 +232,7 @@ public class ConfigLoader {
 
     Consumer<ControllerConfigurationOverrider<R>> retryStep = buildRetryConsumer(prefix);
     if (retryStep != null) {
-      consumer = consumer == null ? retryStep : consumer.andThen(retryStep);
+      consumer = consumer.andThen(retryStep);
     }
     Consumer<ControllerConfigurationOverrider<R>> rateLimiterStep =
         buildRateLimiterConsumer(prefix);
