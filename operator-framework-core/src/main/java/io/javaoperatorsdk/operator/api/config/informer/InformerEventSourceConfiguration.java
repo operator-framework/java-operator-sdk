@@ -316,6 +316,7 @@ public interface InformerEventSourceConfiguration<R extends HasMetadata> extends
             .withOnDeleteFilter(informerConfig.getOnDeleteFilter())
             .withGenericFilter(informerConfig.getGenericFilter())
             .withInformerListLimit(informerConfig.getInformerListLimit())
+            .withComparableResourceVersions(informerConfig.isComparableResourceVersions())
             .withFieldSelector(informerConfig.getFieldSelector());
       }
     }
