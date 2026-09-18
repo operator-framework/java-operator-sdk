@@ -131,7 +131,6 @@ final class VirtualThreads {
 
     private BoundedExecutorService(ExecutorService delegate, int maxConcurrency) {
       this.delegate = delegate;
-      // fair, so that tasks run roughly in submission order as they would on a thread pool
       this.permits = new Semaphore(maxConcurrency, true);
     }
 
