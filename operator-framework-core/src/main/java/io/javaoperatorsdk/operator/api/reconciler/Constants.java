@@ -43,6 +43,7 @@ public final class Constants {
   public static final String CONTROLLER_NAME = "controller.name";
   public static final boolean DEFAULT_FOLLOW_CONTROLLER_NAMESPACE_CHANGES = true;
   public static final boolean DEFAULT_COMPARABLE_RESOURCE_VERSION = true;
+  public static final boolean DEFAULT_WITHOUT_NAMESPACE_INDEX = false;
 
   @Deprecated(forRemoval = true)
   public static final long DEFAULT_GHOST_RESOURCE_CHECK_INTERVAL_MILLIS = 3 * 60 * 1000;

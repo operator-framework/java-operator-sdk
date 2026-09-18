@@ -210,6 +210,18 @@ public class ControllerConfigurationOverrider<R extends HasMetadata> {
     return this;
   }
 
+  /**
+   * Whether to remove the namespace index the underlying informer maintains by default. Note that
+   * event sources that disagree on this setting do not share an informer.
+   *
+   * @param withoutNamespaceIndex true to remove the namespace index, false (the default) to keep it
+   * @see io.javaoperatorsdk.operator.api.config.informer.Informer#withoutNamespaceIndex()
+   */
+  public ControllerConfigurationOverrider<R> withoutNamespaceIndex(boolean withoutNamespaceIndex) {
+    config.withoutNamespaceIndex(withoutNamespaceIndex);
+    return this;
+  }
+
   public ControllerConfigurationOverrider<R> replacingNamedDependentResourceConfig(
       String name, Object dependentResourceConfig) {
 

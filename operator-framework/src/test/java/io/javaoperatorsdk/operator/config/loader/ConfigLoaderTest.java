@@ -26,6 +26,7 @@ import java.util.stream.Collectors;
 
 import org.junit.jupiter.api.Test;
 
+import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.javaoperatorsdk.operator.api.config.BaseConfigurationService;
 import io.javaoperatorsdk.operator.api.config.ConfigurationService;
 import io.javaoperatorsdk.operator.api.config.ConfigurationServiceOverrider;
@@ -218,8 +219,21 @@ class ConfigLoaderTest {
             "josdk.controller.ctrl.informer.label-selector",
             "josdk.controller.ctrl.informer.shard-selector",
             "josdk.controller.ctrl.informer.list-limit",
+            "josdk.controller.ctrl.informer.without-namespace-index",
             "josdk.controller.ctrl.rate-limiter.refresh-period",
             "josdk.controller.ctrl.rate-limiter.limit-for-period");
+  }
+
+  @Test
+  void applyControllerConfigsAppliesInformerWithoutNamespaceIndex() {
+    var loader =
+        new ConfigLoader(
+            mapProvider(Map.of("josdk.controller.ctrl.informer.without-namespace-index", true)));
+    var overrider = ControllerConfigurationOverrider.override(baseControllerConfig());
+
+    loader.<ConfigMap>applyControllerConfigs("ctrl").accept(overrider);
+
+    assertThat(overrider.build().getInformerConfig().isWithoutNamespaceIndex()).isTrue();
   }
 
   @Test
@@ -567,7 +581,6 @@ class ConfigLoaderTest {
     if (methodParam == long.class && bindingType == Long.class) return true;
     if (methodParam == Long.class && bindingType == long.class) return true;
     if (methodParam == double.class && bindingType == Double.class) return true;
-    if (methodParam == Double.class && bindingType == double.class) return true;
-    return false;
+    return methodParam == Double.class && bindingType == double.class;
   }
 }

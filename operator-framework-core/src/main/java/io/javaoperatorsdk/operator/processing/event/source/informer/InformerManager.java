@@ -169,7 +169,8 @@ class InformerManager<R extends HasMetadata, C extends Informable<R>>
         configuration.getInformerConfig().getResourceGroupVersionKind(),
         configuration.getInformerConfig().getFieldSelector(),
         configuration.getInformerConfig().getInformerListLimit(),
-        configuration.getInformerConfig().getItemStore());
+        configuration.getInformerConfig().getItemStore(),
+        configuration.getInformerConfig().isWithoutNamespaceIndex());
   }
 
   private KubernetesClient getTargetClient() {

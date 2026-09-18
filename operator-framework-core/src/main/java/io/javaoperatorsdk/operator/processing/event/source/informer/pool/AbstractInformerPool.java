@@ -71,7 +71,7 @@ public abstract class AbstractInformerPool implements InformerPool {
    */
   public abstract long numberOfInformersForResource(Class<? extends HasMetadata> resourceClass);
 
-  @SuppressWarnings({"rawtypes", "unchecked"})
+  @SuppressWarnings({"rawtypes", "unchecked", "resource"})
   protected SharedIndexInformer createInformer(InformerClassifier<?> classifier) {
     var client = classifier.client();
 
@@ -115,6 +115,11 @@ public abstract class AbstractInformerPool implements InformerPool {
     var informer = filteredClient.runnableInformer(0);
 
     Optional.ofNullable(classifier.itemStore()).ifPresent(informer::itemStore);
+
+    if (classifier.withoutNamespaceIndex()) {
+      // the framework only reads the indexes registered through the resource cache, never this one
+      informer.removeNamespaceIndex();
+    }
 
     configurationService
         .getInformerStoppedHandler()
