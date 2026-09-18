@@ -55,6 +55,7 @@ public abstract class PollingDependentResource<R, P extends HasMetadata, ID>
       EventSourceContext<P> context) {
     return new PollingEventSource<>(
         resourceType(),
+        context,
         new PollingConfiguration<>(name(), this, getPollingPeriod(), resourceIDMapper));
   }
 }

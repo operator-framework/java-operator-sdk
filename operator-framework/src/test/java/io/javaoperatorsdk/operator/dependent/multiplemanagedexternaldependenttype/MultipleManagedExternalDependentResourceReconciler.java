@@ -96,6 +96,7 @@ public class MultipleManagedExternalDependentResourceReconciler
         pollingEventSource =
             new PollingEventSource<>(
                 ExternalResource.class,
+                context,
                 new PollingConfigurationBuilder<ExternalResource, String>(
                         fetcher, Duration.ofMillis(1000L))
                     .withName(EVENT_SOURCE_NAME)
