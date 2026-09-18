@@ -58,6 +58,7 @@ public class InformerConfiguration<R extends HasMetadata> {
   private Long informerListLimit;
   private FieldSelector fieldSelector;
   private Boolean comparableResourceVersions;
+  private Boolean withoutNamespaceIndex;
 
   protected InformerConfiguration(
       Class<R> resourceClass,
@@ -75,6 +76,7 @@ public class InformerConfiguration<R extends HasMetadata> {
       Long informerListLimit,
       FieldSelector fieldSelector,
       Boolean comparableResourceVersions,
+      Boolean withoutNamespaceIndex,
       // TODO for removal in major release
       Duration ghostResourceCacheCheckInterval) {
     this(resourceClass, resourceGroupVersionKind);
@@ -91,6 +93,7 @@ public class InformerConfiguration<R extends HasMetadata> {
     this.informerListLimit = informerListLimit;
     this.fieldSelector = fieldSelector;
     this.comparableResourceVersions = comparableResourceVersions;
+    this.withoutNamespaceIndex = withoutNamespaceIndex;
   }
 
   private InformerConfiguration(Class<R> resourceClass, GroupVersionKind resourceGroupVersionKind) {
@@ -140,6 +143,7 @@ public class InformerConfiguration<R extends HasMetadata> {
             original.informerListLimit,
             original.fieldSelector,
             original.comparableResourceVersions,
+            original.withoutNamespaceIndex,
             null)
         .builder;
   }
@@ -332,6 +336,15 @@ public class InformerConfiguration<R extends HasMetadata> {
     return comparableResourceVersions;
   }
 
+  /**
+   * Whether the namespace index the underlying informer maintains by default is removed.
+   *
+   * @see Informer#withoutNamespaceIndex()
+   */
+  public boolean isWithoutNamespaceIndex() {
+    return withoutNamespaceIndex;
+  }
+
   @SuppressWarnings("UnusedReturnValue")
   public class Builder {
 
@@ -349,6 +362,9 @@ public class InformerConfiguration<R extends HasMetadata> {
       if (comparableResourceVersions == null) {
         comparableResourceVersions = DEFAULT_COMPARABLE_RESOURCE_VERSION;
       }
+      if (withoutNamespaceIndex == null) {
+        withoutNamespaceIndex = DEFAULT_WITHOUT_NAMESPACE_INDEX;
+      }
 
       return InformerConfiguration.this;
     }
@@ -363,6 +379,9 @@ public class InformerConfiguration<R extends HasMetadata> {
       }
       if (comparableResourceVersions == null) {
         comparableResourceVersions = DEFAULT_COMPARABLE_RESOURCE_VERSION;
+      }
+      if (withoutNamespaceIndex == null) {
+        withoutNamespaceIndex = DEFAULT_WITHOUT_NAMESPACE_INDEX;
       }
 
       return InformerConfiguration.this;
@@ -417,6 +436,7 @@ public class InformerConfiguration<R extends HasMetadata> {
                     .map(f -> new FieldSelector.Field(f.path(), f.value(), f.negated()))
                     .toList()));
         withComparableResourceVersions(informerConfig.comparableResourceVersions());
+        withoutNamespaceIndex(informerConfig.withoutNamespaceIndex());
       }
       return this;
     }
@@ -531,6 +551,16 @@ public class InformerConfiguration<R extends HasMetadata> {
       return fieldSelector == null
           || fieldSelector.getFields() == null
           || fieldSelector.getFields().isEmpty();
+    }
+
+    /**
+     * Whether to remove the namespace index the underlying informer maintains by default.
+     *
+     * @see Informer#withoutNamespaceIndex()
+     */
+    public Builder withoutNamespaceIndex(boolean withoutNamespaceIndex) {
+      InformerConfiguration.this.withoutNamespaceIndex = withoutNamespaceIndex;
+      return this;
     }
 
     public Builder withComparableResourceVersions(boolean comparableResourceVersions) {

@@ -43,6 +43,14 @@ public class DefaultInformerPool extends AbstractInformerPool {
     synchronized (this) {
       var pooled = informers.get(classifier);
       if (pooled == null) {
+        if (informers.keySet().stream()
+            .anyMatch(existing -> existing.differsOnlyByNamespaceIndex(classifier))) {
+          log.warn(
+              "Creating a second informer for classifier {} that differs from an existing one only"
+                  + " by withoutNamespaceIndex, so the resource type is cached twice. Set the"
+                  + " option the same way on both to share one informer.",
+              classifier);
+        }
         informer = createInformer(classifier);
         informers.put(classifier, new PooledInformer(informer, new AtomicInteger(1)));
         log.debug(

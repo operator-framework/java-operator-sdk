@@ -36,6 +36,9 @@ import io.javaoperatorsdk.operator.processing.GroupVersionKind;
  *       limit still share an informer; the limit of whichever classifier created the informer is
  *       kept (a pool is expected to warn about this, see {@link
  *       #differsOnlyByInformerListLimit(InformerClassifier)}).
+ *   <li>{@link #withoutNamespaceIndex()} on the other hand <strong>is</strong> part of the
+ *       identity: the namespace index cannot be present for one event source and absent for another
+ *       that shares the same informer, so event sources disagreeing on it get separate informers.
  *   <li>Indexers are not part of the classifier at all: they are registered on the informer under a
  *       name qualified with the event source that added them, so those of different event sources
  *       can live side by side on a shared informer without colliding.
@@ -61,7 +64,8 @@ public record InformerClassifier<R extends HasMetadata>(
     GroupVersionKind groupVersionKind,
     FieldSelector fieldSelector,
     Long informerListLimit,
-    ItemStore<R> itemStore) {
+    ItemStore<R> itemStore,
+    boolean withoutNamespaceIndex) {
 
   @Override
   public boolean equals(Object o) {
@@ -71,6 +75,16 @@ public record InformerClassifier<R extends HasMetadata>(
     if (!(o instanceof InformerClassifier<?> that)) {
       return false;
     }
+    return equalsIgnoringNamespaceIndex(that)
+        && withoutNamespaceIndex == that.withoutNamespaceIndex;
+  }
+
+  /**
+   * Equality of everything the identity is made of except {@link #withoutNamespaceIndex()}, so that
+   * {@link #equals(Object)} and {@link #differsOnlyByNamespaceIndex(InformerClassifier)} cannot
+   * drift apart when a component is added.
+   */
+  private boolean equalsIgnoringNamespaceIndex(InformerClassifier<?> that) {
     return client == that.client
         && Objects.equals(labelSelector, that.labelSelector)
         && Objects.equals(shardSelector, that.shardSelector)
@@ -91,7 +105,8 @@ public record InformerClassifier<R extends HasMetadata>(
         resourceClass,
         groupVersionKind,
         fieldSelector,
-        itemStore);
+        itemStore,
+        withoutNamespaceIndex);
   }
 
   /**
@@ -123,6 +138,8 @@ public record InformerClassifier<R extends HasMetadata>(
         + informerListLimit
         + ", itemStore="
         + itemStore
+        + ", withoutNamespaceIndex="
+        + withoutNamespaceIndex
         + "]";
   }
 
@@ -139,5 +156,15 @@ public record InformerClassifier<R extends HasMetadata>(
    */
   public boolean differsOnlyByInformerListLimit(InformerClassifier<?> other) {
     return equals(other) && !Objects.equals(informerListLimit, other.informerListLimit);
+  }
+
+  /**
+   * Checks whether this classifier and the other are equal in every attribute except for {@link
+   * #withoutNamespaceIndex()}, which differs between them. Unlike the list limit, that setting is
+   * part of the identity, so such a pair is served by two informers rather than one.
+   */
+  public boolean differsOnlyByNamespaceIndex(InformerClassifier<?> other) {
+    return equalsIgnoringNamespaceIndex(other)
+        && withoutNamespaceIndex != other.withoutNamespaceIndex;
   }
 }

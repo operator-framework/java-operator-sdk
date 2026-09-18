@@ -385,6 +385,7 @@ josdk.controller.mycontroller.namespaces=team-a,team-b
 | `josdk.controller.<name>.informer.shard-selector` | `String` | Shard selector for the primary resource informer (alias for `shard-selector`) |
 | `josdk.controller.<name>.informer.list-limit` | `Long` | Page size for paginated informer list requests; omit for no pagination |
 | `josdk.controller.<name>.informer.comparable-resource-versions` | `Boolean` | Whether the resource versions of the primary resource can be treated as integers and thus compared |
+| `josdk.controller.<name>.informer.without-namespace-index` | `Boolean` | Removes the namespace index the informer maintains; defaults to `false`. See [Removing the Namespace Index](../eventing#removing-the-namespace-index) |
 
 #### Retry
 

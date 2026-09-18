@@ -26,6 +26,7 @@ import java.util.stream.Collectors;
 
 import org.junit.jupiter.api.Test;
 
+import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.javaoperatorsdk.operator.api.config.BaseConfigurationService;
 import io.javaoperatorsdk.operator.api.config.ConfigurationService;
 import io.javaoperatorsdk.operator.api.config.ConfigurationServiceOverrider;
@@ -222,8 +223,21 @@ class ConfigLoaderTest {
             "josdk.controller.ctrl.informer.list-limit",
             "josdk.controller.ctrl.informer.comparable-resource-versions",
             "josdk.controller.ctrl.namespaces",
+            "josdk.controller.ctrl.informer.without-namespace-index",
             "josdk.controller.ctrl.rate-limiter.refresh-period",
             "josdk.controller.ctrl.rate-limiter.limit-for-period");
+  }
+
+  @Test
+  void applyControllerConfigsAppliesInformerWithoutNamespaceIndex() {
+    var loader =
+        new ConfigLoader(
+            mapProvider(Map.of("josdk.controller.ctrl.informer.without-namespace-index", true)));
+    var overrider = ControllerConfigurationOverrider.override(baseControllerConfig());
+
+    loader.<ConfigMap>applyControllerConfigs("ctrl").accept(overrider);
+
+    assertThat(overrider.build().getInformerConfig().isWithoutNamespaceIndex()).isTrue();
   }
 
   @Test
@@ -626,8 +640,18 @@ class ConfigLoaderTest {
     assertThat(betaRetry.getMaxAttempts()).isEqualTo(9);
   }
 
+  private static boolean isTypeCompatible(Class<?> methodParam, Class<?> bindingType) {
+    if (methodParam == bindingType) return true;
+    if (methodParam == boolean.class && bindingType == Boolean.class) return true;
+    if (methodParam == Boolean.class && bindingType == boolean.class) return true;
+    if (methodParam == int.class && bindingType == Integer.class) return true;
+    if (methodParam == Integer.class && bindingType == int.class) return true;
+    if (methodParam == long.class && bindingType == Long.class) return true;
+    if (methodParam == Long.class && bindingType == long.class) return true;
+    if (methodParam == double.class && bindingType == Double.class) return true;
+    return methodParam == Double.class && bindingType == double.class;
   // -- watched namespaces -----------------------------------------------------
-
+  }
   private static Set<String> applyAndGetNamespaces(
       java.util.function.Consumer<
               ControllerConfigurationOverrider<io.fabric8.kubernetes.api.model.ConfigMap>>
