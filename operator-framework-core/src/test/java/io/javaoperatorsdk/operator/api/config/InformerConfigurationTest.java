@@ -76,6 +76,28 @@ class InformerConfigurationTest {
   }
 
   @Test
+  void keepsTheNamespaceIndexByDefault() {
+    final var informerConfig = InformerConfiguration.builder(ConfigMap.class).build();
+    assertFalse(informerConfig.isWithoutNamespaceIndex());
+  }
+
+  @Test
+  void keepsTheNamespaceIndexByDefaultForController() {
+    final var informerConfig = InformerConfiguration.builder(ConfigMap.class).buildForController();
+    assertFalse(informerConfig.isWithoutNamespaceIndex());
+  }
+
+  @Test
+  void withoutNamespaceIndexIsCarriedOverWhenCopyingTheConfiguration() {
+    final var original =
+        InformerConfiguration.builder(ConfigMap.class).withoutNamespaceIndex(true).build();
+
+    final var copy = InformerConfiguration.builder(original).build();
+
+    assertTrue(copy.isWithoutNamespaceIndex());
+  }
+
+  @Test
   void nullShardSelectorByDefault() {
     final var informerConfig = InformerConfiguration.builder(ConfigMap.class).build();
     assertNull(informerConfig.getShardSelector());
