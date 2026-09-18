@@ -128,7 +128,7 @@
         <version>${git-commit-id-maven-plugin.version}</version>
         <configuration>
           <generateGitPropertiesFile>true</generateGitPropertiesFile>
-          <generateGitPropertiesFilename>${project.build.outputDirectory}/version.properties</generateGitPropertiesFilename>
+          <generateGitPropertiesFilename>${project.build.outputDirectory}/operator-sdk-version.properties</generateGitPropertiesFilename>
           <includeOnlyProperties>
             <includeOnlyProperty>^git.build.time$</includeOnlyProperty>
             <includeOnlyProperty>^git.commit.id.(abbrev|full)$</includeOnlyProperty>
