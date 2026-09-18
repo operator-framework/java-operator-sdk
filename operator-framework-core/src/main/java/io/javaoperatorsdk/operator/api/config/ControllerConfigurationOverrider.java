@@ -199,6 +199,18 @@ public class ControllerConfigurationOverrider<R extends HasMetadata> {
   }
 
   /**
+   * Sets whether the resource versions of the watched primary resource can be considered integers,
+   * and thus compared to each other.
+   *
+   * @see io.javaoperatorsdk.operator.api.config.informer.Informer#comparableResourceVersions()
+   */
+  public ControllerConfigurationOverrider<R> withComparableResourceVersions(
+      boolean comparableResourceVersions) {
+    config.withComparableResourceVersions(comparableResourceVersions);
+    return this;
+  }
+
+  /**
    * Sets a max page size limit when starting the informer. This will result in pagination while
    * populating the cache. This means that longer lists will take multiple requests to fetch. See
    * {@link io.fabric8.kubernetes.client.dsl.Informable#withLimit(Long)} for more details.

@@ -216,9 +216,11 @@ class ConfigLoaderTest {
             "josdk.controller.ctrl.max-reconciliation-interval",
             "josdk.controller.ctrl.field-manager",
             "josdk.controller.ctrl.trigger-reconciler-on-all-events",
+            "josdk.controller.ctrl.default-filters",
             "josdk.controller.ctrl.informer.label-selector",
             "josdk.controller.ctrl.informer.shard-selector",
             "josdk.controller.ctrl.informer.list-limit",
+            "josdk.controller.ctrl.informer.comparable-resource-versions",
             "josdk.controller.ctrl.namespaces",
             "josdk.controller.ctrl.rate-limiter.refresh-period",
             "josdk.controller.ctrl.rate-limiter.limit-for-period");
@@ -273,60 +275,129 @@ class ConfigLoaderTest {
           Duration.class,
           String.class);
 
-  @Test
-  void operatorBindingsCoverAllSingleScalarSettersOnConfigurationServiceOverrider() {
-    Set<String> expectedSetters =
-        Arrays.stream(ConfigurationServiceOverrider.class.getMethods())
-            .filter(m -> m.getParameterCount() == 1)
-            .filter(m -> SUPPORTED_TYPES.contains(m.getParameterTypes()[0]))
-            .filter(m -> m.getReturnType() == ConfigurationServiceOverrider.class)
-            .map(java.lang.reflect.Method::getName)
-            .collect(Collectors.toSet());
+  /**
+   * Maps every scalar setter of {@link ConfigurationServiceOverrider} to the property key that is
+   * expected to drive it. Matching on the setter name (instead of only on the parameter type) is
+   * what makes the coverage test below able to detect a setter that has no key at all.
+   */
+  private static final Map<String, String> EXPECTED_OPERATOR_KEYS_BY_SETTER =
+      Map.ofEntries(
+          Map.entry("checkingCRDAndValidateLocalModel", "check-crd"),
+          Map.entry("withReconciliationTerminationTimeout", "reconciliation.termination-timeout"),
+          Map.entry("withConcurrentReconciliationThreads", "reconciliation.concurrent-threads"),
+          Map.entry("withConcurrentWorkflowExecutorThreads", "workflow.executor-threads"),
+          Map.entry("withCloseClientOnStop", "close-client-on-stop"),
+          Map.entry(
+              "withStopOnInformerErrorDuringStartup", "informer.stop-on-error-during-startup"),
+          Map.entry("withCacheSyncTimeout", "informer.cache-sync-timeout"),
+          Map.entry(
+              "withSSABasedCreateUpdateMatchForDependentResources",
+              "dependent-resources.ssa-based-create-update-match"),
+          Map.entry("withUseSSAToPatchPrimaryResource", "use-ssa-to-patch-primary-resource"),
+          Map.entry(
+              "withCloneSecondaryResourcesWhenGettingFromCache",
+              "clone-secondary-resources-when-getting-from-cache"),
+          Map.entry("withClusterScopedEventNamespace", "events.cluster-scoped-namespace"));
 
-    Set<String> boundMethodNames =
-        ConfigLoader.OPERATOR_BINDINGS.stream()
-            .flatMap(
-                b ->
-                    Arrays.stream(ConfigurationServiceOverrider.class.getMethods())
-                        .filter(m -> m.getParameterCount() == 1)
-                        .filter(m -> isTypeCompatible(m.getParameterTypes()[0], b.type()))
-                        .filter(m -> m.getReturnType() == ConfigurationServiceOverrider.class)
-                        .map(java.lang.reflect.Method::getName))
-            .collect(Collectors.toSet());
+  /**
+   * Maps every scalar setter of {@link ControllerConfigurationOverrider} to the property key suffix
+   * that is expected to drive it. Setters that are intentionally not configurable are listed in
+   * {@link #CONTROLLER_SETTERS_WITHOUT_KEY} instead.
+   */
+  private static final Map<String, String> EXPECTED_CONTROLLER_KEYS_BY_SETTER =
+      Map.ofEntries(
+          Map.entry("withFinalizer", "finalizer"),
+          Map.entry("withGenerationAware", "generation-aware"),
+          Map.entry("withLabelSelector", "label-selector"),
+          Map.entry("withShardSelector", "shard-selector"),
+          Map.entry("withReconciliationMaxInterval", "max-reconciliation-interval"),
+          Map.entry("withFieldManager", "field-manager"),
+          Map.entry("withTriggerReconcilerOnAllEvents", "trigger-reconciler-on-all-events"),
+          Map.entry("withDefaultFilters", "default-filters"),
+          Map.entry("withInformerListLimit", "informer.list-limit"),
+          Map.entry("withComparableResourceVersions", "informer.comparable-resource-versions"),
+          // not a plain binding: the value is a comma-separated list of namespaces
+          Map.entry("settingNamespace", "namespaces"));
 
-    assertThat(boundMethodNames)
-        .as("Every scalar setter on ConfigurationServiceOverrider must be covered by a binding")
-        .containsExactlyInAnyOrderElementsOf(expectedSetters);
+  /** Scalar setters that intentionally have no property key. */
+  private static final Set<String> CONTROLLER_SETTERS_WITHOUT_KEY =
+      // the controller name is part of the key itself, so it cannot be configured by a key
+      Set.of("withName");
+
+  private static Set<String> scalarSetterNames(Class<?> overriderClass) {
+    return Arrays.stream(overriderClass.getMethods())
+        .filter(m -> m.getParameterCount() == 1)
+        .filter(m -> SUPPORTED_TYPES.contains(m.getParameterTypes()[0]))
+        .filter(m -> m.getReturnType() == overriderClass)
+        .filter(m -> m.getAnnotation(Deprecated.class) == null)
+        .map(java.lang.reflect.Method::getName)
+        .collect(Collectors.toSet());
+  }
+
+  private static java.util.List<String> queriedKeys(
+      java.util.function.Consumer<ConfigLoader> usage) {
+    var keys = new ArrayList<String>();
+    usage.accept(
+        new ConfigLoader(
+            new ConfigProvider() {
+              @Override
+              public <T> Optional<T> getValue(String key, Class<T> type) {
+                keys.add(key);
+                return Optional.empty();
+              }
+            }));
+    return keys;
   }
 
   @Test
-  void controllerBindingsCoverAllSingleScalarSettersOnControllerConfigurationOverrider() {
-    Set<String> expectedSetters =
-        Arrays.stream(ControllerConfigurationOverrider.class.getMethods())
-            .filter(m -> m.getParameterCount() == 1)
-            .filter(m -> SUPPORTED_TYPES.contains(m.getParameterTypes()[0]))
-            .filter(m -> m.getReturnType() == ControllerConfigurationOverrider.class)
-            .filter(m -> m.getAnnotation(Deprecated.class) == null)
-            .map(java.lang.reflect.Method::getName)
-            .collect(Collectors.toSet());
-
-    Set<String> boundMethodNames =
-        ConfigLoader.CONTROLLER_BINDINGS.stream()
-            .flatMap(
-                b ->
-                    Arrays.stream(ControllerConfigurationOverrider.class.getMethods())
-                        .filter(m -> m.getParameterCount() == 1)
-                        .filter(m -> isTypeCompatible(m.getParameterTypes()[0], b.type()))
-                        .filter(m -> m.getReturnType() == ControllerConfigurationOverrider.class)
-                        .filter(m -> m.getAnnotation(Deprecated.class) == null)
-                        .map(java.lang.reflect.Method::getName))
-            .collect(Collectors.toSet());
-
-    assertThat(boundMethodNames)
+  void everyScalarSetterOnConfigurationServiceOverriderIsMappedToAKey() {
+    assertThat(EXPECTED_OPERATOR_KEYS_BY_SETTER.keySet())
         .as(
-            "Every scalar setter on ControllerConfigurationOverrider should be covered by a"
-                + " binding")
-        .containsExactlyInAnyOrderElementsOf(expectedSetters);
+            "Every scalar setter on ConfigurationServiceOverrider must be mapped to a property key."
+                + " Add the new setter here and bind it in ConfigLoader.OPERATOR_BINDINGS.")
+        .containsExactlyInAnyOrderElementsOf(
+            scalarSetterNames(ConfigurationServiceOverrider.class));
+  }
+
+  @Test
+  void operatorBindingsUseTheExpectedKeysAndTypes() {
+    var boundKeys =
+        ConfigLoader.OPERATOR_BINDINGS.stream().map(ConfigBinding::key).collect(Collectors.toSet());
+
+    assertThat(boundKeys)
+        .as("Every mapped operator key must be bound")
+        .containsAll(EXPECTED_OPERATOR_KEYS_BY_SETTER.values());
+    assertThat(ConfigLoader.OPERATOR_BINDINGS)
+        .allSatisfy(b -> assertThat(SUPPORTED_TYPES).contains(b.type()));
+    assertThat(queriedKeys(ConfigLoader::applyConfigs))
+        .as("Every bound operator key must actually be looked up")
+        .containsAll(boundKeys.stream().map(k -> "josdk." + k).collect(Collectors.toSet()));
+  }
+
+  @Test
+  void everyScalarSetterOnControllerConfigurationOverriderIsMappedToAKey() {
+    var mapped = new java.util.HashSet<>(EXPECTED_CONTROLLER_KEYS_BY_SETTER.keySet());
+    mapped.addAll(CONTROLLER_SETTERS_WITHOUT_KEY);
+
+    assertThat(mapped)
+        .as(
+            "Every scalar setter on ControllerConfigurationOverrider must be mapped to a property"
+                + " key. Add the new setter here and bind it in ConfigLoader.CONTROLLER_BINDINGS,"
+                + " or list it in CONTROLLER_SETTERS_WITHOUT_KEY if it is not configurable.")
+        .containsExactlyInAnyOrderElementsOf(
+            scalarSetterNames(ControllerConfigurationOverrider.class));
+  }
+
+  @Test
+  void controllerBindingsUseTheExpectedKeysAndTypes() {
+    assertThat(ConfigLoader.CONTROLLER_BINDINGS)
+        .allSatisfy(b -> assertThat(SUPPORTED_TYPES).contains(b.type()));
+    assertThat(queriedKeys(loader -> loader.applyControllerConfigs("ctrl")))
+        .as("Every mapped controller key must actually be looked up")
+        .containsAll(
+            EXPECTED_CONTROLLER_KEYS_BY_SETTER.values().stream()
+                .map(k -> "josdk.controller.ctrl." + k)
+                .collect(Collectors.toSet()));
   }
 
   // -- leader election --------------------------------------------------------
@@ -655,16 +726,52 @@ class ConfigLoaderTest {
         .containsExactlyInAnyOrder("beta-ns1", "beta-ns2");
   }
 
-  private static boolean isTypeCompatible(Class<?> methodParam, Class<?> bindingType) {
-    if (methodParam == bindingType) return true;
-    if (methodParam == boolean.class && bindingType == Boolean.class) return true;
-    if (methodParam == Boolean.class && bindingType == boolean.class) return true;
-    if (methodParam == int.class && bindingType == Integer.class) return true;
-    if (methodParam == Integer.class && bindingType == int.class) return true;
-    if (methodParam == long.class && bindingType == Long.class) return true;
-    if (methodParam == Long.class && bindingType == long.class) return true;
-    if (methodParam == double.class && bindingType == Double.class) return true;
-    if (methodParam == Double.class && bindingType == double.class) return true;
-    return false;
+  // -- informer and filter flags ----------------------------------------------
+
+  private static io.javaoperatorsdk.operator.api.config.ControllerConfiguration<
+          io.fabric8.kubernetes.api.model.ConfigMap>
+      applyAndBuild(
+          java.util.function.Consumer<
+                  ControllerConfigurationOverrider<io.fabric8.kubernetes.api.model.ConfigMap>>
+              consumer) {
+    var overrider = ControllerConfigurationOverrider.override(baseControllerConfig());
+    consumer.accept(overrider);
+    return overrider.build();
+  }
+
+  @Test
+  void defaultFiltersAreLeftUntouchedWhenPropertyIsAbsent() {
+    var loader = new ConfigLoader(mapProvider(Map.of()));
+    assertThat(applyAndBuild(loader.applyControllerConfigs("ctrl")).isDefaultFilters()).isTrue();
+  }
+
+  @Test
+  void defaultFiltersCanBeDisabled() {
+    var loader =
+        new ConfigLoader(mapProvider(Map.of("josdk.controller.ctrl.default-filters", false)));
+    assertThat(applyAndBuild(loader.applyControllerConfigs("ctrl")).isDefaultFilters()).isFalse();
+  }
+
+  @Test
+  void comparableResourceVersionsAreLeftUntouchedWhenPropertyIsAbsent() {
+    var loader = new ConfigLoader(mapProvider(Map.of()));
+    assertThat(
+            applyAndBuild(loader.applyControllerConfigs("ctrl"))
+                .getInformerConfig()
+                .isComparableResourceVersions())
+        .isEqualTo(baseControllerConfig().getInformerConfig().isComparableResourceVersions());
+  }
+
+  @Test
+  void comparableResourceVersionsCanBeDisabled() {
+    var loader =
+        new ConfigLoader(
+            mapProvider(
+                Map.of("josdk.controller.ctrl.informer.comparable-resource-versions", false)));
+    assertThat(
+            applyAndBuild(loader.applyControllerConfigs("ctrl"))
+                .getInformerConfig()
+                .isComparableResourceVersions())
+        .isFalse();
   }
 }
