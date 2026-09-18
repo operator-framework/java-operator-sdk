@@ -137,7 +137,7 @@ class WorkflowCleanupExecutor<P extends HasMetadata> extends AbstractWorkflowExe
   private boolean allDependentsCleaned(DependentResourceNode dependentResourceNode) {
     List<DependentResourceNode> parents = dependentResourceNode.getParents();
     return parents.isEmpty()
-        || parents.stream().allMatch(d -> alreadyVisited(d) && !postDeleteConditionNotMet(d));
+        || parents.stream().allMatch(d -> alreadyVisited(d) && postDeleteConditionMet(d));
   }
 
   @SuppressWarnings("unchecked")
