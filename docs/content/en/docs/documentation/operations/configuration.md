@@ -23,6 +23,34 @@ Operator operator = new Operator( override -> override
         .withLeaderElectionConfiguration(new LeaderElectionConfiguration("bar", "barNS")));
 ```
 
+### Virtual Threads
+
+Reconciliation is mostly about blocking: talking to the Kubernetes API server or to external
+systems. Virtual threads make such blocking calls much cheaper than platform threads, and the
+framework can be switched over to them with a single flag:
+
+```java
+Operator operator = new Operator(override -> override.withUseVirtualThreads(true));
+```
+
+When enabled, reconciliations, dependent resource workflows and the framework's internal
+housekeeping (starting the informers, for example) all run on virtual threads.
+
+Enabling virtual threads does **not** remove the concurrency limits, parallelism is configured
+exactly as before: `withConcurrentReconciliationThreads(int)` still caps how many reconciliations
+run at the same time and `withConcurrentWorkflowExecutorThreads(int)` how many dependent resources
+of a workflow are processed concurrently. Only the threads backing those limits change. Since
+virtual threads are cheap, these limits can usually be raised significantly compared to what is
+reasonable with platform threads.
+
+Two things to keep in mind:
+
+- Virtual threads require Java 21 or later at runtime. When the flag is set on an older JVM, a
+  warning is logged and platform threads are used instead, so the same configuration works on any
+  supported Java version.
+- A custom `ExecutorService` provided through `withExecutorService(...)` or
+  `withWorkflowExecutorService(...)` is always used as is, the flag has no effect on it.
+
 ## Reconciler-Level Configuration
 
 While reconcilers are typically configured using the `@ControllerConfiguration` annotation, you can also override configuration at runtime when registering the reconciler with the operator. You can either:
@@ -265,6 +293,7 @@ All operator-level keys are prefixed with `josdk.`.
 |---|---|---|
 | `josdk.check-crd` | `Boolean` | Validate CRDs against local model on startup |
 | `josdk.close-client-on-stop` | `Boolean` | Close the Kubernetes client when the operator stops |
+| `josdk.use-virtual-threads` | `Boolean` | Run the framework's concurrent work on virtual threads (requires Java 21+ at runtime) |
 | `josdk.use-ssa-to-patch-primary-resource` | `Boolean` | Use Server-Side Apply to patch the primary resource |
 | `josdk.clone-secondary-resources-when-getting-from-cache` | `Boolean` | Clone secondary resources on cache reads |
 
