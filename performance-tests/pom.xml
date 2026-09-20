@@ -40,5 +40,25 @@
     <!-- nothing below performance-tests is ever published, but the modules are installed locally
          so that single module builds can resolve them -->
     <maven.deploy.skip>true</maven.deploy.skip>
+    <skipPerformanceTests>true</skipPerformanceTests>
+    <jmh.version>1.37</jmh.version>
+    <jackson.version>2.21.4</jackson.version>
+    <maven-shade-plugin.version>3.6.2</maven-shade-plugin.version>
   </properties>
+
+  <dependencyManagement>
+    <dependencies>
+      <dependency>
+        <groupId>com.fasterxml.jackson.core</groupId>
+        <artifactId>jackson-databind</artifactId>
+        <version>${jackson.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>io.javaoperatorsdk</groupId>
+        <artifactId>operator-framework-core</artifactId>
+        <version>${project.version}</version>
+        <type>test-jar</type>
+      </dependency>
+    </dependencies>
+  </dependencyManagement>
 </project>
