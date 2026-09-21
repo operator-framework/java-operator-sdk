@@ -318,8 +318,13 @@ public class BaseConfigurationService extends AbstractConfigurationService {
     final var dependentFieldManager =
         fieldManager.equals(CONTROLLER_NAME_AS_FIELD_MANAGER) ? name : fieldManager;
 
+    // the deprecated triggerReconcilerOnAllEvent is still honored, otherwise enabling all-event
+    // mode under its former name would be silently ignored
+    @SuppressWarnings("removal")
     var triggerReconcilerOnAllEvents =
-        annotation != null && annotation.triggerReconcilerOnAllEvents();
+        annotation != null
+            && (annotation.triggerReconcilerOnAllEvents()
+                || annotation.triggerReconcilerOnAllEvent());
 
     var defaultFilters = annotation == null || annotation.defaultFilters();
 
