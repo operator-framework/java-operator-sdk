@@ -172,6 +172,10 @@ public class ConfigLoader {
               Boolean.class,
               ControllerConfigurationOverrider::withTriggerReconcilerOnAllEvents),
           new ConfigBinding<>(
+              "default-filters",
+              Boolean.class,
+              ControllerConfigurationOverrider::withDefaultFilters),
+          new ConfigBinding<>(
               "informer.label-selector",
               String.class,
               ControllerConfigurationOverrider::withLabelSelector),
@@ -182,7 +186,11 @@ public class ConfigLoader {
           new ConfigBinding<>(
               "informer.list-limit",
               Long.class,
-              ControllerConfigurationOverrider::withInformerListLimit));
+              ControllerConfigurationOverrider::withInformerListLimit),
+          new ConfigBinding<>(
+              "informer.comparable-resource-versions",
+              Boolean.class,
+              ControllerConfigurationOverrider::withComparableResourceVersions));
 
   private final ConfigProvider configProvider;
 
