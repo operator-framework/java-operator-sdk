@@ -122,7 +122,7 @@ public class ConfigurationServiceOverrider {
 
   /**
    * Makes the framework run the tasks it executes concurrently on virtual threads instead of
-   * platform threads. Requires Java 21 or later at runtime, see {@link
+   * platform threads. Officially supported on Java 25 or later, see {@link
    * ConfigurationService#useVirtualThreads()} for the details.
    *
    * @param useVirtualThreads {@code true} to use virtual threads

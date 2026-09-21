@@ -251,9 +251,11 @@ public interface ConfigurationService {
    * pool of platform threads anymore. Since virtual threads are cheap, those limits can be set
    * considerably higher than what would be reasonable for platform threads.
    *
-   * <p>Requires Java 21 or later at runtime. When enabled on an older JVM, a warning is logged and
-   * platform threads are used, so that the same configuration works regardless of the Java version
-   * the operator runs on.
+   * <p>Officially supported on Java 25 or later. Virtual threads exist as of Java 21 and are used
+   * there as well, but before Java 25 a virtual thread pins its carrier thread while inside a
+   * {@code synchronized} block, which <a href="https://openjdk.org/jeps/491">JEP 491</a> removed in
+   * Java 25. On a JVM without virtual threads at all, a warning is logged and platform threads are
+   * used, so that the same configuration works regardless of the Java version the operator runs on.
    *
    * <p>Note that this only affects the executors created by the framework: a custom {@link
    * ExecutorService} provided through {@link #getExecutorService()} or {@link

@@ -45,7 +45,11 @@ reasonable with platform threads.
 
 Two things to keep in mind:
 
-- Virtual threads require Java 21 or later at runtime. When the flag is set on an older JVM, a
+- Virtual threads are officially supported on **Java 25 or later**. They exist from Java 21 on and
+  the flag does enable them there, but before Java 25 a virtual thread pins its carrier thread
+  while it is inside a `synchronized` block, which can starve the carrier pool. [JEP
+  491](https://openjdk.org/jeps/491), delivered in Java 25, removed that pinning, so this is the
+  baseline the framework supports. On a JVM without virtual threads at all (below Java 21) a
   warning is logged and platform threads are used instead, so the same configuration works on any
   supported Java version.
 - A custom `ExecutorService` provided through `withExecutorService(...)` or
@@ -293,7 +297,7 @@ All operator-level keys are prefixed with `josdk.`.
 |---|---|---|
 | `josdk.check-crd` | `Boolean` | Validate CRDs against local model on startup |
 | `josdk.close-client-on-stop` | `Boolean` | Close the Kubernetes client when the operator stops |
-| `josdk.use-virtual-threads` | `Boolean` | Run the framework's concurrent work on virtual threads (requires Java 21+ at runtime) |
+| `josdk.use-virtual-threads` | `Boolean` | Run the framework's concurrent work on virtual threads (officially supported on Java 25+ at runtime) |
 | `josdk.use-ssa-to-patch-primary-resource` | `Boolean` | Use Server-Side Apply to patch the primary resource |
 | `josdk.clone-secondary-resources-when-getting-from-cache` | `Boolean` | Clone secondary resources on cache reads |
 

@@ -89,7 +89,8 @@ final class VirtualThreads {
     if (UNSUPPORTED_WARNING_LOGGED.compareAndSet(false, true)) {
       log.warn(
           "Virtual threads were requested but are not supported by the JVM in use (Java {}, Java 21"
-              + " or later is required). Falling back to platform threads.",
+              + " or later is required, Java 25 or later is officially supported). Falling back to"
+              + " platform threads.",
           Runtime.version().feature());
     }
     return false;
@@ -99,7 +100,8 @@ final class VirtualThreads {
   static ExecutorService newVirtualThreadPerTaskExecutor() {
     if (!isSupported()) {
       throw new OperatorException(
-          "Virtual threads are not supported by the JVM in use, Java 21 or later is required");
+          "Virtual threads are not supported by the JVM in use, Java 21 or later is required"
+              + " (Java 25 or later is officially supported)");
     }
     try {
       return (ExecutorService) NEW_VIRTUAL_THREAD_PER_TASK_EXECUTOR.invokeExact();
