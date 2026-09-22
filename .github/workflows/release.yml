@@ -5,12 +5,6 @@ on:
   release:
     types: [ released ]
 
-# Releases push commits to the branch they are cut from, so run them one at a
-# time rather than letting two overlap on the same branch.
-concurrency:
-  group: ${{ github.workflow }}
-  cancel-in-progress: false
-
 permissions:
   contents: read
 

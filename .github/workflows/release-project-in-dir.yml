@@ -29,10 +29,35 @@ jobs:
         uses: actions/checkout@v7
         with:
           ref: "${{ inputs.version_branch }}"
+          # Full history and tags are needed to check where the release tag
+          # currently points relative to the branch.
+          fetch-depth: 0
+          fetch-tags: true
 
       - name: Resolve checked-out commit
         id: resolve-sha
         run: echo "commit=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+
+      - name: Check the release tag can be moved onto this branch
+        env:
+          RELEASE_TAG: ${{ inputs.release_tag }}
+          TARGET_BRANCH: ${{ inputs.version_branch }}
+        run: |
+          set -euo pipefail
+
+          # finalize-release moves the tag onto a commit built on top of this
+          # one, which is only legitimate if the tag already points into this
+          # branch's history. Checking it here rather than after the deploy
+          # means a release cut from an unrelated commit fails while it can
+          # still be retried - once artifacts are in Maven Central they are
+          # immutable.
+          if git rev-parse -q --verify "refs/tags/${RELEASE_TAG}^{commit}" >/dev/null; then
+            CURRENT_TAGGED="$(git rev-parse "refs/tags/${RELEASE_TAG}^{commit}")"
+            if ! git merge-base --is-ancestor "${CURRENT_TAGGED}" HEAD; then
+              echo "Tag ${RELEASE_TAG} points at ${CURRENT_TAGGED}, which is not an ancestor of ${TARGET_BRANCH}"
+              exit 1
+            fi
+          fi
 
       - name: Set up Java and Maven
         uses: actions/setup-java@v6
@@ -106,6 +131,7 @@ jobs:
         id: commits
         env:
           RELEASE_TAG: ${{ inputs.release_tag }}
+          TARGET_BRANCH: ${{ inputs.version_branch }}
         run: |
           set -euo pipefail
 
@@ -117,6 +143,7 @@ jobs:
           }
 
           RELEASE_VERSION="${RELEASE_TAG#v}"
+          DEVELOPMENT_VERSION="$(pom_version)"
 
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
@@ -160,6 +187,17 @@ jobs:
               ;;
           esac
 
+          # The bump is derived from the released version, so releasing a tag
+          # older than the branch's own development version would move the
+          # branch backwards - onto versions that have already been released.
+          # That means the wrong branch was selected for the tag, so stop.
+          if [ "${NEXT_VERSION}" != "${DEVELOPMENT_VERSION}" ] && \
+             [ "$(printf '%s\n%s\n' "${NEXT_VERSION}" "${DEVELOPMENT_VERSION}" | sort -V | head -1)" = "${NEXT_VERSION}" ]; then
+            echo "Next development version ${NEXT_VERSION} would move ${TARGET_BRANCH} back from ${DEVELOPMENT_VERSION}"
+            echo "Is ${RELEASE_TAG} being released from the right branch?"
+            exit 1
+          fi
+
           if git diff --quiet; then
             echo "Branch would be left on release version ${RELEASE_VERSION}"
             exit 1
@@ -168,6 +206,7 @@ jobs:
           echo "Next development version: ${NEXT_VERSION}"
 
       - name: Move release tag onto the release commit
+        id: tag
         env:
           RELEASE_TAG: ${{ inputs.release_tag }}
           RELEASE_COMMIT: ${{ steps.commits.outputs.release_commit }}
@@ -176,16 +215,25 @@ jobs:
 
           # GitHub created the tag on whatever the branch tip was when the
           # release was published, so it is expected to move - but only forward,
-          # onto a descendant. Anything else means the release was cut from a
-          # commit this workflow did not build, and silently discarding it would
-          # lose the tagged state.
-          if git rev-parse -q --verify "refs/tags/${RELEASE_TAG}^{commit}" >/dev/null; then
+          # onto a descendant. publish already checked this against the branch;
+          # repeat it here because the release commit is what actually gets
+          # tagged.
+          #
+          # The OID recorded here is the tag ref itself, not the commit it peels
+          # to, because that is what the push has to lease against. An empty
+          # value means the tag did not exist, which --force-with-lease reads as
+          # "must still not exist".
+          if git rev-parse -q --verify "refs/tags/${RELEASE_TAG}" >/dev/null; then
+            EXPECTED_TAG_OID="$(git rev-parse "refs/tags/${RELEASE_TAG}")"
             CURRENT_TAGGED="$(git rev-parse "refs/tags/${RELEASE_TAG}^{commit}")"
             if ! git merge-base --is-ancestor "${CURRENT_TAGGED}" "${RELEASE_COMMIT}"; then
               echo "Tag ${RELEASE_TAG} points at ${CURRENT_TAGGED}, which is not an ancestor of ${RELEASE_COMMIT}"
               exit 1
             fi
+          else
+            EXPECTED_TAG_OID=""
           fi
+          echo "expected_tag_oid=${EXPECTED_TAG_OID}" >> "$GITHUB_OUTPUT"
 
           git tag -f -a "${RELEASE_TAG}" "${RELEASE_COMMIT}" -m "Release ${RELEASE_TAG}"
 
@@ -193,13 +241,20 @@ jobs:
         env:
           RELEASE_TAG: ${{ inputs.release_tag }}
           TARGET_BRANCH: ${{ inputs.version_branch }}
+          EXPECTED_TAG_OID: ${{ steps.tag.outputs.expected_tag_oid }}
         run: |
           set -euo pipefail
 
           # One atomic push so the branch is never left holding the release
-          # commit without the SNAPSHOT commit that follows it. The branch
-          # refspec is not forced: if something landed on the branch while the
-          # release was being deployed, this fails instead of clobbering it.
-          git push --atomic origin \
+          # commit without the SNAPSHOT commit that follows it.
+          #
+          # Neither ref can be clobbered: the branch refspec is not forced, so a
+          # commit landing during the deploy fails the push, and the tag is
+          # leased against the OID observed during the ancestry check, so a tag
+          # moved by anyone else since then fails it too. --atomic means either
+          # both refs update or neither does.
+          git push --atomic \
+            --force-with-lease="refs/tags/${RELEASE_TAG}:${EXPECTED_TAG_OID}" \
+            origin \
             "HEAD:refs/heads/${TARGET_BRANCH}" \
-            "+refs/tags/${RELEASE_TAG}"
+            "refs/tags/${RELEASE_TAG}:refs/tags/${RELEASE_TAG}"
