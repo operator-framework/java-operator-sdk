@@ -16,10 +16,12 @@ on:
 env:
   # set the target pom to use the input directory as root
   MAVEN_ARGS: -V -ntp -e -f ${{ inputs.project_dir }}/pom.xml
+  ROOT_POM: ${{ inputs.project_dir }}/pom.xml
 
 jobs:
   publish:
     runs-on: ubuntu-latest
+    timeout-minutes: 60
     outputs:
       release_sha: ${{ steps.resolve-sha.outputs.commit }}
     steps:
@@ -48,7 +50,19 @@ jobs:
         env:
           RELEASE_TAG: ${{ inputs.release_tag }}
         run: |
+          set -euo pipefail
           RELEASE_VERSION="${RELEASE_TAG#v}"
+
+          # Only plain major.minor.patch releases are supported. Pre-releases
+          # used to be handled by skipping the SNAPSHOT bump, which left the
+          # branch pinned to the pre-release version; the project does not cut
+          # them any more, so fail here - before anything is deployed - rather
+          # than carry an unused code path through the rest of the workflow.
+          if ! printf '%s' "${RELEASE_VERSION}" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+$'; then
+            echo "Not a plain major.minor.patch release tag: ${RELEASE_TAG}"
+            exit 1
+          fi
+
           ./mvnw ${MAVEN_ARGS} versions:set -DnewVersion="${RELEASE_VERSION}" versions:commit -DprocessAllModules
 
       - name: Publish to Apache Maven Central
@@ -58,64 +72,28 @@ jobs:
           MAVEN_CENTRAL_TOKEN: ${{ secrets.NEXUS_PASSWORD }}
           MAVEN_GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
 
+  # Deliberately a single job. The release commit carries a non-SNAPSHOT version,
+  # and every push to a release branch triggers snapshot-releases.yml, which
+  # deploys with -Prelease. If restoring the SNAPSHOT version were a separate job,
+  # anything that stops it from running - a failed tag push, a skipped run, a
+  # cancellation - would leave the branch on a release version and the next merge
+  # would deploy that version to Maven Central. So both commits and the tag are
+  # built locally and pushed in one atomic push: the branch is never observably
+  # left on a non-SNAPSHOT version.
   finalize-release:
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     needs: publish
     permissions:
       contents: write
     steps:
       - name: Checkout exact published commit
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           ref: "${{ needs.publish.outputs.release_sha }}"
           fetch-depth: 0
-
-      - name: Set up Java and Maven
-        uses: actions/setup-java@v4
-        with:
-          java-version: 17
-          distribution: temurin
-          cache: 'maven'
-
-      - name: Change version to release version
-        env:
-          RELEASE_TAG: ${{ inputs.release_tag }}
-        run: |
-          RELEASE_VERSION="${RELEASE_TAG#v}"
-          ./mvnw ${MAVEN_ARGS} versions:set -DnewVersion="${RELEASE_VERSION}" versions:commit -DprocessAllModules
-
-      - name: Commit and push release version
-        env:
-          TARGET_BRANCH: ${{ inputs.version_branch }}
-          RELEASE_TAG: ${{ inputs.release_tag }}
-        run: |
-          git config --local user.email "action@github.com"
-          git config --local user.name "GitHub Action"
-          if git diff --quiet; then
-            echo "No version changes to commit."
-          else
-            git commit -am "Release ${RELEASE_TAG}"
-            git push origin HEAD:"${TARGET_BRANCH}"
-          fi
-
-      - name: Override release tag to point to release commit
-        env:
-          RELEASE_TAG: ${{ inputs.release_tag }}
-        run: |
-          git tag -f -a "${RELEASE_TAG}" -m "Release ${RELEASE_TAG}"
-          git push -f origin "refs/tags/${RELEASE_TAG}"
-
-  update-working-version:
-    runs-on: ubuntu-latest
-    needs: finalize-release
-    permissions:
-      contents: write
-    if: "!contains(inputs.release_tag, 'RC')"
-    steps:
-      - name: Checkout "${{ inputs.version_branch }}" branch
-        uses: actions/checkout@v7
-        with:
-          ref: "${{ inputs.version_branch }}"
+          # Needed to check where the release tag currently points.
+          fetch-tags: true
 
       - name: Set up Java and Maven
         uses: actions/setup-java@v6
@@ -124,15 +102,104 @@ jobs:
           distribution: temurin
           cache: 'maven'
 
-      - name: Update version to new SNAPSHOT version
+      - name: Build release and next development commits
+        id: commits
+        env:
+          RELEASE_TAG: ${{ inputs.release_tag }}
         run: |
-          ./mvnw ${MAVEN_ARGS} build-helper:parse-version versions:set -DnewVersion=\${parsedVersion.majorVersion}.\${parsedVersion.minorVersion}.\${parsedVersion.nextIncrementalVersion}-SNAPSHOT versions:commit -DprocessAllModules
+          set -euo pipefail
+
+          # Reads the version of the root pom directly, rather than through
+          # help:evaluate, whose banner and log output would have to be filtered
+          # out of stdout first.
+          pom_version() {
+            python3 -c 'import sys, xml.etree.ElementTree as ET; ns = "{http://maven.apache.org/POM/4.0.0}"; root = ET.parse(sys.argv[1]).getroot(); version = root.findtext(ns + "version") or root.findtext(ns + "parent/" + ns + "version"); print(version.strip())' "${ROOT_POM}"
+          }
+
+          RELEASE_VERSION="${RELEASE_TAG#v}"
+
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
-          git commit -m "Set new SNAPSHOT version into pom files." -a
 
-      - name: Push changes to branch
-        uses: ad-m/github-push-action@881a6320fdb16eb5318c5054f31c218aec2b324c # v0.8.0
-        with:
-          branch: "${{ inputs.version_branch }}"
-          github_token: ${{ secrets.GITHUB_TOKEN }}
+          ./mvnw ${MAVEN_ARGS} versions:set -DnewVersion="${RELEASE_VERSION}" versions:commit -DprocessAllModules
+
+          # The whole point of this job is that the tag ends up on a commit whose
+          # poms carry the released version, so assert it rather than trusting
+          # versions:set to have matched every module.
+          ACTUAL_VERSION="$(pom_version)"
+          if [ "${ACTUAL_VERSION}" != "${RELEASE_VERSION}" ]; then
+            echo "Expected version ${RELEASE_VERSION} in ${ROOT_POM} but found ${ACTUAL_VERSION}"
+            exit 1
+          fi
+          case "${ACTUAL_VERSION}" in
+            *-SNAPSHOT)
+              echo "Refusing to tag ${RELEASE_TAG} on a SNAPSHOT version: ${ACTUAL_VERSION}"
+              exit 1
+              ;;
+          esac
+
+          if git diff --quiet; then
+            echo "Version is already ${RELEASE_VERSION}, no release commit needed."
+          else
+            git commit -am "Release ${RELEASE_TAG}"
+          fi
+          RELEASE_COMMIT="$(git rev-parse HEAD)"
+          echo "release_commit=${RELEASE_COMMIT}" >> "$GITHUB_OUTPUT"
+
+          # Development continues on the next incremental version.
+          ./mvnw ${MAVEN_ARGS} build-helper:parse-version versions:set \
+            -DnewVersion='${parsedVersion.majorVersion}.${parsedVersion.minorVersion}.${parsedVersion.nextIncrementalVersion}-SNAPSHOT' \
+            versions:commit -DprocessAllModules
+
+          NEXT_VERSION="$(pom_version)"
+          case "${NEXT_VERSION}" in
+            *-SNAPSHOT) ;;
+            *)
+              echo "Next development version ${NEXT_VERSION} is not a SNAPSHOT"
+              exit 1
+              ;;
+          esac
+
+          if git diff --quiet; then
+            echo "Branch would be left on release version ${RELEASE_VERSION}"
+            exit 1
+          fi
+          git commit -am "Set new SNAPSHOT version into pom files."
+          echo "Next development version: ${NEXT_VERSION}"
+
+      - name: Move release tag onto the release commit
+        env:
+          RELEASE_TAG: ${{ inputs.release_tag }}
+          RELEASE_COMMIT: ${{ steps.commits.outputs.release_commit }}
+        run: |
+          set -euo pipefail
+
+          # GitHub created the tag on whatever the branch tip was when the
+          # release was published, so it is expected to move - but only forward,
+          # onto a descendant. Anything else means the release was cut from a
+          # commit this workflow did not build, and silently discarding it would
+          # lose the tagged state.
+          if git rev-parse -q --verify "refs/tags/${RELEASE_TAG}^{commit}" >/dev/null; then
+            CURRENT_TAGGED="$(git rev-parse "refs/tags/${RELEASE_TAG}^{commit}")"
+            if ! git merge-base --is-ancestor "${CURRENT_TAGGED}" "${RELEASE_COMMIT}"; then
+              echo "Tag ${RELEASE_TAG} points at ${CURRENT_TAGGED}, which is not an ancestor of ${RELEASE_COMMIT}"
+              exit 1
+            fi
+          fi
+
+          git tag -f -a "${RELEASE_TAG}" "${RELEASE_COMMIT}" -m "Release ${RELEASE_TAG}"
+
+      - name: Push release commit, next development commit and tag
+        env:
+          RELEASE_TAG: ${{ inputs.release_tag }}
+          TARGET_BRANCH: ${{ inputs.version_branch }}
+        run: |
+          set -euo pipefail
+
+          # One atomic push so the branch is never left holding the release
+          # commit without the SNAPSHOT commit that follows it. The branch
+          # refspec is not forced: if something landed on the branch while the
+          # release was being deployed, this fails instead of clobbering it.
+          git push --atomic origin \
+            "HEAD:refs/heads/${TARGET_BRANCH}" \
+            "+refs/tags/${RELEASE_TAG}"

@@ -5,6 +5,12 @@ on:
   release:
     types: [ released ]
 
+# Releases push commits to the branch they are cut from, so run them one at a
+# time rather than letting two overlap on the same branch.
+concurrency:
+  group: ${{ github.workflow }}
+  cancel-in-progress: false
+
 permissions:
   contents: read
 
@@ -39,7 +45,6 @@ jobs:
       - if: ${{ startsWith(github.event.release.tag_name, 'v5.' ) }}
         env:
           GH_TOKEN: ${{ github.token }}
-          RAW_TAG: ${{ github.event.release.tag_name }}
         run: |
           RELEASE_VERSION="${RAW_TAG#v}"
           RELEASE_MAJOR_MINOR=$(echo "$RELEASE_VERSION" | cut -d. -f1-2)
@@ -56,8 +61,7 @@ jobs:
 
           # A maintenance branch (e.g. 5.3.x) exists only for streams no longer
           # developed on main, so its absence means main is the stream being
-          # released. Main's pom cannot be used to identify the stream: it carries
-          # the 999-SNAPSHOT sentinel version.
+          # released.
           echo "Release tag major.minor: $RELEASE_MAJOR_MINOR"
 
           # Only 404 means "no such branch". Any other outcome is a lookup failure
@@ -93,8 +97,6 @@ jobs:
           esac
       - if: ${{ env.tmp_version_branch == '' }}
         name: Fail if version_branch is not set
-        env:
-          RAW_TAG: ${{ github.event.release.tag_name }}
         run: |
           echo "Failed to find appropriate branch to release ${RAW_TAG} from"
           exit 1
