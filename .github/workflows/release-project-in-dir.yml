@@ -51,8 +51,15 @@ jobs:
           # means a release cut from an unrelated commit fails while it can
           # still be retried - once artifacts are in Maven Central they are
           # immutable.
-          if git rev-parse -q --verify "refs/tags/${RELEASE_TAG}^{commit}" >/dev/null; then
-            CURRENT_TAGGED="$(git rev-parse "refs/tags/${RELEASE_TAG}^{commit}")"
+          #
+          # Peel the tag in a separate step from testing its existence: a tag
+          # that resolves to something other than a commit must fail loudly
+          # rather than look like an absent tag and skip the check.
+          if git rev-parse -q --verify "refs/tags/${RELEASE_TAG}" >/dev/null; then
+            if ! CURRENT_TAGGED="$(git rev-parse -q --verify "refs/tags/${RELEASE_TAG}^{commit}")"; then
+              echo "Tag ${RELEASE_TAG} does not resolve to a commit"
+              exit 1
+            fi
             if ! git merge-base --is-ancestor "${CURRENT_TAGGED}" HEAD; then
               echo "Tag ${RELEASE_TAG} points at ${CURRENT_TAGGED}, which is not an ancestor of ${TARGET_BRANCH}"
               exit 1
@@ -74,6 +81,7 @@ jobs:
       - name: Change version to release version
         env:
           RELEASE_TAG: ${{ inputs.release_tag }}
+          TARGET_BRANCH: ${{ inputs.version_branch }}
         run: |
           set -euo pipefail
           RELEASE_VERSION="${RELEASE_TAG#v}"
@@ -85,6 +93,20 @@ jobs:
           # than carry an unused code path through the rest of the workflow.
           if ! printf '%s' "${RELEASE_VERSION}" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+$'; then
             echo "Not a plain major.minor.patch release tag: ${RELEASE_TAG}"
+            exit 1
+          fi
+
+          # finalize-release derives the next development version from the
+          # released one, so releasing a version older than the branch already
+          # develops would set the branch back onto versions that are already
+          # released. That means the wrong branch was selected for this tag.
+          # Checked here because the deploy that follows cannot be undone.
+          DEVELOPMENT_VERSION="$(python3 .github/scripts/pom-version.py "${ROOT_POM}")"
+          DEVELOPMENT_BASE="${DEVELOPMENT_VERSION%-SNAPSHOT}"
+          if [ "${RELEASE_VERSION}" != "${DEVELOPMENT_BASE}" ] && \
+             [ "$(printf '%s\n%s\n' "${RELEASE_VERSION}" "${DEVELOPMENT_BASE}" | sort -V | head -1)" = "${RELEASE_VERSION}" ]; then
+            echo "${TARGET_BRANCH} develops ${DEVELOPMENT_VERSION}, which is newer than ${RELEASE_VERSION}"
+            echo "Is ${RELEASE_TAG} being released from the right branch?"
             exit 1
           fi
 
@@ -135,11 +157,8 @@ jobs:
         run: |
           set -euo pipefail
 
-          # Reads the version of the root pom directly, rather than through
-          # help:evaluate, whose banner and log output would have to be filtered
-          # out of stdout first.
           pom_version() {
-            python3 -c 'import sys, xml.etree.ElementTree as ET; ns = "{http://maven.apache.org/POM/4.0.0}"; root = ET.parse(sys.argv[1]).getroot(); version = root.findtext(ns + "version") or root.findtext(ns + "parent/" + ns + "version"); print(version.strip())' "${ROOT_POM}"
+            python3 .github/scripts/pom-version.py "${ROOT_POM}"
           }
 
           RELEASE_VERSION="${RELEASE_TAG#v}"
