@@ -15,13 +15,21 @@
  */
 package io.javaoperatorsdk.operator.processing.dependent.workflow;
 
+import java.util.concurrent.BrokenBarrierException;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.CyclicBarrier;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.RejectedExecutionException;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInfo;
+import org.junit.jupiter.api.Timeout;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -45,13 +53,12 @@ class WorkflowReconcileExecutorTest extends AbstractWorkflowExecutorTest {
   Context<TestCustomResource> mockContext = spy(Context.class);
 
   ExecutorService executorService = Executors.newCachedThreadPool();
-  EventSourceRetriever eventSourceRetriever = mock(EventSourceRetriever.class);
+  EventSourceRetriever<TestCustomResource> eventSourceRetriever = mock();
 
   TestDependent dr3 = new TestDependent("DR_3");
   TestDependent dr4 = new TestDependent("DR_4");
 
   @BeforeEach
-  @SuppressWarnings("unchecked")
   void setup(TestInfo testInfo) {
     log.debug("==> Starting test {}", testInfo.getDisplayName());
     when(mockContext.managedWorkflowAndDependentResourceContext())
@@ -674,6 +681,161 @@ class WorkflowReconcileExecutorTest extends AbstractWorkflowExecutorTest {
   }
 
   @Test
+  @Timeout(10)
+  void deleteScheduledByUnmetPreconditionFinishesBeforeReconcileReturns() {
+    // the delete is scheduled from the completion hook, while the monitor is still held
+    var deleteFinished = new AtomicBoolean(false);
+    var slowDeleter =
+        new TestDeleterDependent("SLOW_DELETER") {
+          @Override
+          public void delete(TestCustomResource primary, Context<TestCustomResource> context) {
+            try {
+              Thread.sleep(200);
+            } catch (InterruptedException e) {
+              Thread.currentThread().interrupt();
+            }
+            deleteFinished.set(true);
+            super.delete(primary, context);
+          }
+        };
+
+    var workflow =
+        new WorkflowBuilder<TestCustomResource>()
+            .addDependentResourceAndConfigure(slowDeleter)
+            .withReconcilePrecondition(notMetCondition)
+            .build();
+
+    workflow.reconcile(new TestCustomResource(), mockContext);
+
+    assertTrue(deleteFinished.get(), "reconcile() returned while the delete was still running");
+  }
+
+  @Test
+  @Timeout(10)
+  void deletedIfReconcilePreconditionNotMetWhileAnotherDeleteCascadeIsRunning() {
+    // the shared dependent's cascade reaches this one while it is still evaluating its precondition
+    var sharedDependentDeleted = new CountDownLatch(1);
+    TestDeleterDependent drDeleter2 = new TestDeleterDependent("DR_DELETER_2");
+    var drDeleter3 =
+        new TestDeleterDependent("DR_DELETER_3") {
+          @Override
+          public void delete(TestCustomResource primary, Context<TestCustomResource> context) {
+            super.delete(primary, context);
+            sharedDependentDeleted.countDown();
+          }
+        };
+    Condition<?, TestCustomResource> blockedNotMetCondition =
+        (dependentResource, primary, context) -> {
+          try {
+            if (!sharedDependentDeleted.await(5, TimeUnit.SECONDS)) {
+              throw new IllegalStateException("the shared dependent was never deleted");
+            }
+          } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new IllegalStateException(e);
+          }
+          return false;
+        };
+
+    var workflow =
+        new WorkflowBuilder<TestCustomResource>()
+            .addDependentResourceAndConfigure(drDeleter)
+            .withReconcilePrecondition(notMetCondition)
+            .addDependentResourceAndConfigure(drDeleter2)
+            .withReconcilePrecondition(blockedNotMetCondition)
+            .addDependentResourceAndConfigure(drDeleter3)
+            .dependsOn(drDeleter, drDeleter2)
+            .build();
+
+    var res = workflow.reconcile(new TestCustomResource(), mockContext);
+
+    assertThat(executionHistory).deleted(drDeleter3, drDeleter, drDeleter2);
+    Assertions.assertThat(res.getErroredDependents()).isEmpty();
+  }
+
+  @Test
+  @Timeout(10)
+  void completesIfSchedulingDeleteForUnmetPreconditionIsRejected() {
+    // the delete is scheduled from a hook that already runs in the node executor's finally block
+    ExecutorService rejectingSecondSubmit = mock();
+    when(rejectingSecondSubmit.submit(any(Runnable.class)))
+        .thenAnswer(invocation -> executorService.submit((Runnable) invocation.getArgument(0)))
+        .thenThrow(new RejectedExecutionException("executor is shut down"));
+    when(mockContext.getWorkflowExecutorService()).thenReturn(rejectingSecondSubmit);
+
+    var workflow =
+        new WorkflowBuilder<TestCustomResource>()
+            .addDependentResourceAndConfigure(drDeleter)
+            .withReconcilePrecondition(notMetCondition)
+            .build();
+
+    var exception =
+        assertThrows(
+            AggregatedOperatorException.class,
+            () -> workflow.reconcile(new TestCustomResource(), mockContext));
+
+    Assertions.assertThat(exception.getAggregatedExceptions())
+        .containsOnlyKeys(drDeleter.name())
+        .extractingByKey(drDeleter.name())
+        .isInstanceOf(RejectedExecutionException.class);
+  }
+
+  @Test
+  @Timeout(10)
+  void activationConditionsEvaluatedConcurrently() {
+    // they can only meet at the barrier if neither of them holds the executor's monitor
+    var rendezvousCondition = rendezvousCondition(new CyclicBarrier(2));
+
+    var workflow =
+        new WorkflowBuilder<TestCustomResource>()
+            .addDependentResourceAndConfigure(dr1)
+            .withActivationCondition(rendezvousCondition)
+            .addDependentResourceAndConfigure(dr2)
+            .withActivationCondition(rendezvousCondition)
+            .build();
+
+    var res = workflow.reconcile(new TestCustomResource(), mockContext);
+
+    assertThat(executionHistory).reconciled(dr1, dr2);
+    Assertions.assertThat(res.getErroredDependents()).isEmpty();
+  }
+
+  @Test
+  void activationConditionErrorAttributedToItsOwnDependent() {
+    var workflow =
+        new WorkflowBuilder<TestCustomResource>()
+            .addDependentResource(dr1)
+            .addDependentResourceAndConfigure(dr2)
+            .dependsOn(dr1)
+            .withActivationCondition(throwingCondition())
+            .addDependentResourceAndConfigure(dr3)
+            .dependsOn(dr1)
+            .withThrowExceptionFurther(false)
+            .build();
+
+    var res = workflow.reconcile(new TestCustomResource(), mockContext);
+
+    Assertions.assertThat(res.getErroredDependents()).containsOnlyKeys(dr2);
+    assertThat(executionHistory).reconciled(dr1, dr3).notReconciled(dr2);
+  }
+
+  @Test
+  void activationConditionErrorOnTopLevelDependentDoesNotStopOthers() {
+    var workflow =
+        new WorkflowBuilder<TestCustomResource>()
+            .addDependentResourceAndConfigure(dr1)
+            .withActivationCondition(throwingCondition())
+            .addDependentResource(dr2)
+            .withThrowExceptionFurther(false)
+            .build();
+
+    var res = workflow.reconcile(new TestCustomResource(), mockContext);
+
+    Assertions.assertThat(res.getErroredDependents()).containsOnlyKeys(dr1);
+    assertThat(executionHistory).reconciled(dr2).notReconciled(dr1);
+  }
+
+  @Test
   @SuppressWarnings("unchecked")
   void activationConditionOnlyCalledOnceOnDeleteDependents() {
     TestDeleterDependent drDeleter2 = new TestDeleterDependent("DR_DELETER_2");
@@ -695,7 +857,6 @@ class WorkflowReconcileExecutorTest extends AbstractWorkflowExecutorTest {
   }
 
   @Test
-  @SuppressWarnings("unchecked")
   void activationConditionEventSourceRegistrationWithParentWithFalsePrecondition() {
     var workflow =
         new WorkflowBuilder<TestCustomResource>()
@@ -713,7 +874,6 @@ class WorkflowReconcileExecutorTest extends AbstractWorkflowExecutorTest {
   }
 
   @Test
-  @SuppressWarnings("unchecked")
   void activationConditionEventSourceRegistration() {
     var workflow =
         new WorkflowBuilder<TestCustomResource>()
@@ -825,5 +985,25 @@ class WorkflowReconcileExecutorTest extends AbstractWorkflowExecutorTest {
 
     final var reconcileResult = workflow.reconcile(new TestCustomResource(), mockContext);
     assertTrue(reconcileResult.getNotReadyDependentResult(dr1, Integer.class).isEmpty());
+  }
+
+  private Condition<?, TestCustomResource> rendezvousCondition(CyclicBarrier barrier) {
+    return (dependentResource, primary, context) -> {
+      try {
+        barrier.await(5, TimeUnit.SECONDS);
+        return true;
+      } catch (InterruptedException e) {
+        Thread.currentThread().interrupt();
+        throw new IllegalStateException(e);
+      } catch (BrokenBarrierException | TimeoutException e) {
+        throw new IllegalStateException("activation conditions were serialized", e);
+      }
+    };
+  }
+
+  private Condition<?, TestCustomResource> throwingCondition() {
+    return (dependentResource, primary, context) -> {
+      throw new IllegalStateException("Test exception");
+    };
   }
 }

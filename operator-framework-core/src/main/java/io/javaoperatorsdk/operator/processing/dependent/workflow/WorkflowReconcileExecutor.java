@@ -18,6 +18,7 @@ package io.javaoperatorsdk.operator.processing.dependent.workflow;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -34,6 +35,9 @@ class WorkflowReconcileExecutor<P extends HasMetadata> extends AbstractWorkflowE
   private static final String RECONCILE = "reconcile";
   private static final String DELETE = "delete";
 
+  private final Set<DependentResourceNode<?, P>> conditionNotMetNodes =
+      ConcurrentHashMap.newKeySet();
+
   public WorkflowReconcileExecutor(DefaultWorkflow<P> workflow, P primary, Context<P> context) {
     super(workflow, primary, context);
   }
@@ -49,6 +53,13 @@ class WorkflowReconcileExecutor<P extends HasMetadata> extends AbstractWorkflowE
   @Override
   protected Logger logger() {
     return log;
+  }
+
+  @Override
+  protected void onNodeExecutionFinished(DependentResourceNode<?, P> dependentResourceNode) {
+    if (conditionNotMetNodes.remove(dependentResourceNode)) {
+      handleReconcileOrActivationConditionNotMet(dependentResourceNode);
+    }
   }
 
   private synchronized <R> void handleReconcile(DependentResourceNode<R, P> dependentResourceNode) {
@@ -90,20 +101,7 @@ class WorkflowReconcileExecutor<P extends HasMetadata> extends AbstractWorkflowE
       return;
     }
 
-    boolean activationConditionMet =
-        isConditionMet(dependentResourceNode.getActivationCondition(), dependentResourceNode);
-    registerOrDeregisterEventSourceBasedOnActivation(activationConditionMet, dependentResourceNode);
-
-    boolean reconcileConditionMet = true;
-    if (activationConditionMet) {
-      reconcileConditionMet =
-          isConditionMet(dependentResourceNode.getReconcilePrecondition(), dependentResourceNode);
-    }
-    if (!reconcileConditionMet || !activationConditionMet) {
-      handleReconcileOrActivationConditionNotMet(dependentResourceNode);
-    } else {
-      submit(dependentResourceNode, new NodeReconcileExecutor<>(dependentResourceNode), RECONCILE);
-    }
+    submit(dependentResourceNode, new NodeReconcileExecutor<>(dependentResourceNode), RECONCILE);
   }
 
   private synchronized void handleDelete(DependentResourceNode dependentResourceNode) {
@@ -144,7 +142,7 @@ class WorkflowReconcileExecutor<P extends HasMetadata> extends AbstractWorkflowE
     var dependents = dependentResourceNode.getParents();
     return dependents.stream()
         .allMatch(
-            d -> alreadyVisited(d) && isReady(d) && !isInError(d) && !postDeleteConditionNotMet(d));
+            d -> alreadyVisited(d) && isReady(d) && !isInError(d) && postDeleteConditionMet(d));
   }
 
   private class NodeReconcileExecutor<R> extends NodeExecutor<R, P> {
@@ -155,6 +153,17 @@ class WorkflowReconcileExecutor<P extends HasMetadata> extends AbstractWorkflowE
 
     @Override
     protected void doRun(DependentResourceNode<R, P> dependentResourceNode) {
+      final var activationConditionMet =
+          isConditionMet(dependentResourceNode.getActivationCondition(), dependentResourceNode);
+      registerOrDeregisterEventSourceBasedOnActivation(
+          activationConditionMet, dependentResourceNode);
+      if (!activationConditionMet
+          || !isConditionMet(
+              dependentResourceNode.getReconcilePrecondition(), dependentResourceNode)) {
+        conditionNotMetNodes.add(dependentResourceNode);
+        return;
+      }
+
       final var dependentResource = dependentResourceNode.getDependentResource();
       log.debug("Reconciling for primary: {} node: {} ", primaryID, dependentResourceNode);
       ReconcileResult reconcileResult = dependentResource.reconcile(primary, context);
@@ -238,6 +247,7 @@ class WorkflowReconcileExecutor<P extends HasMetadata> extends AbstractWorkflowE
     Set<DependentResourceNode> bottomNodes = new HashSet<>();
     markDependentsForDelete(dependentResourceNode, bottomNodes);
     bottomNodes.forEach(this::handleDelete);
+    handleDelete(dependentResourceNode);
   }
 
   private void markDependentsForDelete(

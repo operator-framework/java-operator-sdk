@@ -92,8 +92,8 @@ abstract class AbstractWorkflowExecutor<P extends HasMetadata> {
     return getResultFlagFor(dependentResourceNode, BaseWorkflowResult.DetailBuilder::isVisited);
   }
 
-  protected boolean postDeleteConditionNotMet(DependentResourceNode<?, P> drn) {
-    return getResultFlagFor(drn, BaseWorkflowResult.DetailBuilder::hasPostDeleteConditionNotMet);
+  protected boolean postDeleteConditionMet(DependentResourceNode<?, P> drn) {
+    return !getResultFlagFor(drn, BaseWorkflowResult.DetailBuilder::hasPostDeleteConditionNotMet);
   }
 
   protected boolean isMarkedForDelete(DependentResourceNode<?, P> drn) {
@@ -132,6 +132,20 @@ abstract class AbstractWorkflowExecutor<P extends HasMetadata> {
     createOrGetResultFor(dependentResourceNode).withError(e);
   }
 
+  /**
+   * Called with the monitor held, after the node's execution mark is cleared and before the
+   * workflow may observe that no execution is left. Anything scheduled from here keeps its own
+   * execution mark, so the workflow does not complete while it is still running.
+   *
+   * <p>Implementations must not block, as the monitor is held, and must schedule any follow up work
+   * synchronously before returning. Scheduling it from another thread would allow that work to
+   * finish before its execution mark is set, leaving behind a mark that is never cleared.
+   *
+   * <p>An exception thrown here is recorded as an error on the node instead of being propagated, so
+   * that the workflow waiting on the monitor is notified in any case.
+   */
+  protected void onNodeExecutionFinished(DependentResourceNode<?, P> dependentResourceNode) {}
+
   protected boolean isReady(DependentResourceNode<?, P> dependentResourceNode) {
     return getResultFlagFor(dependentResourceNode, BaseWorkflowResult.DetailBuilder::isReady);
   }
@@ -144,8 +158,17 @@ abstract class AbstractWorkflowExecutor<P extends HasMetadata> {
       DependentResourceNode<?, P> dependentResourceNode) {
     logger().trace("Finished execution for: {} primary: {}", dependentResourceNode, primaryID);
     actualExecutions.remove(dependentResourceNode);
-    if (noMoreExecutionsScheduled()) {
-      this.notifyAll();
+    try {
+      onNodeExecutionFinished(dependentResourceNode);
+    } catch (Exception e) {
+      handleExceptionInExecutor(dependentResourceNode, e);
+    } catch (Error e) {
+      logger().error("java.lang.Error during execution finish", e);
+      throw e;
+    } finally {
+      if (noMoreExecutionsScheduled()) {
+        this.notifyAll();
+      }
     }
   }
 
