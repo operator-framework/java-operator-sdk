@@ -40,7 +40,9 @@ public class WebPageOperator {
   public static void main(String[] args) throws IOException {
     log.info("WebServer Operator starting!");
 
-    Operator operator = new Operator(o -> o.withStopOnInformerErrorDuringStartup(false));
+    Operator operator =
+        new Operator(
+            o -> o.withStopOnInformerErrorDuringStartup(false).withUseVirtualThreads(true));
     String reconcilerEnvVar = System.getenv(WEBPAGE_RECONCILER_ENV);
     if (WEBPAGE_CLASSIC_RECONCILER_ENV_VALUE.equals(reconcilerEnvVar)) {
       operator.register(new WebPageReconciler());

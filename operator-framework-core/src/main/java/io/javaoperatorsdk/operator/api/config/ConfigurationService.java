@@ -20,7 +20,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.function.Consumer;
 
 import org.slf4j.Logger;
@@ -155,6 +154,12 @@ public interface ConfigurationService {
    * io.javaoperatorsdk.operator.Operator#Operator(Consumer)}, passing your custom instance with
    * {@link ConfigurationServiceOverrider#withKubernetesClient(KubernetesClient)}.
    *
+   * <p>When {@link #useVirtualThreads()} is enabled (and supported by the JVM), the default client
+   * runs its internal asynchronous tasks, such as dispatching informer events to their handlers and
+   * delivering watch events, on virtual threads instead of its default cached platform thread pool.
+   * A client provided by overriding this method or through {@link
+   * ConfigurationServiceOverrider#withKubernetesClient(KubernetesClient)} is used as is.
+   *
    * <p><em>NOTE:</em> It is strongly suggested that implementors override this method since the
    * default implementation creates a new {@link KubernetesClient} instance each time this method is
    * called.
@@ -163,13 +168,17 @@ public interface ConfigurationService {
    * @since 4.4.0
    */
   default KubernetesClient getKubernetesClient() {
-    return new KubernetesClientBuilder()
-        .withConfig(
-            new ConfigBuilder(Config.autoConfigure(null))
-                .withMaxConcurrentRequests(DEFAULT_MAX_CONCURRENT_REQUEST)
-                .build())
-        .withKubernetesSerialization(new KubernetesSerialization())
-        .build();
+    final var builder =
+        new KubernetesClientBuilder()
+            .withConfig(
+                new ConfigBuilder(Config.autoConfigure(null))
+                    .withMaxConcurrentRequests(DEFAULT_MAX_CONCURRENT_REQUEST)
+                    .build())
+            .withKubernetesSerialization(new KubernetesSerialization());
+    if (VirtualThreads.shouldUse(useVirtualThreads())) {
+      builder.withTaskExecutorSupplier(VirtualThreads.newKubernetesClientTaskExecutorSupplier());
+    }
+    return builder.build();
   }
 
   /**
@@ -203,6 +212,11 @@ public interface ConfigurationService {
    * The number of threads the operator can spin out to dispatch reconciliation requests to
    * reconcilers with the default executors
    *
+   * <p>This is a concurrency limit and applies regardless of whether the default executor is backed
+   * by platform or by virtual threads, see {@link #useVirtualThreads()}: with virtual threads it
+   * caps how many reconciliations run at the same time rather than the size of a thread pool. Since
+   * virtual threads are cheap, the limit can be set considerably higher when they are enabled.
+   *
    * @return the number of concurrent reconciliation threads
    */
   default int concurrentReconciliationThreads() {
@@ -212,6 +226,12 @@ public interface ConfigurationService {
   /**
    * Number of threads the operator can spin out to be used in the workflows with the default
    * executor.
+   *
+   * <p>This is a concurrency limit and applies regardless of whether the default executor is backed
+   * by platform or by virtual threads, see {@link #useVirtualThreads()}: with virtual threads it
+   * caps how many dependent resources are processed at the same time rather than the size of a
+   * thread pool. Since virtual threads are cheap, the limit can be set considerably higher when
+   * they are enabled.
    *
    * @return the maximum number of concurrent workflow threads
    */
@@ -229,6 +249,42 @@ public interface ConfigurationService {
   }
 
   /**
+   * Whether the framework should run the tasks it executes concurrently &mdash; reconciliations,
+   * dependent workflows and internal housekeeping such as starting the informers &mdash; on virtual
+   * threads instead of platform threads.
+   *
+   * <p>Virtual threads make blocking operations, which is essentially all a reconciler does while
+   * talking to the Kubernetes API server or to external systems, much cheaper. Enabling them does
+   * <em>not</em> lift the configured concurrency limits: {@link #concurrentReconciliationThreads()}
+   * and {@link #concurrentWorkflowExecutorThreads()} still cap how many reconciliations,
+   * respectively dependent resources, are processed at the same time, they just aren't backed by a
+   * pool of platform threads anymore. Since virtual threads are cheap, those limits can be set
+   * considerably higher than what would be reasonable for platform threads.
+   *
+   * <p>Officially supported on Java 25 or later. Virtual threads exist as of Java 21 and are used
+   * there as well, but before Java 25 a virtual thread pins its carrier thread while inside a
+   * {@code synchronized} block, which <a href="https://openjdk.org/jeps/491">JEP 491</a> removed in
+   * Java 25. On a JVM without virtual threads at all, a warning is logged and platform threads are
+   * used, so that the same configuration works regardless of the Java version the operator runs on.
+   *
+   * <p>Note that this only affects the executors created by the framework: a custom {@link
+   * ExecutorService} provided through {@link #getExecutorService()} or {@link
+   * #getWorkflowExecutorService()} is used as is. The same goes for the {@link KubernetesClient}:
+   * the default client created by {@link #getKubernetesClient()} then also runs its internal
+   * asynchronous tasks (informer event dispatching, watch event delivery) on virtual threads, while
+   * a custom client, e.g. provided through {@link
+   * ConfigurationServiceOverrider#withKubernetesClient(KubernetesClient)}, keeps whatever task
+   * executor it was built with. The blocking calls a reconciler performs through the client don't
+   * need any of this: they already park the calling virtual thread rather than its carrier.
+   *
+   * @return {@code true} to use virtual threads, {@code false} (default) to use platform threads
+   * @since 5.7.0
+   */
+  default boolean useVirtualThreads() {
+    return false;
+  }
+
+  /**
    * Override to provide a custom {@link ExecutorService} implementation to change how threads
    * handle concurrent reconciliations
    *
@@ -236,7 +292,8 @@ public interface ConfigurationService {
    *     processing
    */
   default ExecutorService getExecutorService() {
-    return Executors.newFixedThreadPool(concurrentReconciliationThreads());
+    return ExecutorServiceManager.newBoundedExecutorService(
+        concurrentReconciliationThreads(), useVirtualThreads());
   }
 
   /**
@@ -246,7 +303,8 @@ public interface ConfigurationService {
    * @return the {@link ExecutorService} implementation to use for dependent workflow processing
    */
   default ExecutorService getWorkflowExecutorService() {
-    return Executors.newFixedThreadPool(concurrentWorkflowExecutorThreads());
+    return ExecutorServiceManager.newBoundedExecutorService(
+        concurrentWorkflowExecutorThreads(), useVirtualThreads());
   }
 
   /**
