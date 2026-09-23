@@ -54,6 +54,15 @@ Two things to keep in mind:
   supported Java version.
 - A custom `ExecutorService` provided through `withExecutorService(...)` or
   `withWorkflowExecutorService(...)` is always used as is, the flag has no effect on it.
+- The Kubernetes client the framework creates when none is provided also switches its internal
+  task executor (used to dispatch informer events to their handlers and to deliver watch events)
+  to virtual threads. A client you provide through `withKubernetesClient(...)` is used as is: to
+  get the same behavior, configure it yourself, e.g. with
+  `new KubernetesClientBuilder().withTaskExecutor(Executors.newVirtualThreadPerTaskExecutor())`
+  (the client doesn't shut down an executor passed that way, use `withTaskExecutorSupplier(...)`
+  if it should be shut down when the client is closed).
+  Either way, the blocking calls your reconciler makes through the client work well on virtual
+  threads without any client-side change.
 
 ## Reconciler-Level Configuration
 

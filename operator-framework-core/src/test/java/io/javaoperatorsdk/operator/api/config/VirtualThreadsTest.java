@@ -16,6 +16,7 @@
 package io.javaoperatorsdk.operator.api.config;
 
 import java.util.Set;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
@@ -27,6 +28,9 @@ import java.util.stream.IntStream;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledForJreRange;
 import org.junit.jupiter.api.condition.JRE;
+
+import io.fabric8.kubernetes.client.KubernetesClient;
+import io.fabric8.kubernetes.client.impl.BaseClient;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -146,6 +150,37 @@ class VirtualThreadsTest {
     assertThat(executor.awaitTermination(TIMEOUT_SECONDS, TimeUnit.SECONDS)).isTrue();
     assertThat(executor.isShutdown()).isTrue();
     assertThat(done.getCount()).isZero();
+  }
+
+  @Test
+  void defaultKubernetesClientKeepsPlatformThreadsWhenVirtualThreadsAreNotRequested()
+      throws Exception {
+    try (var client = defaultKubernetesClient(false)) {
+      assertThat(runsTasksOnVirtualThread(client)).isFalse();
+    }
+  }
+
+  @Test
+  @EnabledForJreRange(min = JRE.JAVA_21)
+  void defaultKubernetesClientRunsItsTasksOnVirtualThreadsWhenRequested() throws Exception {
+    ExecutorService executor;
+    try (var client = defaultKubernetesClient(true)) {
+      assertThat(runsTasksOnVirtualThread(client)).isTrue();
+      executor = (ExecutorService) client.adapt(BaseClient.class).getExecutor();
+    }
+    assertThat(executor.isShutdown()).isTrue();
+  }
+
+  private static KubernetesClient defaultKubernetesClient(boolean useVirtualThreads) {
+    return ConfigurationService.newOverriddenConfigurationService(
+            o -> o.withUseVirtualThreads(useVirtualThreads))
+        .getKubernetesClient();
+  }
+
+  private static boolean runsTasksOnVirtualThread(KubernetesClient client) throws Exception {
+    return CompletableFuture.supplyAsync(
+            VirtualThreadsTest::onVirtualThread, client.adapt(BaseClient.class).getExecutor())
+        .get(TIMEOUT_SECONDS, TimeUnit.SECONDS);
   }
 
   /**
