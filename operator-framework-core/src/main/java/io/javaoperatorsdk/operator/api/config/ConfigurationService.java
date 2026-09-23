@@ -154,6 +154,12 @@ public interface ConfigurationService {
    * io.javaoperatorsdk.operator.Operator#Operator(Consumer)}, passing your custom instance with
    * {@link ConfigurationServiceOverrider#withKubernetesClient(KubernetesClient)}.
    *
+   * <p>When {@link #useVirtualThreads()} is enabled (and supported by the JVM), the default client
+   * runs its internal asynchronous tasks, such as dispatching informer events to their handlers and
+   * delivering watch events, on virtual threads instead of its default cached platform thread pool.
+   * A client provided by overriding this method or through {@link
+   * ConfigurationServiceOverrider#withKubernetesClient(KubernetesClient)} is used as is.
+   *
    * <p><em>NOTE:</em> It is strongly suggested that implementors override this method since the
    * default implementation creates a new {@link KubernetesClient} instance each time this method is
    * called.
@@ -162,13 +168,17 @@ public interface ConfigurationService {
    * @since 4.4.0
    */
   default KubernetesClient getKubernetesClient() {
-    return new KubernetesClientBuilder()
-        .withConfig(
-            new ConfigBuilder(Config.autoConfigure(null))
-                .withMaxConcurrentRequests(DEFAULT_MAX_CONCURRENT_REQUEST)
-                .build())
-        .withKubernetesSerialization(new KubernetesSerialization())
-        .build();
+    final var builder =
+        new KubernetesClientBuilder()
+            .withConfig(
+                new ConfigBuilder(Config.autoConfigure(null))
+                    .withMaxConcurrentRequests(DEFAULT_MAX_CONCURRENT_REQUEST)
+                    .build())
+            .withKubernetesSerialization(new KubernetesSerialization());
+    if (VirtualThreads.shouldUse(useVirtualThreads())) {
+      builder.withTaskExecutorSupplier(VirtualThreads.newKubernetesClientTaskExecutorSupplier());
+    }
+    return builder.build();
   }
 
   /**
@@ -259,7 +269,13 @@ public interface ConfigurationService {
    *
    * <p>Note that this only affects the executors created by the framework: a custom {@link
    * ExecutorService} provided through {@link #getExecutorService()} or {@link
-   * #getWorkflowExecutorService()} is used as is.
+   * #getWorkflowExecutorService()} is used as is. The same goes for the {@link KubernetesClient}:
+   * the default client created by {@link #getKubernetesClient()} then also runs its internal
+   * asynchronous tasks (informer event dispatching, watch event delivery) on virtual threads, while
+   * a custom client, e.g. provided through {@link
+   * ConfigurationServiceOverrider#withKubernetesClient(KubernetesClient)}, keeps whatever task
+   * executor it was built with. The blocking calls a reconciler performs through the client don't
+   * need any of this: they already park the calling virtual thread rather than its carrier.
    *
    * @return {@code true} to use virtual threads, {@code false} (default) to use platform threads
    * @since 5.7.0

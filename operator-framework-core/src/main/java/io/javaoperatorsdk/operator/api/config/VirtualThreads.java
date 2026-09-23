@@ -20,6 +20,7 @@ import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 import java.util.List;
 import java.util.concurrent.AbstractExecutorService;
+import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
@@ -30,6 +31,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import io.fabric8.kubernetes.client.KubernetesClientBuilder.ExecutorSupplier;
 import io.javaoperatorsdk.operator.OperatorException;
 
 /**
@@ -108,6 +110,26 @@ final class VirtualThreads {
     } catch (Throwable e) {
       throw new OperatorException("Couldn't create a virtual thread per task executor", e);
     }
+  }
+
+  /**
+   * Supplies the task executor of the default {@link io.fabric8.kubernetes.client.KubernetesClient}
+   * created by {@link ConfigurationService#getKubernetesClient()}: an unbounded virtual thread
+   * executor, replacing the client's default cached platform thread pool, that is shut down when
+   * the client is closed.
+   */
+  static ExecutorSupplier newKubernetesClientTaskExecutorSupplier() {
+    return new ExecutorSupplier() {
+      @Override
+      public Executor get() {
+        return newVirtualThreadPerTaskExecutor();
+      }
+
+      @Override
+      public void onClose(Executor executor) {
+        ((ExecutorService) executor).shutdownNow();
+      }
+    };
   }
 
   /**
