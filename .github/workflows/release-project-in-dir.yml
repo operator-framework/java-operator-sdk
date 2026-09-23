@@ -17,6 +17,22 @@ env:
   # set the target pom to use the input directory as root
   MAVEN_ARGS: -V -ntp -e -f ${{ inputs.project_dir }}/pom.xml
   ROOT_POM: ${{ inputs.project_dir }}/pom.xml
+  # Prints the version of the pom given as argument, falling back to the
+  # parent's version. Used instead of `help:evaluate`, whose banner and log
+  # output would have to be filtered off stdout first. Kept inline rather than
+  # as a script in the repo because the jobs check out the release branch, and
+  # older maintenance branches would not have such a script.
+  POM_VERSION_PY: |
+    import sys
+    import xml.etree.ElementTree as ET
+    NS = "{http://maven.apache.org/POM/4.0.0}"
+    root = ET.parse(sys.argv[1]).getroot()
+    version = root.findtext(NS + "version")
+    if version is None:
+        version = root.findtext(NS + "parent/" + NS + "version")
+    if version is None:
+        raise SystemExit("no version and no parent version in " + sys.argv[1])
+    print(version.strip())
 
 jobs:
   publish:
@@ -101,7 +117,7 @@ jobs:
           # develops would set the branch back onto versions that are already
           # released. That means the wrong branch was selected for this tag.
           # Checked here because the deploy that follows cannot be undone.
-          DEVELOPMENT_VERSION="$(python3 .github/scripts/pom-version.py "${ROOT_POM}")"
+          DEVELOPMENT_VERSION="$(python3 -c "${POM_VERSION_PY}" "${ROOT_POM}")"
           DEVELOPMENT_BASE="${DEVELOPMENT_VERSION%-SNAPSHOT}"
           if [ "${RELEASE_VERSION}" != "${DEVELOPMENT_BASE}" ] && \
              [ "$(printf '%s\n%s\n' "${RELEASE_VERSION}" "${DEVELOPMENT_BASE}" | sort -V | head -1)" = "${RELEASE_VERSION}" ]; then
@@ -158,7 +174,7 @@ jobs:
           set -euo pipefail
 
           pom_version() {
-            python3 .github/scripts/pom-version.py "${ROOT_POM}"
+            python3 -c "${POM_VERSION_PY}" "${ROOT_POM}"
           }
 
           RELEASE_VERSION="${RELEASE_TAG#v}"
