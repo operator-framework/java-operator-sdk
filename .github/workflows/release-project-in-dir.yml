@@ -288,6 +288,21 @@ jobs:
           # leased against the OID observed during the ancestry check, so a tag
           # moved by anyone else since then fails it too. --atomic means either
           # both refs update or neither does.
+          #
+          # Recovering from a rejected push: by now the artifacts are in Maven
+          # Central, so re-running the workflow fails in publish, and re-running
+          # just this job rebuilds on the same stale commit and is rejected
+          # again. Both refs are still in a safe state - the branch on a
+          # SNAPSHOT version, the tag where GitHub created it - so finish the
+          # release by hand:
+          #   1. Check out the commit this job built on (the one shown by its
+          #      checkout step, i.e. what was deployed), set the released
+          #      version with versions:set, commit "Release <tag>", and move
+          #      the tag onto that commit with an annotated tag. Push the tag
+          #      with --force-with-lease against its current remote value.
+          #   2. Check out the current branch tip, set the next -SNAPSHOT
+          #      version with versions:set, and push that as an ordinary
+          #      commit.
           git push --atomic \
             --force-with-lease="refs/tags/${RELEASE_TAG}:${EXPECTED_TAG_OID}" \
             origin \
