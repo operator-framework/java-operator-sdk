@@ -35,6 +35,13 @@ public record PerResourcePollingConfiguration<R, P extends HasMetadata, ID>(
     Predicate<P> registerPredicate,
     Duration defaultPollingPeriod) {
 
+  /**
+   * @deprecated not used anymore, polls now run on the executor the operator shares between all its
+   *     scheduled tasks unless an executor is explicitly configured
+   */
+  @Deprecated(forRemoval = true)
+  public static final int DEFAULT_EXECUTOR_THREAD_NUMBER = 1;
+
   public PerResourcePollingConfiguration(
       String name,
       ScheduledExecutorService executorService,
