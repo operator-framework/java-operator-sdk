@@ -5,8 +5,10 @@ on:
   release:
     types: [ released ]
 
-# Releases push commits to the branch they are cut from, so run them one at a
-# time rather than letting two overlap on the same branch.
+# Two releases cut from the same branch must not overlap: both would deploy to
+# Maven Central, then one would lose the branch push and be left with immutable
+# artifacts and no release commit. Serializing means the worst case is instead a
+# release that does not start, which can simply be re-run.
 concurrency:
   group: ${{ github.workflow }}
   cancel-in-progress: false
