@@ -17,6 +17,7 @@ package io.javaoperatorsdk.operator.processing.event.source.timer;
 
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
 import org.awaitility.Awaitility;
@@ -26,6 +27,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import io.javaoperatorsdk.operator.TestUtils;
+import io.javaoperatorsdk.operator.api.config.Utils;
 import io.javaoperatorsdk.operator.api.reconciler.BaseControl;
 import io.javaoperatorsdk.operator.health.Status;
 import io.javaoperatorsdk.operator.processing.event.Event;
@@ -125,6 +127,59 @@ class TimerEventSourceTest
     assertThat(eventHandler.events).hasSize(1);
   }
 
+  @Test
+  public void schedulesOnTheProvidedExecutorAndLeavesItRunningOnStop() {
+    var providedExecutor =
+        Executors.newSingleThreadScheduledExecutor(
+            Utils.daemonThreadFactory("provided-timer-executor"));
+    var handler = new CapturingEventHandler();
+    var eventSource = new TimerEventSource<TestCustomResource>(() -> providedExecutor);
+    eventSource.setEventHandler(handler);
+
+    try {
+      eventSource.start();
+      eventSource.scheduleOnce(ResourceID.fromResource(TestUtils.testCustomResource()), PERIOD);
+
+      untilAsserted(
+          () ->
+              assertThat(handler.eventProducingThreadNames)
+                  .containsExactly("provided-timer-executor-1"));
+
+      eventSource.stop();
+
+      // the executor is not the event source's to shut down
+      assertThat(providedExecutor.isShutdown()).isFalse();
+    } finally {
+      providedExecutor.shutdownNow();
+    }
+  }
+
+  @Test
+  public void shutsDownTheExecutorItCreatedItselfAndCreatesANewOneOnRestart() {
+    var eventSource = new TimerEventSource<TestCustomResource>();
+    var handler = new CapturingEventHandler();
+    eventSource.setEventHandler(handler);
+
+    eventSource.start();
+    eventSource.scheduleOnce(ResourceID.fromResource(TestUtils.testCustomResource()), PERIOD);
+    untilAsserted(() -> assertThat(handler.events).hasSize(1));
+    var firstThreadName = handler.eventProducingThreadNames.get(0);
+    assertThat(firstThreadName).startsWith("josdk-timer-");
+
+    eventSource.stop();
+    Awaitility.await()
+        .untilAsserted(
+            () ->
+                assertThat(Thread.getAllStackTraces().keySet())
+                    .noneMatch(t -> t.getName().equals(firstThreadName)));
+
+    eventSource.start();
+    eventSource.scheduleOnce(ResourceID.fromResource(TestUtils.testCustomResource()), PERIOD);
+    untilAsserted(() -> assertThat(handler.events).hasSize(2));
+
+    eventSource.stop();
+  }
+
   private void untilAsserted(ThrowingRunnable assertion) {
     untilAsserted(INITIAL_DELAY, PERIOD, assertion);
   }
@@ -150,10 +205,12 @@ class TimerEventSourceTest
 
   public static class CapturingEventHandler implements EventHandler {
     private final List<Event> events = new CopyOnWriteArrayList<>();
+    private final List<String> eventProducingThreadNames = new CopyOnWriteArrayList<>();
 
     @Override
     public void handleEvent(Event event) {
       events.add(event);
+      eventProducingThreadNames.add(Thread.currentThread().getName());
     }
   }
 }
