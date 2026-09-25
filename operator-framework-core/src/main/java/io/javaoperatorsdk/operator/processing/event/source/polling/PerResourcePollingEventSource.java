@@ -137,6 +137,12 @@ public class PerResourcePollingEventSource<R, P extends HasMetadata, ID>
             executorService.schedule(
                 new FetchingExecutor(primaryID), fetchDuration.toMillis(), TimeUnit.MILLISECONDS);
     scheduledFutures.put(primaryID, scheduledFuture);
+    // a fetch that was already running when the event source got stopped can get here after stop
+    // cleared the map; since the shared executor stays alive, the task has to be withdrawn,
+    // otherwise the stale entry would prevent the resource from being registered on a restart
+    if (!isRunning() && scheduledFutures.remove(primaryID, scheduledFuture)) {
+      scheduledFuture.cancel(true);
+    }
   }
 
   @Override
