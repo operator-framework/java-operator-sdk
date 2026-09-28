@@ -181,19 +181,16 @@ public class TriggerReconcilerOnAllEventIT {
     extension.create(res);
     extension.delete(getResource());
 
-    await()
-        .pollDelay(Duration.ofMillis(30))
-        .untilAsserted(
-            () -> {
-              assertThat(reconciler.getEventCount()).isGreaterThan(2);
-            });
-    var eventCount = reconciler.getEventCount();
-
+    // Don't assume a fixed number of reconciliations before the first retry: if the delete event
+    // arrives before the first reconciliation reads the resource, the finalizer-adding
+    // reconciliation is skipped. The reconciler increments the counter before it starts waiting,
+    // and nothing else reconciles while it waits, so the count read after this is stable.
     await()
         .untilAsserted(
             () -> {
               assertThat(reconciler.isWaiting()).isTrue();
             });
+    var eventCount = reconciler.getEventCount();
 
     // trigger reconciliation while waiting in reconciler
     res = getResource();
