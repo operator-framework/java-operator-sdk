@@ -765,9 +765,7 @@ class EventProcessorTest {
         spy(
             new EventProcessor(
                 controllerConfigTriggerAllEvent(
-                    GenericRetry.defaultLimitedExponentialRetry()
-                        .setInitialInterval(1000)
-                        .setMaxAttempts(-1),
+                    GenericRetry.builder().withInitialInterval(1000).withMaxAttempts(-1).build(),
                     rateLimiterMock),
                 reconciliationDispatcherMock,
                 eventSourceManagerMock,
@@ -796,10 +794,11 @@ class EventProcessorTest {
         spy(
             new EventProcessor(
                 controllerConfigTriggerAllEvent(
-                    GenericRetry.defaultLimitedExponentialRetry()
-                        .setInitialInterval(100)
-                        .setIntervalMultiplier(1)
-                        .setMaxAttempts(1),
+                    GenericRetry.builder()
+                        .withInitialInterval(100)
+                        .withIntervalMultiplier(1)
+                        .withMaxAttempts(1)
+                        .build(),
                     rateLimiterMock),
                 reconciliationDispatcherMock,
                 eventSourceManagerMock,
@@ -831,10 +830,11 @@ class EventProcessorTest {
         spy(
             new EventProcessor(
                 controllerConfigTriggerAllEvent(
-                    GenericRetry.defaultLimitedExponentialRetry()
-                        .setInitialInterval(100)
-                        .setIntervalMultiplier(1)
-                        .setMaxAttempts(1),
+                    GenericRetry.builder()
+                        .withInitialInterval(100)
+                        .withIntervalMultiplier(1)
+                        .withMaxAttempts(1)
+                        .build(),
                     rateLimiterMock),
                 reconciliationDispatcherMock,
                 eventSourceManagerMock,

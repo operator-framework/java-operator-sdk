@@ -49,10 +49,11 @@ class RetryIT {
       LocallyRunOperatorExtension.builder()
           .withReconciler(
               new RetryTestCustomReconciler(NUMBER_FAILED_EXECUTIONS),
-              new GenericRetry()
-                  .setInitialInterval(RETRY_INTERVAL)
+              GenericRetry.builder()
+                  .withInitialInterval(RETRY_INTERVAL)
                   .withLinearRetry()
-                  .setMaxAttempts(MAX_RETRY_ATTEMPTS))
+                  .withMaxAttempts(MAX_RETRY_ATTEMPTS)
+                  .build())
           .build();
 
   @Test

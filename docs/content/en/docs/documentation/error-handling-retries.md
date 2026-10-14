@@ -12,11 +12,17 @@ JOSDK automatically schedules retries whenever your `Reconciler` throws an excep
 The default retry implementation covers most typical use cases with exponential backoff:
 
 ```java
-GenericRetry.defaultLimitedExponentialRetry()
-    .setInitialInterval(5000)       // Start with 5-second delay
-    .setIntervalMultiplier(1.5D)    // Increase delay by 1.5x each retry
-    .setMaxAttempts(5);             // Maximum 5 attempts
+GenericRetry.builder()
+    .withInitialInterval(Duration.ofSeconds(5)) // Start with 5-second delay
+    .withIntervalMultiplier(1.5D)               // Increase delay by 1.5x each retry
+    .withMaxAttempts(5)                         // Maximum 5 attempts
+    .withMaxInterval(Duration.ofMinutes(1))     // Cap the delay at 1 minute
+    .build();
 ```
+
+Prefer the builder for creating `GenericRetry` instances, and use `toBuilder()` to derive a variant
+of an existing configuration. The `set*` methods are deprecated and will be removed in a future
+major version, at which point `GenericRetry` becomes immutable.
 
 ### Configuration Options
 

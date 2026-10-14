@@ -47,10 +47,11 @@ public class TriggerReconcilerOnAllEventIT {
               new TriggerReconcilerOnAllEventReconciler(),
               o ->
                   o.withRetry(
-                      new GenericRetry()
-                          .setInitialInterval(800)
-                          .setMaxAttempts(MAX_RETRY_ATTEMPTS)
-                          .setIntervalMultiplier(1)))
+                      GenericRetry.builder()
+                          .withInitialInterval(800)
+                          .withMaxAttempts(MAX_RETRY_ATTEMPTS)
+                          .withIntervalMultiplier(1)
+                          .build()))
           .build();
 
   @Test

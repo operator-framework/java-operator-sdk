@@ -595,7 +595,7 @@ class ReconciliationDispatcherTest {
     var configuration =
         MockControllerConfiguration.forResource(
             (Class<TestCustomResource>) testCustomResource.getClass());
-    when(configuration.getRetry()).thenReturn(new GenericRetry().setMaxAttempts(0));
+    when(configuration.getRetry()).thenReturn(GenericRetry.builder().withMaxAttempts(0).build());
     reconciliationDispatcher =
         init(testCustomResource, reconciler, configuration, customResourceFacade, false);
 

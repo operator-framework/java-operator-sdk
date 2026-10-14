@@ -58,10 +58,11 @@ class RetryIntervalHonoredOnFrequentEventsIT {
       LocallyRunOperatorExtension.builder()
           .withReconciler(
               reconciler,
-              new GenericRetry()
-                  .setInitialInterval(RETRY_INTERVAL_MILLIS)
+              GenericRetry.builder()
+                  .withInitialInterval(RETRY_INTERVAL_MILLIS)
                   .withLinearRetry()
-                  .setMaxAttempts(MAX_RETRY_ATTEMPTS))
+                  .withMaxAttempts(MAX_RETRY_ATTEMPTS)
+                  .build())
           .build();
 
   @Test
