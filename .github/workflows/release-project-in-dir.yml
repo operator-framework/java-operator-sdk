@@ -129,7 +129,7 @@ jobs:
           ./mvnw ${MAVEN_ARGS} versions:set -DnewVersion="${RELEASE_VERSION}" versions:commit -DprocessAllModules
 
       - name: Publish to Apache Maven Central
-        run: ./mvnw package deploy -Prelease
+        run: ./mvnw package deploy -Prelease -Dmaven.repository.credentialScope=id
         env:
           MAVEN_USERNAME: ${{ secrets.NEXUS_USERNAME }}
           MAVEN_CENTRAL_TOKEN: ${{ secrets.NEXUS_PASSWORD }}
