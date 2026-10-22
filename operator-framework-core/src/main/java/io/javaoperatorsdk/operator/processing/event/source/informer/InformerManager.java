@@ -120,19 +120,31 @@ class InformerManager<R extends HasMetadata, C extends Informable<R>>
       return;
     }
 
+    // Registering the handler on an already populated shared informer replays its cache to the
+    // handler synchronously, on the registering thread. The event source holds its monitor while
+    // waiting for the informers below to start, so the handler has to be registered on this thread:
+    // a replay from an informer starter thread would block on that monitor and deadlock.
+    var newSources = newNamespaces.stream().map(this::getEventSourceForNamespace).toList();
     controllerConfiguration
         .getConfigurationService()
         .getExecutorServiceManager()
         .boundedExecuteAndWaitForAllToComplete(
-            newNamespaces.stream(),
-            ns -> {
-              final var source = getEventSourceForNamespace(ns);
+            newSources.stream(),
+            source -> {
               // block until the informer's cache is synced (or the sync timeout elapses)
               start(source);
-              log.debug("Registered new {} -> {} for namespace: {}", this, source, ns);
+              log.debug(
+                  "Registered new {} -> {} for namespace: {}",
+                  this,
+                  source,
+                  source.getTargetNamespace());
               return null;
             },
-            ns -> "InformerStarter-" + ns + "-" + configuration.getResourceClass().getSimpleName());
+            source ->
+                "InformerStarter-"
+                    + source.getTargetNamespace()
+                    + "-"
+                    + configuration.getResourceClass().getSimpleName());
   }
 
   private void start(InformerWrapper<R> informerWrapper) {

@@ -15,13 +15,16 @@
  */
 package io.javaoperatorsdk.operator.processing.event.source.informer;
 
+import java.time.Duration;
 import java.util.Set;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.client.KubernetesClient;
+import io.fabric8.kubernetes.client.informers.ResourceEventHandler;
 import io.fabric8.kubernetes.client.informers.SharedIndexInformer;
 import io.fabric8.kubernetes.client.informers.cache.Cache;
 import io.javaoperatorsdk.operator.MockKubernetesClient;
@@ -37,8 +40,11 @@ import io.javaoperatorsdk.operator.processing.event.source.informer.pool.Default
 import io.javaoperatorsdk.operator.sample.simple.TestCustomResource;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertTimeoutPreemptively;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 /**
@@ -101,21 +107,70 @@ class ManagedInformerEventSourceNamespaceChangeTest {
   }
 
   /**
+   * Fabric8 replays the cache of an already populated informer to a newly added handler
+   * synchronously, on the thread registering it. That replay enters the event source's monitor,
+   * which the namespace change holds while waiting for the informers to start, so the handler must
+   * be registered on the thread holding the monitor rather than on an informer starter thread.
+   */
+  @Test
+  void namespaceChangeJoiningAPopulatedInformerDoesNotDeadlock() {
+    var eventHandler = mock(EventHandler.class);
+    var eventSource = buildEventSource(eventHandler);
+    eventSource.start();
+    replayCacheOnHandlerRegistration();
+
+    assertTimeoutPreemptively(
+        Duration.ofSeconds(10), () -> eventSource.changeNamespaces(Set.of("ns1", "ns2")));
+
+    assertThat(eventSource.manager().isWatchingNamespace("ns2")).isTrue();
+    verify(eventHandler).handleEvent(any());
+    eventSource.stop();
+  }
+
+  private void replayCacheOnHandlerRegistration() {
+    var informer = informer();
+    var existing = new Deployment();
+    existing.setMetadata(
+        new ObjectMetaBuilder()
+            .withName("existing")
+            .withNamespace("ns2")
+            .withResourceVersion("1")
+            .build());
+    doAnswer(
+            invocation -> {
+              ResourceEventHandler<Deployment> handler = invocation.getArgument(0);
+              handler.onAdd(existing);
+              return null;
+            })
+        .when(informer)
+        .addEventHandler(any());
+  }
+
+  /**
    * A successfully started {@link InformerEventSource} lists its cache to populate the
    * primary-to-secondary index, and the mock client leaves the informer's store unstubbed.
    */
   private void stubInformerStore() {
-    SharedIndexInformer informer =
-        clientMock
-            .resources(Deployment.class)
-            .inNamespace("ns1")
-            .withLabelSelector((String) null)
-            .withShardSelector(null)
-            .runnableInformer(0);
+    var informer = informer();
     when(informer.getStore()).thenReturn(mock(Cache.class));
   }
 
+  /** The mock client hands out the very same informer for every namespace. */
+  private SharedIndexInformer informer() {
+    return clientMock
+        .resources(Deployment.class)
+        .inNamespace("ns1")
+        .withLabelSelector((String) null)
+        .withShardSelector(null)
+        .runnableInformer(0);
+  }
+
   private InformerEventSource<Deployment, TestCustomResource> buildEventSource() {
+    return buildEventSource(mock(EventHandler.class));
+  }
+
+  private InformerEventSource<Deployment, TestCustomResource> buildEventSource(
+      EventHandler eventHandler) {
     ConfigurationService configurationService =
         ConfigurationService.newOverriddenConfigurationService(
             new BaseConfigurationService(),
@@ -125,7 +180,7 @@ class ManagedInformerEventSourceNamespaceChangeTest {
     when(controllerConfiguration.getName()).thenReturn("controller");
 
     var eventSource = new InformerEventSource<Deployment, TestCustomResource>(configuration);
-    eventSource.setEventHandler(mock(EventHandler.class));
+    eventSource.setEventHandler(eventHandler);
     eventSource.setControllerConfiguration(controllerConfiguration);
     return eventSource;
   }
