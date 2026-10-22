@@ -46,7 +46,8 @@ class ErrorStatusHandlerIT {
   LocallyRunOperatorExtension operator =
       LocallyRunOperatorExtension.builder()
           .withReconciler(
-              reconciler, new GenericRetry().setMaxAttempts(MAX_RETRY_ATTEMPTS).withLinearRetry())
+              reconciler,
+              GenericRetry.builder().withMaxAttempts(MAX_RETRY_ATTEMPTS).withLinearRetry().build())
           .build();
 
   @Test

@@ -32,16 +32,42 @@ public class GenericRetry implements Retry, AnnotationConfigurable<GradualRetry>
   @Deprecated(forRemoval = true)
   public static final Retry DEFAULT = new GenericRetry();
 
+  /**
+   * Creates an instance with the default values. Prefer {@link #builder()} or {@link
+   * #defaultLimitedExponentialRetry()}; this constructor is kept public so that the class can be
+   * instantiated and configured from the {@link GradualRetry} annotation.
+   */
+  public GenericRetry() {}
+
+  private GenericRetry(Builder builder) {
+    this.maxAttempts = builder.maxAttempts;
+    this.initialInterval = builder.initialInterval;
+    this.intervalMultiplier = builder.intervalMultiplier;
+    this.maxInterval = builder.maxInterval;
+  }
+
+  public static Builder builder() {
+    return new Builder();
+  }
+
   public static GenericRetry defaultLimitedExponentialRetry() {
-    return new GenericRetry();
+    return builder().build();
   }
 
   public static GenericRetry noRetry() {
-    return new GenericRetry().setMaxAttempts(0);
+    return builder().withMaxAttempts(0).build();
   }
 
   public static GenericRetry every10second10TimesRetry() {
-    return new GenericRetry().withLinearRetry().setMaxAttempts(10).setInitialInterval(10000);
+    return builder()
+        .withLinearRetry()
+        .withMaxAttempts(10)
+        .withInitialInterval(Duration.ofSeconds(10))
+        .build();
+  }
+
+  public Builder toBuilder() {
+    return new Builder(this);
   }
 
   @Override
@@ -53,6 +79,10 @@ public class GenericRetry implements Retry, AnnotationConfigurable<GradualRetry>
     return maxAttempts;
   }
 
+  /**
+   * @deprecated use {@link Builder#withMaxAttempts(int)} instead
+   */
+  @Deprecated(forRemoval = true)
   public GenericRetry setMaxAttempts(int maxRetryAttempts) {
     this.maxAttempts = maxRetryAttempts;
     return this;
@@ -62,11 +92,19 @@ public class GenericRetry implements Retry, AnnotationConfigurable<GradualRetry>
     return initialInterval;
   }
 
+  /**
+   * @deprecated use {@link Builder#withInitialInterval(Duration)} instead
+   */
+  @Deprecated(forRemoval = true)
   public GenericRetry setInitialInterval(Duration initialInterval) {
-    setInitialInterval(initialInterval.toMillis());
+    this.initialInterval = initialInterval.toMillis();
     return this;
   }
 
+  /**
+   * @deprecated use {@link Builder#withInitialInterval(long)} instead
+   */
+  @Deprecated(forRemoval = true)
   public GenericRetry setInitialInterval(long initialInterval) {
     this.initialInterval = initialInterval;
     return this;
@@ -76,6 +114,10 @@ public class GenericRetry implements Retry, AnnotationConfigurable<GradualRetry>
     return intervalMultiplier;
   }
 
+  /**
+   * @deprecated use {@link Builder#withIntervalMultiplier(double)} instead
+   */
+  @Deprecated(forRemoval = true)
   public GenericRetry setIntervalMultiplier(double intervalMultiplier) {
     this.intervalMultiplier = intervalMultiplier;
     return this;
@@ -85,24 +127,46 @@ public class GenericRetry implements Retry, AnnotationConfigurable<GradualRetry>
     return maxInterval;
   }
 
+  /**
+   * @deprecated use {@link Builder#withMaxInterval(long)} instead
+   */
+  @Deprecated(forRemoval = true)
   public GenericRetry setMaxInterval(long maxInterval) {
     this.maxInterval = maxInterval;
     return this;
   }
 
+  /**
+   * @deprecated use {@link Builder#withMaxInterval(Duration)} instead
+   */
+  @Deprecated(forRemoval = true)
   public GenericRetry setMaxInterval(Duration maxInterval) {
-    return setMaxInterval(maxInterval.toMillis());
+    this.maxInterval = maxInterval.toMillis();
+    return this;
   }
 
+  /**
+   * @deprecated use {@link Builder#withoutMaxInterval()} instead
+   */
+  @Deprecated(forRemoval = true)
   public GenericRetry withoutMaxInterval() {
     this.maxInterval = -1;
     return this;
   }
 
+  /**
+   * @deprecated use {@link Builder#withoutMaxAttempts()} instead
+   */
+  @Deprecated(forRemoval = true)
   public GenericRetry withoutMaxAttempts() {
-    return this.setMaxAttempts(-1);
+    this.maxAttempts = -1;
+    return this;
   }
 
+  /**
+   * @deprecated use {@link Builder#withLinearRetry()} instead
+   */
+  @Deprecated(forRemoval = true)
   public GenericRetry withLinearRetry() {
     this.intervalMultiplier = 1;
     return this;
@@ -117,5 +181,78 @@ public class GenericRetry implements Retry, AnnotationConfigurable<GradualRetry>
         configuration.maxInterval() == GradualRetry.UNSET_VALUE
             ? GradualRetry.DEFAULT_MAX_INTERVAL
             : configuration.maxInterval();
+  }
+
+  @Override
+  public String toString() {
+    return "GenericRetry{maxAttempts="
+        + maxAttempts
+        + ", initialInterval="
+        + initialInterval
+        + ", intervalMultiplier="
+        + intervalMultiplier
+        + ", maxInterval="
+        + maxInterval
+        + '}';
+  }
+
+  public static final class Builder {
+    private int maxAttempts = GradualRetry.DEFAULT_MAX_ATTEMPTS;
+    private long initialInterval = GradualRetry.DEFAULT_INITIAL_INTERVAL;
+    private double intervalMultiplier = GradualRetry.DEFAULT_MULTIPLIER;
+    private long maxInterval = GradualRetry.DEFAULT_MAX_INTERVAL;
+
+    private Builder() {}
+
+    private Builder(GenericRetry retry) {
+      this.maxAttempts = retry.maxAttempts;
+      this.initialInterval = retry.initialInterval;
+      this.intervalMultiplier = retry.intervalMultiplier;
+      this.maxInterval = retry.maxInterval;
+    }
+
+    public Builder withMaxAttempts(int maxAttempts) {
+      this.maxAttempts = maxAttempts;
+      return this;
+    }
+
+    public Builder withoutMaxAttempts() {
+      return withMaxAttempts(-1);
+    }
+
+    public Builder withInitialInterval(long initialIntervalMillis) {
+      this.initialInterval = initialIntervalMillis;
+      return this;
+    }
+
+    public Builder withInitialInterval(Duration initialInterval) {
+      return withInitialInterval(initialInterval.toMillis());
+    }
+
+    public Builder withIntervalMultiplier(double intervalMultiplier) {
+      this.intervalMultiplier = intervalMultiplier;
+      return this;
+    }
+
+    public Builder withLinearRetry() {
+      return withIntervalMultiplier(1);
+    }
+
+    public Builder withMaxInterval(long maxIntervalMillis) {
+      this.maxInterval = maxIntervalMillis;
+      return this;
+    }
+
+    public Builder withMaxInterval(Duration maxInterval) {
+      return withMaxInterval(maxInterval.toMillis());
+    }
+
+    public Builder withoutMaxInterval() {
+      return withMaxInterval(-1);
+    }
+
+    public GenericRetry build() {
+      return new GenericRetry(this);
+    }
   }
 }

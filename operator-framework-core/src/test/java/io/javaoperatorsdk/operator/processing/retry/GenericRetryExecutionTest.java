@@ -26,7 +26,7 @@ class GenericRetryExecutionTest {
   @Test
   void noNextDelayIfMaxAttemptLimitReached() {
     RetryExecution retryExecution =
-        GenericRetry.defaultLimitedExponentialRetry().setMaxAttempts(3).initExecution();
+        GenericRetry.builder().withMaxAttempts(3).build().initExecution();
     Optional<Long> res = callNextDelayNTimes(retryExecution, 2);
     assertThat(res).isNotEmpty();
 
@@ -37,10 +37,11 @@ class GenericRetryExecutionTest {
   @Test
   void canLimitMaxIntervalLength() {
     RetryExecution retryExecution =
-        GenericRetry.defaultLimitedExponentialRetry()
-            .setInitialInterval(2000)
-            .setMaxInterval(4500)
-            .setIntervalMultiplier(2)
+        GenericRetry.builder()
+            .withInitialInterval(2000)
+            .withMaxInterval(4500)
+            .withIntervalMultiplier(2)
+            .build()
             .initExecution();
 
     Optional<Long> res = callNextDelayNTimes(retryExecution, 4);
@@ -56,7 +57,8 @@ class GenericRetryExecutionTest {
 
   @Test
   void supportsIsLastExecution() {
-    GenericRetryExecution execution = new GenericRetry().setMaxAttempts(2).initExecution();
+    GenericRetryExecution execution =
+        GenericRetry.builder().withMaxAttempts(2).build().initExecution();
     assertThat(execution.isLastAttempt()).isFalse();
 
     execution.nextDelay();
@@ -83,7 +85,8 @@ class GenericRetryExecutionTest {
   @Test
   void remainingDurationPresentAfterNextDelay() {
     long interval = 60_000L;
-    RetryExecution retryExecution = new GenericRetry().setInitialInterval(interval).initExecution();
+    RetryExecution retryExecution =
+        GenericRetry.builder().withInitialInterval(interval).build().initExecution();
 
     retryExecution.nextDelay();
 
@@ -94,7 +97,8 @@ class GenericRetryExecutionTest {
 
   @Test
   void remainingDurationEmptyAfterIntervalElapsed() throws InterruptedException {
-    RetryExecution retryExecution = new GenericRetry().setInitialInterval(20).initExecution();
+    RetryExecution retryExecution =
+        GenericRetry.builder().withInitialInterval(20).build().initExecution();
 
     retryExecution.nextDelay();
     Thread.sleep(60);
@@ -107,9 +111,10 @@ class GenericRetryExecutionTest {
     long initialInterval = 1000L;
     double multiplier = 2.0;
     RetryExecution retryExecution =
-        new GenericRetry()
-            .setInitialInterval(initialInterval)
-            .setIntervalMultiplier(multiplier)
+        GenericRetry.builder()
+            .withInitialInterval(initialInterval)
+            .withIntervalMultiplier(multiplier)
+            .build()
             .initExecution();
 
     // first two calls keep the initial interval (multiplier only kicks in after attempt 1)

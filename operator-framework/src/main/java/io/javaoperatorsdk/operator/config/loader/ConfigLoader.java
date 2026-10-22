@@ -286,12 +286,12 @@ public class ConfigLoader {
     }
 
     return overrider -> {
-      GenericRetry retry = GenericRetry.defaultLimitedExponentialRetry();
-      maxAttempts.ifPresent(retry::setMaxAttempts);
-      initialInterval.ifPresent(retry::setInitialInterval);
-      intervalMultiplier.ifPresent(retry::setIntervalMultiplier);
-      maxInterval.ifPresent(retry::setMaxInterval);
-      overrider.withRetry(retry);
+      var retry = GenericRetry.builder();
+      maxAttempts.ifPresent(retry::withMaxAttempts);
+      initialInterval.ifPresent(retry::withInitialInterval);
+      intervalMultiplier.ifPresent(retry::withIntervalMultiplier);
+      maxInterval.ifPresent(retry::withMaxInterval);
+      overrider.withRetry(retry.build());
     };
   }
 

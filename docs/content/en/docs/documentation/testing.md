@@ -117,7 +117,7 @@ LocallyRunOperatorExtension.builder()
     // Override controller configuration
     .withReconciler(new MyReconciler(), config -> config
         .settingNamespace("specific-namespace")
-        .withRetry(new GenericRetry().withLinearRetry()))
+        .withRetry(GenericRetry.builder().withLinearRetry().build()))
     // Pre-deploy infrastructure resources before operator starts
     .withInfrastructure(configMap, secret)
     // Register CRDs for resources not managed by a reconciler
