@@ -157,6 +157,8 @@ You can specify the name of the finalizer to use for your `Reconciler` using the
 annotation. If you do not specify a finalizer name, one will be automatically generated for you.
 
 From v5, by default, the finalizer is added using Server Side Apply. See also `UpdateControl` in docs.
+The apply carries the resource's UID and resource version, so a resource deleted before the finalizer
+was added is not re-created: the API server rejects the apply, and the framework skips adding the finalizer.
 
 ### Read-cache-after-write consistency and event filtering
 
