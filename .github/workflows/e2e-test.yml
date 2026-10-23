@@ -27,18 +27,44 @@ jobs:
           - "sample-operators/operations"
           - "sample-operators/kotlin-operator"
     runs-on: ubuntu-latest
+    env:
+      MINIKUBE_VERSION: v1.39.0
+      # Use the latest versions supported by minikube, otherwise GitHub it will
+      # end up in a throttling requests from minikube and workflow will fail.
+      # Minikube does such requests only if a version is not officially supported.
+      KUBERNETES_VERSION: v1.37.0
     steps:
       - name: Checkout
         uses: actions/checkout@v7
 
+      # minikube downloads its base image and the preloaded Kubernetes images on every start,
+      # which regularly times out when many matrix jobs start at once
+      - name: Cache Minikube downloads
+        uses: actions/cache@v6
+        with:
+          path: ${{ runner.temp }}/.minikube/cache
+          key: minikube-${{ runner.os }}-${{ env.MINIKUBE_VERSION }}-${{ env.KUBERNETES_VERSION }}-docker
+
       - name: Setup Minikube-Kubernetes
+        id: minikube
+        continue-on-error: true
         uses: manusa/actions-setup-minikube@v2.19.0
         with:
-          minikube version: 'v1.39.0'
-          # Use the latest versions supported by minikube, otherwise GitHub it will
-          # end up in a throttling requests from minikube and workflow will fail.
-          # Minikube does such requests only if a version is not officially supported.
-          kubernetes version: 'v1.37.0'
+          minikube version: ${{ env.MINIKUBE_VERSION }}
+          kubernetes version: ${{ env.KUBERNETES_VERSION }}
+          github token: ${{ secrets.GITHUB_TOKEN }}
+          driver: docker
+
+      - name: Clean up failed Minikube setup
+        if: steps.minikube.outcome == 'failure'
+        run: '"$MINIKUBE_HOME/minikube" delete || true'
+
+      - name: Setup Minikube-Kubernetes (retry)
+        if: steps.minikube.outcome == 'failure'
+        uses: manusa/actions-setup-minikube@v2.19.0
+        with:
+          minikube version: ${{ env.MINIKUBE_VERSION }}
+          kubernetes version: ${{ env.KUBERNETES_VERSION }}
           github token: ${{ secrets.GITHUB_TOKEN }}
           driver: docker
 
