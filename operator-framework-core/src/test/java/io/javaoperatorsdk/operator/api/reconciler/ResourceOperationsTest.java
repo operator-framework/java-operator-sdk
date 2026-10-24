@@ -157,7 +157,7 @@ class ResourceOperationsTest {
   }
 
   @Test
-  void ssaFinalizerAddSendsUidAndResourceVersion() {
+  void ssaFinalizerAddSendsResourceVersion() {
     var resource = TestUtils.testCustomResource1();
     resource.getMetadata().setUid("uid-1");
     resource.getMetadata().setResourceVersion("1");
@@ -170,18 +170,16 @@ class ResourceOperationsTest {
 
     var metadata = applied.getValue().getMetadata();
     assertThat(metadata.getName()).isEqualTo(resource.getMetadata().getName());
-    assertThat(metadata.getUid()).isEqualTo("uid-1");
+    assertThat(metadata.getUid()).isNull();
     assertThat(metadata.getResourceVersion()).isEqualTo("1");
     assertThat(metadata.getFinalizers()).containsExactly(FINALIZER_NAME);
   }
 
   @Test
-  void ssaFinalizerAddDoesNotRecreateDeletedResource() {
+  void ssaFinalizerAddStopsWhenResourceIsGoneAfterConflict() {
     var resource = TestUtils.testCustomResource1();
-    resource.getMetadata().setUid("uid-1");
     resource.getMetadata().setResourceVersion("1");
     when(context.getPrimaryResource()).thenReturn(resource);
-    // with the UID set the API server rejects the apply of a missing resource with a conflict
     when(controllerEventSource.updateAndCacheResource(any(), any(UnaryOperator.class)))
         .thenThrow(new KubernetesClientException("Conflict", 409, null));
     when(resourceOp.get()).thenReturn(null);
@@ -196,11 +194,9 @@ class ResourceOperationsTest {
   @Test
   void ssaFinalizerAddRetriesConflictWithFreshResource() {
     var resource = TestUtils.testCustomResource1();
-    resource.getMetadata().setUid("uid-1");
     resource.getMetadata().setResourceVersion("1");
     when(context.getPrimaryResource()).thenReturn(resource);
     var freshResource = TestUtils.testCustomResource1();
-    freshResource.getMetadata().setUid("uid-1");
     freshResource.getMetadata().setResourceVersion("2");
     when(resourceOp.get()).thenReturn(freshResource);
     var applied = ArgumentCaptor.forClass(TestCustomResource.class);

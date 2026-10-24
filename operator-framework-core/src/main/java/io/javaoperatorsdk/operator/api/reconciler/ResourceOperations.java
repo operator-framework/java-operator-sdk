@@ -1261,17 +1261,14 @@ public class ResourceOperations<P extends HasMetadata> {
 
   /**
    * Adds finalizer using Server-Side Apply. In the background this method creates a fresh copy of
-   * the target resource, setting only name, namespace, UID, resource version and finalizer. It does
-   * not try to add the finalizer if there is already a finalizer or the resource is marked for
+   * the target resource, setting only name, namespace, resource version and finalizer. It does not
+   * try to add the finalizer if there is already a finalizer or the resource is marked for
    * deletion. Note that explicitly adding finalizer is required only if "Trigger reconciliation on
    * all event" mode is on.
    *
-   * <p>A Server-Side Apply creates the resource if it does not exist, so without further
-   * precautions the finalizer add would re-create a resource deleted after it was cached. The UID
-   * makes the API server reject the apply with a conflict instead, and the resource version adds
-   * optimistic locking. On conflict the resource is re-fetched and the apply retried, up to {@link
-   * ResourceOperations#DEFAULT_MAX_RETRY} times; if the resource no longer exists, nothing is
-   * applied and {@code null} is returned.
+   * <p>The resource version makes the apply use optimistic locking. On conflict the resource is
+   * re-fetched and the apply retried, up to {@link ResourceOperations#DEFAULT_MAX_RETRY} times; if
+   * the re-fetched resource no longer exists, nothing is applied and {@code null} is returned.
    *
    * @param finalizerName name of the finalizer to add
    * @return the patched resource from the server response, the resource unchanged if the finalizer
@@ -1302,7 +1299,6 @@ public class ResourceOperations<P extends HasMetadata> {
       @SuppressWarnings("unchecked")
       P resource = (P) actualResource.getClass().getConstructor().newInstance();
       resource.initNameAndNamespaceFrom(actualResource);
-      resource.getMetadata().setUid(actualResource.getMetadata().getUid());
       resource.getMetadata().setResourceVersion(actualResource.getMetadata().getResourceVersion());
       resource.addFinalizer(finalizerName);
       return resource;
