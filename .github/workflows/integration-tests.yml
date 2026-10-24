@@ -28,6 +28,8 @@ jobs:
     runs-on: ubuntu-latest
     continue-on-error: ${{ inputs.experimental }}
     timeout-minutes: 120
+    env:
+      MINIKUBE_VERSION: v1.39.0
     steps:
       - uses: actions/checkout@v7
         with:
@@ -38,10 +40,29 @@ jobs:
           distribution: temurin
           java-version: ${{ inputs.java-version }}
           cache: 'maven'
+      # minikube downloads kubelet, kubeadm and kubectl from dl.k8s.io on every start, which
+      # regularly times out when many matrix jobs start at once
+      - name: Cache Minikube downloads
+        uses: actions/cache@v6
+        with:
+          path: ${{ runner.temp }}/.minikube/cache
+          key: minikube-${{ runner.os }}-${{ env.MINIKUBE_VERSION }}-${{ inputs.kube-version }}-none
       - name: Set up Minikube
+        id: minikube
+        continue-on-error: true
         uses: manusa/actions-setup-minikube@v2.19.0
         with:
-          minikube version: 'v1.39.0'
+          minikube version: ${{ env.MINIKUBE_VERSION }}
+          kubernetes version: '${{ inputs.kube-version }}'
+          github token: ${{ github.token }}
+      - name: Clean up failed Minikube setup
+        if: steps.minikube.outcome == 'failure'
+        run: sudo -E --preserve-env=HOME,MINIKUBE_HOME "$MINIKUBE_HOME/minikube" delete || true
+      - name: Set up Minikube (retry)
+        if: steps.minikube.outcome == 'failure'
+        uses: manusa/actions-setup-minikube@v2.19.0
+        with:
+          minikube version: ${{ env.MINIKUBE_VERSION }}
           kubernetes version: '${{ inputs.kube-version }}'
           github token: ${{ github.token }}
 
