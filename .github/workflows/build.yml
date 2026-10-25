@@ -23,7 +23,7 @@ jobs:
   httpclient-tests:
     strategy:
       matrix:
-        httpclient: [ 'vertx', 'jdk', 'jetty' ]
+        httpclient: [ 'vertx-5', 'jdk', 'jetty' ]
     uses: ./.github/workflows/integration-tests.yml
     with:
       java-version: 25
