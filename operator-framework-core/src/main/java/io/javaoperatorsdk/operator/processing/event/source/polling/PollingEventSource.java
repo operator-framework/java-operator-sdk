@@ -136,9 +136,16 @@ public class PollingEventSource<R, P extends HasMetadata, ID>
     super.start();
     executorService = resolveExecutorService();
     getStateAndFillCache();
-    pollingTask =
+    var task =
         executorService.scheduleWithFixedDelay(
             this::poll, period.toMillis(), period.toMillis(), TimeUnit.MILLISECONDS);
+    pollingTask = task;
+    // stop() clears the running flag before it looks for the task, so a stop that happened during
+    // the initial fetch is either seen by stop (which cancels the task) or caught here
+    if (!isRunning()) {
+      task.cancel(false);
+      pollingTask = null;
+    }
   }
 
   private void poll() {
