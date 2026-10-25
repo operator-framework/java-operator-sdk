@@ -240,9 +240,12 @@ default); few threads are needed there since triggering a reconciliation only en
 for one of the reconciliation threads to pick up.
 
 Use `ConfigurationServiceOverrider.withScheduledExecutorService` to replace the polling executor
-altogether, or the `withExecutorService` method of the event source's own configuration builder to
-poll a single event source on an executor of its own. An executor provided that way is not managed
-by the operator: it is your responsibility to shut it down.
+altogether. The operator still manages the lifecycle of that executor: it shuts it down when the
+operator is stopped, so don't shut it down yourself.
+
+Use the `withExecutorService` method of the event source's own configuration builder to poll a
+single event source on an executor of its own. An executor provided that way is not managed by the
+operator: it is your responsibility to shut it down.
 
 #### Inbound event sources
 
