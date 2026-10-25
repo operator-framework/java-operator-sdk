@@ -38,7 +38,7 @@ import static org.mockito.Mockito.when;
  * whether the apply creates a missing resource or rejects it.
  */
 @EnableKubeAPIServer
-class AddFinalizerWithSSAIntegrationTest {
+class AddFinalizerWithSSAIntegrationIT {
 
   private static final String NAMESPACE = "default";
   private static final String FINALIZER = "int.test/finalizer";
