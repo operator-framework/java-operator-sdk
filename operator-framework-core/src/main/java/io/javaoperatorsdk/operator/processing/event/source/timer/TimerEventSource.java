@@ -19,9 +19,11 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executors;
+import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Supplier;
 
 import org.slf4j.Logger;
@@ -100,14 +102,30 @@ public class TimerEventSource<R extends HasMetadata> extends AbstractEventSource
       return;
     }
 
-    onceTasks.compute(
-        resourceID,
-        (id, alreadyScheduled) -> {
-          if (alreadyScheduled != null) {
-            alreadyScheduled.cancel(false);
-          }
-          return executor.schedule(new EventProducerTimeTask(id), delay, TimeUnit.MILLISECONDS);
-        });
+    var scheduled = new AtomicReference<ScheduledFuture<?>>();
+    try {
+      onceTasks.compute(
+          resourceID,
+          (id, alreadyScheduled) -> {
+            if (alreadyScheduled != null) {
+              alreadyScheduled.cancel(false);
+            }
+            var future =
+                executor.schedule(new EventProducerTimeTask(id), delay, TimeUnit.MILLISECONDS);
+            scheduled.set(future);
+            return future;
+          });
+    } catch (RejectedExecutionException e) {
+      if (isRunning()) {
+        throw e;
+      }
+      throw new IllegalStateException("The TimerEventSource is not running", e);
+    }
+    // stop() clears the running flag before cancelling the tasks, so a task that got registered
+    // concurrently with it is either cancelled by stop, or withdrawn here
+    if (!isRunning() && onceTasks.remove(resourceID, scheduled.get())) {
+      scheduled.get().cancel(false);
+    }
   }
 
   @Override
@@ -147,8 +165,8 @@ public class TimerEventSource<R extends HasMetadata> extends AbstractEventSource
   @Override
   public void stop() {
     if (isRunning()) {
-      onceTasks.keySet().forEach(this::cancelOnceSchedule);
       super.stop();
+      onceTasks.keySet().forEach(this::cancelOnceSchedule);
       if (ownsExecutorService && executorService != null) {
         executorService.shutdownNow();
       }
