@@ -1261,14 +1261,18 @@ public class ResourceOperations<P extends HasMetadata> {
 
   /**
    * Adds finalizer using Server-Side Apply. In the background this method creates a fresh copy of
-   * the target resource, setting only name, namespace, resource version and finalizer. It does not
-   * try to add the finalizer if there is already a finalizer or the resource is marked for
-   * deletion. Note that explicitly adding finalizer is required only if "Trigger reconciliation on
-   * all event" mode is on.
+   * the target resource, setting only name, namespace, UID and finalizer. It does not try to add
+   * the finalizer if there is already a finalizer or the resource is marked for deletion. Note that
+   * explicitly adding finalizer is required only if "Trigger reconciliation on all event" mode is
+   * on.
    *
-   * <p>The resource version makes the apply use optimistic locking. On conflict the resource is
-   * re-fetched and the apply retried, up to {@link ResourceOperations#DEFAULT_MAX_RETRY} times; if
-   * the re-fetched resource no longer exists, nothing is applied and {@code null} is returned.
+   * <p>A Server-Side Apply creates the resource if it does not exist, so without further
+   * precautions the finalizer add would re-create a resource deleted after it was cached. The UID
+   * makes the API server reject the apply instead: with a conflict (HTTP 409) if the resource no
+   * longer exists, and with unprocessable content (HTTP 422) if it was re-created under the same
+   * name. In both cases the resource is re-fetched and the apply retried, up to {@link
+   * ResourceOperations#DEFAULT_MAX_RETRY} times; if the resource no longer exists, nothing is
+   * applied and {@code null} is returned. No optimistic locking is used.
    *
    * @param finalizerName name of the finalizer to add
    * @return the patched resource from the server response, the resource unchanged if the finalizer
@@ -1291,7 +1295,7 @@ public class ResourceOperations<P extends HasMetadata> {
           return !r.isMarkedForDeletion() && !r.hasFinalizer(finalizerName);
         },
         r -> serverSideApplyPrimary(finalizerApplyFor(r, finalizerName), Options.cacheOnly()),
-        code -> code == HttpURLConnection.HTTP_CONFLICT);
+        code -> code == HttpURLConnection.HTTP_CONFLICT || code == 422);
   }
 
   private P finalizerApplyFor(P actualResource, String finalizerName) {
@@ -1299,7 +1303,7 @@ public class ResourceOperations<P extends HasMetadata> {
       @SuppressWarnings("unchecked")
       P resource = (P) actualResource.getClass().getConstructor().newInstance();
       resource.initNameAndNamespaceFrom(actualResource);
-      resource.getMetadata().setResourceVersion(actualResource.getMetadata().getResourceVersion());
+      resource.getMetadata().setUid(actualResource.getMetadata().getUid());
       resource.addFinalizer(finalizerName);
       return resource;
     } catch (InstantiationException
