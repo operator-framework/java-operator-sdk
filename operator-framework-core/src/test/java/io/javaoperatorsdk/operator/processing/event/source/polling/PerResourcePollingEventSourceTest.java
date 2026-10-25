@@ -24,6 +24,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import io.javaoperatorsdk.operator.TestUtils;
+import io.javaoperatorsdk.operator.api.config.BaseConfigurationService;
+import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.EventSourceContext;
 import io.javaoperatorsdk.operator.processing.ResourceIDMapper;
 import io.javaoperatorsdk.operator.processing.event.EventHandler;
@@ -213,6 +215,58 @@ class PerResourcePollingEventSourceTest
         .atMost(Duration.ofMillis(2 * PERIOD))
         .pollInterval(Duration.ofMillis(20))
         .untilAsserted(() -> verify(supplier, times(2)).fetchResources(any()));
+  }
+
+  @Test
+  void pollsAgainAfterRestart() {
+    source.onResourceCreated(testCustomResource);
+    await().untilAsserted(() -> verify(supplier, atLeast(2)).fetchResources(any()));
+    source.stop();
+
+    source.start();
+    clearInvocations(supplier);
+    source.onResourceCreated(testCustomResource);
+
+    await().untilAsserted(() -> verify(supplier, atLeast(2)).fetchResources(any()));
+  }
+
+  @Test
+  void pollsOnTheNewSharedSchedulerWhenTheOperatorIsRestarted() {
+    var configurationService = new BaseConfigurationService();
+    var executorServiceManager = configurationService.getExecutorServiceManager();
+    var controllerConfiguration = mock(ControllerConfiguration.class);
+    when(controllerConfiguration.getConfigurationService()).thenReturn(configurationService);
+    when(context.getControllerConfiguration()).thenReturn(controllerConfiguration);
+    setUpSource(
+        new PerResourcePollingEventSource<>(
+            SampleExternalResource.class,
+            context,
+            new PerResourcePollingConfigurationBuilder<
+                    SampleExternalResource, TestCustomResource, String>(
+                    supplier, Duration.ofMillis(PERIOD))
+                .withResourceIDMapper(r -> r.getName() + "#" + r.getValue())
+                .build()));
+
+    try {
+      source.onResourceCreated(testCustomResource);
+      await().untilAsserted(() -> verify(supplier, atLeast(2)).fetchResources(any()));
+      var firstExecutor = executorServiceManager.scheduledExecutorService();
+      source.stop();
+
+      executorServiceManager.stop(Duration.ofMillis(100));
+      executorServiceManager.start(configurationService);
+      assertThat(firstExecutor.isShutdown()).isTrue();
+      assertThat(executorServiceManager.scheduledExecutorService()).isNotSameAs(firstExecutor);
+
+      source.start();
+      clearInvocations(supplier);
+      source.onResourceCreated(testCustomResource);
+
+      await().untilAsserted(() -> verify(supplier, atLeast(2)).fetchResources(any()));
+    } finally {
+      source.stop();
+      executorServiceManager.stop(Duration.ofMillis(100));
+    }
   }
 
   @Test
