@@ -75,9 +75,42 @@ class PollingEventSourceTest
 
     // the polling task is cancelled on stop, a new one has to be scheduled on start
     pollingEventSource.start();
-    Thread.sleep(DEFAULT_WAIT_PERIOD);
+    clearInvocations(resourceFetcher);
 
+    await().untilAsserted(() -> verify(resourceFetcher, atLeast(2)).fetchResources());
     assertThat(pollingEventSource.getStatus()).isEqualTo(Status.HEALTHY);
+  }
+
+  @Test
+  void pollsOnTheNewSharedSchedulerWhenTheOperatorIsRestarted() {
+    when(resourceFetcher.fetchResources()).thenReturn(testResponseWithOneValue());
+    var configurationService = new BaseConfigurationService();
+    var executorServiceManager = configurationService.getExecutorServiceManager();
+    var eventSource =
+        new PollingEventSource<SampleExternalResource, HasMetadata, String>(
+            SampleExternalResource.class,
+            contextFor(configurationService),
+            new PollingConfiguration<>(null, resourceFetcher, POLL_PERIOD, null));
+    eventSource.setEventHandler(mock(EventHandler.class));
+
+    try {
+      eventSource.start();
+      var firstExecutor = executorServiceManager.scheduledExecutorService();
+      eventSource.stop();
+
+      executorServiceManager.stop(Duration.ofMillis(100));
+      executorServiceManager.start(configurationService);
+      assertThat(firstExecutor.isShutdown()).isTrue();
+      assertThat(executorServiceManager.scheduledExecutorService()).isNotSameAs(firstExecutor);
+
+      eventSource.start();
+      clearInvocations(resourceFetcher);
+
+      await().untilAsserted(() -> verify(resourceFetcher, atLeast(2)).fetchResources());
+    } finally {
+      eventSource.stop();
+      executorServiceManager.stop(Duration.ofMillis(100));
+    }
   }
 
   @Test
