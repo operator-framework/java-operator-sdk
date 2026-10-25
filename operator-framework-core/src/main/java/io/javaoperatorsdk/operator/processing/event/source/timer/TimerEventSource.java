@@ -17,6 +17,7 @@ package io.javaoperatorsdk.operator.processing.event.source.timer;
 
 import java.util.Map;
 import java.util.Set;
+import java.util.TimerTask;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executors;
 import java.util.concurrent.RejectedExecutionException;
@@ -183,7 +184,7 @@ public class TimerEventSource<R extends HasMetadata> extends AbstractEventSource
     return Set.of();
   }
 
-  public class EventProducerTimeTask implements Runnable {
+  public class EventProducerTimeTask extends TimerTask {
 
     protected final ResourceID customResourceUid;
 
