@@ -16,7 +16,9 @@
 package io.javaoperatorsdk.operator.api.reconciler;
 
 import java.lang.reflect.InvocationTargetException;
+import java.net.HttpURLConnection;
 import java.util.Optional;
+import java.util.function.IntPredicate;
 import java.util.function.Predicate;
 import java.util.function.UnaryOperator;
 
@@ -1170,9 +1172,34 @@ public class ResourceOperations<P extends HasMetadata> {
    * @return updated resource from the server or unchanged if the precondition does not hold
    * @throws OperatorException if the maximum number of retry attempts is exceeded
    */
-  @SuppressWarnings("unchecked")
   public P conflictRetryingPatchPrimary(
       UnaryOperator<P> resourceChangesOperator, Predicate<P> preCondition, boolean cacheOnly) {
+    return conflictRetrying(
+        preCondition,
+        r ->
+            jsonPatchPrimary(
+                r,
+                resourceChangesOperator,
+                cacheOnly
+                    ? Options.cacheOnly()
+                    : Options.matchAndFilterWithDefaultMatcher(UpdateType.JSON_PATCH)),
+        // also retry on unprocessable content (422) which can happen if JSON Patch is not a valid
+        // request since there was a concurrent request which already removed another finalizer:
+        // List element removal from a list is by index in JSON Patch so if addressing a second
+        // finalizer but first is meanwhile removed it is a wrong request.
+        code -> code == HttpURLConnection.HTTP_CONFLICT || code == 422);
+  }
+
+  /**
+   * Runs the given write against the primary resource, re-fetching the resource and retrying when
+   * the server responds with one of the retried HTTP codes, up to {@link
+   * ResourceOperations#DEFAULT_MAX_RETRY} times. The pre-condition is evaluated against the
+   * (possibly re-fetched) resource before each attempt; a re-fetched resource is {@code null} if it
+   * no longer exists.
+   */
+  @SuppressWarnings("unchecked")
+  private P conflictRetrying(
+      Predicate<P> preCondition, UnaryOperator<P> write, IntPredicate retriedCode) {
     var resource = context.getPrimaryResource();
     var client = context.getClient();
     if (log.isDebugEnabled()) {
@@ -1184,22 +1211,11 @@ public class ResourceOperations<P extends HasMetadata> {
         if (!preCondition.test(resource)) {
           return resource;
         }
-        return jsonPatchPrimary(
-            resource,
-            resourceChangesOperator,
-            cacheOnly
-                ? Options.cacheOnly()
-                : Options.matchAndFilterWithDefaultMatcher(UpdateType.JSON_PATCH));
+        return write.apply(resource);
       } catch (KubernetesClientException e) {
         log.trace("Exception during patch for resource: {}", resource);
         retryIndex++;
-        // only retry on conflict (409) and unprocessable content (422) which
-        // can happen if JSON Patch is not a valid request since there was
-        // a concurrent request which already removed another finalizer:
-        // List element removal from a list is by index in JSON Patch
-        // so if addressing a second finalizer but first is meanwhile removed
-        // it is a wrong request.
-        if (e.getCode() != 409 && e.getCode() != 422) {
+        if (!retriedCode.test(e.getCode())) {
           throw e;
         }
         if (retryIndex >= DEFAULT_MAX_RETRY) {
@@ -1235,7 +1251,8 @@ public class ResourceOperations<P extends HasMetadata> {
    * String)} with the configured finalizer name. Note that explicitly adding finalizer is required
    * only if "Trigger reconciliation on all event" mode is on.
    *
-   * @return the patched resource from the server response
+   * @return the patched resource from the server response, the resource unchanged if the finalizer
+   *     does not need to be added, or {@code null} if the resource no longer exists
    * @see #addFinalizerWithSSA(String)
    */
   public P addFinalizerWithSSA() {
@@ -1244,28 +1261,51 @@ public class ResourceOperations<P extends HasMetadata> {
 
   /**
    * Adds finalizer using Server-Side Apply. In the background this method creates a fresh copy of
-   * the target resource, setting only name, namespace and finalizer. Does not use optimistic
-   * locking for the patch. Note that explicitly adding finalizer is required only if "Trigger
-   * reconciliation on all event" mode is on.
+   * the target resource, setting only name, namespace, UID and finalizer. It does not try to add
+   * the finalizer if there is already a finalizer or the resource is marked for deletion. Note that
+   * explicitly adding finalizer is required only if "Trigger reconciliation on all event" mode is
+   * on.
+   *
+   * <p>A Server-Side Apply creates the resource if it does not exist, so without further
+   * precautions the finalizer add would re-create a resource deleted after it was cached. The UID
+   * makes the API server reject the apply instead: with a conflict (HTTP 409) if the resource no
+   * longer exists, and with unprocessable content (HTTP 422) if it was re-created under the same
+   * name. In both cases the resource is re-fetched and the apply retried, up to {@link
+   * ResourceOperations#DEFAULT_MAX_RETRY} times; if the resource no longer exists, nothing is
+   * applied and {@code null} is returned. No optimistic locking is used.
    *
    * @param finalizerName name of the finalizer to add
-   * @return the patched resource from the server response
+   * @return the patched resource from the server response, the resource unchanged if the finalizer
+   *     does not need to be added, or {@code null} if the resource no longer exists
    */
   public P addFinalizerWithSSA(String finalizerName) {
-    var originalResource = context.getPrimaryResource();
     if (log.isDebugEnabled()) {
+      var originalResource = context.getPrimaryResource();
       log.debug(
           "Adding finalizer (using SSA) for resource: {} version: {}",
           getUID(originalResource),
           getVersion(originalResource));
     }
+    return conflictRetrying(
+        r -> {
+          if (r == null) {
+            log.warn("Cannot add finalizer since resource no longer exists.");
+            return false;
+          }
+          return !r.isMarkedForDeletion() && !r.hasFinalizer(finalizerName);
+        },
+        r -> serverSideApplyPrimary(finalizerApplyFor(r, finalizerName), Options.cacheOnly()),
+        code -> code == HttpURLConnection.HTTP_CONFLICT || code == 422);
+  }
+
+  private P finalizerApplyFor(P actualResource, String finalizerName) {
     try {
       @SuppressWarnings("unchecked")
-      P resource = (P) originalResource.getClass().getConstructor().newInstance();
-      resource.initNameAndNamespaceFrom(originalResource);
+      P resource = (P) actualResource.getClass().getConstructor().newInstance();
+      resource.initNameAndNamespaceFrom(actualResource);
+      resource.getMetadata().setUid(actualResource.getMetadata().getUid());
       resource.addFinalizer(finalizerName);
-
-      return serverSideApplyPrimary(resource, Options.cacheOnly());
+      return resource;
     } catch (InstantiationException
         | IllegalAccessException
         | InvocationTargetException
@@ -1273,7 +1313,7 @@ public class ResourceOperations<P extends HasMetadata> {
       throw new RuntimeException(
           "Issue with creating custom resource instance with reflection."
               + " Custom Resources must provide a no-arg constructor. Class: "
-              + originalResource.getClass().getName(),
+              + actualResource.getClass().getName(),
           e);
     }
   }

@@ -157,6 +157,78 @@ class ResourceOperationsTest {
   }
 
   @Test
+  void ssaFinalizerAddSendsUidWithoutResourceVersion() {
+    var resource = TestUtils.testCustomResource1();
+    resource.getMetadata().setUid("uid-1");
+    resource.getMetadata().setResourceVersion("1");
+    when(context.getPrimaryResource()).thenReturn(resource);
+    var applied = ArgumentCaptor.forClass(TestCustomResource.class);
+    when(controllerEventSource.updateAndCacheResource(applied.capture(), any(UnaryOperator.class)))
+        .thenAnswer(invocation -> invocation.getArgument(0));
+
+    resourceOperations.addFinalizerWithSSA(FINALIZER_NAME);
+
+    var metadata = applied.getValue().getMetadata();
+    assertThat(metadata.getName()).isEqualTo(resource.getMetadata().getName());
+    assertThat(metadata.getUid()).isEqualTo("uid-1");
+    assertThat(metadata.getResourceVersion()).isNull();
+    assertThat(metadata.getFinalizers()).containsExactly(FINALIZER_NAME);
+  }
+
+  @Test
+  void ssaFinalizerAddDoesNotRecreateDeletedResource() {
+    var resource = TestUtils.testCustomResource1();
+    resource.getMetadata().setUid("uid-1");
+    when(context.getPrimaryResource()).thenReturn(resource);
+    // with the UID set the API server rejects the apply of a missing resource with a conflict
+    when(controllerEventSource.updateAndCacheResource(any(), any(UnaryOperator.class)))
+        .thenThrow(new KubernetesClientException("Conflict", 409, null));
+    when(resourceOp.get()).thenReturn(null);
+
+    var result = resourceOperations.addFinalizerWithSSA(FINALIZER_NAME);
+
+    assertThat(result).isNull();
+    verify(controllerEventSource, times(1)).updateAndCacheResource(any(), any(UnaryOperator.class));
+    verify(resourceOp, times(1)).get();
+  }
+
+  @Test
+  void ssaFinalizerAddRetriesWithUidOfRecreatedResource() {
+    var resource = TestUtils.testCustomResource1();
+    resource.getMetadata().setUid("uid-1");
+    when(context.getPrimaryResource()).thenReturn(resource);
+    var recreatedResource = TestUtils.testCustomResource1();
+    recreatedResource.getMetadata().setUid("uid-2");
+    when(resourceOp.get()).thenReturn(recreatedResource);
+    var applied = ArgumentCaptor.forClass(TestCustomResource.class);
+    // a UID differing from the existing resource's is rejected as an immutable field change
+    when(controllerEventSource.updateAndCacheResource(applied.capture(), any(UnaryOperator.class)))
+        .thenThrow(new KubernetesClientException("Unprocessable", 422, null))
+        .thenAnswer(invocation -> invocation.getArgument(0));
+
+    var result = resourceOperations.addFinalizerWithSSA(FINALIZER_NAME);
+
+    assertThat(result.hasFinalizer(FINALIZER_NAME)).isTrue();
+    assertThat(applied.getAllValues())
+        .extracting(r -> r.getMetadata().getUid())
+        .containsExactly("uid-1", "uid-2");
+    verify(resourceOp, times(1)).get();
+  }
+
+  @Test
+  void ssaFinalizerAddSkipsResourceThatAlreadyHasFinalizer() {
+    var resource = TestUtils.testCustomResource1();
+    resource.getMetadata().setResourceVersion("1");
+    resource.addFinalizer(FINALIZER_NAME);
+    when(context.getPrimaryResource()).thenReturn(resource);
+
+    var result = resourceOperations.addFinalizerWithSSA(FINALIZER_NAME);
+
+    assertThat(result).isSameAs(resource);
+    verify(controllerEventSource, never()).updateAndCacheResource(any(), any(UnaryOperator.class));
+  }
+
+  @Test
   void removesFinalizer() {
     var resource = TestUtils.testCustomResource1();
     resource.getMetadata().setResourceVersion("1");
