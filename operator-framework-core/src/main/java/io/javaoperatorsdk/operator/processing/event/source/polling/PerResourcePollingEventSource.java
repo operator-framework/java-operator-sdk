@@ -98,6 +98,9 @@ public class PerResourcePollingEventSource<R, P extends HasMetadata, ID>
 
   @Override
   public void start() throws OperatorException {
+    if (isRunning()) {
+      return;
+    }
     executorService = resolveExecutorService();
     super.start();
   }
