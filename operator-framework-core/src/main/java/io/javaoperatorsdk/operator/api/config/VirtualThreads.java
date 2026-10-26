@@ -18,12 +18,15 @@ package io.javaoperatorsdk.operator.api.config;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
+import java.util.Set;
 import java.util.concurrent.AbstractExecutorService;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -137,6 +140,9 @@ final class VirtualThreads {
    * time, the equivalent of a fixed size platform thread pool.
    */
   static ExecutorService newBoundedVirtualThreadExecutor(int maxConcurrency) {
+    if (maxConcurrency <= 0) {
+      throw new IllegalArgumentException("maxConcurrency must be positive: " + maxConcurrency);
+    }
     return new BoundedExecutorService(newVirtualThreadPerTaskExecutor(), maxConcurrency);
   }
 
@@ -152,6 +158,7 @@ final class VirtualThreads {
 
     private final ExecutorService delegate;
     private final Semaphore permits;
+    private final Set<PendingTask> pending = ConcurrentHashMap.newKeySet();
 
     private BoundedExecutorService(ExecutorService delegate, int maxConcurrency) {
       this.delegate = delegate;
@@ -160,25 +167,49 @@ final class VirtualThreads {
 
     @Override
     public void execute(Runnable command) {
-      delegate.execute(
-          () -> {
-            try {
-              permits.acquire();
-            } catch (InterruptedException e) {
-              Thread.currentThread().interrupt();
-              // shutdownNow interrupted us before the task even started: cancel it so that whoever
-              // waits on the associated future isn't left hanging
-              if (command instanceof Future) {
-                ((Future<?>) command).cancel(false);
-              }
-              return;
-            }
-            try {
-              command.run();
-            } finally {
-              permits.release();
-            }
-          });
+      Objects.requireNonNull(command);
+      var task = new PendingTask(command);
+      pending.add(task);
+      try {
+        delegate.execute(task);
+      } catch (RuntimeException e) {
+        pending.remove(task);
+        throw e;
+      }
+    }
+
+    private final class PendingTask implements Runnable {
+
+      private final Runnable command;
+      private final AtomicBoolean claimed = new AtomicBoolean();
+
+      private PendingTask(Runnable command) {
+        this.command = command;
+      }
+
+      private boolean claim() {
+        return claimed.compareAndSet(false, true);
+      }
+
+      @Override
+      public void run() {
+        try {
+          permits.acquire();
+        } catch (InterruptedException e) {
+          // shutdownNow interrupted us and already handed the task back to its caller
+          Thread.currentThread().interrupt();
+          return;
+        }
+        try {
+          if (!claim()) {
+            return;
+          }
+          pending.remove(this);
+          command.run();
+        } finally {
+          permits.release();
+        }
+      }
     }
 
     @Override
@@ -188,7 +219,15 @@ final class VirtualThreads {
 
     @Override
     public List<Runnable> shutdownNow() {
-      return delegate.shutdownNow();
+      var notStarted = new ArrayList<Runnable>();
+      for (var task : pending) {
+        if (task.claim()) {
+          pending.remove(task);
+          notStarted.add(task.command);
+        }
+      }
+      delegate.shutdownNow();
+      return notStarted;
     }
 
     @Override
