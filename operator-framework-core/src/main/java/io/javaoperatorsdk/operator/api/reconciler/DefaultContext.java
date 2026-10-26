@@ -50,6 +50,8 @@ public class DefaultContext<P extends HasMetadata> implements Context<P> {
   private final boolean primaryResourceDeleted;
   private final boolean primaryResourceFinalStateUnknown;
   private final Map<DependentResource<?, P>, Object> desiredStates = new ConcurrentHashMap<>();
+  private final Map<DependentResource<?, P>, DesiredStateInProgress> desiredStatesInProgress =
+      new ConcurrentHashMap<>();
   private final ResourceOperations<P> resourceOperations;
 
   public DefaultContext(
@@ -254,15 +256,40 @@ public class DefaultContext<P extends HasMetadata> implements Context<P> {
     return this;
   }
 
-  @SuppressWarnings("unchecked")
   public <R> R getOrComputeDesiredStateFor(
       DependentResource<R, P> dependentResource, Function<P, R> desiredStateComputer) {
+    return getOrComputeDesiredStateFor(dependentResource, dependentResource, desiredStateComputer);
+  }
+
+  /**
+   * Same as {@link #getOrComputeDesiredStateFor(DependentResource, Function)} but hands {@code
+   * aspectTarget} rather than {@code dependentResource} to the {@link DesiredStateAspect}s, for
+   * dependents that are only a stand-in for the one the user configured.
+   */
+  @SuppressWarnings("unchecked")
+  public <R> R getOrComputeDesiredStateFor(
+      DependentResource<R, P> dependentResource,
+      DependentResource<?, P> aspectTarget,
+      Function<P, R> desiredStateComputer) {
+    // an aspect can look up the actual resource of its dependent, which asks for the desired state
+    // being computed: the thread computing it is handed the state as it is so far, instead of
+    // re-entering the computation
+    final var computing = desiredStatesInProgress.get(dependentResource);
+    if (computing != null && computing.thread() == Thread.currentThread()) {
+      return (R) computing.desired();
+    }
     return (R)
         desiredStates.computeIfAbsent(
             dependentResource,
             ignored -> {
               final var desired = desiredStateComputer.apply(getPrimaryResource());
-              applyDesiredStateAspects(desired, dependentResource);
+              desiredStatesInProgress.put(
+                  dependentResource, new DesiredStateInProgress(Thread.currentThread(), desired));
+              try {
+                applyDesiredStateAspects(desired, aspectTarget);
+              } finally {
+                desiredStatesInProgress.remove(dependentResource);
+              }
               return desired;
             });
   }
@@ -273,11 +300,13 @@ public class DefaultContext<P extends HasMetadata> implements Context<P> {
    * resources are therefore left untouched.
    */
   private void applyDesiredStateAspects(Object desired, DependentResource<?, P> dependentResource) {
-    if (desired instanceof HasMetadata hasMetadata) {
+    if (desired instanceof HasMetadata hasMetadata && controllerConfiguration != null) {
       controllerConfiguration
           .getConfigurationService()
           .desiredStateAspects()
           .forEach(aspect -> aspect.apply(hasMetadata, dependentResource, this));
     }
   }
+
+  private record DesiredStateInProgress(Thread thread, Object desired) {}
 }

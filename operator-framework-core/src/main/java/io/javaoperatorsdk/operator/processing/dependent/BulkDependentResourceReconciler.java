@@ -24,8 +24,10 @@ import java.util.Set;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
+import io.javaoperatorsdk.operator.api.reconciler.DefaultContext;
 import io.javaoperatorsdk.operator.api.reconciler.Ignore;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.Deleter;
+import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.ReconcileResult;
 
 class BulkDependentResourceReconciler<R, P extends HasMetadata, ID>
@@ -113,6 +115,14 @@ class BulkDependentResourceReconciler<R, P extends HasMetadata, ID>
     @SuppressWarnings("unchecked")
     public R update(R actual, R desired, P primary, Context<P> context) {
       return ((Updater<R, P>) bulkDependentResource).update(actual, desired, primary, context);
+    }
+
+    @Override
+    @SuppressWarnings("unchecked")
+    protected R getOrComputeDesired(Context<P> context) {
+      return ((DefaultContext<P>) context)
+          .getOrComputeDesiredStateFor(
+              this, (DependentResource<?, P>) bulkDependentResource, p -> desired);
     }
 
     @Override
