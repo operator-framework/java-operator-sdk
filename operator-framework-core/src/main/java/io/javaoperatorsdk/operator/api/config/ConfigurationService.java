@@ -16,6 +16,7 @@
 package io.javaoperatorsdk.operator.api.config;
 
 import java.time.Duration;
+import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
@@ -41,6 +42,7 @@ import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.Experimental;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResourceFactory;
+import io.javaoperatorsdk.operator.api.reconciler.dependent.DesiredStateAspect;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependent;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependentResource;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependentResourceConfig;
@@ -145,11 +147,11 @@ public interface ConfigurationService {
    * you do not need to worry about setting the namespace information in most cases).
    *
    * <p>Previous versions of this class provided direct access to the serialization mechanism (via
-   * {@link com.fasterxml.jackson.databind.ObjectMapper}) or the client's configuration. This was
-   * somewhat confusing, in particular with respect to changes made in the Fabric8 client
-   * serialization architecture made in 6.7. The proper way to configure these aspects is now to
-   * configure the Kubernetes client accordingly and the SDK will extract the information it needs
-   * from this instance. The recommended way to do so is to create your operator with {@link
+   * {@link tools.jackson.databind.ObjectMapper}) or the client's configuration. This was somewhat
+   * confusing, in particular with respect to changes made in the Fabric8 client serialization
+   * architecture made in 6.7. The proper way to configure these aspects is now to configure the
+   * Kubernetes client accordingly and the SDK will extract the information it needs from this
+   * instance. The recommended way to do so is to create your operator with {@link
    * io.javaoperatorsdk.operator.Operator#Operator(Consumer)}, passing your custom instance with
    * {@link ConfigurationServiceOverrider#withKubernetesClient(KubernetesClient)}.
    *
@@ -538,5 +540,19 @@ public interface ConfigurationService {
     var pool = new DefaultInformerPool();
     pool.setConfigurationService(this);
     return pool;
+  }
+
+  /**
+   * Retrieves the {@link DesiredStateAspect}s applied to the desired state of all the Kubernetes
+   * dependent resources managed by the operator. Aspects are applied in the order in which they are
+   * returned, right after the desired state has been computed, and are typically used to add common
+   * metadata (such as a label identifying the operator managing the resource) to all the resources
+   * the operator creates or updates.
+   *
+   * @return the list of aspects to apply to computed desired states, empty by default
+   * @since 5.6.0
+   */
+  default List<DesiredStateAspect> desiredStateAspects() {
+    return List.of();
   }
 }

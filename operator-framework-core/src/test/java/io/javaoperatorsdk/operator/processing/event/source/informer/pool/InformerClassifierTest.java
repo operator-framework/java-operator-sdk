@@ -45,7 +45,7 @@ class InformerClassifierTest {
   private static final FieldSelector FIELD_SELECTOR =
       new FieldSelector(new FieldSelector.Field("status.phase", "Running"));
   private static final Long LIMIT = 100L;
-  private static final ItemStore<TestCustomResource> ITEM_STORE = mock(ItemStore.class);
+  private static final ItemStore<TestCustomResource> ITEM_STORE = mock();
 
   private static InformerClassifier<TestCustomResource> base() {
     return new InformerClassifier<>(
@@ -57,7 +57,8 @@ class InformerClassifierTest {
         GVK,
         FIELD_SELECTOR,
         LIMIT,
-        ITEM_STORE);
+        ITEM_STORE,
+        false);
   }
 
   @Test
@@ -78,7 +79,8 @@ class InformerClassifierTest {
             GVK,
             FIELD_SELECTOR,
             999L,
-            ITEM_STORE);
+            ITEM_STORE,
+            false);
 
     assertThat(base()).isEqualTo(withOtherLimit);
     assertThat(base()).hasSameHashCodeAs(withOtherLimit);
@@ -103,7 +105,8 @@ class InformerClassifierTest {
             GVK,
             FIELD_SELECTOR,
             LIMIT,
-            ITEM_STORE);
+            ITEM_STORE,
+            false);
 
     assertThat(classifier.toString())
         .contains("https://localhost:8443/")
@@ -124,7 +127,8 @@ class InformerClassifierTest {
             GVK,
             FIELD_SELECTOR,
             LIMIT,
-            ITEM_STORE);
+            ITEM_STORE,
+            false);
 
     assertThat(classifier.toString()).contains(NAMESPACE);
   }
@@ -144,7 +148,8 @@ class InformerClassifierTest {
                 GVK,
                 FIELD_SELECTOR,
                 LIMIT,
-                ITEM_STORE));
+                ITEM_STORE,
+                false));
   }
 
   @Test
@@ -160,7 +165,8 @@ class InformerClassifierTest {
                 GVK,
                 FIELD_SELECTOR,
                 LIMIT,
-                ITEM_STORE));
+                ITEM_STORE,
+                false));
   }
 
   @Test
@@ -176,7 +182,8 @@ class InformerClassifierTest {
                 GVK,
                 FIELD_SELECTOR,
                 LIMIT,
-                ITEM_STORE));
+                ITEM_STORE,
+                false));
   }
 
   @Test
@@ -192,14 +199,16 @@ class InformerClassifierTest {
                 GVK,
                 FIELD_SELECTOR,
                 LIMIT,
-                ITEM_STORE));
+                ITEM_STORE,
+                false));
   }
 
   @Test
   void differsWhenResourceClassDiffers() {
-    // item stores are null here because their generic type is tied to the resource class, which is
-    // exactly the field under test; this keeps the resource class the only difference.
-    var forTestResource =
+    // the resource class is the field under test, so everything tied to it follows: the item stores
+    // are null to keep it the only difference, and both are declared as wildcards since their type
+    // argument differs with it
+    InformerClassifier<?> forTestResource =
         new InformerClassifier<>(
             CLIENT,
             LABEL,
@@ -209,8 +218,9 @@ class InformerClassifierTest {
             GVK,
             FIELD_SELECTOR,
             LIMIT,
-            null);
-    var forOtherResource =
+            null,
+            false);
+    InformerClassifier<?> forOtherResource =
         new InformerClassifier<>(
             CLIENT,
             LABEL,
@@ -220,7 +230,8 @@ class InformerClassifierTest {
             GVK,
             FIELD_SELECTOR,
             LIMIT,
-            null);
+            null,
+            false);
 
     assertThat(forTestResource).isNotEqualTo(forOtherResource);
   }
@@ -238,7 +249,8 @@ class InformerClassifierTest {
                 new GroupVersionKind("sample.io/v1", "Bar"),
                 FIELD_SELECTOR,
                 LIMIT,
-                ITEM_STORE));
+                ITEM_STORE,
+                false));
   }
 
   @Test
@@ -254,7 +266,8 @@ class InformerClassifierTest {
                 GVK,
                 new FieldSelector(new FieldSelector.Field("status.phase", "Pending")),
                 LIMIT,
-                ITEM_STORE));
+                ITEM_STORE,
+                false));
   }
 
   @Test
@@ -270,7 +283,25 @@ class InformerClassifierTest {
                 GVK,
                 FIELD_SELECTOR,
                 LIMIT,
-                mock(ItemStore.class)));
+                mock(),
+                false));
+  }
+
+  @Test
+  void differsWhenWithoutNamespaceIndexDiffers() {
+    assertThat(base())
+        .isNotEqualTo(
+            new InformerClassifier<>(
+                CLIENT,
+                LABEL,
+                SHARD,
+                NAMESPACE,
+                TestCustomResource.class,
+                GVK,
+                FIELD_SELECTOR,
+                LIMIT,
+                ITEM_STORE,
+                true));
   }
 
   @Test
@@ -285,7 +316,8 @@ class InformerClassifierTest {
             GVK,
             FIELD_SELECTOR,
             999L,
-            ITEM_STORE);
+            ITEM_STORE,
+            false);
 
     assertThat(base().differsOnlyByInformerListLimit(withOtherLimit)).isTrue();
   }
@@ -308,8 +340,51 @@ class InformerClassifierTest {
             GVK,
             FIELD_SELECTOR,
             999L,
-            ITEM_STORE);
+            ITEM_STORE,
+            false);
 
     assertThat(base().differsOnlyByInformerListLimit(differentNamespaceAndLimit)).isFalse();
+  }
+
+  @Test
+  void differsOnlyByNamespaceIndexIsTrueWhenOnlyIndexDiffers() {
+    var withoutIndex =
+        new InformerClassifier<>(
+            CLIENT,
+            LABEL,
+            SHARD,
+            NAMESPACE,
+            TestCustomResource.class,
+            GVK,
+            FIELD_SELECTOR,
+            LIMIT,
+            ITEM_STORE,
+            true);
+
+    assertThat(base().differsOnlyByNamespaceIndex(withoutIndex)).isTrue();
+  }
+
+  @Test
+  void differsOnlyByNamespaceIndexIsFalseWhenFullyEqual() {
+    assertThat(base().differsOnlyByNamespaceIndex(base())).isFalse();
+  }
+
+  @Test
+  void differsOnlyByNamespaceIndexIsFalseWhenAnotherFieldDiffers() {
+    // different namespace AND different index setting: not "only by namespace index"
+    var differentNamespaceAndIndex =
+        new InformerClassifier<>(
+            CLIENT,
+            LABEL,
+            SHARD,
+            "other-ns",
+            TestCustomResource.class,
+            GVK,
+            FIELD_SELECTOR,
+            LIMIT,
+            ITEM_STORE,
+            true);
+
+    assertThat(base().differsOnlyByNamespaceIndex(differentNamespaceAndIndex)).isFalse();
   }
 }

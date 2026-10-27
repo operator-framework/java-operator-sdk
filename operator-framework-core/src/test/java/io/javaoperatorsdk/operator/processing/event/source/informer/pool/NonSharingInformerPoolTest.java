@@ -138,6 +138,6 @@ class NonSharingInformerPoolTest {
 
   private InformerClassifier<TestCustomResource> classifier(String namespace) {
     return new InformerClassifier<>(
-        client, null, null, namespace, TestCustomResource.class, null, null, null, null);
+        client, null, null, namespace, TestCustomResource.class, null, null, null, null, false);
   }
 }

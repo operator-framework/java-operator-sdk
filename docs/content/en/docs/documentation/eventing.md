@@ -348,6 +348,30 @@ See
 also [CaffeineBoundedItemStores](https://github.com/operator-framework/java-operator-sdk/blob/main/caffeine-bounded-cache-support/src/main/java/io/javaoperatorsdk/operator/processing/event/source/cache/CaffeineBoundedItemStores.java)
 for more details.
 
+### Removing the Namespace Index
+
+Informers keep an index from namespace to the resources cached for it. JOSDK never reads that index,
+only the ones registered explicitly through `IndexerResourceCache.addIndexers(..)`, so it can be
+removed to save an entry per cached resource:
+
+```java
+@ControllerConfiguration(informer = @Informer(withoutNamespaceIndex = true))
+public class MyReconciler implements Reconciler<MyCustomResource> { }
+```
+
+The same option is available on `InformerEventSourceConfiguration.Builder` for event sources, and on
+`InformerConfiguration.Builder`.
+
+This matters most for informers that cache a large number of resources, and in particular together
+with a custom [item store](#bounded-caches-for-informers) that keeps only a reduced form of each
+resource: the index is keyed independently of what the store does with the resource itself, so
+shrinking what is cached does not shrink the index.
+
+Note that this takes part in the informer pool identity described below: an event source that
+removes the index does not share an informer with one that keeps it. If two event sources watch the
+same resource type and only one of them sets the option, they end up with two informers, and two
+caches of that resource type, which can cost far more memory than the index ever did.
+
 ### Sharing Informers Between Controllers (Informer Pool)
 
 {{% alert title="Experimental" color="warning" %}}
@@ -374,7 +398,10 @@ Two event sources share an informer when their effective informer configuration 
 - the resource type (or the group/version/kind for generic resources),
 - the watched namespace,
 - the label, field and shard selectors,
-- the configured [item store](#bounded-caches-for-informers).
+- the configured [item store](#bounded-caches-for-informers),
+- whether the [namespace index is removed](#removing-the-namespace-index): it cannot be present for
+  one event source and absent for another on one shared informer, so event sources that disagree on
+  it are backed by separate informers.
 
 The `informerListLimit` is intentionally *not* part of this identity: if two otherwise-equivalent
 event sources request a different list limit, the existing informer is reused (a warning is logged
