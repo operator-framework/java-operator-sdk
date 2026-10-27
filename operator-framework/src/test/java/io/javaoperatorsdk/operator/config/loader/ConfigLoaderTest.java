@@ -337,7 +337,11 @@ class ConfigLoaderTest {
           Map.entry(
               "withCloneSecondaryResourcesWhenGettingFromCache",
               "clone-secondary-resources-when-getting-from-cache"),
-          Map.entry("withClusterScopedEventNamespace", "events.cluster-scoped-namespace"));
+          Map.entry("withClusterScopedEventNamespace", "events.cluster-scoped-namespace"),
+          Map.entry(
+              "withConcurrentRetryAndRescheduleThreads", "retry-and-reschedule.concurrent-threads"),
+          Map.entry("withConcurrentScheduledTaskThreads", "scheduled-tasks.concurrent-threads"),
+          Map.entry("withUseVirtualThreads", "use-virtual-threads"));
 
   /**
    * Maps every scalar setter of {@link ControllerConfigurationOverrider} to the property key suffix
