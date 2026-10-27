@@ -158,11 +158,11 @@ class ManagedInformerEventSourceNamespaceChangeTest {
   /** The mock client hands out the very same informer for every namespace. */
   private SharedIndexInformer informer() {
     return clientMock
-        .resources(Deployment.class)
-        .inNamespace("ns1")
-        .withLabelSelector((String) null)
-        .withShardSelector(null)
-        .runnableInformer(0);
+            .resources(Deployment.class)
+            .inNamespace("ns1")
+            .withLabelSelector((String) null)
+            .withShardSelector(null)
+            .runnableInformer(0);
   }
 
   private InformerEventSource<Deployment, TestCustomResource> buildEventSource() {

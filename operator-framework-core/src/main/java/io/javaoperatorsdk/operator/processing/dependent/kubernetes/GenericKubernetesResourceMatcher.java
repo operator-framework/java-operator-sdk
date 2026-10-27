@@ -25,7 +25,7 @@ import io.fabric8.zjsonpatch.JsonDiff;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.processing.dependent.Matcher;
 
-import com.fasterxml.jackson.databind.JsonNode;
+import tools.jackson.databind.JsonNode;
 
 public class GenericKubernetesResourceMatcher<R extends HasMetadata, P extends HasMetadata> {
 
@@ -264,7 +264,7 @@ public class GenericKubernetesResourceMatcher<R extends HasMetadata, P extends H
     if (!ignoreList.isEmpty()) {
       return nodeIsChildOf(diff, ignoreList);
     }
-    return ADD.equals(diff.get(OP).asText());
+    return ADD.equals(diff.get(OP).asString());
   }
 
   static boolean nodeIsChildOf(JsonNode n, List<String> prefixes) {
@@ -278,6 +278,6 @@ public class GenericKubernetesResourceMatcher<R extends HasMetadata, P extends H
   }
 
   static String getPath(JsonNode n) {
-    return n.get(PATH).asText();
+    return n.get(PATH).asString();
   }
 }

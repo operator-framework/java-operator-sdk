@@ -28,8 +28,10 @@ import org.slf4j.LoggerFactory;
 
 import io.javaoperatorsdk.operator.config.loader.ConfigProvider;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
+import tools.jackson.core.JacksonException;
+import tools.jackson.core.JsonParser;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.dataformat.yaml.YAMLMapper;
 
 /**
  * A {@link ConfigProvider} that resolves configuration values from a YAML file.
@@ -44,7 +46,7 @@ public class YamlConfigProvider implements ConfigProvider {
 
   private static final Logger log = LoggerFactory.getLogger(YamlConfigProvider.class);
 
-  private static final ObjectMapper MAPPER = new ObjectMapper(new YAMLFactory());
+  private static final ObjectMapper MAPPER = YAMLMapper.builder().build();
 
   private final Map<String, Object> data;
 
@@ -101,7 +103,7 @@ public class YamlConfigProvider implements ConfigProvider {
     }
 
     try (InputStream in = Files.newInputStream(path);
-        com.fasterxml.jackson.core.JsonParser parser = MAPPER.getFactory().createParser(in)) {
+        JsonParser parser = MAPPER.createParser(in)) {
       if (parser.nextToken() == null) {
         log.debug(
             "YAML file contains no mappings (possibly empty or comments only). "
@@ -113,6 +115,8 @@ public class YamlConfigProvider implements ConfigProvider {
       return result != null ? result : Map.of();
     } catch (IOException e) {
       throw new UncheckedIOException("Failed to load config YAML from " + path, e);
+    } catch (JacksonException e) {
+      throw new UncheckedIOException("Failed to load config YAML from " + path, new IOException(e));
     }
   }
 }
