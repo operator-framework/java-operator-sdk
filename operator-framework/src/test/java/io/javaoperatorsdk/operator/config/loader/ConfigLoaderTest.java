@@ -330,6 +330,7 @@ class ConfigLoaderTest {
           Map.entry("withDefaultFilters", "default-filters"),
           Map.entry("withInformerListLimit", "informer.list-limit"),
           Map.entry("withComparableResourceVersions", "informer.comparable-resource-versions"),
+          Map.entry("withoutNamespaceIndex", "informer.without-namespace-index"),
           // not a plain binding: the value is a comma-separated list of namespaces
           Map.entry("settingNamespace", "namespaces"));
 
@@ -650,8 +651,9 @@ class ConfigLoaderTest {
     if (methodParam == Long.class && bindingType == long.class) return true;
     if (methodParam == double.class && bindingType == Double.class) return true;
     return methodParam == Double.class && bindingType == double.class;
-  // -- watched namespaces -----------------------------------------------------
+    // -- watched namespaces -----------------------------------------------------
   }
+
   private static Set<String> applyAndGetNamespaces(
       java.util.function.Consumer<
               ControllerConfigurationOverrider<io.fabric8.kubernetes.api.model.ConfigMap>>
