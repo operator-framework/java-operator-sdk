@@ -147,11 +147,11 @@ public interface ConfigurationService {
    * you do not need to worry about setting the namespace information in most cases).
    *
    * <p>Previous versions of this class provided direct access to the serialization mechanism (via
-   * {@link com.fasterxml.jackson.databind.ObjectMapper}) or the client's configuration. This was
-   * somewhat confusing, in particular with respect to changes made in the Fabric8 client
-   * serialization architecture made in 6.7. The proper way to configure these aspects is now to
-   * configure the Kubernetes client accordingly and the SDK will extract the information it needs
-   * from this instance. The recommended way to do so is to create your operator with {@link
+   * {@link tools.jackson.databind.ObjectMapper}) or the client's configuration. This was somewhat
+   * confusing, in particular with respect to changes made in the Fabric8 client serialization
+   * architecture made in 6.7. The proper way to configure these aspects is now to configure the
+   * Kubernetes client accordingly and the SDK will extract the information it needs from this
+   * instance. The recommended way to do so is to create your operator with {@link
    * io.javaoperatorsdk.operator.Operator#Operator(Consumer)}, passing your custom instance with
    * {@link ConfigurationServiceOverrider#withKubernetesClient(KubernetesClient)}.
    *

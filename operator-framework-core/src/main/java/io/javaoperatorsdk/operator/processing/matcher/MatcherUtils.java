@@ -20,10 +20,10 @@ import io.fabric8.zjsonpatch.JsonDiff;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.matcher.Matcher;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.node.JsonNodeFactory;
-import com.fasterxml.jackson.databind.node.NullNode;
-import com.fasterxml.jackson.databind.node.ObjectNode;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.node.JsonNodeFactory;
+import tools.jackson.databind.node.NullNode;
+import tools.jackson.databind.node.ObjectNode;
 
 /** Shared helpers for the client-side patch based {@link Matcher} implementations. */
 final class MatcherUtils {
@@ -66,9 +66,7 @@ final class MatcherUtils {
     }
     var targetObject =
         target.isObject() ? (ObjectNode) target : JsonNodeFactory.instance.objectNode();
-    var fields = patch.fields();
-    while (fields.hasNext()) {
-      var entry = fields.next();
+    for (var entry : patch.properties()) {
       if (entry.getValue().isNull()) {
         targetObject.remove(entry.getKey());
       } else {
