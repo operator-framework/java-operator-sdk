@@ -32,7 +32,7 @@ import io.javaoperatorsdk.annotation.Sample;
 import io.javaoperatorsdk.operator.api.config.InformerStoppedHandler;
 import io.javaoperatorsdk.operator.junit.LocallyRunOperatorExtension;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
+import tools.jackson.core.JacksonException;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
@@ -93,7 +93,7 @@ class MultiVersionCRDIT {
                     final var object = unmarshal.get("object");
                     resourceCreateAsVersion =
                         acceptOnlyIfUnsetOrEqualToAlreadySet(
-                            resourceCreateAsVersion, object.get("apiVersion").asText());
+                            resourceCreateAsVersion, object.get("apiVersion").asString());
                     // extract the asked resource version
                     failedResourceVersion =
                         acceptOnlyIfUnsetOrEqualToAlreadySet(
@@ -103,8 +103,8 @@ class MultiVersionCRDIT {
                                 .get("managedFields")
                                 .get(0)
                                 .get("apiVersion")
-                                .asText());
-                  } catch (JsonProcessingException e) {
+                                .asString());
+                  } catch (JacksonException e) {
                     throw new RuntimeException(e);
                   }
                 });
