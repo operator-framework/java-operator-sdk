@@ -15,6 +15,8 @@
  */
 package io.javaoperatorsdk.operator.api.event;
 
+import java.util.Objects;
+
 import io.fabric8.kubernetes.api.model.Event;
 import io.fabric8.kubernetes.api.model.EventBuilder;
 import io.fabric8.kubernetes.client.KubernetesClient;
@@ -30,8 +32,12 @@ import static java.util.Objects.requireNonNullElse;
  * <p>An event that does not exist yet is created. An event that does is a repeat of one already
  * recorded, since the name of an event is derived from everything that identifies it (see {@link
  * DefaultEventRecorder}), and is aggregated onto the recorded one by patching its {@code count} and
- * {@code lastTimestamp}. That is what makes {@code kubectl describe} report a repeating event once,
- * as {@code (x12 over 3m)}, rather than filling the event list with copies of it.
+ * {@code lastTimestamp}, along with its {@code message}, {@code type}, {@code reason} and {@code
+ * action}, which events sharing a name explicitly may differ in, unless the event carries an {@code
+ * eventTime} (see {@link DefaultEventRecorder}), in which case the API server treats them as
+ * immutable and recording an event that differs in them is rejected. That is what makes {@code
+ * kubectl describe} report a repeating event once, as {@code (x12 over 3m)}, rather than filling
+ * the event list with copies of it.
  *
  * <p>Recording therefore needs {@code get}, {@code create} and {@code patch} on {@code events} in
  * the core API group. The patch is made on the resource version the event was read at, so two
@@ -55,13 +61,31 @@ public class DefaultEventSink implements EventSink {
     if (existing == null) {
       events.resource(event).create();
     } else {
-      var aggregated =
+      if (existing.getEventTime() != null && differsInImmutableFields(existing, event)) {
+        throw new IllegalStateException(
+            "Event "
+                + name
+                + " carries an eventTime, so its type, reason and action cannot change, but the"
+                + " event to record differs in them: use distinct event names for them");
+      }
+      var builder =
           new EventBuilder(existing)
               .withCount(requireNonNullElse(existing.getCount(), 1) + 1)
               .withLastTimestamp(event.getLastTimestamp())
               .withMessage(event.getMessage())
-              .build();
+              .withType(event.getType())
+              .withReason(event.getReason());
+      if (event.getAction() != null) {
+        builder.withAction(event.getAction());
+      }
+      var aggregated = builder.build();
       events.resource(existing).patch(aggregated);
     }
+  }
+
+  private static boolean differsInImmutableFields(Event existing, Event event) {
+    return !Objects.equals(existing.getType(), event.getType())
+        || !Objects.equals(existing.getReason(), event.getReason())
+        || (event.getAction() != null && !Objects.equals(existing.getAction(), event.getAction()));
   }
 }
