@@ -123,6 +123,28 @@ class EventRecorderAuditTest {
     assertThat(patched.get().getReason()).isEqualTo("Degraded");
   }
 
+  @Test
+  void aggregatingOntoAnEventWithAnEventTimeRejectsChangedImmutableFields() {
+    var stored = new AtomicReference<Event>();
+    var patched = new AtomicReference<Event>();
+    var sink = new DefaultEventSink(mockClient(stored, patched));
+    var recorder =
+        DefaultEventRecorder.builder(sink)
+            .namingStrategy((regarding, record) -> Optional.of("fixed-name"))
+            .build();
+    var context = context(clusterScoped("ns1"), "operator-ns");
+
+    recorder.record(EventRecord.normal("Ready", "all good"), context);
+    recorder.record(EventRecord.warning("Degraded", "replica down"), context);
+
+    assertThat(patched.get()).isNull();
+    assertThat(stored.get().getType()).isEqualTo("Normal");
+
+    recorder.record(EventRecord.normal("Ready", "still good"), context);
+
+    assertThat(patched.get().getCount()).isEqualTo(2);
+  }
+
   /**
    * Supplied names are truncated to 253 characters, which silently maps distinct names onto the
    * same event, so two different events of a long-named object are aggregated as one.
@@ -198,6 +220,15 @@ class EventRecorderAuditTest {
     when(context.getPrimaryResource()).thenReturn(primaryResource);
     when(context.getControllerConfiguration()).thenReturn(controllerConfiguration);
     return context;
+  }
+
+  private HasMetadata clusterScoped(String name) {
+    return new NamespaceBuilder()
+        .withNewMetadata()
+        .withName(name)
+        .withUid("uid-3")
+        .endMetadata()
+        .build();
   }
 
   private ConfigMap configMap(String name) {

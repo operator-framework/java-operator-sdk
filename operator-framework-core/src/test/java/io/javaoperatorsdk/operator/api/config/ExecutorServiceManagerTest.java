@@ -16,10 +16,14 @@
 package io.javaoperatorsdk.operator.api.config;
 
 import java.time.Duration;
+import java.util.Optional;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.EnabledForJreRange;
+import org.junit.jupiter.api.condition.JRE;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.awaitility.Awaitility.await;
 
 class ExecutorServiceManagerTest {
 
@@ -61,5 +65,52 @@ class ExecutorServiceManagerTest {
     assertThat(manager.retryAndRescheduleExecutorService().isShutdown()).isFalse();
 
     manager.stop(SHUTDOWN_TIMEOUT);
+  }
+
+  @Test
+  @EnabledForJreRange(min = JRE.JAVA_21)
+  void cachingExecutorRunsOnVirtualThreadsWhenRequested() throws Exception {
+    var configurationService =
+        ConfigurationService.newOverriddenConfigurationService(
+            new BaseConfigurationService(), o -> o.withUseVirtualThreads(true));
+    var manager = configurationService.getExecutorServiceManager();
+    try {
+      var virtual =
+          manager.cachingExecutorService().submit(() -> VirtualThreadsTest.onVirtualThread()).get();
+      assertThat(virtual).isTrue();
+    } finally {
+      manager.stop(SHUTDOWN_TIMEOUT);
+    }
+  }
+
+  @Test
+  @EnabledForJreRange(min = JRE.JAVA_21)
+  void keepAliveThreadRunsOnlyWhileTheManagerIsStartedWithVirtualThreads() throws Exception {
+    var configurationService =
+        ConfigurationService.newOverriddenConfigurationService(
+            new BaseConfigurationService(), o -> o.withUseVirtualThreads(true));
+    var manager = configurationService.getExecutorServiceManager();
+
+    assertThat(keepAliveThread()).hasValueSatisfying(t -> assertThat(t.isDaemon()).isFalse());
+
+    manager.stop(SHUTDOWN_TIMEOUT);
+
+    await().untilAsserted(() -> assertThat(keepAliveThread()).isEmpty());
+  }
+
+  @Test
+  void noKeepAliveThreadWithPlatformThreads() {
+    var manager = new BaseConfigurationService().getExecutorServiceManager();
+    try {
+      assertThat(keepAliveThread()).isEmpty();
+    } finally {
+      manager.stop(SHUTDOWN_TIMEOUT);
+    }
+  }
+
+  private static Optional<Thread> keepAliveThread() {
+    return Thread.getAllStackTraces().keySet().stream()
+        .filter(t -> t.getName().equals("josdk-keep-alive") && t.isAlive())
+        .findFirst();
   }
 }

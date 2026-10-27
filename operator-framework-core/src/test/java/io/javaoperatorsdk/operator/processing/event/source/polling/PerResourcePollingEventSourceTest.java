@@ -91,6 +91,52 @@ class PerResourcePollingEventSourceTest
   }
 
   @Test
+  void resourcesSeenBeforeStartArePolledOnceStarted() {
+    source.stop();
+    setUpSource(
+        new PerResourcePollingEventSource<>(
+            SampleExternalResource.class,
+            context,
+            new PerResourcePollingConfigurationBuilder<
+                    SampleExternalResource, TestCustomResource, String>(
+                    supplier, Duration.ofMillis(PERIOD))
+                .withResourceIDMapper(r -> r.getName() + "#" + r.getValue())
+                .build()),
+        false);
+
+    source.onResourceCreated(testCustomResource);
+    verify(supplier, never()).fetchResources(any());
+
+    source.start();
+
+    await()
+        .untilAsserted(() -> verify(supplier, atLeast(1)).fetchResources(eq(testCustomResource)));
+  }
+
+  @Test
+  void resourcesDeletedBeforeStartAreNotPolled() {
+    source.stop();
+    setUpSource(
+        new PerResourcePollingEventSource<>(
+            SampleExternalResource.class,
+            context,
+            new PerResourcePollingConfigurationBuilder<
+                    SampleExternalResource, TestCustomResource, String>(
+                    supplier, Duration.ofMillis(PERIOD))
+                .withResourceIDMapper(r -> r.getName() + "#" + r.getValue())
+                .build()),
+        false);
+
+    source.onResourceCreated(testCustomResource);
+    source.onResourceDeleted(testCustomResource);
+    source.start();
+
+    await()
+        .pollDelay(Duration.ofMillis(2 * PERIOD))
+        .untilAsserted(() -> verify(supplier, never()).fetchResources(any()));
+  }
+
+  @Test
   void registeringTaskOnAPredicate() {
     setUpSource(
         new PerResourcePollingEventSource<>(

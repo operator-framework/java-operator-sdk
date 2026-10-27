@@ -66,6 +66,8 @@ public class PerResourcePollingEventSource<R, P extends HasMetadata, ID>
   private final Predicate<P> registerPredicate;
   private final Duration period;
 
+  private final Map<ResourceID, P> registrationsBeforeStart = new ConcurrentHashMap<>();
+
   private volatile ScheduledExecutorService executorService;
 
   public PerResourcePollingEventSource(
@@ -103,6 +105,16 @@ public class PerResourcePollingEventSource<R, P extends HasMetadata, ID>
     }
     executorService = resolveExecutorService();
     super.start();
+    replayRegistrationsBeforeStart();
+  }
+
+  private void replayRegistrationsBeforeStart() {
+    for (var primaryID : registrationsBeforeStart.keySet()) {
+      var resource = registrationsBeforeStart.remove(primaryID);
+      if (resource != null) {
+        checkAndRegisterTask(resource);
+      }
+    }
   }
 
   /**
@@ -161,6 +173,7 @@ public class PerResourcePollingEventSource<R, P extends HasMetadata, ID>
   @Override
   public void onResourceDeleted(P resource) {
     var resourceID = ResourceID.fromResource(resource);
+    registrationsBeforeStart.remove(resourceID);
     var scheduledFuture = scheduledFutures.remove(resourceID);
     if (scheduledFuture != null) {
       log.debug("Canceling scheduledFuture for resource: {}", resource);
@@ -175,6 +188,20 @@ public class PerResourcePollingEventSource<R, P extends HasMetadata, ID>
   // important because otherwise there will be a race condition related to the timerTasks.
   private void checkAndRegisterTask(P resource) {
     var primaryID = ResourceID.fromResource(resource);
+    // the primary informer is started before this event source, and the executor to poll on is
+    // only resolved when this one starts, so resources seen in the meantime are registered then
+    if (!isRunning()) {
+      registrationsBeforeStart.put(primaryID, resource);
+      if (!isRunning()) {
+        return;
+      }
+      replayRegistrationsBeforeStart();
+      return;
+    }
+    registerTask(primaryID, resource);
+  }
+
+  private synchronized void registerTask(ResourceID primaryID, P resource) {
     if (scheduledFutures.get(primaryID) == null
         && (registerPredicate == null || registerPredicate.test(resource))) {
       var cachedResources = cachedResourcesFor(primaryID);
@@ -260,6 +287,7 @@ public class PerResourcePollingEventSource<R, P extends HasMetadata, ID>
     // of the operator, and the map cleared so that they are registered again on a restart
     scheduledFutures.values().forEach(future -> future.cancel(true));
     scheduledFutures.clear();
+    registrationsBeforeStart.clear();
     if (ownsExecutorService && executorService != null) {
       executorService.shutdownNow();
     }

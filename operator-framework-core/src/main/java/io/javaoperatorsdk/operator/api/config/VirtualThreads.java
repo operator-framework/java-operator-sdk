@@ -159,6 +159,7 @@ final class VirtualThreads {
     private final ExecutorService delegate;
     private final Semaphore permits;
     private final Set<PendingTask> pending = ConcurrentHashMap.newKeySet();
+    private final Object lifecycleLock = new Object();
 
     private BoundedExecutorService(ExecutorService delegate, int maxConcurrency) {
       this.delegate = delegate;
@@ -169,12 +170,16 @@ final class VirtualThreads {
     public void execute(Runnable command) {
       Objects.requireNonNull(command);
       var task = new PendingTask(command);
-      pending.add(task);
-      try {
-        delegate.execute(task);
-      } catch (RuntimeException e) {
-        pending.remove(task);
-        throw e;
+      // admission is closed under the same lock that shutdownNow drains pending tasks with, so a
+      // task is either rejected or seen by the drain, and never interrupted while unaccounted for
+      synchronized (lifecycleLock) {
+        pending.add(task);
+        try {
+          delegate.execute(task);
+        } catch (RuntimeException e) {
+          pending.remove(task);
+          throw e;
+        }
       }
     }
 
@@ -220,13 +225,15 @@ final class VirtualThreads {
     @Override
     public List<Runnable> shutdownNow() {
       var notStarted = new ArrayList<Runnable>();
-      for (var task : pending) {
-        if (task.claim()) {
-          pending.remove(task);
-          notStarted.add(task.command);
+      synchronized (lifecycleLock) {
+        for (var task : pending) {
+          if (task.claim()) {
+            pending.remove(task);
+            notStarted.add(task.command);
+          }
         }
+        delegate.shutdownNow();
       }
-      delegate.shutdownNow();
       return notStarted;
     }
 

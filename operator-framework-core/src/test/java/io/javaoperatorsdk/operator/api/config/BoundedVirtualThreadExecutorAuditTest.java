@@ -16,6 +16,7 @@
 package io.javaoperatorsdk.operator.api.config;
 
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -60,6 +61,41 @@ class BoundedVirtualThreadExecutorAuditTest {
   @EnabledForJreRange(min = JRE.JAVA_21)
   void virtualThreadVariantShutdownNowReturnsTasksThatNeverStarted() throws Exception {
     assertThat(queuedTasksReturnedByShutdownNow(true)).isEqualTo(5);
+  }
+
+  @Test
+  @EnabledForJreRange(min = JRE.JAVA_21)
+  void everyTaskSubmittedWhileShuttingDownIsRunReturnedOrRejected() throws Exception {
+    for (int round = 0; round < 50; round++) {
+      final var executor = ExecutorServiceManager.newBoundedExecutorService(1, true);
+      final var accepted = new AtomicInteger();
+      final var ran = new AtomicInteger();
+      final var submitters = new CountDownLatch(4);
+      final var go = new CountDownLatch(1);
+      for (int t = 0; t < 4; t++) {
+        new Thread(
+                () -> {
+                  try {
+                    go.await();
+                    for (int i = 0; i < 200; i++) {
+                      executor.execute(ran::incrementAndGet);
+                      accepted.incrementAndGet();
+                    }
+                  } catch (RejectedExecutionException | InterruptedException e) {
+                    // the executor was shut down
+                  } finally {
+                    submitters.countDown();
+                  }
+                })
+            .start();
+      }
+      go.countDown();
+      final var notStarted = executor.shutdownNow();
+      assertThat(submitters.await(10, TimeUnit.SECONDS)).isTrue();
+      assertThat(executor.awaitTermination(10, TimeUnit.SECONDS)).isTrue();
+      // tasks admitted after shutdownNow returned can't exist, so none may go missing
+      assertThat(ran.get() + notStarted.size()).isEqualTo(accepted.get());
+    }
   }
 
   private static int queuedTasksReturnedByShutdownNow(boolean useVirtualThreads) throws Exception {
