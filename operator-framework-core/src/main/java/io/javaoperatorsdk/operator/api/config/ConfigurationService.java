@@ -259,7 +259,9 @@ public interface ConfigurationService {
    * tasks with the default executor. These threads are shared by all the polling event sources of
    * the operator, so this number should be raised when many, or slow, polling event sources are
    * registered: a poll only starts once a thread is available, and a slow poll therefore delays the
-   * polls of the other event sources.
+   * polls of the other event sources. Not used when virtual threads are enabled, see {@link
+   * #useVirtualThreads()}, since the number of scheduled tasks running at the same time is not
+   * limited then.
    *
    * @return the maximum number of concurrent scheduled task threads
    * @since 5.6.0
@@ -272,7 +274,8 @@ public interface ConfigurationService {
    * Number of threads the operator can spin out to trigger its retried and rescheduled
    * reconciliations with the default executor. These threads are shared by all the controllers of
    * the operator, but the tasks they run only enqueue an event for the reconciliation to happen on
-   * a reconciliation thread, so few of them are needed.
+   * a reconciliation thread, so few of them are needed. Not used when virtual threads are enabled,
+   * see {@link #useVirtualThreads()}.
    *
    * @return the maximum number of concurrent retry and reschedule threads
    * @since 5.6.0

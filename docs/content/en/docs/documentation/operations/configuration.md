@@ -54,9 +54,9 @@ Things to keep in mind:
 - The scheduled tasks (the polling event sources, and the retried and rescheduled reconciliations)
   run on virtual threads too. The JDK has no scheduled executor backed by virtual threads, so the
   default ones keep a single platform thread for the timing only and run each task they fire on a
-  virtual thread. `withConcurrentScheduledTaskThreads(int)` and
-  `withConcurrentRetryAndRescheduleThreads(int)` still cap how many of those tasks run at the same
-  time.
+  virtual thread. The number of those tasks running at the same time is not limited, so
+  `withConcurrentScheduledTaskThreads(int)` and `withConcurrentRetryAndRescheduleThreads(int)` only
+  apply to platform threads.
 - With virtual threads, which are always daemon threads, the framework keeps one idle platform
   thread (`josdk-keep-alive`) running until the operator is stopped, so that an operator whose
   `main` method returns after starting it doesn't let the JVM exit.

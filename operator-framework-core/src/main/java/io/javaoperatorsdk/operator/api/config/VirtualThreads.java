@@ -54,8 +54,8 @@ import io.javaoperatorsdk.operator.OperatorException;
  * <p>The JDK provides no virtual thread backed {@link
  * java.util.concurrent.ScheduledExecutorService} (the Loom runtime itself uses a platform thread
  * scheduler to unpark timed out virtual threads), so the scheduled variant, see {@link
- * #newScheduledExecutor(int, String)}, keeps a single platform thread for the timing only and hands
- * each fired task off to a virtual thread.
+ * #newScheduledExecutor(String)}, keeps a single platform thread for the timing only and hands each
+ * fired task off to a virtual thread.
  */
 final class VirtualThreads {
 
@@ -152,14 +152,12 @@ final class VirtualThreads {
   }
 
   /**
-   * A {@link ScheduledExecutorService} running the tasks it fires on virtual threads, at most
-   * {@code maxConcurrency} of them at the same time. The timing is done by a single daemon platform
+   * A {@link ScheduledExecutorService} running the tasks it fires on virtual threads, without
+   * limiting how many of them run at the same time. The timing is done by a single daemon platform
    * thread named after {@code threadNamePrefix}, which only hands the tasks off.
    */
-  static ScheduledExecutorService newScheduledExecutor(
-      int maxConcurrency, String threadNamePrefix) {
-    return new VirtualThreadScheduledExecutor(
-        newBoundedVirtualThreadExecutor(maxConcurrency), threadNamePrefix);
+  static ScheduledExecutorService newScheduledExecutor(String threadNamePrefix) {
+    return new VirtualThreadScheduledExecutor(newVirtualThreadPerTaskExecutor(), threadNamePrefix);
   }
 
   /**
