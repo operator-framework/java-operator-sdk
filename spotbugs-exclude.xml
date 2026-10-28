@@ -67,4 +67,14 @@
     <Class name="io.javaoperatorsdk.operator.config.loader.ConfigLoader"/>
     <Bug pattern="SING_SINGLETON_HAS_NONPRIVATE_CONSTRUCTOR"/>
   </Match>
+
+  <!--
+    Like the JDK's own scheduled futures, the handles are ordered by their remaining delay only,
+    while they have to stay distinct by identity (they are tracked in a set), so equals() is
+    intentionally not derived from compareTo().
+  -->
+  <Match>
+    <Class name="io.javaoperatorsdk.operator.api.config.VirtualThreadScheduledExecutor$Handle"/>
+    <Bug pattern="EQ_COMPARETO_USE_OBJECT_EQUALS"/>
+  </Match>
 </FindBugsFilter>

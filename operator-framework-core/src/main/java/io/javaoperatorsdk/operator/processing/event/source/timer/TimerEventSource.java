@@ -19,7 +19,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TimerTask;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.Executors;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
@@ -150,8 +149,8 @@ public class TimerEventSource<R extends HasMetadata> extends AbstractEventSource
   @Override
   public void start() {
     if (!isRunning()) {
-      super.start();
       executorService = resolveExecutorService();
+      super.start();
     }
   }
 
@@ -159,8 +158,7 @@ public class TimerEventSource<R extends HasMetadata> extends AbstractEventSource
     if (executorServiceSupplier != null) {
       return executorServiceSupplier.get();
     }
-    return Executors.newSingleThreadScheduledExecutor(
-        ExecutorUtilsInternal.daemonThreadFactory("josdk-timer-" + name()));
+    return ExecutorUtilsInternal.daemonScheduledThreadPool(1, "josdk-timer-" + name());
   }
 
   @Override

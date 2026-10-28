@@ -91,6 +91,18 @@ class PerResourcePollingEventSourceTest
   }
 
   @Test
+  void keepsPollingAfterTheFetcherFailed() {
+    when(supplier.fetchResources(any()))
+        .thenThrow(new IllegalStateException("temporary failure"))
+        .thenReturn(Set.of(SampleExternalResource.testResource1()));
+
+    source.onResourceCreated(testCustomResource);
+
+    await()
+        .untilAsserted(() -> verify(supplier, atLeast(3)).fetchResources(eq(testCustomResource)));
+  }
+
+  @Test
   void resourcesSeenBeforeStartArePolledOnceStarted() {
     source.stop();
     setUpSource(
