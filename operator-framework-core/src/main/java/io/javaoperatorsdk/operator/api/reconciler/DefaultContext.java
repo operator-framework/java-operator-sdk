@@ -21,6 +21,8 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -50,6 +52,9 @@ public class DefaultContext<P extends HasMetadata> implements Context<P> {
   private final boolean primaryResourceDeleted;
   private final boolean primaryResourceFinalStateUnknown;
   private final Map<DependentResource<?, P>, Object> desiredStates = new ConcurrentHashMap<>();
+  private final Map<DependentResource<?, P>, DesiredStateInProgress> desiredStatesInProgress =
+      new ConcurrentHashMap<>();
+  private final Map<DependentResource<?, P>, Lock> desiredStateLocks = new ConcurrentHashMap<>();
   private final ResourceOperations<P> resourceOperations;
 
   public DefaultContext(
@@ -257,14 +262,43 @@ public class DefaultContext<P extends HasMetadata> implements Context<P> {
   @SuppressWarnings("unchecked")
   public <R> R getOrComputeDesiredStateFor(
       DependentResource<R, P> dependentResource, Function<P, R> desiredStateComputer) {
-    return (R)
-        desiredStates.computeIfAbsent(
-            dependentResource,
-            ignored -> {
-              final var desired = desiredStateComputer.apply(getPrimaryResource());
-              applyDesiredStateAspects(desired, dependentResource);
-              return desired;
-            });
+    // an aspect can look up the actual resource of its dependent, which asks for the desired state
+    // being computed: the thread computing it is handed the state as it is so far, instead of
+    // re-entering the computation
+    final var computing = desiredStatesInProgress.get(dependentResource);
+    if (computing != null && computing.thread() == Thread.currentThread()) {
+      return (R) computing.desired();
+    }
+    final var existing = desiredStates.get(dependentResource);
+    if (existing != null) {
+      return (R) existing;
+    }
+    // not computed within ConcurrentHashMap.computeIfAbsent, since an aspect can look up the actual
+    // resource of another dependent, which re-enters this method for a different key
+    final var lock =
+        desiredStateLocks.computeIfAbsent(dependentResource, ignored -> new ReentrantLock());
+    lock.lock();
+    try {
+      final var computedMeanwhile = desiredStates.get(dependentResource);
+      if (computedMeanwhile != null) {
+        return (R) computedMeanwhile;
+      }
+      final var desired = desiredStateComputer.apply(getPrimaryResource());
+      if (desired == null) {
+        return null;
+      }
+      desiredStatesInProgress.put(
+          dependentResource, new DesiredStateInProgress(Thread.currentThread(), desired));
+      try {
+        applyDesiredStateAspects(desired, dependentResource);
+      } finally {
+        desiredStatesInProgress.remove(dependentResource);
+      }
+      desiredStates.put(dependentResource, desired);
+      return desired;
+    } finally {
+      lock.unlock();
+    }
   }
 
   /**
@@ -280,4 +314,6 @@ public class DefaultContext<P extends HasMetadata> implements Context<P> {
           .forEach(aspect -> aspect.apply(hasMetadata, dependentResource, this));
     }
   }
+
+  private record DesiredStateInProgress(Thread thread, Object desired) {}
 }
