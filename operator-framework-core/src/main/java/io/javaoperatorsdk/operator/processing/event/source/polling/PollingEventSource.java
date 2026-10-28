@@ -18,7 +18,6 @@ package io.javaoperatorsdk.operator.processing.event.source.polling;
 import java.time.Duration;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
@@ -175,8 +174,7 @@ public class PollingEventSource<R, P extends HasMetadata, ID>
     if (configurationService != null) {
       return configurationService.getExecutorServiceManager().scheduledExecutorService();
     }
-    return Executors.newSingleThreadScheduledExecutor(
-        ExecutorUtilsInternal.daemonThreadFactory("josdk-polling-" + name()));
+    return ExecutorUtilsInternal.daemonScheduledThreadPool(1, "josdk-polling-" + name());
   }
 
   protected synchronized void getStateAndFillCache() {

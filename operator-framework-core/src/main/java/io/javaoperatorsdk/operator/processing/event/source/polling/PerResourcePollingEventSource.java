@@ -21,7 +21,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
@@ -129,8 +128,7 @@ public class PerResourcePollingEventSource<R, P extends HasMetadata, ID>
     if (configurationService != null) {
       return configurationService.getExecutorServiceManager().scheduledExecutorService();
     }
-    return Executors.newSingleThreadScheduledExecutor(
-        ExecutorUtilsInternal.daemonThreadFactory("josdk-polling-" + name()));
+    return ExecutorUtilsInternal.daemonScheduledThreadPool(1, "josdk-polling-" + name());
   }
 
   private Set<R> getAndCacheResource(P primary, boolean fromGetter) {
@@ -231,8 +229,13 @@ public class PerResourcePollingEventSource<R, P extends HasMetadata, ID>
         log.warn("No resource in cache for resource ID: {}", primaryID);
         // no new execution is scheduled in this case, an on delete event should be received shortly
       } else {
-        var actualResources = primary.map(p -> getAndCacheResource(p, false));
-        scheduleNextExecution(primary.get(), actualResources.orElse(null));
+        Set<R> actualResources = null;
+        try {
+          actualResources = getAndCacheResource(primary.get(), false);
+        } catch (RuntimeException e) {
+          log.error("Error during polling resources for: {}", primaryID, e);
+        }
+        scheduleNextExecution(primary.get(), actualResources);
       }
     }
   }
