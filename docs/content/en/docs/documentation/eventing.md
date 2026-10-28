@@ -235,8 +235,9 @@ Operator operator = new Operator(overrider -> overrider.withConcurrentScheduledT
 ```
 
 With virtual threads enabled, see [virtual threads](../operations/configuration/#virtual-threads), the
-polls run on virtual threads, the executor only keeping one platform thread to do the timing; the
-number of threads then caps how many polls run at the same time.
+polls run on virtual threads, the executor only keeping one platform thread to do the timing. The
+number of polls running at the same time is then not limited, so `withConcurrentScheduledTaskThreads`
+doesn't apply, and a slow poll doesn't delay the others.
 
 Retried and rescheduled reconciliations are triggered on a separate executor, so a slow poll can
 never delay them. It is sized with `withConcurrentRetryAndRescheduleThreads` (2 threads by

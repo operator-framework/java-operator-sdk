@@ -74,9 +74,11 @@ public class ExecutorServiceManager {
    * Creates the executor service used to run scheduled (i.e. periodic or delayed) tasks, either
    * firing them on virtual threads or on a pool of platform threads. The platform thread variant is
    * the one of {@link ExecutorUtilsInternal#daemonScheduledThreadPool(int, String)}. In both cases
-   * the threads are daemon threads and the concurrency limit is enforced.
+   * the threads are daemon threads. Virtual threads are cheap and the tasks scheduled are typically
+   * blocking calls, so their number is not limited.
    *
-   * @param maxConcurrency the maximal number of tasks executed at the same time
+   * @param maxConcurrency the number of threads of the platform thread pool, not used with virtual
+   *     threads
    * @param useVirtualThreads whether virtual threads should be used, see {@link
    *     ConfigurationService#useVirtualThreads()}
    * @param threadNamePrefix the prefix the threads of the executor are named after
@@ -86,7 +88,7 @@ public class ExecutorServiceManager {
   public static ScheduledExecutorService newScheduledExecutorService(
       int maxConcurrency, boolean useVirtualThreads, String threadNamePrefix) {
     return VirtualThreads.shouldUse(useVirtualThreads)
-        ? VirtualThreads.newScheduledExecutor(maxConcurrency, threadNamePrefix)
+        ? VirtualThreads.newScheduledExecutor(threadNamePrefix)
         : ExecutorUtilsInternal.daemonScheduledThreadPool(maxConcurrency, threadNamePrefix);
   }
 

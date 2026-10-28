@@ -39,6 +39,7 @@ import static org.awaitility.Awaitility.await;
 class VirtualThreadScheduledExecutorTest {
 
   private static final int MAX_CONCURRENCY = 2;
+  private static final int TASKS = 10;
 
   private ScheduledExecutorService executor;
 
@@ -164,28 +165,28 @@ class VirtualThreadScheduledExecutorTest {
   }
 
   @Test
-  void runsAtMostTheConfiguredNumberOfTasksAtTheSameTime() throws Exception {
-    var running = new AtomicInteger();
-    var maxRunning = new AtomicInteger();
-    var done = new CountDownLatch(10);
-    for (int i = 0; i < 10; i++) {
+  void doesNotLimitTheNumberOfTasksRunningAtTheSameTime() throws Exception {
+    var allStarted = new CountDownLatch(TASKS);
+    var done = new CountDownLatch(TASKS);
+    for (int i = 0; i < TASKS; i++) {
       executor.schedule(
           () -> {
-            maxRunning.accumulateAndGet(running.incrementAndGet(), Math::max);
+            allStarted.countDown();
             try {
-              Thread.sleep(30);
+              // only returns if all the tasks are running at the same time, which with more tasks
+              // than the (platform thread) concurrency would never be the case if it was limited
+              if (allStarted.await(30, TimeUnit.SECONDS)) {
+                done.countDown();
+              }
             } catch (InterruptedException e) {
               Thread.currentThread().interrupt();
             }
-            running.decrementAndGet();
-            done.countDown();
           },
           0,
           TimeUnit.MILLISECONDS);
     }
 
     assertThat(done.await(30, TimeUnit.SECONDS)).isTrue();
-    assertThat(maxRunning).hasValueLessThanOrEqualTo(MAX_CONCURRENCY);
   }
 
   @Test
