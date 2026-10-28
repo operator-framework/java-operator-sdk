@@ -449,6 +449,8 @@ public class ConfigurationServiceOverrider {
       public ScheduledExecutorService getScheduledExecutorService() {
         if (scheduledExecutorService != null) {
           return scheduledExecutorService;
+        } else if (concurrentScheduledTaskThreads == null && useVirtualThreads == null) {
+          return original.getScheduledExecutorService();
         } else {
           return super.getScheduledExecutorService();
         }
@@ -458,6 +460,8 @@ public class ConfigurationServiceOverrider {
       public ScheduledExecutorService getRetryAndRescheduleExecutorService() {
         if (retryAndRescheduleExecutorService != null) {
           return retryAndRescheduleExecutorService;
+        } else if (concurrentRetryAndRescheduleThreads == null && useVirtualThreads == null) {
+          return original.getRetryAndRescheduleExecutorService();
         } else {
           return super.getRetryAndRescheduleExecutorService();
         }

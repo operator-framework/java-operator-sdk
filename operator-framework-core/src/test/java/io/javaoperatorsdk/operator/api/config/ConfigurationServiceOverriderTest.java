@@ -20,6 +20,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.ThreadPoolExecutor;
 
@@ -135,6 +136,47 @@ class ConfigurationServiceOverriderTest {
       assertThat(overridden.getScheduledExecutorService()).isSameAs(scheduledExecutorService);
       assertThat(overridden.concurrentRetryAndRescheduleThreads()).isEqualTo(5);
       assertThat(overridden.getRetryAndRescheduleExecutorService()).isSameAs(retryExecutorService);
+    } finally {
+      scheduledExecutorService.shutdownNow();
+      retryExecutorService.shutdownNow();
+    }
+  }
+
+  @Test
+  void executorsOfTheOriginalConfigurationAreKeptUnlessTheirSettingsAreOverridden() {
+    final var scheduledExecutorService = Executors.newScheduledThreadPool(1);
+    final var retryExecutorService = Executors.newScheduledThreadPool(1);
+    try {
+      final var original =
+          new BaseConfigurationService() {
+            @Override
+            public ScheduledExecutorService getScheduledExecutorService() {
+              return scheduledExecutorService;
+            }
+
+            @Override
+            public ScheduledExecutorService getRetryAndRescheduleExecutorService() {
+              return retryExecutorService;
+            }
+          };
+
+      final var overridden =
+          new ConfigurationServiceOverrider(original).withCloseClientOnStop(false);
+
+      assertThat(overridden.build().getScheduledExecutorService())
+          .isSameAs(scheduledExecutorService);
+      assertThat(overridden.build().getRetryAndRescheduleExecutorService())
+          .isSameAs(retryExecutorService);
+
+      final var resized = overridden.withConcurrentScheduledTaskThreads(3).build();
+      final var defaultScheduled = resized.getScheduledExecutorService();
+      try {
+        assertThat(defaultScheduled).isNotSameAs(scheduledExecutorService);
+        assertThat(((ScheduledThreadPoolExecutor) defaultScheduled).getCorePoolSize()).isEqualTo(3);
+        assertThat(resized.getRetryAndRescheduleExecutorService()).isSameAs(retryExecutorService);
+      } finally {
+        defaultScheduled.shutdownNow();
+      }
     } finally {
       scheduledExecutorService.shutdownNow();
       retryExecutorService.shutdownNow();
