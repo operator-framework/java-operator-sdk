@@ -26,8 +26,8 @@ import org.awaitility.core.ThrowingRunnable;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import io.javaoperatorsdk.operator.ExecutorUtilsInternal;
 import io.javaoperatorsdk.operator.TestUtils;
-import io.javaoperatorsdk.operator.api.config.Utils;
 import io.javaoperatorsdk.operator.api.reconciler.BaseControl;
 import io.javaoperatorsdk.operator.health.Status;
 import io.javaoperatorsdk.operator.processing.event.Event;
@@ -131,7 +131,7 @@ class TimerEventSourceTest
   public void schedulesOnTheProvidedExecutorAndLeavesItRunningOnStop() {
     var providedExecutor =
         Executors.newSingleThreadScheduledExecutor(
-            Utils.daemonThreadFactory("provided-timer-executor"));
+            ExecutorUtilsInternal.daemonThreadFactory("provided-timer-executor"));
     var handler = new CapturingEventHandler();
     var eventSource = new TimerEventSource<TestCustomResource>(() -> providedExecutor);
     eventSource.setEventHandler(handler);

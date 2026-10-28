@@ -31,7 +31,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
-import io.javaoperatorsdk.operator.api.config.Utils;
+import io.javaoperatorsdk.operator.ExecutorUtilsInternal;
 import io.javaoperatorsdk.operator.api.reconciler.BaseControl;
 import io.javaoperatorsdk.operator.health.Status;
 import io.javaoperatorsdk.operator.processing.event.Event;
@@ -160,7 +160,7 @@ public class TimerEventSource<R extends HasMetadata> extends AbstractEventSource
       return executorServiceSupplier.get();
     }
     return Executors.newSingleThreadScheduledExecutor(
-        Utils.daemonThreadFactory("josdk-timer-" + name()));
+        ExecutorUtilsInternal.daemonThreadFactory("josdk-timer-" + name()));
   }
 
   @Override

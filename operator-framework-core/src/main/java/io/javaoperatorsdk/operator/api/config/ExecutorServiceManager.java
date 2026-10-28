@@ -34,6 +34,7 @@ import java.util.stream.Stream;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import io.javaoperatorsdk.operator.ExecutorUtilsInternal;
 import io.javaoperatorsdk.operator.OperatorException;
 
 public class ExecutorServiceManager {
@@ -67,6 +68,26 @@ public class ExecutorServiceManager {
     return VirtualThreads.shouldUse(useVirtualThreads)
         ? VirtualThreads.newBoundedVirtualThreadExecutor(maxConcurrency)
         : Executors.newFixedThreadPool(maxConcurrency);
+  }
+
+  /**
+   * Creates the executor service used to run scheduled (i.e. periodic or delayed) tasks, either
+   * firing them on virtual threads or on a pool of platform threads. The platform thread variant is
+   * the one of {@link ExecutorUtilsInternal#daemonScheduledThreadPool(int, String)}. In both cases
+   * the threads are daemon threads and the concurrency limit is enforced.
+   *
+   * @param maxConcurrency the maximal number of tasks executed at the same time
+   * @param useVirtualThreads whether virtual threads should be used, see {@link
+   *     ConfigurationService#useVirtualThreads()}
+   * @param threadNamePrefix the prefix the threads of the executor are named after
+   * @return the {@link ScheduledExecutorService} to run scheduled tasks on
+   * @since 5.7.0
+   */
+  public static ScheduledExecutorService newScheduledExecutorService(
+      int maxConcurrency, boolean useVirtualThreads, String threadNamePrefix) {
+    return VirtualThreads.shouldUse(useVirtualThreads)
+        ? VirtualThreads.newScheduledExecutor(maxConcurrency, threadNamePrefix)
+        : ExecutorUtilsInternal.daemonScheduledThreadPool(maxConcurrency, threadNamePrefix);
   }
 
   /**

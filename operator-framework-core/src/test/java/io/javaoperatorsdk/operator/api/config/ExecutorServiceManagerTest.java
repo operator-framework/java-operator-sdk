@@ -68,7 +68,7 @@ class ExecutorServiceManagerTest {
   }
 
   @Test
-  @EnabledForJreRange(min = JRE.JAVA_21)
+  @EnabledForJreRange(min = JRE.JAVA_25)
   void cachingExecutorRunsOnVirtualThreadsWhenRequested() throws Exception {
     var configurationService =
         ConfigurationService.newOverriddenConfigurationService(
@@ -84,7 +84,7 @@ class ExecutorServiceManagerTest {
   }
 
   @Test
-  @EnabledForJreRange(min = JRE.JAVA_21)
+  @EnabledForJreRange(min = JRE.JAVA_25)
   void keepAliveThreadRunsOnlyWhileTheManagerIsStartedWithVirtualThreads() throws Exception {
     var configurationService =
         ConfigurationService.newOverriddenConfigurationService(

@@ -27,6 +27,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -41,21 +42,27 @@ import io.javaoperatorsdk.operator.OperatorException;
  * Creates the virtual thread based executors used when {@link
  * ConfigurationService#useVirtualThreads()} is enabled.
  *
- * <p>The SDK is compiled for Java 17, in which virtual threads don't exist yet, so {@code
- * Executors.newVirtualThreadPerTaskExecutor()} is looked up reflectively and is only available when
- * the operator actually runs on Java 21 or later.
+ * <p>Virtual threads are only supported on Java 25 or later, where <a
+ * href="https://openjdk.org/jeps/491">JEP 491</a> removed the pinning of the carrier thread by
+ * {@code synchronized} blocks. On older JVMs, including the ones where virtual threads already
+ * exist, the request is ignored with a warning and platform threads are used, see {@link
+ * #shouldUse(boolean)}.
  *
- * <p>There is intentionally no scheduled variant here: the JDK provides no virtual thread backed
- * {@link java.util.concurrent.ScheduledExecutorService}, scheduling was deliberately left out of
- * virtual threads (the Loom runtime itself uses a platform thread scheduler to unpark timed out
- * virtual threads). Running scheduled tasks on virtual threads would mean keeping a platform thread
- * scheduler purely for the timing and handing each fired task off to a virtual thread executor,
- * which the SDK doesn't do, so {@link ExecutorServiceManager#scheduledExecutorService()} is always
- * backed by platform threads.
+ * <p>The SDK is compiled for Java 17, in which virtual threads don't exist yet, so {@code
+ * Executors.newVirtualThreadPerTaskExecutor()} is looked up reflectively.
+ *
+ * <p>The JDK provides no virtual thread backed {@link
+ * java.util.concurrent.ScheduledExecutorService} (the Loom runtime itself uses a platform thread
+ * scheduler to unpark timed out virtual threads), so the scheduled variant, see {@link
+ * #newScheduledExecutor(int, String)}, keeps a single platform thread for the timing only and hands
+ * each fired task off to a virtual thread.
  */
 final class VirtualThreads {
 
   private static final Logger log = LoggerFactory.getLogger(VirtualThreads.class);
+
+  /** The first Java version virtual threads are supported on. */
+  static final int MINIMUM_SUPPORTED_JAVA_VERSION = 25;
 
   private static final MethodHandle NEW_VIRTUAL_THREAD_PER_TASK_EXECUTOR = lookupFactoryMethod();
   private static final AtomicBoolean UNSUPPORTED_WARNING_LOGGED = new AtomicBoolean();
@@ -75,9 +82,17 @@ final class VirtualThreads {
     }
   }
 
-  /** Whether the JVM the operator runs on supports virtual threads, i.e. is Java 21 or later. */
+  /**
+   * Whether the JVM the operator runs on supports virtual threads, i.e. is Java {@value
+   * #MINIMUM_SUPPORTED_JAVA_VERSION} or later.
+   */
   static boolean isSupported() {
-    return NEW_VIRTUAL_THREAD_PER_TASK_EXECUTOR != null;
+    return isSupported(Runtime.version().feature());
+  }
+
+  static boolean isSupported(int javaFeatureVersion) {
+    return NEW_VIRTUAL_THREAD_PER_TASK_EXECUTOR != null
+        && javaFeatureVersion >= MINIMUM_SUPPORTED_JAVA_VERSION;
   }
 
   /**
@@ -93,9 +108,9 @@ final class VirtualThreads {
     }
     if (UNSUPPORTED_WARNING_LOGGED.compareAndSet(false, true)) {
       log.warn(
-          "Virtual threads were requested but are not supported by the JVM in use (Java {}, Java 21"
-              + " or later is required, Java 25 or later is officially supported). Falling back to"
-              + " platform threads.",
+          "Virtual threads were requested but are only supported on Java {} or later, and the JVM"
+              + " in use is Java {}. Falling back to platform threads.",
+          MINIMUM_SUPPORTED_JAVA_VERSION,
           Runtime.version().feature());
     }
     return false;
@@ -105,8 +120,9 @@ final class VirtualThreads {
   static ExecutorService newVirtualThreadPerTaskExecutor() {
     if (!isSupported()) {
       throw new OperatorException(
-          "Virtual threads are not supported by the JVM in use, Java 21 or later is required"
-              + " (Java 25 or later is officially supported)");
+          "Virtual threads are only supported on Java "
+              + MINIMUM_SUPPORTED_JAVA_VERSION
+              + " or later");
     }
     try {
       return (ExecutorService) NEW_VIRTUAL_THREAD_PER_TASK_EXECUTOR.invokeExact();
@@ -133,6 +149,17 @@ final class VirtualThreads {
         ((ExecutorService) executor).shutdownNow();
       }
     };
+  }
+
+  /**
+   * A {@link ScheduledExecutorService} running the tasks it fires on virtual threads, at most
+   * {@code maxConcurrency} of them at the same time. The timing is done by a single daemon platform
+   * thread named after {@code threadNamePrefix}, which only hands the tasks off.
+   */
+  static ScheduledExecutorService newScheduledExecutor(
+      int maxConcurrency, String threadNamePrefix) {
+    return new VirtualThreadScheduledExecutor(
+        newBoundedVirtualThreadExecutor(maxConcurrency), threadNamePrefix);
   }
 
   /**

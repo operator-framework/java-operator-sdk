@@ -52,7 +52,31 @@ class VirtualThreadsTest {
   }
 
   @Test
-  @EnabledForJreRange(min = JRE.JAVA_21)
+  void virtualThreadsAreOnlySupportedFromJava25() {
+    assertThat(VirtualThreads.isSupported(17)).isFalse();
+    assertThat(VirtualThreads.isSupported(21)).isFalse();
+    assertThat(VirtualThreads.isSupported(24)).isFalse();
+    assertThat(VirtualThreads.isSupported(Runtime.version().feature()))
+        .isEqualTo(Runtime.version().feature() >= 25);
+  }
+
+  @Test
+  @EnabledForJreRange(max = JRE.JAVA_24)
+  void fallsBackToPlatformThreadsBeforeJava25() throws Exception {
+    var executor = ExecutorServiceManager.newBoundedExecutorService(MAX_CONCURRENCY, true);
+    var scheduled = ExecutorServiceManager.newScheduledExecutorService(MAX_CONCURRENCY, true, "t");
+    try {
+      assertThat(executor).isInstanceOf(ThreadPoolExecutor.class);
+      assertThat(executor.submit(VirtualThreadsTest::onVirtualThread).get()).isFalse();
+      assertThat(scheduled.submit(VirtualThreadsTest::onVirtualThread).get()).isFalse();
+    } finally {
+      executor.shutdownNow();
+      scheduled.shutdownNow();
+    }
+  }
+
+  @Test
+  @EnabledForJreRange(min = JRE.JAVA_25)
   void usesVirtualThreadsWhenRequested() throws Exception {
     var virtualExecutor = ExecutorServiceManager.newBoundedExecutorService(MAX_CONCURRENCY, true);
     try {
@@ -70,7 +94,7 @@ class VirtualThreadsTest {
   }
 
   @Test
-  @EnabledForJreRange(min = JRE.JAVA_21)
+  @EnabledForJreRange(min = JRE.JAVA_25)
   void boundedVirtualThreadExecutorRespectsTheConfiguredConcurrency() throws Exception {
     var executor = ExecutorServiceManager.newBoundedExecutorService(MAX_CONCURRENCY, true);
     try {
@@ -108,7 +132,7 @@ class VirtualThreadsTest {
   }
 
   @Test
-  @EnabledForJreRange(min = JRE.JAVA_21)
+  @EnabledForJreRange(min = JRE.JAVA_25)
   void invokeAllIsBoundedTooSinceItIsUsedToStartTheEventSources() {
     var executor = ExecutorServiceManager.newBoundedExecutorService(MAX_CONCURRENCY, true);
     try {
@@ -138,7 +162,7 @@ class VirtualThreadsTest {
   }
 
   @Test
-  @EnabledForJreRange(min = JRE.JAVA_21)
+  @EnabledForJreRange(min = JRE.JAVA_25)
   void shutdownTerminatesOnceTheAlreadySubmittedTasksAreDone() throws Exception {
     ExecutorService executor =
         ExecutorServiceManager.newBoundedExecutorService(MAX_CONCURRENCY, true);
@@ -161,7 +185,7 @@ class VirtualThreadsTest {
   }
 
   @Test
-  @EnabledForJreRange(min = JRE.JAVA_21)
+  @EnabledForJreRange(min = JRE.JAVA_25)
   void defaultKubernetesClientRunsItsTasksOnVirtualThreadsWhenRequested() throws Exception {
     ExecutorService executor;
     try (var client = defaultKubernetesClient(true)) {

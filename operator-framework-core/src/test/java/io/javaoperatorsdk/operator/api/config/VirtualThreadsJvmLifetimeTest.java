@@ -79,7 +79,7 @@ class VirtualThreadsJvmLifetimeTest {
   }
 
   @Test
-  @EnabledForJreRange(min = JRE.JAVA_21)
+  @EnabledForJreRange(min = JRE.JAVA_25)
   void virtualThreadsKeepTheOperatorJvmAliveToo() throws Exception {
     assertThat(jvmStillAliveAfterMainReturns(true))
         .as("JVM exited right after main returned with useVirtualThreads=true")

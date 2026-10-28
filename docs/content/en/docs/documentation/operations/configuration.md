@@ -43,15 +43,23 @@ of a workflow are processed concurrently. Only the threads backing those limits 
 virtual threads are cheap, these limits can usually be raised significantly compared to what is
 reasonable with platform threads.
 
-Two things to keep in mind:
+Things to keep in mind:
 
-- Virtual threads are officially supported on **Java 25 or later**. They exist from Java 21 on and
-  the flag does enable them there, but before Java 25 a virtual thread pins its carrier thread
-  while it is inside a `synchronized` block, which can starve the carrier pool. [JEP
-  491](https://openjdk.org/jeps/491), delivered in Java 25, removed that pinning, so this is the
-  baseline the framework supports. On a JVM without virtual threads at all (below Java 21) a
-  warning is logged and platform threads are used instead, so the same configuration works on any
-  supported Java version.
+- Virtual threads are only supported on **Java 25 or later**. Before Java 25 a virtual thread pins
+  its carrier thread while it is inside a `synchronized` block, which can starve the carrier pool
+  and even deadlock the operator on startup. [JEP 491](https://openjdk.org/jeps/491), delivered in
+  Java 25, removed that pinning. This is checked at runtime: on an older JVM, including the ones
+  where virtual threads exist (Java 21 to 24), a warning is logged and platform threads are used
+  instead, so the same configuration works on any Java version the operator runs on.
+- The scheduled tasks (the polling event sources, and the retried and rescheduled reconciliations)
+  run on virtual threads too. The JDK has no scheduled executor backed by virtual threads, so the
+  default ones keep a single platform thread for the timing only and run each task they fire on a
+  virtual thread. `withConcurrentScheduledTaskThreads(int)` and
+  `withConcurrentRetryAndRescheduleThreads(int)` still cap how many of those tasks run at the same
+  time.
+- With virtual threads, which are always daemon threads, the framework keeps one idle platform
+  thread (`josdk-keep-alive`) running until the operator is stopped, so that an operator whose
+  `main` method returns after starting it doesn't let the JVM exit.
 - A custom `ExecutorService` provided through `withExecutorService(...)` or
   `withWorkflowExecutorService(...)` is always used as is, the flag has no effect on it.
 - The Kubernetes client the framework creates when none is provided also switches its internal
@@ -308,7 +316,7 @@ All operator-level keys are prefixed with `josdk.`.
 |---|---|---|
 | `josdk.check-crd` | `Boolean` | Validate CRDs against local model on startup |
 | `josdk.close-client-on-stop` | `Boolean` | Close the Kubernetes client when the operator stops |
-| `josdk.use-virtual-threads` | `Boolean` | Run the framework's concurrent work on virtual threads (officially supported on Java 25+ at runtime) |
+| `josdk.use-virtual-threads` | `Boolean` | Run the framework's concurrent work on virtual threads (only supported on Java 25+, platform threads are used on older versions) |
 | `josdk.use-ssa-to-patch-primary-resource` | `Boolean` | Use Server-Side Apply to patch the primary resource |
 | `josdk.clone-secondary-resources-when-getting-from-cache` | `Boolean` | Clone secondary resources on cache reads |
 
