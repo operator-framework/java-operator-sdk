@@ -303,15 +303,18 @@ public interface ConfigurationService {
    * pool of platform threads anymore. Since virtual threads are cheap, those limits can be set
    * considerably higher than what would be reasonable for platform threads.
    *
-   * <p>Officially supported on Java 25 or later. Virtual threads exist as of Java 21 and are used
-   * there as well, but before Java 25 a virtual thread pins its carrier thread while inside a
-   * {@code synchronized} block, which <a href="https://openjdk.org/jeps/491">JEP 491</a> removed in
-   * Java 25. On a JVM without virtual threads at all, a warning is logged and platform threads are
-   * used, so that the same configuration works regardless of the Java version the operator runs on.
+   * <p>Virtual threads are only supported on Java 25 or later, where <a
+   * href="https://openjdk.org/jeps/491">JEP 491</a> removed the pinning of the carrier thread by
+   * {@code synchronized} blocks. This is checked at runtime: on an older JVM, a warning is logged
+   * and platform threads are used, so that the same configuration works regardless of the Java
+   * version the operator runs on.
    *
    * <p>Note that this only affects the executors created by the framework: a custom {@link
    * ExecutorService} provided through {@link #getExecutorService()} or {@link
-   * #getWorkflowExecutorService()} is used as is. The same goes for the {@link KubernetesClient}:
+   * #getWorkflowExecutorService()}, or a custom {@link ScheduledExecutorService} provided through
+   * {@link #getScheduledExecutorService()} or {@link #getRetryAndRescheduleExecutorService()}, is
+   * used as is. The default scheduled executors keep a single platform thread for the timing and
+   * run each task they fire on a virtual thread. The same goes for the {@link KubernetesClient}:
    * the default client created by {@link #getKubernetesClient()} then also runs its internal
    * asynchronous tasks (informer event dispatching, watch event delivery) on virtual threads, while
    * a custom client, e.g. provided through {@link
@@ -365,8 +368,8 @@ public interface ConfigurationService {
    * @since 5.6.0
    */
   default ScheduledExecutorService getScheduledExecutorService() {
-    return Utils.daemonScheduledThreadPool(
-        concurrentScheduledTaskThreads(), "josdk-scheduled-task");
+    return ExecutorServiceManager.newScheduledExecutorService(
+        concurrentScheduledTaskThreads(), useVirtualThreads(), "josdk-scheduled-task");
   }
 
   /**
@@ -383,8 +386,8 @@ public interface ConfigurationService {
    * @since 5.6.0
    */
   default ScheduledExecutorService getRetryAndRescheduleExecutorService() {
-    return Utils.daemonScheduledThreadPool(
-        concurrentRetryAndRescheduleThreads(), "josdk-retry-reschedule");
+    return ExecutorServiceManager.newScheduledExecutorService(
+        concurrentRetryAndRescheduleThreads(), useVirtualThreads(), "josdk-retry-reschedule");
   }
 
   /**

@@ -45,10 +45,10 @@ class VirtualThreadsIT {
   static final int NUMBER_OF_RESOURCES = 10;
 
   /**
-   * Virtual threads require Java 21, on an older JVM the framework transparently falls back to
+   * Virtual threads require Java 25, on an older JVM the framework transparently falls back to
    * platform threads, which this test also covers since only the concurrency assertions apply then.
    */
-  private static final boolean VIRTUAL_THREADS_SUPPORTED = Runtime.version().feature() >= 21;
+  private static final boolean VIRTUAL_THREADS_SUPPORTED = Runtime.version().feature() >= 25;
 
   @RegisterExtension
   LocallyRunOperatorExtension operator =

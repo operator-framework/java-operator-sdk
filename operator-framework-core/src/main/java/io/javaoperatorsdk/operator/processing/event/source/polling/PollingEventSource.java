@@ -28,9 +28,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
+import io.javaoperatorsdk.operator.ExecutorUtilsInternal;
 import io.javaoperatorsdk.operator.OperatorException;
 import io.javaoperatorsdk.operator.api.config.ConfigurationService;
-import io.javaoperatorsdk.operator.api.config.Utils;
 import io.javaoperatorsdk.operator.api.reconciler.EventSourceContext;
 import io.javaoperatorsdk.operator.health.Status;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
@@ -176,7 +176,7 @@ public class PollingEventSource<R, P extends HasMetadata, ID>
       return configurationService.getExecutorServiceManager().scheduledExecutorService();
     }
     return Executors.newSingleThreadScheduledExecutor(
-        Utils.daemonThreadFactory("josdk-polling-" + name()));
+        ExecutorUtilsInternal.daemonThreadFactory("josdk-polling-" + name()));
   }
 
   protected synchronized void getStateAndFillCache() {

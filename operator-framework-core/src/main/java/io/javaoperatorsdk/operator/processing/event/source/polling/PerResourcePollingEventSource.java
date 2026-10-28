@@ -31,9 +31,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
+import io.javaoperatorsdk.operator.ExecutorUtilsInternal;
 import io.javaoperatorsdk.operator.OperatorException;
 import io.javaoperatorsdk.operator.api.config.ConfigurationService;
-import io.javaoperatorsdk.operator.api.config.Utils;
 import io.javaoperatorsdk.operator.api.reconciler.EventSourceContext;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
 import io.javaoperatorsdk.operator.processing.event.source.Cache;
@@ -130,7 +130,7 @@ public class PerResourcePollingEventSource<R, P extends HasMetadata, ID>
       return configurationService.getExecutorServiceManager().scheduledExecutorService();
     }
     return Executors.newSingleThreadScheduledExecutor(
-        Utils.daemonThreadFactory("josdk-polling-" + name()));
+        ExecutorUtilsInternal.daemonThreadFactory("josdk-polling-" + name()));
   }
 
   private Set<R> getAndCacheResource(P primary, boolean fromGetter) {

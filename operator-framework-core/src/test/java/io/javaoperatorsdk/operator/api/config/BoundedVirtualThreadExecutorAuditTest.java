@@ -41,7 +41,7 @@ class BoundedVirtualThreadExecutorAuditTest {
    * Semaphore(0) (or a negative one) whose tasks wait for a permit forever.
    */
   @Test
-  @EnabledForJreRange(min = JRE.JAVA_21)
+  @EnabledForJreRange(min = JRE.JAVA_25)
   void virtualThreadVariantRejectsNonPositiveConcurrencyToo() {
     assertThatIllegalArgumentException()
         .isThrownBy(() -> ExecutorServiceManager.newBoundedExecutorService(0, true).shutdownNow());
@@ -58,13 +58,13 @@ class BoundedVirtualThreadExecutorAuditTest {
    * waiting for a permit are silently dropped (neither run nor returned).
    */
   @Test
-  @EnabledForJreRange(min = JRE.JAVA_21)
+  @EnabledForJreRange(min = JRE.JAVA_25)
   void virtualThreadVariantShutdownNowReturnsTasksThatNeverStarted() throws Exception {
     assertThat(queuedTasksReturnedByShutdownNow(true)).isEqualTo(5);
   }
 
   @Test
-  @EnabledForJreRange(min = JRE.JAVA_21)
+  @EnabledForJreRange(min = JRE.JAVA_25)
   void everyTaskSubmittedWhileShuttingDownIsRunReturnedOrRejected() throws Exception {
     for (int round = 0; round < 50; round++) {
       final var executor = ExecutorServiceManager.newBoundedExecutorService(1, true);
