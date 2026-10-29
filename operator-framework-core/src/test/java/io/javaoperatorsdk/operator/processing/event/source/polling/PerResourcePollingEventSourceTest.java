@@ -89,6 +89,33 @@ class PerResourcePollingEventSourceTest
   }
 
   @Test
+  void keepsPollingAfterTheFetcherFailed() {
+    when(supplier.fetchResources(any()))
+        .thenThrow(new IllegalStateException("temporary failure"))
+        .thenReturn(Set.of(SampleExternalResource.testResource1()));
+
+    source.onResourceCreated(testCustomResource);
+
+    await()
+        .untilAsserted(() -> verify(supplier, atLeast(3)).fetchResources(eq(testCustomResource)));
+  }
+
+  @Test
+  void resourceAbsentFromTheCacheCanBeRegisteredAgain() {
+    when(resourceCache.get(any())).thenReturn(Optional.empty());
+    source.onResourceCreated(testCustomResource);
+    await()
+        .pollDelay(Duration.ofMillis(2 * PERIOD))
+        .untilAsserted(() -> verify(supplier, never()).fetchResources(any()));
+
+    when(resourceCache.get(any())).thenReturn(Optional.of(testCustomResource));
+    source.onResourceUpdated(testCustomResource, testCustomResource);
+
+    await()
+        .untilAsserted(() -> verify(supplier, atLeast(1)).fetchResources(eq(testCustomResource)));
+  }
+
+  @Test
   void registeringTaskOnAPredicate() {
     setUpSource(
         new PerResourcePollingEventSource<>(
