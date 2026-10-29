@@ -148,10 +148,18 @@ public class PerResourcePollingEventSource<R, P extends HasMetadata, ID>
       var primary = primaryResourceCache.get(primaryID);
       if (primary.isEmpty()) {
         log.warn("No resource in cache for resource ID: {}", primaryID);
-        // no new execution is scheduled in this case, an on delete event should be received shortly
+        // no new execution is scheduled in this case, an on delete event should be received
+        // shortly;
+        // the entry is dropped so that it can't block a registration of a recreated resource
+        scheduledFutures.remove(primaryID);
       } else {
-        var actualResources = primary.map(p -> getAndCacheResource(p, false));
-        scheduleNextExecution(primary.get(), actualResources.orElse(null));
+        Set<R> actualResources = null;
+        try {
+          actualResources = getAndCacheResource(primary.get(), false);
+        } catch (RuntimeException e) {
+          log.error("Error during polling resources for: {}", primaryID, e);
+        }
+        scheduleNextExecution(primary.get(), actualResources);
       }
     }
   }
