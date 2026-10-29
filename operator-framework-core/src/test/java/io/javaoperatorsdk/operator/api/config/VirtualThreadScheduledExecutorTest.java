@@ -17,6 +17,7 @@ package io.javaoperatorsdk.operator.api.config;
 
 import java.time.Duration;
 import java.util.concurrent.CancellationException;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.RejectedExecutionException;
@@ -24,6 +25,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -143,6 +145,36 @@ class VirtualThreadScheduledExecutorTest {
     await()
         .atMost(Duration.ofSeconds(10))
         .untilAsserted(() -> assertThat(runs).hasValueGreaterThan(3));
+  }
+
+  @Test
+  void aFixedRateTaskCatchesUpAfterAnOverrun() {
+    var starts = new CopyOnWriteArrayList<Long>();
+    var firstRunEnd = new AtomicLong();
+
+    executor.scheduleAtFixedRate(
+        () -> {
+          starts.add(System.nanoTime());
+          if (starts.size() == 1) {
+            try {
+              Thread.sleep(350);
+            } catch (InterruptedException e) {
+              Thread.currentThread().interrupt();
+            }
+            firstRunEnd.set(System.nanoTime());
+          }
+        },
+        0,
+        100,
+        TimeUnit.MILLISECONDS);
+
+    await()
+        .atMost(Duration.ofSeconds(10))
+        .untilAsserted(() -> assertThat(starts).hasSizeGreaterThanOrEqualTo(4));
+    // the three executions missed during the first run are made up for right after it, instead of
+    // being skipped, which would space the fourth one a full period behind the third
+    assertThat(Duration.ofNanos(starts.get(3) - firstRunEnd.get()))
+        .isLessThan(Duration.ofMillis(150));
   }
 
   @Test
