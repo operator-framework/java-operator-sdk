@@ -19,9 +19,12 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 
 public class ExecutorUtilsInternal {
+
+  private static final long SCHEDULED_THREAD_KEEP_ALIVE_SECONDS = 60;
 
   // prevent instantiation of util class
   private ExecutorUtilsInternal() {}
@@ -50,7 +53,8 @@ public class ExecutorUtilsInternal {
    * periodic or delayed) tasks on: one whose threads are daemon threads named after the specified
    * prefix, and which doesn't let the tasks that were scheduled for later delay its shutdown.
    *
-   * @param corePoolSize the number of threads to keep in the pool
+   * @param corePoolSize the maximal number of threads of the pool, which are created on demand and
+   *     let go if idle for a while
    * @param threadNamePrefix the prefix the threads of the pool are named after
    * @return a {@link ScheduledExecutorService} to run scheduled tasks on
    */
@@ -64,6 +68,10 @@ public class ExecutorUtilsInternal {
     // cancelled tasks are frequent (every retry that is superseded by a new event cancels one) and
     // would otherwise be retained until their delay elapses
     executor.setRemoveOnCancelPolicy(true);
+    // the threads are created as tasks get scheduled, not as the load requires, so without this
+    // they would all stay around idle for good; the pool always keeps a thread for delayed tasks
+    executor.setKeepAliveTime(SCHEDULED_THREAD_KEEP_ALIVE_SECONDS, TimeUnit.SECONDS);
+    executor.allowCoreThreadTimeOut(true);
     return executor;
   }
 }
