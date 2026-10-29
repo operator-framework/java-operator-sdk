@@ -19,6 +19,8 @@ import java.time.Duration;
 import java.util.Collections;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -274,6 +276,42 @@ class PerResourcePollingEventSourceTest
     source.onResourceCreated(testCustomResource);
 
     await().untilAsserted(() -> verify(supplier, atLeast(2)).fetchResources(any()));
+  }
+
+  @Test
+  void aFetchOutlivingARestartDoesNotStartASecondPollingChain() throws Exception {
+    var fetching = new CountDownLatch(1);
+    var release = new CountDownLatch(1);
+    when(supplier.fetchResources(any()))
+        .thenAnswer(
+            invocation -> {
+              fetching.countDown();
+              var interrupted = false;
+              while (release.getCount() > 0) {
+                try {
+                  release.await();
+                } catch (InterruptedException e) {
+                  interrupted = true;
+                }
+              }
+              if (interrupted) {
+                Thread.currentThread().interrupt();
+              }
+              return Set.of(SampleExternalResource.testResource1());
+            })
+        .thenReturn(Set.of(SampleExternalResource.testResource1()));
+
+    source.onResourceCreated(testCustomResource);
+    assertThat(fetching.await(5, TimeUnit.SECONDS)).isTrue();
+    source.stop();
+    source.start();
+    source.onResourceCreated(testCustomResource);
+    clearInvocations(supplier);
+    release.countDown();
+
+    await()
+        .pollDelay(Duration.ofMillis(10 * PERIOD))
+        .untilAsserted(() -> verify(supplier, atMost(15)).fetchResources(any()));
   }
 
   @Test
