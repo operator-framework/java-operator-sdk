@@ -41,7 +41,7 @@ class WebPageOperatorManagedDependentResourcesE2E extends WebPageOperatorAbstrac
           ? LocallyRunOperatorExtension.builder()
               .waitForNamespaceDeletion(false)
               .withDeleteCRDs(false)
-              .withConfigurationService(o->o.withUseVirtualThreads(true))
+              .withConfigurationService(o -> o.withUseVirtualThreads(true))
               .withReconciler(new WebPageManagedDependentsReconciler())
               .build()
           : ClusterDeployedOperatorExtension.builder()
