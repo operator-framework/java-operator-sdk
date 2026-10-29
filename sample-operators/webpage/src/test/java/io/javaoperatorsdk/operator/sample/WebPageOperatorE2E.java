@@ -41,6 +41,7 @@ class WebPageOperatorE2E extends WebPageOperatorAbstractTest {
   AbstractOperatorExtension operator =
       isLocal()
           ? LocallyRunOperatorExtension.builder()
+              .withConfigurationService(o -> o.withUseVirtualThreads(true))
               .waitForNamespaceDeletion(false)
               .withDeleteCRDs(false)
               .withReconciler(new WebPageReconciler())

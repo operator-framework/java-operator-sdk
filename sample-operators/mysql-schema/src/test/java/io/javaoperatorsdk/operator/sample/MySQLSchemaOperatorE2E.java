@@ -74,6 +74,7 @@ class MySQLSchemaOperatorE2E {
               .withReconciler(new MySQLSchemaReconciler()) // configuration for schema comes from
               // SchemaDependentResource annotation
               .withInfrastructure(infrastructure)
+              .withConfigurationService(o->o.withUseVirtualThreads(true))
               .withDeleteCRDs(false)
               .withPortForward(MY_SQL_NS, "app", "mysql", 3306, SchemaDependentResource.LOCAL_PORT)
               .build()
