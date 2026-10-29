@@ -26,7 +26,6 @@ import java.util.concurrent.Future;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
-import java.util.concurrent.locks.LockSupport;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -47,7 +46,6 @@ public class ExecutorServiceManager {
   private ScheduledExecutorService retryAndRescheduleExecutorService;
   private boolean started;
   private ConfigurationService configurationService;
-  private Thread keepAliveThread;
 
   ExecutorServiceManager(ConfigurationService configurationService) {
     start(configurationService);
@@ -218,37 +216,11 @@ public class ExecutorServiceManager {
       this.retryAndRescheduleExecutorService =
           configurationService.getRetryAndRescheduleExecutorService();
       this.executor = new InstrumentedExecutorService(configurationService.getExecutorService());
-      if (VirtualThreads.shouldUse(configurationService.useVirtualThreads())) {
-        startKeepAliveThread();
-      }
       started = true;
     }
   }
 
-  /**
-   * Virtual threads are always daemon threads, so with them nothing is left to keep the JVM running
-   * once the main method of an operator returns after starting it, as opposed to the non-daemon
-   * threads of the platform thread pools. This thread restores that, until the executors are
-   * stopped.
-   */
-  private void startKeepAliveThread() {
-    keepAliveThread =
-        new Thread(
-            () -> {
-              while (!Thread.currentThread().isInterrupted()) {
-                LockSupport.park();
-              }
-            },
-            "josdk-keep-alive");
-    keepAliveThread.setDaemon(false);
-    keepAliveThread.start();
-  }
-
   public synchronized void stop(Duration gracefulShutdownTimeout) {
-    if (keepAliveThread != null) {
-      keepAliveThread.interrupt();
-      keepAliveThread = null;
-    }
     var shutdowns =
         List.of(
             shutdown(executor, gracefulShutdownTimeout),
