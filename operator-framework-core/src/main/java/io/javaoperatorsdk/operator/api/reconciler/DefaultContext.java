@@ -259,9 +259,21 @@ public class DefaultContext<P extends HasMetadata> implements Context<P> {
     return this;
   }
 
-  @SuppressWarnings("unchecked")
   public <R> R getOrComputeDesiredStateFor(
       DependentResource<R, P> dependentResource, Function<P, R> desiredStateComputer) {
+    return getOrComputeDesiredStateFor(dependentResource, dependentResource, desiredStateComputer);
+  }
+
+  /**
+   * Same as {@link #getOrComputeDesiredStateFor(DependentResource, Function)} but hands {@code
+   * aspectTarget} rather than {@code dependentResource} to the {@link DesiredStateAspect}s, for
+   * dependents that are only a stand-in for the one the user configured.
+   */
+  @SuppressWarnings("unchecked")
+  public <R> R getOrComputeDesiredStateFor(
+      DependentResource<R, P> dependentResource,
+      DependentResource<?, P> aspectTarget,
+      Function<P, R> desiredStateComputer) {
     // an aspect can look up the actual resource of its dependent, which asks for the desired state
     // being computed: the thread computing it is handed the state as it is so far, instead of
     // re-entering the computation
@@ -290,7 +302,7 @@ public class DefaultContext<P extends HasMetadata> implements Context<P> {
       desiredStatesInProgress.put(
           dependentResource, new DesiredStateInProgress(Thread.currentThread(), desired));
       try {
-        applyDesiredStateAspects(desired, dependentResource);
+        applyDesiredStateAspects(desired, aspectTarget);
       } finally {
         desiredStatesInProgress.remove(dependentResource);
       }
@@ -307,7 +319,7 @@ public class DefaultContext<P extends HasMetadata> implements Context<P> {
    * resources are therefore left untouched.
    */
   private void applyDesiredStateAspects(Object desired, DependentResource<?, P> dependentResource) {
-    if (desired instanceof HasMetadata hasMetadata) {
+    if (desired instanceof HasMetadata hasMetadata && controllerConfiguration != null) {
       controllerConfiguration
           .getConfigurationService()
           .desiredStateAspects()
