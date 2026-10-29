@@ -69,6 +69,10 @@ public class PerResourcePollingEventSource<R, P extends HasMetadata, ID>
 
   private volatile ScheduledExecutorService executorService;
 
+  // incremented on every stop, to tell the polls of previous runs apart, which can outlive the
+  // stop when the fetcher ignores the interruption; guarded by this
+  private long lifecycleGeneration;
+
   public PerResourcePollingEventSource(
       Class<R> resourceClass,
       EventSourceContext<P> context,
@@ -140,7 +144,11 @@ public class PerResourcePollingEventSource<R, P extends HasMetadata, ID>
   }
 
   @SuppressWarnings("unchecked")
-  private void scheduleNextExecution(P primary, Set<R> actualResources) {
+  private synchronized void scheduleNextExecution(
+      P primary, Set<R> actualResources, long generation) {
+    if (generation != lifecycleGeneration) {
+      return;
+    }
     var primaryID = ResourceID.fromResource(primary);
     var fetchDelay = resourceFetcher.fetchDelay(actualResources, primary);
     var fetchDuration = fetchDelay.orElse(period);
@@ -148,14 +156,10 @@ public class PerResourcePollingEventSource<R, P extends HasMetadata, ID>
     ScheduledFuture<Void> scheduledFuture =
         (ScheduledFuture<Void>)
             executorService.schedule(
-                new FetchingExecutor(primaryID), fetchDuration.toMillis(), TimeUnit.MILLISECONDS);
+                new FetchingExecutor(primaryID, generation),
+                fetchDuration.toMillis(),
+                TimeUnit.MILLISECONDS);
     scheduledFutures.put(primaryID, scheduledFuture);
-    // a fetch that was already running when the event source got stopped can get here after stop
-    // cleared the map; since the shared executor stays alive, the task has to be withdrawn,
-    // otherwise the stale entry would prevent the resource from being registered on a restart
-    if (!isRunning() && scheduledFutures.remove(primaryID, scheduledFuture)) {
-      scheduledFuture.cancel(true);
-    }
   }
 
   @Override
@@ -206,15 +210,17 @@ public class PerResourcePollingEventSource<R, P extends HasMetadata, ID>
       var actualResources = cachedResources.isEmpty() ? null : cachedResources;
       // note that there is a delay, to not do two fetches when the resources first appeared
       // and getSecondaryResource is called on reconciliation.
-      scheduleNextExecution(resource, actualResources);
+      scheduleNextExecution(resource, actualResources, lifecycleGeneration);
     }
   }
 
   private class FetchingExecutor implements Runnable {
     private final ResourceID primaryID;
+    private final long generation;
 
-    public FetchingExecutor(ResourceID primaryID) {
+    public FetchingExecutor(ResourceID primaryID, long generation) {
       this.primaryID = primaryID;
+      this.generation = generation;
     }
 
     @Override
@@ -230,7 +236,7 @@ public class PerResourcePollingEventSource<R, P extends HasMetadata, ID>
         // no new execution is scheduled in this case, an on delete event should be received shortly
       } else {
         var actualResources = primary.map(p -> getAndCacheResource(p, false));
-        scheduleNextExecution(primary.get(), actualResources.orElse(null));
+        scheduleNextExecution(primary.get(), actualResources.orElse(null), generation);
       }
     }
   }
@@ -283,8 +289,11 @@ public class PerResourcePollingEventSource<R, P extends HasMetadata, ID>
     super.stop();
     // the tasks have to be cancelled explicitly now that the executor can be shared with the rest
     // of the operator, and the map cleared so that they are registered again on a restart
-    scheduledFutures.values().forEach(future -> future.cancel(true));
-    scheduledFutures.clear();
+    synchronized (this) {
+      lifecycleGeneration++;
+      scheduledFutures.values().forEach(future -> future.cancel(true));
+      scheduledFutures.clear();
+    }
     registrationsBeforeStart.clear();
     if (ownsExecutorService && executorService != null) {
       executorService.shutdownNow();

@@ -199,6 +199,7 @@ final class VirtualThreadScheduledExecutor extends AbstractExecutorService
         }
       }
       if (result.isDone()) {
+        waiting.remove(this);
         timerFuture.cancel(false);
       }
     }
