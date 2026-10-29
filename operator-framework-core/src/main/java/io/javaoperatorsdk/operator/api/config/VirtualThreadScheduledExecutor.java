@@ -99,7 +99,7 @@ final class VirtualThreadScheduledExecutor extends AbstractExecutorService
   }
 
   private <V> Handle<V> start(Handle<V> handle, long initialDelay, TimeUnit unit) {
-    handle.arm(Math.max(0, unit.toNanos(initialDelay)));
+    handle.arm(System.nanoTime() + Math.max(0, unit.toNanos(initialDelay)));
     return handle;
   }
 
@@ -186,8 +186,9 @@ final class VirtualThreadScheduledExecutor extends AbstractExecutorService
       this.period = period;
     }
 
-    private void arm(long delayNanos) {
-      triggerTime = System.nanoTime() + delayNanos;
+    private void arm(long triggerNanos) {
+      triggerTime = triggerNanos;
+      final var delayNanos = Math.max(0, triggerNanos - System.nanoTime());
       synchronized (lifecycleLock) {
         waiting.add(this);
         try {
@@ -215,11 +216,11 @@ final class VirtualThreadScheduledExecutor extends AbstractExecutorService
     }
 
     private void runOnWorker() {
-      if (result.isDone()) {
-        return;
-      }
       runner = Thread.currentThread();
       try {
+        if (result.isDone()) {
+          return;
+        }
         if (period == 0) {
           result.complete(callable.call());
           return;
@@ -238,14 +239,14 @@ final class VirtualThreadScheduledExecutor extends AbstractExecutorService
       if (result.isDone()) {
         return;
       }
-      final long delay;
+      final long nextTrigger;
       if (period > 0) {
-        delay = Math.max(0, triggerTime + period - System.nanoTime());
+        nextTrigger = triggerTime + period;
       } else {
-        delay = -period;
+        nextTrigger = System.nanoTime() - period;
       }
       try {
-        arm(delay);
+        arm(nextTrigger);
       } catch (RejectedExecutionException e) {
         result.cancel(false);
       }

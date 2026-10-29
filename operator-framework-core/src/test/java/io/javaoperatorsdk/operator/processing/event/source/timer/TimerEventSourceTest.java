@@ -162,7 +162,7 @@ class TimerEventSourceTest
 
     eventSource.start();
     eventSource.scheduleOnce(ResourceID.fromResource(TestUtils.testCustomResource()), PERIOD);
-    untilAsserted(() -> assertThat(handler.events).hasSize(1));
+    untilAsserted(() -> assertThat(handler.eventProducingThreadNames).hasSize(1));
     var firstThreadName = handler.eventProducingThreadNames.get(0);
     assertThat(firstThreadName).startsWith("josdk-timer-");
 
