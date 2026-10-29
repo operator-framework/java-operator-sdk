@@ -57,9 +57,9 @@ Things to keep in mind:
   virtual thread. The number of those tasks running at the same time is not limited, so
   `withConcurrentScheduledTaskThreads(int)` and `withConcurrentRetryAndRescheduleThreads(int)` only
   apply to platform threads.
-- With virtual threads, which are always daemon threads, the framework keeps one idle platform
-  thread (`josdk-keep-alive`) running until the operator is stopped, so that an operator whose
-  `main` method returns after starting it doesn't let the JVM exit.
+- Virtual threads are always daemon threads, so unlike the threads of the platform thread pools they
+  don't keep the JVM running: if the `main` method of your application returns after starting the
+  operator, make sure something else keeps the JVM alive.
 - A custom `ExecutorService` provided through `withExecutorService(...)` or
   `withWorkflowExecutorService(...)` is always used as is, the flag has no effect on it.
 - The Kubernetes client the framework creates when none is provided also switches its internal
