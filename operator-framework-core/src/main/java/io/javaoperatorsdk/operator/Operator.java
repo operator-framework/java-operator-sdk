@@ -20,6 +20,8 @@ import java.util.HashSet;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.concurrent.locks.LockSupport;
 import java.util.function.Consumer;
 
 import org.slf4j.Logger;
@@ -45,6 +47,7 @@ public class Operator implements LifecycleAware {
   private ConfigurationService configurationService;
   private volatile boolean started = false;
   private final AtomicBoolean shutdownHookInstalled = new AtomicBoolean(false);
+  private final AtomicReference<Thread> keepAliveThread = new AtomicReference<>();
 
   public Operator() {
     init(initConfigurationService(null, null), true);
@@ -175,6 +178,38 @@ public class Operator implements LifecycleAware {
     installShutdownHook();
   }
 
+  /**
+   * Keeps the JVM running until this operator is stopped, by starting a non-daemon thread that does
+   * nothing but wait. This is useful when the {@code main} method of the application returns after
+   * starting the operator and nothing else keeps the JVM alive, for example when the threads of the
+   * operator are all daemon threads, as is the case with virtual threads.
+   *
+   * <p>It can be called before or after {@link #start()}, and calling it again while the thread is
+   * already running has no effect. The thread ends when {@link #stop()} is called, so the operator
+   * can be stopped from a shutdown hook, see {@link #installShutdownHook()}.
+   */
+  public void keepAlive() {
+    var thread =
+        new Thread(
+            () -> {
+              while (!Thread.currentThread().isInterrupted()) {
+                LockSupport.park();
+              }
+            },
+            "josdk-keep-alive");
+    thread.setDaemon(false);
+    if (keepAliveThread.compareAndSet(null, thread)) {
+      thread.start();
+    }
+  }
+
+  private void stopKeepAlive() {
+    var thread = keepAliveThread.getAndSet(null);
+    if (thread != null) {
+      thread.interrupt();
+    }
+  }
+
   public KubernetesClient getKubernetesClient() {
     return configurationService.getKubernetesClient();
   }
@@ -240,6 +275,7 @@ public class Operator implements LifecycleAware {
    */
   @Override
   public void stop() throws OperatorException {
+    stopKeepAlive();
     Duration reconciliationTerminationTimeout =
         configurationService.reconciliationTerminationTimeout();
 
