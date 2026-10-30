@@ -83,7 +83,7 @@ public class PollingEventSource<R, P extends HasMetadata, ID>
    * @param resourceClass the type of the polled resource
    * @param context the context this event source is created for
    * @param config the configuration of the polling
-   * @since 5.6.0
+   * @since 5.7.0
    */
   public PollingEventSource(
       Class<R> resourceClass, EventSourceContext<P> context, PollingConfiguration<R, ID> config) {
@@ -96,7 +96,7 @@ public class PollingEventSource<R, P extends HasMetadata, ID>
    *     source has to create a thread of its own to poll on instead of using the one the operator
    *     shares between all its scheduled tasks.
    */
-  @Deprecated(since = "5.6.0")
+  @Deprecated(since = "5.7.0")
   public PollingEventSource(Class<R> resourceClass, PollingConfiguration<R, ID> config) {
     this(resourceClass, config, null);
   }

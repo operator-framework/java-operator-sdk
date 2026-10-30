@@ -264,7 +264,7 @@ public interface ConfigurationService {
    * limited then.
    *
    * @return the maximum number of concurrent scheduled task threads
-   * @since 5.6.0
+   * @since 5.7.0
    */
   default int concurrentScheduledTaskThreads() {
     return DEFAULT_SCHEDULED_TASK_THREADS_NUMBER;
@@ -278,7 +278,7 @@ public interface ConfigurationService {
    * see {@link #useVirtualThreads()}.
    *
    * @return the maximum number of concurrent retry and reschedule threads
-   * @since 5.6.0
+   * @since 5.7.0
    */
   default int concurrentRetryAndRescheduleThreads() {
     return DEFAULT_RETRY_AND_RESCHEDULE_THREADS_NUMBER;
@@ -368,7 +368,7 @@ public interface ConfigurationService {
    * Custom implementations are advised to do the same.
    *
    * @return the {@link ScheduledExecutorService} implementation to use to run scheduled tasks
-   * @since 5.6.0
+   * @since 5.7.0
    */
   default ScheduledExecutorService getScheduledExecutorService() {
     return ExecutorServiceManager.newScheduledExecutorService(
@@ -386,7 +386,7 @@ public interface ConfigurationService {
    *
    * @return the {@link ScheduledExecutorService} implementation to use to trigger retried and
    *     rescheduled reconciliations
-   * @since 5.6.0
+   * @since 5.7.0
    */
   default ScheduledExecutorService getRetryAndRescheduleExecutorService() {
     return ExecutorServiceManager.newScheduledExecutorService(

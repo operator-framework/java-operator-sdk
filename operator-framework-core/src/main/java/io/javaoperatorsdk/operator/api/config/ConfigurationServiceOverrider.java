@@ -99,7 +99,7 @@ public class ConfigurationServiceOverrider {
    * @param threadNumber the maximum number of concurrent scheduled task threads
    * @return this {@link ConfigurationServiceOverrider} for chained customization
    * @see ConfigurationService#concurrentScheduledTaskThreads()
-   * @since 5.6.0
+   * @since 5.7.0
    */
   public ConfigurationServiceOverrider withConcurrentScheduledTaskThreads(int threadNumber) {
     this.concurrentScheduledTaskThreads = threadNumber;
@@ -113,7 +113,7 @@ public class ConfigurationServiceOverrider {
    * @param threadNumber the maximum number of concurrent retry and reschedule threads
    * @return this {@link ConfigurationServiceOverrider} for chained customization
    * @see ConfigurationService#concurrentRetryAndRescheduleThreads()
-   * @since 5.6.0
+   * @since 5.7.0
    */
   public ConfigurationServiceOverrider withConcurrentRetryAndRescheduleThreads(int threadNumber) {
     this.concurrentRetryAndRescheduleThreads = threadNumber;
@@ -160,7 +160,7 @@ public class ConfigurationServiceOverrider {
    * @param scheduledExecutorService the executor to run scheduled tasks on
    * @return this {@link ConfigurationServiceOverrider} for chained customization
    * @see ConfigurationService#getScheduledExecutorService()
-   * @since 5.6.0
+   * @since 5.7.0
    */
   public ConfigurationServiceOverrider withScheduledExecutorService(
       ScheduledExecutorService scheduledExecutorService) {
@@ -176,7 +176,7 @@ public class ConfigurationServiceOverrider {
    *     reconciliations on
    * @return this {@link ConfigurationServiceOverrider} for chained customization
    * @see ConfigurationService#getRetryAndRescheduleExecutorService()
-   * @since 5.6.0
+   * @since 5.7.0
    */
   public ConfigurationServiceOverrider withRetryAndRescheduleExecutorService(
       ScheduledExecutorService retryAndRescheduleExecutorService) {
@@ -191,6 +191,7 @@ public class ConfigurationServiceOverrider {
    *
    * @param useVirtualThreads {@code true} to use virtual threads
    * @return this {@link ConfigurationServiceOverrider} for chained customization
+   * @since 5.7.0
    */
   public ConfigurationServiceOverrider withUseVirtualThreads(boolean useVirtualThreads) {
     this.useVirtualThreads = useVirtualThreads;
