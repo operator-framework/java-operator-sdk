@@ -130,11 +130,16 @@ public class PollingEventSource<R, P extends HasMetadata, ID>
   @Override
   public void start() throws OperatorException {
     if (pollingTask != null) {
+      switchToCurrentExecutor();
       return;
     }
     super.start();
     executorService = resolveExecutorService();
     getStateAndFillCache();
+    schedulePolling();
+  }
+
+  private void schedulePolling() {
     var task =
         executorService.scheduleWithFixedDelay(
             this::poll, period.toMillis(), period.toMillis(), TimeUnit.MILLISECONDS);
@@ -145,6 +150,25 @@ public class PollingEventSource<R, P extends HasMetadata, ID>
       task.cancel(false);
       pollingTask = null;
     }
+  }
+
+  /**
+   * The operator replaces its executors when it is started again, which can happen while this event
+   * source keeps running, when a previous start failed after it started. The polling task is gone
+   * with the replaced executor then, so it is scheduled again on the new one.
+   */
+  private void switchToCurrentExecutor() {
+    final var current = pollingTask;
+    if (ownsExecutorService || current == null) {
+      return;
+    }
+    final var resolved = resolveExecutorService();
+    if (resolved == executorService) {
+      return;
+    }
+    current.cancel(false);
+    executorService = resolved;
+    schedulePolling();
   }
 
   private void poll() {
@@ -195,7 +219,7 @@ public class PollingEventSource<R, P extends HasMetadata, ID>
       pollingTask = null;
     }
     if (ownsExecutorService && executorService != null) {
-      executorService.shutdownNow();
+      executorService.shutdown();
     }
   }
 
