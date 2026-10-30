@@ -184,6 +184,40 @@ class ConfigurationServiceOverriderTest {
   }
 
   @Test
+  void executorsOfTheOriginalConfigurationAreKeptWhenOverridesDoNotChangeTheirSettings() {
+    final var scheduledExecutorService = Executors.newScheduledThreadPool(1);
+    final var retryExecutorService = Executors.newScheduledThreadPool(1);
+    try {
+      final var original =
+          new BaseConfigurationService() {
+            @Override
+            public ScheduledExecutorService getScheduledExecutorService() {
+              return scheduledExecutorService;
+            }
+
+            @Override
+            public ScheduledExecutorService getRetryAndRescheduleExecutorService() {
+              return retryExecutorService;
+            }
+          };
+
+      final var overridden =
+          new ConfigurationServiceOverrider(original)
+              .withUseVirtualThreads(original.useVirtualThreads())
+              .withConcurrentScheduledTaskThreads(original.concurrentScheduledTaskThreads())
+              .withConcurrentRetryAndRescheduleThreads(
+                  original.concurrentRetryAndRescheduleThreads())
+              .build();
+
+      assertThat(overridden.getScheduledExecutorService()).isSameAs(scheduledExecutorService);
+      assertThat(overridden.getRetryAndRescheduleExecutorService()).isSameAs(retryExecutorService);
+    } finally {
+      scheduledExecutorService.shutdownNow();
+      retryExecutorService.shutdownNow();
+    }
+  }
+
+  @Test
   void scheduledExecutorDefaultsToADaemonPoolOfTheConfiguredSize() {
     final var overridden =
         (ScheduledThreadPoolExecutor)
