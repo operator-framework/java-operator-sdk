@@ -51,7 +51,7 @@ public final class PollingConfigurationBuilder<R, ID> {
    *
    * @param executorService the executor to run the polls on
    * @return this builder for chained customization
-   * @since 5.6.0
+   * @since 5.7.0
    */
   public PollingConfigurationBuilder<R, ID> withExecutorService(
       ScheduledExecutorService executorService) {
