@@ -449,7 +449,8 @@ public class ConfigurationServiceOverrider {
       public ScheduledExecutorService getScheduledExecutorService() {
         if (scheduledExecutorService != null) {
           return scheduledExecutorService;
-        } else if (concurrentScheduledTaskThreads == null && useVirtualThreads == null) {
+        } else if (!changes(
+            concurrentScheduledTaskThreads, original.concurrentScheduledTaskThreads())) {
           return original.getScheduledExecutorService();
         } else {
           return super.getScheduledExecutorService();
@@ -460,11 +461,20 @@ public class ConfigurationServiceOverrider {
       public ScheduledExecutorService getRetryAndRescheduleExecutorService() {
         if (retryAndRescheduleExecutorService != null) {
           return retryAndRescheduleExecutorService;
-        } else if (concurrentRetryAndRescheduleThreads == null && useVirtualThreads == null) {
+        } else if (!changes(
+            concurrentRetryAndRescheduleThreads, original.concurrentRetryAndRescheduleThreads())) {
           return original.getRetryAndRescheduleExecutorService();
         } else {
           return super.getRetryAndRescheduleExecutorService();
         }
+      }
+
+      // the default scheduled executors are only built anew when an override actually changes the
+      // way they are built, otherwise the ones of the original configuration are kept, which also
+      // preserves a custom executor the original provides
+      private boolean changes(Integer overriddenThreads, int originalThreads) {
+        return (overriddenThreads != null && overriddenThreads != originalThreads)
+            || (useVirtualThreads != null && useVirtualThreads != original.useVirtualThreads());
       }
 
       @Override
