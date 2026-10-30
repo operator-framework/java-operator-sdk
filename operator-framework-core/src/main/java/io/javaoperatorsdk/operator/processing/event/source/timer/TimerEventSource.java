@@ -151,11 +151,30 @@ public class TimerEventSource<R extends HasMetadata> extends AbstractEventSource
     // the operator replaces its executors when it is started again, which can happen while this
     // event source keeps running, when a previous start failed after it started
     if (!isRunning() || !ownsExecutorService) {
-      executorService = resolveExecutorService();
+      final var resolved = resolveExecutorService();
+      final var replaced = isRunning() && resolved != executorService;
+      executorService = resolved;
+      if (replaced) {
+        rearmPendingTimers();
+      }
     }
     if (!isRunning()) {
       super.start();
     }
+  }
+
+  /**
+   * The timers that were pending on the replaced executor are gone with it, so they are scheduled
+   * again on the new one for what remained of their delay. The ones that already fired are left
+   * alone, and the ones explicitly cancelled are not in the map anymore.
+   */
+  private void rearmPendingTimers() {
+    onceTasks.forEach(
+        (resourceID, future) -> {
+          if (future.isCancelled() || !future.isDone()) {
+            scheduleOnce(resourceID, Math.max(0, future.getDelay(TimeUnit.MILLISECONDS)));
+          }
+        });
   }
 
   private ScheduledExecutorService resolveExecutorService() {
@@ -171,7 +190,7 @@ public class TimerEventSource<R extends HasMetadata> extends AbstractEventSource
       super.stop();
       onceTasks.keySet().forEach(this::cancelOnceSchedule);
       if (ownsExecutorService && executorService != null) {
-        executorService.shutdownNow();
+        executorService.shutdown();
       }
     }
   }

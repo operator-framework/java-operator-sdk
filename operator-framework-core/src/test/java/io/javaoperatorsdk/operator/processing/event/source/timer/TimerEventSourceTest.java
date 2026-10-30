@@ -17,9 +17,11 @@ package io.javaoperatorsdk.operator.processing.event.source.timer;
 
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
 import org.awaitility.Awaitility;
@@ -116,6 +118,75 @@ class TimerEventSourceTest
     } finally {
       second.shutdownNow();
     }
+  }
+
+  @Test
+  public void timersPendingOnTheReplacedExecutorAreScheduledAgainOnTheNewOne() {
+    var first = Executors.newScheduledThreadPool(1);
+    var second = Executors.newScheduledThreadPool(1);
+    var current = new AtomicReference<ScheduledExecutorService>(first);
+    var timerSource = new TimerEventSource<TestCustomResource>("timer", false, current::get);
+    setUpSource(timerSource, new CapturingEventHandler());
+    try {
+      var resourceID = ResourceID.fromResource(TestUtils.testCustomResource());
+      source.scheduleOnce(resourceID, 2 * PERIOD);
+      first.shutdownNow();
+      current.set(second);
+
+      source.start();
+
+      untilAsserted(() -> assertThat(eventHandler.events).hasSize(1));
+    } finally {
+      second.shutdownNow();
+    }
+  }
+
+  @Test
+  public void timersThatAlreadyFiredAreNotScheduledAgainOnTheNewExecutor() {
+    var first = Executors.newScheduledThreadPool(1);
+    var second = Executors.newScheduledThreadPool(1);
+    var current = new AtomicReference<ScheduledExecutorService>(first);
+    var timerSource = new TimerEventSource<TestCustomResource>("timer", false, current::get);
+    setUpSource(timerSource, new CapturingEventHandler());
+    try {
+      source.scheduleOnce(ResourceID.fromResource(TestUtils.testCustomResource()), PERIOD);
+      untilAsserted(() -> assertThat(eventHandler.events).hasSize(1));
+      first.shutdownNow();
+      current.set(second);
+
+      source.start();
+
+      untilAsserted(PERIOD * 4, 0, () -> assertThat(eventHandler.events).hasSize(1));
+    } finally {
+      second.shutdownNow();
+    }
+  }
+
+  @Test
+  public void stoppingDoesNotInterruptAnEventHandlerInFlight() throws Exception {
+    var handling = new CountDownLatch(1);
+    var release = new CountDownLatch(1);
+    var interrupted = new AtomicBoolean();
+    setUpSource(
+        new TimerEventSource<>(),
+        new CapturingEventHandler() {
+          @Override
+          public void handleEvent(Event event) {
+            handling.countDown();
+            try {
+              release.await();
+            } catch (InterruptedException e) {
+              interrupted.set(true);
+            }
+          }
+        });
+
+    source.scheduleOnce(ResourceID.fromResource(TestUtils.testCustomResource()), 1);
+    assertThat(handling.await(5, TimeUnit.SECONDS)).isTrue();
+    source.stop();
+    release.countDown();
+
+    untilAsserted(PERIOD * 2, 0, () -> assertThat(interrupted).isFalse());
   }
 
   @Test

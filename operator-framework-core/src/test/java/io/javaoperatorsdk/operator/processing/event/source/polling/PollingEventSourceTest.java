@@ -20,6 +20,10 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -111,6 +115,61 @@ class PollingEventSourceTest
       eventSource.stop();
       executorServiceManager.stop(Duration.ofMillis(100));
     }
+  }
+
+  @Test
+  void pollsOnTheNewSharedSchedulerWhenStartedAgainWhileRunning() {
+    when(resourceFetcher.fetchResources()).thenReturn(testResponseWithOneValue());
+    var configurationService = new BaseConfigurationService();
+    var executorServiceManager = configurationService.getExecutorServiceManager();
+    var eventSource =
+        new PollingEventSource<SampleExternalResource, HasMetadata, String>(
+            SampleExternalResource.class,
+            contextFor(configurationService),
+            new PollingConfiguration<>(null, resourceFetcher, POLL_PERIOD, null));
+    eventSource.setEventHandler(mock(EventHandler.class));
+
+    try {
+      eventSource.start();
+      executorServiceManager.stop(Duration.ofMillis(100));
+      executorServiceManager.start(configurationService);
+      clearInvocations(resourceFetcher);
+
+      eventSource.start();
+
+      await().untilAsserted(() -> verify(resourceFetcher, atLeast(2)).fetchResources());
+    } finally {
+      eventSource.stop();
+      executorServiceManager.stop(Duration.ofMillis(100));
+    }
+  }
+
+  @Test
+  void stoppingDoesNotInterruptAPollInFlight() throws Exception {
+    var polling = new CountDownLatch(1);
+    var release = new CountDownLatch(1);
+    var interrupted = new AtomicBoolean();
+    var fetches = new AtomicInteger();
+    when(resourceFetcher.fetchResources())
+        .thenAnswer(
+            invocation -> {
+              if (fetches.incrementAndGet() > 1) {
+                polling.countDown();
+                try {
+                  release.await();
+                } catch (InterruptedException e) {
+                  interrupted.set(true);
+                }
+              }
+              return testResponseWithOneValue();
+            });
+
+    pollingEventSource.start();
+    assertThat(polling.await(5, TimeUnit.SECONDS)).isTrue();
+    pollingEventSource.stop();
+    release.countDown();
+
+    await().pollDelay(Duration.ofMillis(DEFAULT_WAIT_PERIOD)).until(() -> !interrupted.get());
   }
 
   @Test
