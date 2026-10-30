@@ -18,6 +18,8 @@ package io.javaoperatorsdk.operator.api.config;
 import java.time.Duration;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.EnabledForJreRange;
+import org.junit.jupiter.api.condition.JRE;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -30,14 +32,19 @@ class ExecutorServiceManagerTest {
     ConfigurationService configurationService = new BaseConfigurationService();
     var manager = configurationService.getExecutorServiceManager();
     var scheduled = manager.scheduledExecutorService();
+    var retryAndReschedule = manager.retryAndRescheduleExecutorService();
 
     try {
       assertThat(scheduled.isShutdown()).isFalse();
+      assertThat(retryAndReschedule.isShutdown()).isFalse();
+      // retries are triggered on an executor of their own so that a slow poll can't delay them
+      assertThat(retryAndReschedule).isNotSameAs(scheduled);
     } finally {
       manager.stop(SHUTDOWN_TIMEOUT);
     }
 
     assertThat(scheduled.isShutdown()).isTrue();
+    assertThat(retryAndReschedule.isShutdown()).isTrue();
   }
 
   @Test
@@ -53,7 +60,24 @@ class ExecutorServiceManagerTest {
     assertThat(manager.reconcileExecutorService().isShutdown()).isFalse();
     assertThat(manager.cachingExecutorService().isShutdown()).isFalse();
     assertThat(manager.scheduledExecutorService().isShutdown()).isFalse();
+    assertThat(manager.retryAndRescheduleExecutorService().isShutdown()).isFalse();
 
     manager.stop(SHUTDOWN_TIMEOUT);
+  }
+
+  @Test
+  @EnabledForJreRange(min = JRE.JAVA_25)
+  void cachingExecutorRunsOnVirtualThreadsWhenRequested() throws Exception {
+    var configurationService =
+        ConfigurationService.newOverriddenConfigurationService(
+            new BaseConfigurationService(), o -> o.withUseVirtualThreads(true));
+    var manager = configurationService.getExecutorServiceManager();
+    try {
+      var virtual =
+          manager.cachingExecutorService().submit(() -> VirtualThreadsTest.onVirtualThread()).get();
+      assertThat(virtual).isTrue();
+    } finally {
+      manager.stop(SHUTDOWN_TIMEOUT);
+    }
   }
 }

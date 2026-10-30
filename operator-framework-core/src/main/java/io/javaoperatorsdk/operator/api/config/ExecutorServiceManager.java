@@ -33,6 +33,7 @@ import java.util.stream.Stream;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import io.javaoperatorsdk.operator.ExecutorUtilsInternal;
 import io.javaoperatorsdk.operator.OperatorException;
 
 public class ExecutorServiceManager {
@@ -42,11 +43,65 @@ public class ExecutorServiceManager {
   private ExecutorService workflowExecutor;
   private ExecutorService cachingExecutorService;
   private ScheduledExecutorService scheduledExecutorService;
+  private ScheduledExecutorService retryAndRescheduleExecutorService;
   private boolean started;
   private ConfigurationService configurationService;
 
   ExecutorServiceManager(ConfigurationService configurationService) {
     start(configurationService);
+  }
+
+  /**
+   * Creates the executor service used to run a bounded number of tasks concurrently, either backed
+   * by virtual threads or by a fixed size pool of platform threads. The concurrency limit is
+   * enforced in both cases.
+   *
+   * @param maxConcurrency the maximal number of tasks executed at the same time
+   * @param useVirtualThreads whether virtual threads should be used, see {@link
+   *     ConfigurationService#useVirtualThreads()}
+   * @return the created {@link ExecutorService}
+   */
+  public static ExecutorService newBoundedExecutorService(
+      int maxConcurrency, boolean useVirtualThreads) {
+    return VirtualThreads.shouldUse(useVirtualThreads)
+        ? VirtualThreads.newBoundedVirtualThreadExecutor(maxConcurrency)
+        : Executors.newFixedThreadPool(maxConcurrency);
+  }
+
+  /**
+   * Creates the executor service used to run scheduled (i.e. periodic or delayed) tasks, either
+   * firing them on virtual threads or on a pool of platform threads. The platform thread variant is
+   * the one of {@link ExecutorUtilsInternal#daemonScheduledThreadPool(int, String)}. In both cases
+   * the threads are daemon threads. Virtual threads are cheap and the tasks scheduled are typically
+   * blocking calls, so their number is not limited.
+   *
+   * @param maxConcurrency the number of threads of the platform thread pool, not used with virtual
+   *     threads
+   * @param useVirtualThreads whether virtual threads should be used, see {@link
+   *     ConfigurationService#useVirtualThreads()}
+   * @param threadNamePrefix the prefix the threads of the executor are named after
+   * @return the {@link ScheduledExecutorService} to run scheduled tasks on
+   * @since 5.7.0
+   */
+  public static ScheduledExecutorService newScheduledExecutorService(
+      int maxConcurrency, boolean useVirtualThreads, String threadNamePrefix) {
+    return VirtualThreads.shouldUse(useVirtualThreads)
+        ? VirtualThreads.newScheduledExecutor(threadNamePrefix)
+        : ExecutorUtilsInternal.daemonScheduledThreadPool(maxConcurrency, threadNamePrefix);
+  }
+
+  /**
+   * Creates the executor service used to run an unbounded number of tasks concurrently, either
+   * backed by virtual threads or by a cached pool of platform threads.
+   *
+   * @param useVirtualThreads whether virtual threads should be used, see {@link
+   *     ConfigurationService#useVirtualThreads()}
+   * @return the created {@link ExecutorService}
+   */
+  public static ExecutorService newUnboundedExecutorService(boolean useVirtualThreads) {
+    return VirtualThreads.shouldUse(useVirtualThreads)
+        ? VirtualThreads.newVirtualThreadPerTaskExecutor()
+        : Executors.newCachedThreadPool();
   }
 
   /**
@@ -128,30 +183,55 @@ public class ExecutorServiceManager {
     return cachingExecutorService;
   }
 
+  /**
+   * The executor the operator runs its scheduled (i.e. periodic or delayed) tasks on, shared by its
+   * polling event sources. Note that it is only valid while the manager is started: it is shut down
+   * by {@link #stop(Duration)} and replaced by a fresh one on the next {@link
+   * #start(ConfigurationService)}, so callers should retrieve it when they start rather than hold
+   * on to it.
+   *
+   * @return the executor to run scheduled tasks on
+   */
   public ScheduledExecutorService scheduledExecutorService() {
     return scheduledExecutorService;
+  }
+
+  /**
+   * The executor the operator triggers its retried and rescheduled reconciliations on, kept
+   * separate from {@link #scheduledExecutorService()} so that a slow poll can't delay a retry. The
+   * same lifecycle caveat as for {@link #scheduledExecutorService()} applies.
+   *
+   * @return the executor to trigger retried and rescheduled reconciliations on
+   */
+  public ScheduledExecutorService retryAndRescheduleExecutorService() {
+    return retryAndRescheduleExecutorService;
   }
 
   public synchronized void start(ConfigurationService configurationService) {
     if (!started) {
       this.configurationService = configurationService; // used to lazy init workflow executor
-      this.cachingExecutorService = Executors.newCachedThreadPool();
-      this.scheduledExecutorService = Executors.newScheduledThreadPool(0);
+      this.cachingExecutorService =
+          newUnboundedExecutorService(configurationService.useVirtualThreads());
+      this.scheduledExecutorService = configurationService.getScheduledExecutorService();
+      this.retryAndRescheduleExecutorService =
+          configurationService.getRetryAndRescheduleExecutorService();
       this.executor = new InstrumentedExecutorService(configurationService.getExecutorService());
       started = true;
     }
   }
 
   public synchronized void stop(Duration gracefulShutdownTimeout) {
-    var parallelExec = Executors.newFixedThreadPool(4);
+    var shutdowns =
+        List.of(
+            shutdown(executor, gracefulShutdownTimeout),
+            shutdown(workflowExecutor, gracefulShutdownTimeout),
+            shutdown(cachingExecutorService, gracefulShutdownTimeout),
+            shutdown(scheduledExecutorService, gracefulShutdownTimeout),
+            shutdown(retryAndRescheduleExecutorService, gracefulShutdownTimeout));
+    var parallelExec = Executors.newFixedThreadPool(shutdowns.size());
     try {
       log.debug("Closing executor");
-      parallelExec.invokeAll(
-          List.of(
-              shutdown(executor, gracefulShutdownTimeout),
-              shutdown(workflowExecutor, gracefulShutdownTimeout),
-              shutdown(cachingExecutorService, gracefulShutdownTimeout),
-              shutdown(scheduledExecutorService, gracefulShutdownTimeout)));
+      parallelExec.invokeAll(shutdowns);
     } catch (InterruptedException e) {
       log.debug("Exception closing executor: {}", e.getLocalizedMessage());
       Thread.currentThread().interrupt();

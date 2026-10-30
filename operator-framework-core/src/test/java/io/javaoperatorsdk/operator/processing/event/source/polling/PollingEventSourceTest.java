@@ -19,11 +19,20 @@ import java.time.Duration;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
+import io.javaoperatorsdk.operator.api.config.BaseConfigurationService;
+import io.javaoperatorsdk.operator.api.config.ConfigurationService;
+import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
+import io.javaoperatorsdk.operator.api.reconciler.EventSourceContext;
 import io.javaoperatorsdk.operator.health.Status;
 import io.javaoperatorsdk.operator.processing.event.EventHandler;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
@@ -46,6 +55,7 @@ class PollingEventSourceTest
   private final PollingEventSource.GenericResourceFetcher<SampleExternalResource> resourceFetcher =
       mock(PollingEventSource.GenericResourceFetcher.class);
 
+  @SuppressWarnings("deprecation")
   private final PollingEventSource<SampleExternalResource, HasMetadata, String> pollingEventSource =
       new PollingEventSource<>(
           SampleExternalResource.class,
@@ -67,15 +77,116 @@ class PollingEventSourceTest
     Thread.sleep(DEFAULT_WAIT_PERIOD);
     pollingEventSource.stop();
 
-    // a cancelled java.util.Timer cannot be reused, a new one has to be created on start
+    // the polling task is cancelled on stop, a new one has to be scheduled on start
     pollingEventSource.start();
-    Thread.sleep(DEFAULT_WAIT_PERIOD);
+    clearInvocations(resourceFetcher);
 
+    await().untilAsserted(() -> verify(resourceFetcher, atLeast(2)).fetchResources());
     assertThat(pollingEventSource.getStatus()).isEqualTo(Status.HEALTHY);
   }
 
   @Test
-  void timerThreadIsADaemonSoItDoesNotKeepTheJvmAlive() throws InterruptedException {
+  void pollsOnTheNewSharedSchedulerWhenTheOperatorIsRestarted() {
+    when(resourceFetcher.fetchResources()).thenReturn(testResponseWithOneValue());
+    var configurationService = new BaseConfigurationService();
+    var executorServiceManager = configurationService.getExecutorServiceManager();
+    var eventSource =
+        new PollingEventSource<SampleExternalResource, HasMetadata, String>(
+            SampleExternalResource.class,
+            contextFor(configurationService),
+            new PollingConfiguration<>(null, resourceFetcher, POLL_PERIOD, null));
+    eventSource.setEventHandler(mock(EventHandler.class));
+
+    try {
+      eventSource.start();
+      var firstExecutor = executorServiceManager.scheduledExecutorService();
+      eventSource.stop();
+
+      executorServiceManager.stop(Duration.ofMillis(100));
+      executorServiceManager.start(configurationService);
+      assertThat(firstExecutor.isShutdown()).isTrue();
+      assertThat(executorServiceManager.scheduledExecutorService()).isNotSameAs(firstExecutor);
+
+      eventSource.start();
+      clearInvocations(resourceFetcher);
+
+      await().untilAsserted(() -> verify(resourceFetcher, atLeast(2)).fetchResources());
+    } finally {
+      eventSource.stop();
+      executorServiceManager.stop(Duration.ofMillis(100));
+    }
+  }
+
+  @Test
+  void pollsOnTheNewSharedSchedulerWhenStartedAgainWhileRunning() {
+    when(resourceFetcher.fetchResources()).thenReturn(testResponseWithOneValue());
+    var configurationService = new BaseConfigurationService();
+    var executorServiceManager = configurationService.getExecutorServiceManager();
+    var eventSource =
+        new PollingEventSource<SampleExternalResource, HasMetadata, String>(
+            SampleExternalResource.class,
+            contextFor(configurationService),
+            new PollingConfiguration<>(null, resourceFetcher, POLL_PERIOD, null));
+    eventSource.setEventHandler(mock(EventHandler.class));
+
+    try {
+      eventSource.start();
+      executorServiceManager.stop(Duration.ofMillis(100));
+      executorServiceManager.start(configurationService);
+      clearInvocations(resourceFetcher);
+
+      eventSource.start();
+
+      await().untilAsserted(() -> verify(resourceFetcher, atLeast(2)).fetchResources());
+    } finally {
+      eventSource.stop();
+      executorServiceManager.stop(Duration.ofMillis(100));
+    }
+  }
+
+  @Test
+  void stoppingDoesNotInterruptAPollInFlight() throws Exception {
+    var polling = new CountDownLatch(1);
+    var release = new CountDownLatch(1);
+    var interrupted = new AtomicBoolean();
+    var fetches = new AtomicInteger();
+    when(resourceFetcher.fetchResources())
+        .thenAnswer(
+            invocation -> {
+              if (fetches.incrementAndGet() > 1) {
+                polling.countDown();
+                try {
+                  release.await();
+                } catch (InterruptedException e) {
+                  interrupted.set(true);
+                }
+              }
+              return testResponseWithOneValue();
+            });
+
+    pollingEventSource.start();
+    assertThat(polling.await(5, TimeUnit.SECONDS)).isTrue();
+    pollingEventSource.stop();
+    release.countDown();
+
+    await().pollDelay(Duration.ofMillis(DEFAULT_WAIT_PERIOD)).until(() -> !interrupted.get());
+  }
+
+  @Test
+  void stopCancelsThePollingTask() throws InterruptedException {
+    when(resourceFetcher.fetchResources()).thenReturn(testResponseWithTwoValues());
+    pollingEventSource.start();
+    Thread.sleep(DEFAULT_WAIT_PERIOD);
+    pollingEventSource.stop();
+    clearInvocations(resourceFetcher);
+
+    Thread.sleep(DEFAULT_WAIT_PERIOD);
+
+    verify(resourceFetcher, never()).fetchResources();
+  }
+
+  @Test
+  void pollingThreadIsADaemonSoItDoesNotKeepTheJvmAlive() throws InterruptedException {
     when(resourceFetcher.fetchResources()).thenReturn(testResponseWithTwoValues());
 
     var threadsBeforeStart = Thread.getAllStackTraces().keySet();
@@ -83,13 +194,13 @@ class PollingEventSourceTest
     pollingEventSource.start();
     Thread.sleep(DEFAULT_WAIT_PERIOD);
 
-    var newTimerThreads =
+    var newPollingThreads =
         Thread.getAllStackTraces().keySet().stream()
-            .filter(t -> t.getName().startsWith("Timer-"))
+            .filter(t -> t.getName().startsWith("josdk-polling-"))
             .filter(t -> !threadsBeforeStart.contains(t))
             .toList();
 
-    assertThat(newTimerThreads).isNotEmpty().allMatch(Thread::isDaemon);
+    assertThat(newPollingThreads).isNotEmpty().allMatch(Thread::isDaemon);
   }
 
   @Test
@@ -152,6 +263,54 @@ class PollingEventSourceTest
 
     await()
         .untilAsserted(() -> assertThat(pollingEventSource.getStatus()).isEqualTo(Status.HEALTHY));
+  }
+
+  @Test
+  void pollsOnTheOperatorsSharedSchedulerWhenCreatedWithAContext() {
+    var pollingThreadNames = new CopyOnWriteArrayList<String>();
+    when(resourceFetcher.fetchResources())
+        .thenAnswer(
+            invocation -> {
+              pollingThreadNames.add(Thread.currentThread().getName());
+              return testResponseWithOneValue();
+            });
+
+    var configurationService = new BaseConfigurationService();
+    var executorServiceManager = configurationService.getExecutorServiceManager();
+    var eventSource =
+        new PollingEventSource<SampleExternalResource, HasMetadata, String>(
+            SampleExternalResource.class,
+            contextFor(configurationService),
+            new PollingConfiguration<>(null, resourceFetcher, POLL_PERIOD, null));
+    eventSource.setEventHandler(mock(EventHandler.class));
+
+    try {
+      eventSource.start();
+
+      // the initial fetch happens on the calling thread, the scheduled ones on the shared pool
+      await()
+          .untilAsserted(
+              () ->
+                  assertThat(pollingThreadNames)
+                      .anyMatch(name -> name.startsWith("josdk-scheduled-task-")));
+
+      eventSource.stop();
+
+      // the shared executor belongs to the operator, stopping an event source must not shut it down
+      assertThat(executorServiceManager.scheduledExecutorService().isShutdown()).isFalse();
+    } finally {
+      executorServiceManager.stop(Duration.ofMillis(100));
+    }
+  }
+
+  @SuppressWarnings("unchecked")
+  private static EventSourceContext<HasMetadata> contextFor(
+      ConfigurationService configurationService) {
+    var controllerConfiguration = mock(ControllerConfiguration.class);
+    when(controllerConfiguration.getConfigurationService()).thenReturn(configurationService);
+    var context = mock(EventSourceContext.class);
+    when(context.getControllerConfiguration()).thenReturn(controllerConfiguration);
+    return context;
   }
 
   private Map<ResourceID, Set<SampleExternalResource>> testResponseWithTwoValueForSameId() {

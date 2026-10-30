@@ -20,7 +20,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
 import java.util.function.Consumer;
 
 import org.slf4j.Logger;
@@ -63,6 +63,20 @@ public interface ConfigurationService {
 
   /** The default number of threads used to process dependent workflows */
   int DEFAULT_WORKFLOW_EXECUTOR_THREAD_NUMBER = DEFAULT_RECONCILIATION_THREADS_NUMBER;
+
+  /**
+   * The default number of threads used to run the operator's scheduled tasks, i.e. the periodic
+   * polls of {@link io.javaoperatorsdk.operator.processing.event.source.polling.PollingEventSource}
+   * and {@link
+   * io.javaoperatorsdk.operator.processing.event.source.polling.PerResourcePollingEventSource}
+   */
+  int DEFAULT_SCHEDULED_TASK_THREADS_NUMBER = 4;
+
+  /**
+   * The default number of threads used to trigger the operator's retried and rescheduled
+   * reconciliations
+   */
+  int DEFAULT_RETRY_AND_RESCHEDULE_THREADS_NUMBER = 2;
 
   /**
    * Creates a new {@link ConfigurationService} instance used to configure an {@link
@@ -155,6 +169,12 @@ public interface ConfigurationService {
    * io.javaoperatorsdk.operator.Operator#Operator(Consumer)}, passing your custom instance with
    * {@link ConfigurationServiceOverrider#withKubernetesClient(KubernetesClient)}.
    *
+   * <p>When {@link #useVirtualThreads()} is enabled (and supported by the JVM), the default client
+   * runs its internal asynchronous tasks, such as dispatching informer events to their handlers and
+   * delivering watch events, on virtual threads instead of its default cached platform thread pool.
+   * A client provided by overriding this method or through {@link
+   * ConfigurationServiceOverrider#withKubernetesClient(KubernetesClient)} is used as is.
+   *
    * <p><em>NOTE:</em> It is strongly suggested that implementors override this method since the
    * default implementation creates a new {@link KubernetesClient} instance each time this method is
    * called.
@@ -163,13 +183,17 @@ public interface ConfigurationService {
    * @since 4.4.0
    */
   default KubernetesClient getKubernetesClient() {
-    return new KubernetesClientBuilder()
-        .withConfig(
-            new ConfigBuilder(Config.autoConfigure(null))
-                .withMaxConcurrentRequests(DEFAULT_MAX_CONCURRENT_REQUEST)
-                .build())
-        .withKubernetesSerialization(new KubernetesSerialization())
-        .build();
+    final var builder =
+        new KubernetesClientBuilder()
+            .withConfig(
+                new ConfigBuilder(Config.autoConfigure(null))
+                    .withMaxConcurrentRequests(DEFAULT_MAX_CONCURRENT_REQUEST)
+                    .build())
+            .withKubernetesSerialization(new KubernetesSerialization());
+    if (VirtualThreads.shouldUse(useVirtualThreads())) {
+      builder.withTaskExecutorSupplier(VirtualThreads.newKubernetesClientTaskExecutorSupplier());
+    }
+    return builder.build();
   }
 
   /**
@@ -203,6 +227,11 @@ public interface ConfigurationService {
    * The number of threads the operator can spin out to dispatch reconciliation requests to
    * reconcilers with the default executors
    *
+   * <p>This is a concurrency limit and applies regardless of whether the default executor is backed
+   * by platform or by virtual threads, see {@link #useVirtualThreads()}: with virtual threads it
+   * caps how many reconciliations run at the same time rather than the size of a thread pool. Since
+   * virtual threads are cheap, the limit can be set considerably higher when they are enabled.
+   *
    * @return the number of concurrent reconciliation threads
    */
   default int concurrentReconciliationThreads() {
@@ -213,10 +242,46 @@ public interface ConfigurationService {
    * Number of threads the operator can spin out to be used in the workflows with the default
    * executor.
    *
+   * <p>This is a concurrency limit and applies regardless of whether the default executor is backed
+   * by platform or by virtual threads, see {@link #useVirtualThreads()}: with virtual threads it
+   * caps how many dependent resources are processed at the same time rather than the size of a
+   * thread pool. Since virtual threads are cheap, the limit can be set considerably higher when
+   * they are enabled.
+   *
    * @return the maximum number of concurrent workflow threads
    */
   default int concurrentWorkflowExecutorThreads() {
     return DEFAULT_WORKFLOW_EXECUTOR_THREAD_NUMBER;
+  }
+
+  /**
+   * Number of threads the operator can spin out to run its scheduled (i.e. periodic or delayed)
+   * tasks with the default executor. These threads are shared by all the polling event sources of
+   * the operator, so this number should be raised when many, or slow, polling event sources are
+   * registered: a poll only starts once a thread is available, and a slow poll therefore delays the
+   * polls of the other event sources. Not used when virtual threads are enabled, see {@link
+   * #useVirtualThreads()}, since the number of scheduled tasks running at the same time is not
+   * limited then.
+   *
+   * @return the maximum number of concurrent scheduled task threads
+   * @since 5.7.0
+   */
+  default int concurrentScheduledTaskThreads() {
+    return DEFAULT_SCHEDULED_TASK_THREADS_NUMBER;
+  }
+
+  /**
+   * Number of threads the operator can spin out to trigger its retried and rescheduled
+   * reconciliations with the default executor. These threads are shared by all the controllers of
+   * the operator, but the tasks they run only enqueue an event for the reconciliation to happen on
+   * a reconciliation thread, so few of them are needed. Not used when virtual threads are enabled,
+   * see {@link #useVirtualThreads()}.
+   *
+   * @return the maximum number of concurrent retry and reschedule threads
+   * @since 5.7.0
+   */
+  default int concurrentRetryAndRescheduleThreads() {
+    return DEFAULT_RETRY_AND_RESCHEDULE_THREADS_NUMBER;
   }
 
   /**
@@ -229,6 +294,45 @@ public interface ConfigurationService {
   }
 
   /**
+   * Whether the framework should run the tasks it executes concurrently &mdash; reconciliations,
+   * dependent workflows and internal housekeeping such as starting the informers &mdash; on virtual
+   * threads instead of platform threads.
+   *
+   * <p>Virtual threads make blocking operations, which is essentially all a reconciler does while
+   * talking to the Kubernetes API server or to external systems, much cheaper. Enabling them does
+   * <em>not</em> lift the configured concurrency limits: {@link #concurrentReconciliationThreads()}
+   * and {@link #concurrentWorkflowExecutorThreads()} still cap how many reconciliations,
+   * respectively dependent resources, are processed at the same time, they just aren't backed by a
+   * pool of platform threads anymore. Since virtual threads are cheap, those limits can be set
+   * considerably higher than what would be reasonable for platform threads.
+   *
+   * <p>Virtual threads are only supported on Java 25 or later, where <a
+   * href="https://openjdk.org/jeps/491">JEP 491</a> removed the pinning of the carrier thread by
+   * {@code synchronized} blocks. This is checked at runtime: on an older JVM, a warning is logged
+   * and platform threads are used, so that the same configuration works regardless of the Java
+   * version the operator runs on.
+   *
+   * <p>Note that this only affects the executors created by the framework: a custom {@link
+   * ExecutorService} provided through {@link #getExecutorService()} or {@link
+   * #getWorkflowExecutorService()}, or a custom {@link ScheduledExecutorService} provided through
+   * {@link #getScheduledExecutorService()} or {@link #getRetryAndRescheduleExecutorService()}, is
+   * used as is. The default scheduled executors keep a single platform thread for the timing and
+   * run each task they fire on a virtual thread. The same goes for the {@link KubernetesClient}:
+   * the default client created by {@link #getKubernetesClient()} then also runs its internal
+   * asynchronous tasks (informer event dispatching, watch event delivery) on virtual threads, while
+   * a custom client, e.g. provided through {@link
+   * ConfigurationServiceOverrider#withKubernetesClient(KubernetesClient)}, keeps whatever task
+   * executor it was built with. The blocking calls a reconciler performs through the client don't
+   * need any of this: they already park the calling virtual thread rather than its carrier.
+   *
+   * @return {@code true} to use virtual threads, {@code false} (default) to use platform threads
+   * @since 5.7.0
+   */
+  default boolean useVirtualThreads() {
+    return false;
+  }
+
+  /**
    * Override to provide a custom {@link ExecutorService} implementation to change how threads
    * handle concurrent reconciliations
    *
@@ -236,7 +340,8 @@ public interface ConfigurationService {
    *     processing
    */
   default ExecutorService getExecutorService() {
-    return Executors.newFixedThreadPool(concurrentReconciliationThreads());
+    return ExecutorServiceManager.newBoundedExecutorService(
+        concurrentReconciliationThreads(), useVirtualThreads());
   }
 
   /**
@@ -246,7 +351,46 @@ public interface ConfigurationService {
    * @return the {@link ExecutorService} implementation to use for dependent workflow processing
    */
   default ExecutorService getWorkflowExecutorService() {
-    return Executors.newFixedThreadPool(concurrentWorkflowExecutorThreads());
+    return ExecutorServiceManager.newBoundedExecutorService(
+        concurrentWorkflowExecutorThreads(), useVirtualThreads());
+  }
+
+  /**
+   * Override to provide a custom {@link ScheduledExecutorService} implementation to change how the
+   * operator's scheduled (i.e. periodic or delayed) tasks are run. This executor is shared by all
+   * the polling event sources of the operator. The retried and rescheduled reconciliations run on
+   * an executor of their own, see {@link #getRetryAndRescheduleExecutorService()}, so that a slow
+   * poll can't delay them.
+   *
+   * <p>Note that the default implementation lets the executor discard the tasks that were scheduled
+   * for later when it is shut down, so that they don't delay the termination of the operator, and
+   * that it creates daemon threads so that a never stopped operator doesn't keep the JVM alive.
+   * Custom implementations are advised to do the same.
+   *
+   * @return the {@link ScheduledExecutorService} implementation to use to run scheduled tasks
+   * @since 5.7.0
+   */
+  default ScheduledExecutorService getScheduledExecutorService() {
+    return ExecutorServiceManager.newScheduledExecutorService(
+        concurrentScheduledTaskThreads(), useVirtualThreads(), "josdk-scheduled-task");
+  }
+
+  /**
+   * Override to provide a custom {@link ScheduledExecutorService} implementation to change how the
+   * operator's retried and rescheduled reconciliations are triggered. This executor is kept
+   * separate from the one the polling event sources use, see {@link
+   * #getScheduledExecutorService()}, so that a slow poll can't delay a retry.
+   *
+   * <p>The same notes as for {@link #getScheduledExecutorService()} apply to custom
+   * implementations.
+   *
+   * @return the {@link ScheduledExecutorService} implementation to use to trigger retried and
+   *     rescheduled reconciliations
+   * @since 5.7.0
+   */
+  default ScheduledExecutorService getRetryAndRescheduleExecutorService() {
+    return ExecutorServiceManager.newScheduledExecutorService(
+        concurrentRetryAndRescheduleThreads(), useVirtualThreads(), "josdk-retry-reschedule");
   }
 
   /**

@@ -23,6 +23,55 @@ Operator operator = new Operator( override -> override
         .withLeaderElectionConfiguration(new LeaderElectionConfiguration("bar", "barNS")));
 ```
 
+### Virtual Threads
+
+Reconciliation is mostly about blocking: talking to the Kubernetes API server or to external
+systems. Virtual threads make such blocking calls much cheaper than platform threads, and the
+framework can be switched over to them with a single flag:
+
+```java
+Operator operator = new Operator(override -> override.withUseVirtualThreads(true));
+```
+
+When enabled, reconciliations, dependent resource workflows and the framework's internal
+housekeeping (starting the informers, for example) all run on virtual threads.
+
+Enabling virtual threads does **not** remove the concurrency limits, parallelism is configured
+exactly as before: `withConcurrentReconciliationThreads(int)` still caps how many reconciliations
+run at the same time and `withConcurrentWorkflowExecutorThreads(int)` how many dependent resources
+of a workflow are processed concurrently. Only the threads backing those limits change. Since
+virtual threads are cheap, these limits can usually be raised significantly compared to what is
+reasonable with platform threads.
+
+Things to keep in mind:
+
+- Virtual threads are only supported on **Java 25 or later**. Before Java 25 a virtual thread pins
+  its carrier thread while it is inside a `synchronized` block, which can starve the carrier pool
+  and even deadlock the operator on startup. [JEP 491](https://openjdk.org/jeps/491), delivered in
+  Java 25, removed that pinning. This is checked at runtime: on an older JVM, including the ones
+  where virtual threads exist (Java 21 to 24), a warning is logged and platform threads are used
+  instead, so the same configuration works on any Java version the operator runs on.
+- The scheduled tasks (the polling event sources, and the retried and rescheduled reconciliations)
+  run on virtual threads too. The JDK has no scheduled executor backed by virtual threads, so the
+  default ones keep a single platform thread for the timing only and run each task they fire on a
+  virtual thread. The number of those tasks running at the same time is not limited, so
+  `withConcurrentScheduledTaskThreads(int)` and `withConcurrentRetryAndRescheduleThreads(int)` only
+  apply to platform threads.
+- Virtual threads are always daemon threads, so unlike the threads of the platform thread pools they
+  don't keep the JVM running: if the `main` method of your application returns after starting the
+  operator, make sure something else keeps the JVM alive.
+- A custom `ExecutorService` provided through `withExecutorService(...)` or
+  `withWorkflowExecutorService(...)` is always used as is, the flag has no effect on it.
+- The Kubernetes client the framework creates when none is provided also switches its internal
+  task executor (used to dispatch informer events to their handlers and to deliver watch events)
+  to virtual threads. A client you provide through `withKubernetesClient(...)` is used as is: to
+  get the same behavior, configure it yourself, e.g. with
+  `new KubernetesClientBuilder().withTaskExecutor(Executors.newVirtualThreadPerTaskExecutor())`
+  (the client doesn't shut down an executor passed that way, use `withTaskExecutorSupplier(...)`
+  if it should be shut down when the client is closed).
+  Either way, the blocking calls your reconciler makes through the client work well on virtual
+  threads without any client-side change.
+
 ## Reconciler-Level Configuration
 
 While reconcilers are typically configured using the `@ControllerConfiguration` annotation, you can also override configuration at runtime when registering the reconciler with the operator. You can either:
@@ -267,6 +316,7 @@ All operator-level keys are prefixed with `josdk.`.
 |---|---|---|
 | `josdk.check-crd` | `Boolean` | Validate CRDs against local model on startup |
 | `josdk.close-client-on-stop` | `Boolean` | Close the Kubernetes client when the operator stops |
+| `josdk.use-virtual-threads` | `Boolean` | Run the framework's concurrent work on virtual threads (only supported on Java 25+, platform threads are used on older versions) |
 | `josdk.use-ssa-to-patch-primary-resource` | `Boolean` | Use Server-Side Apply to patch the primary resource |
 | `josdk.clone-secondary-resources-when-getting-from-cache` | `Boolean` | Clone secondary resources on cache reads |
 
@@ -282,6 +332,13 @@ All operator-level keys are prefixed with `josdk.`.
 | Key | Type | Description |
 |---|---|---|
 | `josdk.workflow.executor-threads` | `Integer` | Thread pool size for workflow execution |
+
+#### Scheduled Tasks
+
+| Key | Type | Description |
+|---|---|---|
+| `josdk.scheduled-tasks.concurrent-threads` | `Integer` | Thread pool size for the operator's scheduled tasks, i.e. the polling event sources |
+| `josdk.retry-and-reschedule.concurrent-threads` | `Integer` | Thread pool size for triggering retried and rescheduled reconciliations |
 
 #### Informer
 

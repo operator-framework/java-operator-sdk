@@ -87,6 +87,30 @@ class ConfigLoaderTest {
   }
 
   @Test
+  void applyConfigsAppliesConcurrentScheduledTaskThreads() {
+    var loader =
+        new ConfigLoader(mapProvider(Map.of("josdk.scheduled-tasks.concurrent-threads", 8)));
+
+    var base = new BaseConfigurationService(null);
+    var result =
+        ConfigurationService.newOverriddenConfigurationService(base, loader.applyConfigs());
+
+    assertThat(result.concurrentScheduledTaskThreads()).isEqualTo(8);
+  }
+
+  @Test
+  void applyConfigsAppliesConcurrentRetryAndRescheduleThreads() {
+    var loader =
+        new ConfigLoader(mapProvider(Map.of("josdk.retry-and-reschedule.concurrent-threads", 6)));
+
+    var base = new BaseConfigurationService(null);
+    var result =
+        ConfigurationService.newOverriddenConfigurationService(base, loader.applyConfigs());
+
+    assertThat(result.concurrentRetryAndRescheduleThreads()).isEqualTo(6);
+  }
+
+  @Test
   void applyConfigsAppliesBooleanFlags() {
     var values = new HashMap<String, Object>();
     values.put("josdk.check-crd", true);
@@ -95,6 +119,7 @@ class ConfigLoaderTest {
     values.put("josdk.dependent-resources.ssa-based-create-update-match", false);
     values.put("josdk.use-ssa-to-patch-primary-resource", false);
     values.put("josdk.clone-secondary-resources-when-getting-from-cache", true);
+    values.put("josdk.use-virtual-threads", true);
     var loader = new ConfigLoader(mapProvider(values));
 
     var base = new BaseConfigurationService(null);
@@ -107,6 +132,7 @@ class ConfigLoaderTest {
     assertThat(result.ssaBasedCreateUpdateMatchForDependentResources()).isFalse();
     assertThat(result.useSSAToPatchPrimaryResource()).isFalse();
     assertThat(result.cloneSecondaryResourcesWhenGettingFromCache()).isTrue();
+    assertThat(result.useVirtualThreads()).isTrue();
   }
 
   @Test
@@ -311,7 +337,11 @@ class ConfigLoaderTest {
           Map.entry(
               "withCloneSecondaryResourcesWhenGettingFromCache",
               "clone-secondary-resources-when-getting-from-cache"),
-          Map.entry("withClusterScopedEventNamespace", "events.cluster-scoped-namespace"));
+          Map.entry("withClusterScopedEventNamespace", "events.cluster-scoped-namespace"),
+          Map.entry(
+              "withConcurrentRetryAndRescheduleThreads", "retry-and-reschedule.concurrent-threads"),
+          Map.entry("withConcurrentScheduledTaskThreads", "scheduled-tasks.concurrent-threads"),
+          Map.entry("withUseVirtualThreads", "use-virtual-threads"));
 
   /**
    * Maps every scalar setter of {@link ControllerConfigurationOverrider} to the property key suffix
