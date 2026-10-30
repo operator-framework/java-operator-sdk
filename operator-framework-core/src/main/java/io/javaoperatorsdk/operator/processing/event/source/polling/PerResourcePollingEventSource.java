@@ -104,11 +104,34 @@ public class PerResourcePollingEventSource<R, P extends HasMetadata, ID>
   @Override
   public void start() throws OperatorException {
     if (isRunning()) {
+      switchToCurrentExecutor();
       return;
     }
     executorService = resolveExecutorService();
     super.start();
     replayRegistrationsBeforeStart();
+  }
+
+  /**
+   * The operator replaces its executors when it is started again, which can happen while this event
+   * source keeps running, when a previous start failed after it started. The polls scheduled on the
+   * replaced executor are gone then, so they are scheduled again on the new one.
+   */
+  private void switchToCurrentExecutor() {
+    if (ownsExecutorService) {
+      return;
+    }
+    var resolved = resolveExecutorService();
+    synchronized (this) {
+      if (resolved == executorService) {
+        return;
+      }
+      executorService = resolved;
+      lifecycleGeneration++;
+      scheduledFutures.values().forEach(future -> future.cancel(true));
+      scheduledFutures.clear();
+    }
+    primaryResourceCache.list().forEach(this::checkAndRegisterTask);
   }
 
   private void replayRegistrationsBeforeStart() {
@@ -204,6 +227,12 @@ public class PerResourcePollingEventSource<R, P extends HasMetadata, ID>
   }
 
   private synchronized void registerTask(ResourceID primaryID, P resource) {
+    // stop() clears the running flag before it takes the monitor, so a registration that raced it
+    // has to be held back, otherwise a task scheduled after the stop would block a restart
+    if (!isRunning()) {
+      registrationsBeforeStart.put(primaryID, resource);
+      return;
+    }
     if (scheduledFutures.get(primaryID) == null
         && (registerPredicate == null || registerPredicate.test(resource))) {
       var cachedResources = cachedResourcesFor(primaryID);

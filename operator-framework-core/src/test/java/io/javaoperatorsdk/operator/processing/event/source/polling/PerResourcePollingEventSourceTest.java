@@ -21,6 +21,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Stream;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -312,6 +313,80 @@ class PerResourcePollingEventSourceTest
     await()
         .pollDelay(Duration.ofMillis(10 * PERIOD))
         .untilAsserted(() -> verify(supplier, atMost(15)).fetchResources(any()));
+  }
+
+  @Test
+  void aRegistrationRacingStopDoesNotBlockPollingAfterARestart() throws Exception {
+    var configurationService = new BaseConfigurationService();
+    var executorServiceManager = configurationService.getExecutorServiceManager();
+    var controllerConfiguration = mock(ControllerConfiguration.class);
+    when(controllerConfiguration.getConfigurationService()).thenReturn(configurationService);
+    when(context.getControllerConfiguration()).thenReturn(controllerConfiguration);
+    setUpSource(
+        new PerResourcePollingEventSource<>(
+            SampleExternalResource.class,
+            context,
+            new PerResourcePollingConfigurationBuilder<
+                    SampleExternalResource, TestCustomResource, String>(
+                    supplier, Duration.ofMillis(PERIOD))
+                .withResourceIDMapper(r -> r.getName() + "#" + r.getValue())
+                .build()));
+
+    try {
+      Thread informer;
+      synchronized (source) {
+        informer = new Thread(() -> source.onResourceCreated(testCustomResource));
+        informer.start();
+        await().until(() -> informer.getState() == Thread.State.BLOCKED);
+        source.stop();
+      }
+      informer.join();
+      executorServiceManager.stop(Duration.ofMillis(100));
+      executorServiceManager.start(configurationService);
+
+      source.start();
+      clearInvocations(supplier);
+      source.onResourceCreated(testCustomResource);
+
+      await().untilAsserted(() -> verify(supplier, atLeast(2)).fetchResources(any()));
+    } finally {
+      source.stop();
+      executorServiceManager.stop(Duration.ofMillis(100));
+    }
+  }
+
+  @Test
+  void pollsOnTheNewSharedSchedulerWhenStartedAgainWhileRunning() {
+    var configurationService = new BaseConfigurationService();
+    var executorServiceManager = configurationService.getExecutorServiceManager();
+    var controllerConfiguration = mock(ControllerConfiguration.class);
+    when(controllerConfiguration.getConfigurationService()).thenReturn(configurationService);
+    when(context.getControllerConfiguration()).thenReturn(controllerConfiguration);
+    when(resourceCache.list()).thenAnswer(i -> Stream.of(testCustomResource));
+    setUpSource(
+        new PerResourcePollingEventSource<>(
+            SampleExternalResource.class,
+            context,
+            new PerResourcePollingConfigurationBuilder<
+                    SampleExternalResource, TestCustomResource, String>(
+                    supplier, Duration.ofMillis(PERIOD))
+                .withResourceIDMapper(r -> r.getName() + "#" + r.getValue())
+                .build()));
+
+    try {
+      source.onResourceCreated(testCustomResource);
+      await().untilAsserted(() -> verify(supplier, atLeast(2)).fetchResources(any()));
+
+      executorServiceManager.stop(Duration.ofMillis(100));
+      executorServiceManager.start(configurationService);
+      clearInvocations(supplier);
+      source.start();
+
+      await().untilAsserted(() -> verify(supplier, atLeast(2)).fetchResources(any()));
+    } finally {
+      source.stop();
+      executorServiceManager.stop(Duration.ofMillis(100));
+    }
   }
 
   @Test

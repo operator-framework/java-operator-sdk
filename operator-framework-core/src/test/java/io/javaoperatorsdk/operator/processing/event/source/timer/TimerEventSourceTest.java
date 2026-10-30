@@ -18,7 +18,9 @@ package io.javaoperatorsdk.operator.processing.event.source.timer;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReference;
 
 import org.awaitility.Awaitility;
 import org.awaitility.core.ConditionFactory;
@@ -94,6 +96,26 @@ class TimerEventSourceTest
 
     untilAsserted(() -> assertThat(eventHandler.events).isEmpty());
     assertThat(source.getStatus()).isEqualTo(Status.HEALTHY);
+  }
+
+  @Test
+  public void schedulesOnTheNewExecutorWhenStartedAgainWhileRunning() {
+    var first = Executors.newScheduledThreadPool(1);
+    var second = Executors.newScheduledThreadPool(1);
+    var current = new AtomicReference<ScheduledExecutorService>(first);
+    var timerSource = new TimerEventSource<TestCustomResource>("timer", false, current::get);
+    setUpSource(timerSource, new CapturingEventHandler());
+    try {
+      first.shutdownNow();
+      current.set(second);
+
+      source.start();
+      source.scheduleOnce(ResourceID.fromResource(TestUtils.testCustomResource()), PERIOD);
+
+      untilAsserted(() -> assertThat(eventHandler.events).hasSize(1));
+    } finally {
+      second.shutdownNow();
+    }
   }
 
   @Test
