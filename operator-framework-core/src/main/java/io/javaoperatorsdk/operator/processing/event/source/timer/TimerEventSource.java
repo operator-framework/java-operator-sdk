@@ -63,7 +63,7 @@ public class TimerEventSource<R extends HasMetadata> extends AbstractEventSource
    *
    * @param executorServiceSupplier supplies the executor to schedule on, {@code null} to have the
    *     event source create, and shut down, an executor of its own
-   * @since 5.6.0
+   * @since 5.7.0
    */
   public TimerEventSource(Supplier<ScheduledExecutorService> executorServiceSupplier) {
     super(Void.class);
@@ -73,7 +73,7 @@ public class TimerEventSource<R extends HasMetadata> extends AbstractEventSource
 
   /**
    * @see #TimerEventSource(Supplier)
-   * @since 5.6.0
+   * @since 5.7.0
    */
   public TimerEventSource(
       String name,
@@ -148,8 +148,12 @@ public class TimerEventSource<R extends HasMetadata> extends AbstractEventSource
 
   @Override
   public void start() {
-    if (!isRunning()) {
+    // the operator replaces its executors when it is started again, which can happen while this
+    // event source keeps running, when a previous start failed after it started
+    if (!isRunning() || !ownsExecutorService) {
       executorService = resolveExecutorService();
+    }
+    if (!isRunning()) {
       super.start();
     }
   }
