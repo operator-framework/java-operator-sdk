@@ -201,8 +201,8 @@ public class ConfigurationServiceOverrider {
 
   /**
    * Sets the namespace in which Kubernetes events about cluster scoped resources are recorded. Use
-   * this when the operator is not allowed to create events in the {@code default} namespace,
-   * passing for example the namespace the operator itself runs in.
+   * this when the operator is not allowed to create events in the {@code default} namespace. The
+   * API server only accepts {@code default} and {@code kube-system} for such events.
    *
    * @param namespace the namespace to record events about cluster scoped resources in
    * @return this {@link ConfigurationServiceOverrider} for chained customization

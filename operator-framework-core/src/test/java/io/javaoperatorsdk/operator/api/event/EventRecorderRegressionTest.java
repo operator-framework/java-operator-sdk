@@ -51,44 +51,47 @@ class EventRecorderRegressionTest {
 
   /**
    * The core/v1 API server (legacyValidateEvent in pkg/apis/core/validation/events.go) rejects an
-   * event without eventTime whose involvedObject.namespace is empty unless the event itself lives
-   * in "" or "default". Overriding the cluster scoped event namespace, as
-   * ConfigurationService#clusterScopedEventNamespace recommends, therefore requires the event to
-   * carry an eventTime, and with it an action.
+   * event whose involvedObject.namespace is empty unless the event itself lives in "" or "default",
+   * or in "kube-system" if it carries an eventTime, and with it an action. No other namespace is
+   * accepted.
    */
   @Test
-  void overriddenClusterScopedEventNamespaceProducesEventsTheCoreApiAccepts() {
+  void clusterScopedEventsInTheKubeSystemNamespaceCarryAnEventTimeAndAnAction() {
     var recorder = new DefaultEventRecorder((event, context) -> emitted.add(event));
-    var namespace =
-        new NamespaceBuilder()
-            .withNewMetadata()
-            .withName("ns1")
-            .withUid("uid-2")
-            .endMetadata()
-            .build();
 
-    recorder.record(EventRecord.normal("Created", "created"), context(namespace, "operator-ns"));
+    recorder.record(
+        EventRecord.normal("Created", "created"), context(clusterScoped("ns1"), "kube-system"));
 
     var event = emitted.get(0);
     assertThat(event.getInvolvedObject().getNamespace()).isNull();
-    assertThat(event.getMetadata().getNamespace()).isEqualTo("operator-ns");
+    assertThat(event.getMetadata().getNamespace()).isEqualTo("kube-system");
     assertThat(event.getEventTime().getTime())
         .matches("\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{6}Z");
     assertThat(event.getAction()).isEqualTo("Created");
   }
 
   @Test
+  void aSuppliedActionIsKeptOnClusterScopedEventsInTheKubeSystemNamespace() {
+    var recorder = new DefaultEventRecorder((event, context) -> emitted.add(event));
+
+    recorder.record(
+        EventRecord.builder()
+            .type(EventType.NORMAL)
+            .reason("Created")
+            .message("created")
+            .action("Create")
+            .build(),
+        context(clusterScoped("ns1"), "kube-system"));
+
+    assertThat(emitted.get(0).getAction()).isEqualTo("Create");
+  }
+
+  @Test
   void clusterScopedEventsInTheDefaultNamespaceDoNotCarryAnEventTime() {
     var recorder = new DefaultEventRecorder((event, context) -> emitted.add(event));
-    var namespace =
-        new NamespaceBuilder()
-            .withNewMetadata()
-            .withName("ns1")
-            .withUid("uid-2")
-            .endMetadata()
-            .build();
 
-    recorder.record(EventRecord.normal("Created", "created"), context(namespace, "default"));
+    recorder.record(
+        EventRecord.normal("Created", "created"), context(clusterScoped("ns1"), "default"));
 
     assertThat(emitted.get(0).getEventTime()).isNull();
     assertThat(emitted.get(0).getMetadata().getNamespace()).isEqualTo("default");
@@ -124,7 +127,7 @@ class EventRecorderRegressionTest {
   }
 
   @Test
-  void aggregatingOntoAnEventWithAnEventTimeRejectsChangedImmutableFields() {
+  void aggregatingOntoAnEventWithAnEventTimeUpdatesTypeReasonAndAction() {
     var stored = new AtomicReference<Event>();
     var patched = new AtomicReference<Event>();
     var sink = new DefaultEventSink(mockClient(stored, patched));
@@ -132,17 +135,51 @@ class EventRecorderRegressionTest {
         DefaultEventRecorder.builder(sink)
             .namingStrategy((regarding, record) -> Optional.of("fixed-name"))
             .build();
-    var context = context(clusterScoped("ns1"), "operator-ns");
+    var context = context(clusterScoped("ns1"), "kube-system");
 
     recorder.record(EventRecord.normal("Ready", "all good"), context);
     recorder.record(EventRecord.warning("Degraded", "replica down"), context);
 
-    assertThat(patched.get()).isNull();
-    assertThat(stored.get().getType()).isEqualTo("Normal");
-
-    recorder.record(EventRecord.normal("Ready", "still good"), context);
-
+    assertThat(stored.get().getEventTime()).isNotNull();
     assertThat(patched.get().getCount()).isEqualTo(2);
+    assertThat(patched.get().getType()).isEqualTo("Warning");
+    assertThat(patched.get().getReason()).isEqualTo("Degraded");
+    assertThat(patched.get().getAction()).isEqualTo("Degraded");
+  }
+
+  @Test
+  void aggregatingOntoANamedEventWithoutAnActionClearsTheActionOfTheEarlierOccurrence() {
+    var stored = new AtomicReference<Event>();
+    var patched = new AtomicReference<Event>();
+    var sink = new DefaultEventSink(mockClient(stored, patched));
+    var recorder =
+        DefaultEventRecorder.builder(sink)
+            .namingStrategy((regarding, record) -> Optional.of("fixed-name"))
+            .build();
+    var context = context(configMap("test1"), "default");
+
+    recorder.record(
+        EventRecord.builder()
+            .type(EventType.NORMAL)
+            .reason("Created")
+            .message("created")
+            .action("Create")
+            .build(),
+        context);
+    recorder.record(EventRecord.warning("Degraded", "replica down"), context);
+
+    assertThat(patched.get().getAction()).isNull();
+  }
+
+  @Test
+  void shortenedGeneratedNamesDoNotEndInASeparatorBeforeTheHash() {
+    var recorder = new DefaultEventRecorder((event, context) -> emitted.add(event));
+
+    recorder.record(
+        EventRecord.normal("Created", "created"),
+        context(configMap("a".repeat(219) + "-" + "b".repeat(10)), "default"));
+
+    assertThat(emitted.get(0).getMetadata().getName()).matches("a{219}\\.[0-9a-f]{32}");
   }
 
   /**

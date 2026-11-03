@@ -50,7 +50,8 @@ import static java.util.Objects.requireNonNullElse;
  * <p>Events for cluster scoped objects have to live in some namespace: by default the {@value
  * #CLUSTER_SCOPED_EVENT_NAMESPACE} namespace is used, following the Kubernetes convention, but it
  * can be overridden, see {@link
- * io.javaoperatorsdk.operator.api.config.ConfigurationService#clusterScopedEventNamespace()}.
+ * io.javaoperatorsdk.operator.api.config.ConfigurationService#clusterScopedEventNamespace()}. The
+ * API server only accepts such events in the {@code default} and {@code kube-system} namespaces.
  *
  * <p>By default, events are named deterministically, after the object they are about plus a hash of
  * everything that identifies the event, so that recording the same event again resolves to the
@@ -63,6 +64,8 @@ public class DefaultEventRecorder implements EventRecorder {
   private static final Logger log = LoggerFactory.getLogger(DefaultEventRecorder.class);
 
   public static final String CLUSTER_SCOPED_EVENT_NAMESPACE = "default";
+
+  private static final String KUBE_SYSTEM_NAMESPACE = "kube-system";
 
   /**
    * Kubernetes limits object names to 253 characters, as they have to be valid RFC 1123 DNS
@@ -277,13 +280,13 @@ public class DefaultEventRecorder implements EventRecorder {
 
   /**
    * The API server only accepts an event without {@code eventTime} for a cluster scoped object if
-   * the event lives in the {@code default} namespace. Events that carry an {@code eventTime} are
-   * not subject to that restriction, but then have to set an {@code action} too.
+   * the event lives in the {@code default} namespace. An event that carries an {@code eventTime}
+   * (and with it an {@code action}) is also accepted in the {@code kube-system} namespace. No other
+   * namespace is accepted for such an event, whether it has an {@code eventTime} or not.
    */
   private static boolean requiresEventTime(HasMetadata regarding, String eventNamespace) {
     return regarding.getMetadata().getNamespace() == null
-        && !CLUSTER_SCOPED_EVENT_NAMESPACE.equals(eventNamespace)
-        && !eventNamespace.isEmpty();
+        && KUBE_SYSTEM_NAMESPACE.equals(eventNamespace);
   }
 
   private String eventNamespace(HasMetadata regarding, Context<?> context) {
@@ -323,16 +326,20 @@ public class DefaultEventRecorder implements EventRecorder {
       return name;
     }
     var suffix = "." + identityDigest(name);
-    var truncated = name.substring(0, MAX_NAME_LENGTH - suffix.length());
-    while (truncated.endsWith("-") || truncated.endsWith(".")) {
-      truncated = truncated.substring(0, truncated.length() - 1);
-    }
-    var shortened = truncated + suffix;
+    var shortened = truncate(name, MAX_NAME_LENGTH - suffix.length()) + suffix;
     log.warn(
         "Shortened the name of event {} to {} to stay within the Kubernetes name limit",
         name,
         shortened);
     return shortened;
+  }
+
+  private static String truncate(String name, int maxLength) {
+    var truncated = name.substring(0, Math.min(name.length(), maxLength));
+    while (truncated.endsWith("-") || truncated.endsWith(".")) {
+      truncated = truncated.substring(0, truncated.length() - 1);
+    }
+    return truncated;
   }
 
   /**
@@ -366,12 +373,7 @@ public class DefaultEventRecorder implements EventRecorder {
                 .orElseGet(() -> requireNonNullElse(record.message(), "")));
 
     var suffix = "." + identityDigest(identity);
-    var prefix = metadata.getName();
-    var maxPrefixLength = MAX_NAME_LENGTH - suffix.length();
-    if (prefix.length() > maxPrefixLength) {
-      prefix = prefix.substring(0, maxPrefixLength);
-    }
-    return prefix + suffix;
+    return truncate(metadata.getName(), MAX_NAME_LENGTH - suffix.length()) + suffix;
   }
 
   /**

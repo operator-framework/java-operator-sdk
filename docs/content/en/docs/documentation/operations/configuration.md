@@ -379,7 +379,7 @@ All operator-level keys are prefixed with `josdk.`.
 
 | Key | Type | Description |
 |---|---|---|
-| `josdk.events.cluster-scoped-namespace` | `String` | Namespace to record events about cluster scoped resources in (defaults to `default`) |
+| `josdk.events.cluster-scoped-namespace` | `String` | Namespace to record events about cluster scoped resources in (defaults to `default`); the API server only accepts `default` and `kube-system` |
 
 Recording events requires the operator's service account to be allowed `get`, `create` and `patch` on
 `events` in the core (`""`) API group. All three are used: an event that does not exist yet is
@@ -394,6 +394,11 @@ they are about, and for cluster scoped objects the namespace configured above. A
 therefore has to grant the permission in every namespace events are recorded in — including
 `default`, or whatever `josdk.events.cluster-scoped-namespace` is set to, if the operator reconciles
 cluster scoped resources. A `ClusterRole` covers all of them at once.
+
+The API server only accepts events about cluster scoped objects in the `default` and `kube-system`
+namespaces, so those are the only values `josdk.events.cluster-scoped-namespace` can usefully be set
+to. In particular, the namespace the operator itself runs in is rejected, and the event dropped with
+a warning in the operator log.
 
 #### Leader Election
 
