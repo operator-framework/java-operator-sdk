@@ -144,6 +144,17 @@ public class PerResourcePollingEventSource<R, P extends HasMetadata, ID>
     fetchedForPrimaries.add(primaryID);
   }
 
+  // a fetch ignoring the interruption of a stop can return after a restart, its result is not to
+  // overwrite what the polls of the new run cached in the meantime
+  private synchronized void cacheAndScheduleNextExecution(
+      P primary, Set<R> values, long generation) {
+    if (generation != lifecycleGeneration) {
+      return;
+    }
+    cacheResources(primary, values, false);
+    scheduleNextExecution(primary, values, generation);
+  }
+
   @SuppressWarnings("unchecked")
   private synchronized void scheduleNextExecution(
       P primary, Set<R> actualResources, long generation) {
@@ -243,15 +254,7 @@ public class PerResourcePollingEventSource<R, P extends HasMetadata, ID>
         // no new execution is scheduled in this case, an on delete event should be received shortly
       } else {
         var values = resourceFetcher.fetchResources(primary.get());
-        // a fetch ignoring the interruption of a stop can return after a restart, its result is
-        // not to overwrite what the polls of the new run cached in the meantime
-        synchronized (PerResourcePollingEventSource.this) {
-          if (generation != lifecycleGeneration) {
-            return;
-          }
-          cacheResources(primary.get(), values, false);
-          scheduleNextExecution(primary.get(), values, generation);
-        }
+        cacheAndScheduleNextExecution(primary.get(), values, generation);
       }
     }
   }
