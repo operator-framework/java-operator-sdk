@@ -59,7 +59,8 @@ Things to keep in mind:
   `withConcurrentRetryAndRescheduleThreads(int)` only applies to platform threads.
 - Virtual threads are always daemon threads, so unlike the threads of the platform thread pools they
   don't keep the JVM running: if the `main` method of your application returns after starting the
-  operator, make sure something else keeps the JVM alive.
+  operator and nothing else keeps the JVM alive, call `Operator.keepAlive()`, see
+  [Keeping the JVM Alive](#keeping-the-jvm-alive).
 - A custom `ExecutorService` provided through `withExecutorService(...)` or
   `withWorkflowExecutorService(...)` is always used as is, the flag has no effect on it.
 - The Kubernetes client the framework creates when none is provided also switches its internal
