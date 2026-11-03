@@ -101,6 +101,24 @@ See also
 the [integration test](https://github.com/operator-framework/java-operator-sdk/tree/main/operator-framework/src/test/java/io/javaoperatorsdk/operator/baseapi/changenamespace)
 for this feature.
 
+## Keeping the JVM Alive
+
+The operator normally keeps the JVM running through the non-daemon threads of its thread pools. If
+nothing else does, for example because all the threads of the operator are daemon threads as it is
+the case with virtual threads, the JVM exits as soon as the `main` method returns after starting
+the operator. Call `Operator.keepAlive()` to have a non-daemon thread keep the JVM running until the
+operator is stopped:
+
+```java
+public static void main(String[] args) {
+    Operator operator = new Operator();
+    operator.register(new MyReconciler());
+    operator.installShutdownHook();
+    operator.start();
+    operator.keepAlive();
+}
+```
+
 ## DependentResource-level configuration
 
 It is possible to define custom annotations to configure custom `DependentResource` implementations. In order to provide
