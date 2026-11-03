@@ -46,7 +46,6 @@ public class ConfigurationServiceOverrider {
   private Boolean checkCR;
   private Integer concurrentReconciliationThreads;
   private Integer concurrentWorkflowExecutorThreads;
-  private Integer concurrentScheduledTaskThreads;
   private Integer concurrentRetryAndRescheduleThreads;
   private Cloner cloner;
   private Boolean closeClientOnStop;
@@ -54,7 +53,6 @@ public class ConfigurationServiceOverrider {
   private ExecutorService executorService;
   private ExecutorService workflowExecutorService;
   private Boolean useVirtualThreads;
-  private ScheduledExecutorService scheduledExecutorService;
   private ScheduledExecutorService retryAndRescheduleExecutorService;
   private LeaderElectionConfiguration leaderElectionConfiguration;
   private String clusterScopedEventNamespace;
@@ -89,20 +87,6 @@ public class ConfigurationServiceOverrider {
 
   public ConfigurationServiceOverrider withConcurrentWorkflowExecutorThreads(int threadNumber) {
     this.concurrentWorkflowExecutorThreads = threadNumber;
-    return this;
-  }
-
-  /**
-   * Sets the number of threads used to run the operator's scheduled (i.e. periodic or delayed)
-   * tasks, which are shared by all its polling event sources.
-   *
-   * @param threadNumber the maximum number of concurrent scheduled task threads
-   * @return this {@link ConfigurationServiceOverrider} for chained customization
-   * @see ConfigurationService#concurrentScheduledTaskThreads()
-   * @since 5.7.0
-   */
-  public ConfigurationServiceOverrider withConcurrentScheduledTaskThreads(int threadNumber) {
-    this.concurrentScheduledTaskThreads = threadNumber;
     return this;
   }
 
@@ -150,21 +134,6 @@ public class ConfigurationServiceOverrider {
   public ConfigurationServiceOverrider withWorkflowExecutorService(
       ExecutorService workflowExecutorService) {
     this.workflowExecutorService = workflowExecutorService;
-    return this;
-  }
-
-  /**
-   * Replaces the executor used to run the operator's scheduled (i.e. periodic or delayed) tasks,
-   * which are shared by all its polling event sources.
-   *
-   * @param scheduledExecutorService the executor to run scheduled tasks on
-   * @return this {@link ConfigurationServiceOverrider} for chained customization
-   * @see ConfigurationService#getScheduledExecutorService()
-   * @since 5.7.0
-   */
-  public ConfigurationServiceOverrider withScheduledExecutorService(
-      ScheduledExecutorService scheduledExecutorService) {
-    this.scheduledExecutorService = scheduledExecutorService;
     return this;
   }
 
@@ -392,17 +361,6 @@ public class ConfigurationServiceOverrider {
       }
 
       @Override
-      public int concurrentScheduledTaskThreads() {
-        return Utils.ensureValid(
-            overriddenValueOrDefault(
-                concurrentScheduledTaskThreads,
-                ConfigurationService::concurrentScheduledTaskThreads),
-            "maximum scheduled task threads",
-            1,
-            original.concurrentScheduledTaskThreads());
-      }
-
-      @Override
       public int concurrentRetryAndRescheduleThreads() {
         return Utils.ensureValid(
             overriddenValueOrDefault(
@@ -443,18 +401,6 @@ public class ConfigurationServiceOverrider {
           return workflowExecutorService;
         } else {
           return super.getWorkflowExecutorService();
-        }
-      }
-
-      @Override
-      public ScheduledExecutorService getScheduledExecutorService() {
-        if (scheduledExecutorService != null) {
-          return scheduledExecutorService;
-        } else if (!changes(
-            concurrentScheduledTaskThreads, original.concurrentScheduledTaskThreads())) {
-          return original.getScheduledExecutorService();
-        } else {
-          return super.getScheduledExecutorService();
         }
       }
 

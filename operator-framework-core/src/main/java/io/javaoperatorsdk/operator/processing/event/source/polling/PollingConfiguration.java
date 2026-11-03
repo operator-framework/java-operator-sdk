@@ -22,8 +22,9 @@ import java.util.concurrent.ScheduledExecutorService;
 import io.javaoperatorsdk.operator.processing.ResourceIDMapper;
 
 /**
- * @param executorService the executor to run the polls on, {@code null} (the default) to run them
- *     on the executor the operator shares between all its scheduled tasks
+ * @param executorService the executor to run the polls on, {@code null} (the default) to have the
+ *     event source create one of its own, on virtual threads if enabled, which it shuts down when
+ *     stopped. A provided executor is not shut down by the event source.
  */
 public record PollingConfiguration<R, ID>(
     String name,

@@ -284,18 +284,13 @@ class VirtualThreadScheduledExecutorTest {
   }
 
   @Test
-  void theOperatorsDefaultScheduledExecutorsRunOnVirtualThreadsWhenRequested() throws Exception {
+  void theOperatorsDefaultRetryAndRescheduleExecutorRunsOnVirtualThreadsWhenRequested()
+      throws Exception {
     var configurationService =
         ConfigurationService.newOverriddenConfigurationService(
             new BaseConfigurationService(), o -> o.withUseVirtualThreads(true));
     var manager = configurationService.getExecutorServiceManager();
     try {
-      assertThat(
-              manager
-                  .scheduledExecutorService()
-                  .schedule(VirtualThreadsTest::onVirtualThread, 0, TimeUnit.MILLISECONDS)
-                  .get(10, TimeUnit.SECONDS))
-          .isTrue();
       assertThat(
               manager
                   .retryAndRescheduleExecutorService()

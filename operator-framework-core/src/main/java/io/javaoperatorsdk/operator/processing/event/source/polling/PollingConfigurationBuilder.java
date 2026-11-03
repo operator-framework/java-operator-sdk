@@ -45,9 +45,9 @@ public final class PollingConfigurationBuilder<R, ID> {
   }
 
   /**
-   * Runs the polls on the specified executor instead of the one the operator shares between all its
-   * scheduled tasks. Note that an explicitly provided executor is not managed by the operator: it
-   * is the caller's responsibility to shut it down.
+   * Runs the polls on the specified executor instead of the one the event source creates by
+   * default. Note that an explicitly provided executor is not managed by the operator: it is the
+   * caller's responsibility to shut it down. It can be shared between event sources.
    *
    * @param executorService the executor to run the polls on
    * @return this builder for chained customization

@@ -65,14 +65,6 @@ public interface ConfigurationService {
   int DEFAULT_WORKFLOW_EXECUTOR_THREAD_NUMBER = DEFAULT_RECONCILIATION_THREADS_NUMBER;
 
   /**
-   * The default number of threads used to run the operator's scheduled tasks, i.e. the periodic
-   * polls of {@link io.javaoperatorsdk.operator.processing.event.source.polling.PollingEventSource}
-   * and {@link
-   * io.javaoperatorsdk.operator.processing.event.source.polling.PerResourcePollingEventSource}
-   */
-  int DEFAULT_SCHEDULED_TASK_THREADS_NUMBER = 4;
-
-  /**
    * The default number of threads used to trigger the operator's retried and rescheduled
    * reconciliations
    */
@@ -255,22 +247,6 @@ public interface ConfigurationService {
   }
 
   /**
-   * Number of threads the operator can spin out to run its scheduled (i.e. periodic or delayed)
-   * tasks with the default executor. These threads are shared by all the polling event sources of
-   * the operator, so this number should be raised when many, or slow, polling event sources are
-   * registered: a poll only starts once a thread is available, and a slow poll therefore delays the
-   * polls of the other event sources. Not used when virtual threads are enabled, see {@link
-   * #useVirtualThreads()}, since the number of scheduled tasks running at the same time is not
-   * limited then.
-   *
-   * @return the maximum number of concurrent scheduled task threads
-   * @since 5.7.0
-   */
-  default int concurrentScheduledTaskThreads() {
-    return DEFAULT_SCHEDULED_TASK_THREADS_NUMBER;
-  }
-
-  /**
    * Number of threads the operator can spin out to trigger its retried and rescheduled
    * reconciliations with the default executor. These threads are shared by all the controllers of
    * the operator, but the tasks they run only enqueue an event for the reconciliation to happen on
@@ -315,15 +291,16 @@ public interface ConfigurationService {
    * <p>Note that this only affects the executors created by the framework: a custom {@link
    * ExecutorService} provided through {@link #getExecutorService()} or {@link
    * #getWorkflowExecutorService()}, or a custom {@link ScheduledExecutorService} provided through
-   * {@link #getScheduledExecutorService()} or {@link #getRetryAndRescheduleExecutorService()}, is
-   * used as is. The default scheduled executors keep a single platform thread for the timing and
-   * run each task they fire on a virtual thread. The same goes for the {@link KubernetesClient}:
-   * the default client created by {@link #getKubernetesClient()} then also runs its internal
-   * asynchronous tasks (informer event dispatching, watch event delivery) on virtual threads, while
-   * a custom client, e.g. provided through {@link
-   * ConfigurationServiceOverrider#withKubernetesClient(KubernetesClient)}, keeps whatever task
-   * executor it was built with. The blocking calls a reconciler performs through the client don't
-   * need any of this: they already park the calling virtual thread rather than its carrier.
+   * {@link #getRetryAndRescheduleExecutorService()} or the polling configuration, is used as is.
+   * The default scheduled executors, including the ones the polling event sources create for
+   * themselves, keep a single platform thread for the timing and run each task they fire on a
+   * virtual thread. The same goes for the {@link KubernetesClient}: the default client created by
+   * {@link #getKubernetesClient()} then also runs its internal asynchronous tasks (informer event
+   * dispatching, watch event delivery) on virtual threads, while a custom client, e.g. provided
+   * through {@link ConfigurationServiceOverrider#withKubernetesClient(KubernetesClient)}, keeps
+   * whatever task executor it was built with. The blocking calls a reconciler performs through the
+   * client don't need any of this: they already park the calling virtual thread rather than its
+   * carrier.
    *
    * @return {@code true} to use virtual threads, {@code false} (default) to use platform threads
    * @since 5.7.0
@@ -357,32 +334,12 @@ public interface ConfigurationService {
 
   /**
    * Override to provide a custom {@link ScheduledExecutorService} implementation to change how the
-   * operator's scheduled (i.e. periodic or delayed) tasks are run. This executor is shared by all
-   * the polling event sources of the operator. The retried and rescheduled reconciliations run on
-   * an executor of their own, see {@link #getRetryAndRescheduleExecutorService()}, so that a slow
-   * poll can't delay them.
+   * operator's retried and rescheduled reconciliations are triggered.
    *
    * <p>Note that the default implementation lets the executor discard the tasks that were scheduled
    * for later when it is shut down, so that they don't delay the termination of the operator, and
    * that it creates daemon threads so that a never stopped operator doesn't keep the JVM alive.
    * Custom implementations are advised to do the same.
-   *
-   * @return the {@link ScheduledExecutorService} implementation to use to run scheduled tasks
-   * @since 5.7.0
-   */
-  default ScheduledExecutorService getScheduledExecutorService() {
-    return ExecutorServiceManager.newScheduledExecutorService(
-        concurrentScheduledTaskThreads(), useVirtualThreads(), "josdk-scheduled-task");
-  }
-
-  /**
-   * Override to provide a custom {@link ScheduledExecutorService} implementation to change how the
-   * operator's retried and rescheduled reconciliations are triggered. This executor is kept
-   * separate from the one the polling event sources use, see {@link
-   * #getScheduledExecutorService()}, so that a slow poll can't delay a retry.
-   *
-   * <p>The same notes as for {@link #getScheduledExecutorService()} apply to custom
-   * implementations.
    *
    * @return the {@link ScheduledExecutorService} implementation to use to trigger retried and
    *     rescheduled reconciliations

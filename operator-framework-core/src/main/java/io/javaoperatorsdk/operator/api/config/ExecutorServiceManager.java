@@ -42,7 +42,6 @@ public class ExecutorServiceManager {
   private ExecutorService executor;
   private ExecutorService workflowExecutor;
   private ExecutorService cachingExecutorService;
-  private ScheduledExecutorService scheduledExecutorService;
   private ScheduledExecutorService retryAndRescheduleExecutorService;
   private boolean started;
   private ConfigurationService configurationService;
@@ -184,22 +183,10 @@ public class ExecutorServiceManager {
   }
 
   /**
-   * The executor the operator runs its scheduled (i.e. periodic or delayed) tasks on, shared by its
-   * polling event sources. Note that it is only valid while the manager is started: it is shut down
-   * by {@link #stop(Duration)} and replaced by a fresh one on the next {@link
-   * #start(ConfigurationService)}, so callers should retrieve it when they start rather than hold
-   * on to it.
-   *
-   * @return the executor to run scheduled tasks on
-   */
-  public ScheduledExecutorService scheduledExecutorService() {
-    return scheduledExecutorService;
-  }
-
-  /**
-   * The executor the operator triggers its retried and rescheduled reconciliations on, kept
-   * separate from {@link #scheduledExecutorService()} so that a slow poll can't delay a retry. The
-   * same lifecycle caveat as for {@link #scheduledExecutorService()} applies.
+   * The executor the operator triggers its retried and rescheduled reconciliations on. Note that it
+   * is only valid while the manager is started: it is shut down by {@link #stop(Duration)} and
+   * replaced by a fresh one on the next {@link #start(ConfigurationService)}, so callers should
+   * retrieve it when they start rather than hold on to it.
    *
    * @return the executor to trigger retried and rescheduled reconciliations on
    */
@@ -212,7 +199,6 @@ public class ExecutorServiceManager {
       this.configurationService = configurationService; // used to lazy init workflow executor
       this.cachingExecutorService =
           newUnboundedExecutorService(configurationService.useVirtualThreads());
-      this.scheduledExecutorService = configurationService.getScheduledExecutorService();
       this.retryAndRescheduleExecutorService =
           configurationService.getRetryAndRescheduleExecutorService();
       this.executor = new InstrumentedExecutorService(configurationService.getExecutorService());
@@ -226,7 +212,6 @@ public class ExecutorServiceManager {
             shutdown(executor, gracefulShutdownTimeout),
             shutdown(workflowExecutor, gracefulShutdownTimeout),
             shutdown(cachingExecutorService, gracefulShutdownTimeout),
-            shutdown(scheduledExecutorService, gracefulShutdownTimeout),
             shutdown(retryAndRescheduleExecutorService, gracefulShutdownTimeout));
     var parallelExec = Executors.newFixedThreadPool(shutdowns.size());
     try {

@@ -87,18 +87,6 @@ class ConfigLoaderTest {
   }
 
   @Test
-  void applyConfigsAppliesConcurrentScheduledTaskThreads() {
-    var loader =
-        new ConfigLoader(mapProvider(Map.of("josdk.scheduled-tasks.concurrent-threads", 8)));
-
-    var base = new BaseConfigurationService(null);
-    var result =
-        ConfigurationService.newOverriddenConfigurationService(base, loader.applyConfigs());
-
-    assertThat(result.concurrentScheduledTaskThreads()).isEqualTo(8);
-  }
-
-  @Test
   void applyConfigsAppliesConcurrentRetryAndRescheduleThreads() {
     var loader =
         new ConfigLoader(mapProvider(Map.of("josdk.retry-and-reschedule.concurrent-threads", 6)));
@@ -340,7 +328,6 @@ class ConfigLoaderTest {
           Map.entry("withClusterScopedEventNamespace", "events.cluster-scoped-namespace"),
           Map.entry(
               "withConcurrentRetryAndRescheduleThreads", "retry-and-reschedule.concurrent-threads"),
-          Map.entry("withConcurrentScheduledTaskThreads", "scheduled-tasks.concurrent-threads"),
           Map.entry("withUseVirtualThreads", "use-virtual-threads"));
 
   /**

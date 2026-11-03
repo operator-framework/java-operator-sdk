@@ -19,15 +19,20 @@ import java.time.Duration;
 import java.util.Collections;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
-import java.util.stream.Stream;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.EnabledForJreRange;
+import org.junit.jupiter.api.condition.JRE;
 
 import io.javaoperatorsdk.operator.TestUtils;
 import io.javaoperatorsdk.operator.api.config.BaseConfigurationService;
+import io.javaoperatorsdk.operator.api.config.ConfigurationService;
 import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.EventSourceContext;
 import io.javaoperatorsdk.operator.processing.ResourceIDMapper;
@@ -356,75 +361,166 @@ class PerResourcePollingEventSourceTest
   }
 
   @Test
-  void pollsOnTheNewSharedSchedulerWhenStartedAgainWhileRunning() {
-    var configurationService = new BaseConfigurationService();
-    var executorServiceManager = configurationService.getExecutorServiceManager();
-    var controllerConfiguration = mock(ControllerConfiguration.class);
-    when(controllerConfiguration.getConfigurationService()).thenReturn(configurationService);
-    when(context.getControllerConfiguration()).thenReturn(controllerConfiguration);
-    when(resourceCache.list()).thenAnswer(i -> Stream.of(testCustomResource));
-    setUpSource(
-        new PerResourcePollingEventSource<>(
-            SampleExternalResource.class,
-            context,
-            new PerResourcePollingConfigurationBuilder<
-                    SampleExternalResource, TestCustomResource, String>(
-                    supplier, Duration.ofMillis(PERIOD))
-                .withResourceIDMapper(r -> r.getName() + "#" + r.getValue())
-                .build()));
+  void createsAnExecutorOfItsOwnAndShutsItDownOnStop() {
+    var pollingThreads = new CopyOnWriteArrayList<Thread>();
+    when(supplier.fetchResources(any()))
+        .thenAnswer(
+            invocation -> {
+              pollingThreads.add(Thread.currentThread());
+              return Set.of(SampleExternalResource.testResource1());
+            });
+    setUpSource(eventSourceFor(new BaseConfigurationService(), null));
+
+    source.onResourceCreated(testCustomResource);
+
+    await().until(() -> !pollingThreads.isEmpty());
+    var pollingThread = pollingThreads.get(0);
+    assertThat(pollingThread.getName()).startsWith("josdk-polling-");
+    assertThat(pollingThread.isDaemon()).isTrue();
+
+    source.stop();
+
+    await().untilAsserted(() -> assertThat(pollingThread.isAlive()).isFalse());
+  }
+
+  @Test
+  void usesANewExecutorWhenStartedAfterStop() {
+    setUpSource(eventSourceFor(new BaseConfigurationService(), null));
+    source.onResourceCreated(testCustomResource);
+    await().untilAsserted(() -> verify(supplier, atLeast(2)).fetchResources(any()));
+    source.stop();
+    clearInvocations(supplier);
+
+    source.start();
+    source.onResourceCreated(testCustomResource);
+
+    await().untilAsserted(() -> verify(supplier, atLeast(2)).fetchResources(any()));
+  }
+
+  @Test
+  void pollsOnTheProvidedExecutorAndLeavesItRunningOnStop() {
+    var pollingThreadNames = new CopyOnWriteArrayList<String>();
+    when(supplier.fetchResources(any()))
+        .thenAnswer(
+            invocation -> {
+              pollingThreadNames.add(Thread.currentThread().getName());
+              return Set.of(SampleExternalResource.testResource1());
+            });
+    var provided =
+        Executors.newSingleThreadScheduledExecutor(runnable -> new Thread(runnable, "provided"));
+    setUpSource(eventSourceFor(new BaseConfigurationService(), provided));
 
     try {
       source.onResourceCreated(testCustomResource);
-      await().untilAsserted(() -> verify(supplier, atLeast(2)).fetchResources(any()));
+      await().untilAsserted(() -> assertThat(pollingThreadNames).contains("provided"));
 
-      executorServiceManager.stop(Duration.ofMillis(100));
-      executorServiceManager.start(configurationService);
-      clearInvocations(supplier);
-      source.start();
-
-      await().untilAsserted(() -> verify(supplier, atLeast(2)).fetchResources(any()));
-    } finally {
       source.stop();
-      executorServiceManager.stop(Duration.ofMillis(100));
+
+      assertThat(provided.isShutdown()).isFalse();
+      assertThat(pollingThreadNames).containsOnly("provided");
+    } finally {
+      provided.shutdownNow();
     }
   }
 
   @Test
-  void pollsOnTheNewSharedSchedulerWhenTheOperatorIsRestarted() {
+  void eventSourcesDoNotShareTheirExecutor() throws Exception {
+    var otherThreads = new CopyOnWriteArrayList<Thread>();
+    var blockFirst = new CountDownLatch(1);
+    var firstPolling = new CountDownLatch(1);
+    when(supplier.fetchResources(any()))
+        .thenAnswer(
+            invocation -> {
+              firstPolling.countDown();
+              blockFirst.await();
+              return Set.of(SampleExternalResource.testResource1());
+            });
+    @SuppressWarnings("unchecked")
+    PerResourcePollingEventSource.ResourceFetcher<SampleExternalResource, TestCustomResource>
+        otherSupplier = mock(PerResourcePollingEventSource.ResourceFetcher.class);
+    when(otherSupplier.fetchResources(any()))
+        .thenAnswer(
+            invocation -> {
+              otherThreads.add(Thread.currentThread());
+              return Set.of(SampleExternalResource.testResource1());
+            });
     var configurationService = new BaseConfigurationService();
-    var executorServiceManager = configurationService.getExecutorServiceManager();
-    var controllerConfiguration = mock(ControllerConfiguration.class);
-    when(controllerConfiguration.getConfigurationService()).thenReturn(configurationService);
-    when(context.getControllerConfiguration()).thenReturn(controllerConfiguration);
-    setUpSource(
-        new PerResourcePollingEventSource<>(
-            SampleExternalResource.class,
-            context,
-            new PerResourcePollingConfigurationBuilder<
-                    SampleExternalResource, TestCustomResource, String>(
-                    supplier, Duration.ofMillis(PERIOD))
-                .withResourceIDMapper(r -> r.getName() + "#" + r.getValue())
-                .build()));
+    var first = eventSourceFor(configurationService, supplier, null);
+    var second = eventSourceFor(configurationService, otherSupplier, null);
+    first.setEventHandler(mock(EventHandler.class));
+    second.setEventHandler(mock(EventHandler.class));
+
+    try {
+      first.start();
+      second.start();
+      first.onResourceCreated(testCustomResource);
+      assertThat(firstPolling.await(5, TimeUnit.SECONDS)).isTrue();
+      second.onResourceCreated(testCustomResource);
+
+      // a poll of the first one hanging must not delay the polls of the second one
+      await().until(() -> otherThreads.size() >= 2);
+    } finally {
+      blockFirst.countDown();
+      first.stop();
+      second.stop();
+    }
+  }
+
+  @Test
+  @EnabledForJreRange(min = JRE.JAVA_25)
+  void pollsOnVirtualThreadsWhenEnabledInTheConfiguration() {
+    var onVirtualThread = new CopyOnWriteArrayList<Boolean>();
+    when(supplier.fetchResources(any()))
+        .thenAnswer(
+            invocation -> {
+              onVirtualThread.add(isVirtual(Thread.currentThread()));
+              return Set.of(SampleExternalResource.testResource1());
+            });
+    var configurationService =
+        ConfigurationService.newOverriddenConfigurationService(
+            new BaseConfigurationService(), o -> o.withUseVirtualThreads(true));
+    setUpSource(eventSourceFor(configurationService, null));
 
     try {
       source.onResourceCreated(testCustomResource);
-      await().untilAsserted(() -> verify(supplier, atLeast(2)).fetchResources(any()));
-      var firstExecutor = executorServiceManager.scheduledExecutorService();
-      source.stop();
 
-      executorServiceManager.stop(Duration.ofMillis(100));
-      executorServiceManager.start(configurationService);
-      assertThat(firstExecutor.isShutdown()).isTrue();
-      assertThat(executorServiceManager.scheduledExecutorService()).isNotSameAs(firstExecutor);
-
-      source.start();
-      clearInvocations(supplier);
-      source.onResourceCreated(testCustomResource);
-
-      await().untilAsserted(() -> verify(supplier, atLeast(2)).fetchResources(any()));
+      await().untilAsserted(() -> assertThat(onVirtualThread).contains(true));
     } finally {
       source.stop();
-      executorServiceManager.stop(Duration.ofMillis(100));
+    }
+  }
+
+  private PerResourcePollingEventSource<SampleExternalResource, TestCustomResource, String>
+      eventSourceFor(
+          ConfigurationService configurationService, ScheduledExecutorService executorService) {
+    return eventSourceFor(configurationService, supplier, executorService);
+  }
+
+  private PerResourcePollingEventSource<SampleExternalResource, TestCustomResource, String>
+      eventSourceFor(
+          ConfigurationService configurationService,
+          PerResourcePollingEventSource.ResourceFetcher<SampleExternalResource, TestCustomResource>
+              fetcher,
+          ScheduledExecutorService executorService) {
+    var controllerConfiguration = mock(ControllerConfiguration.class);
+    when(controllerConfiguration.getConfigurationService()).thenReturn(configurationService);
+    when(context.getControllerConfiguration()).thenReturn(controllerConfiguration);
+    return new PerResourcePollingEventSource<>(
+        SampleExternalResource.class,
+        context,
+        new PerResourcePollingConfigurationBuilder<
+                SampleExternalResource, TestCustomResource, String>(
+                fetcher, Duration.ofMillis(PERIOD))
+            .withResourceIDMapper(r -> r.getName() + "#" + r.getValue())
+            .withExecutorService(executorService)
+            .build());
+  }
+
+  private static boolean isVirtual(Thread thread) {
+    try {
+      return (Boolean) Thread.class.getMethod("isVirtual").invoke(thread);
+    } catch (ReflectiveOperationException e) {
+      return false;
     }
   }
 

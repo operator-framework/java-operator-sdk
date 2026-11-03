@@ -30,9 +30,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
-import io.javaoperatorsdk.operator.ExecutorUtilsInternal;
 import io.javaoperatorsdk.operator.OperatorException;
 import io.javaoperatorsdk.operator.api.config.ConfigurationService;
+import io.javaoperatorsdk.operator.api.config.ExecutorServiceManager;
 import io.javaoperatorsdk.operator.api.reconciler.EventSourceContext;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
 import io.javaoperatorsdk.operator.processing.event.source.Cache;
@@ -59,7 +59,7 @@ public class PerResourcePollingEventSource<R, P extends HasMetadata, ID>
   private final Set<ResourceID> fetchedForPrimaries = ConcurrentHashMap.newKeySet();
 
   private final ScheduledExecutorService configuredExecutorService;
-  private final ConfigurationService configurationService;
+  private final boolean useVirtualThreads;
   private final boolean ownsExecutorService;
   private final ResourceFetcher<R, P> resourceFetcher;
   private final Predicate<P> registerPredicate;
@@ -82,10 +82,10 @@ public class PerResourcePollingEventSource<R, P extends HasMetadata, ID>
     this.resourceFetcher = config.resourceFetcher();
     this.registerPredicate = config.registerPredicate();
     this.configuredExecutorService = config.executorService();
-    this.configurationService = configurationServiceOf(context);
-    // when neither the configuration nor the operator provides one, the event source has to create
-    // an executor of its own, and is then the one responsible for shutting it down
-    this.ownsExecutorService = configuredExecutorService == null && configurationService == null;
+    var configurationService = configurationServiceOf(context);
+    this.useVirtualThreads =
+        configurationService != null && configurationService.useVirtualThreads();
+    this.ownsExecutorService = configuredExecutorService == null;
     this.period = config.defaultPollingPeriod();
   }
 
@@ -104,34 +104,11 @@ public class PerResourcePollingEventSource<R, P extends HasMetadata, ID>
   @Override
   public void start() throws OperatorException {
     if (isRunning()) {
-      switchToCurrentExecutor();
       return;
     }
     executorService = resolveExecutorService();
     super.start();
     replayRegistrationsBeforeStart();
-  }
-
-  /**
-   * The operator replaces its executors when it is started again, which can happen while this event
-   * source keeps running, when a previous start failed after it started. The polls scheduled on the
-   * replaced executor are gone then, so they are scheduled again on the new one.
-   */
-  private void switchToCurrentExecutor() {
-    if (ownsExecutorService) {
-      return;
-    }
-    var resolved = resolveExecutorService();
-    synchronized (this) {
-      if (resolved == executorService) {
-        return;
-      }
-      executorService = resolved;
-      lifecycleGeneration++;
-      scheduledFutures.values().forEach(future -> future.cancel(true));
-      scheduledFutures.clear();
-    }
-    primaryResourceCache.list().forEach(this::checkAndRegisterTask);
   }
 
   private void replayRegistrationsBeforeStart() {
@@ -144,18 +121,15 @@ public class PerResourcePollingEventSource<R, P extends HasMetadata, ID>
   }
 
   /**
-   * Resolves the executor to poll on. Note that this happens on every start, and not once at
-   * creation time, since the operator shuts its executors down when it is stopped and creates new
-   * ones if it is started again.
+   * Resolves the executor to poll on. Note that this happens on every start, since an executor
+   * created by this event source is shut down when it is stopped.
    */
   private ScheduledExecutorService resolveExecutorService() {
     if (configuredExecutorService != null) {
       return configuredExecutorService;
     }
-    if (configurationService != null) {
-      return configurationService.getExecutorServiceManager().scheduledExecutorService();
-    }
-    return ExecutorUtilsInternal.daemonScheduledThreadPool(1, "josdk-polling-" + name());
+    return ExecutorServiceManager.newScheduledExecutorService(
+        1, useVirtualThreads, "josdk-polling-" + name());
   }
 
   private Set<R> getAndCacheResource(P primary, boolean fromGetter) {
@@ -316,8 +290,8 @@ public class PerResourcePollingEventSource<R, P extends HasMetadata, ID>
   @Override
   public void stop() throws OperatorException {
     super.stop();
-    // the tasks have to be cancelled explicitly now that the executor can be shared with the rest
-    // of the operator, and the map cleared so that they are registered again on a restart
+    // the tasks have to be cancelled explicitly since a provided executor is not shut down, and the
+    // map cleared so that they are registered again on a restart
     synchronized (this) {
       lifecycleGeneration++;
       scheduledFutures.values().forEach(future -> future.cancel(true));

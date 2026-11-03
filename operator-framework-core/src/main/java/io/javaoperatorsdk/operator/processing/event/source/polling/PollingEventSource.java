@@ -27,9 +27,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
-import io.javaoperatorsdk.operator.ExecutorUtilsInternal;
 import io.javaoperatorsdk.operator.OperatorException;
 import io.javaoperatorsdk.operator.api.config.ConfigurationService;
+import io.javaoperatorsdk.operator.api.config.ExecutorServiceManager;
 import io.javaoperatorsdk.operator.api.reconciler.EventSourceContext;
 import io.javaoperatorsdk.operator.health.Status;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
@@ -70,15 +70,16 @@ public class PollingEventSource<R, P extends HasMetadata, ID>
   private final Duration period;
   private final AtomicBoolean healthy = new AtomicBoolean(true);
   private final ScheduledExecutorService configuredExecutorService;
-  private final ConfigurationService configurationService;
+  private final boolean useVirtualThreads;
   private final boolean ownsExecutorService;
 
   private volatile ScheduledExecutorService executorService;
   private volatile ScheduledFuture<?> pollingTask;
 
   /**
-   * Creates an event source polling on the executor the operator shares between all its scheduled
-   * tasks, unless the configuration provides one of its own.
+   * Creates an event source polling on an executor of its own: the one provided by the
+   * configuration, or otherwise one it creates and shuts down itself, which runs on virtual threads
+   * if {@link ConfigurationService#useVirtualThreads()} is enabled.
    *
    * @param resourceClass the type of the polled resource
    * @param context the context this event source is created for
@@ -93,8 +94,8 @@ public class PollingEventSource<R, P extends HasMetadata, ID>
   /**
    * @deprecated use {@link #PollingEventSource(Class, EventSourceContext, PollingConfiguration)}
    *     instead: without a context, and unless the configuration provides an executor, this event
-   *     source has to create a thread of its own to poll on instead of using the one the operator
-   *     shares between all its scheduled tasks.
+   *     source polls on a platform thread even if the operator is configured to use virtual
+   *     threads.
    */
   @Deprecated(since = "5.7.0")
   public PollingEventSource(Class<R> resourceClass, PollingConfiguration<R, ID> config) {
@@ -109,10 +110,9 @@ public class PollingEventSource<R, P extends HasMetadata, ID>
     this.genericResourceFetcher = config.genericResourceFetcher();
     this.period = config.period();
     this.configuredExecutorService = config.executorService();
-    this.configurationService = configurationService;
-    // when neither the configuration nor the operator provides one, the event source has to create
-    // an executor of its own, and is then the one responsible for shutting it down
-    this.ownsExecutorService = configuredExecutorService == null && configurationService == null;
+    this.useVirtualThreads =
+        configurationService != null && configurationService.useVirtualThreads();
+    this.ownsExecutorService = configuredExecutorService == null;
   }
 
   /**
@@ -130,7 +130,6 @@ public class PollingEventSource<R, P extends HasMetadata, ID>
   @Override
   public void start() throws OperatorException {
     if (pollingTask != null) {
-      switchToCurrentExecutor();
       return;
     }
     super.start();
@@ -152,25 +151,6 @@ public class PollingEventSource<R, P extends HasMetadata, ID>
     }
   }
 
-  /**
-   * The operator replaces its executors when it is started again, which can happen while this event
-   * source keeps running, when a previous start failed after it started. The polling task is gone
-   * with the replaced executor then, so it is scheduled again on the new one.
-   */
-  private void switchToCurrentExecutor() {
-    final var current = pollingTask;
-    if (ownsExecutorService || current == null) {
-      return;
-    }
-    final var resolved = resolveExecutorService();
-    if (resolved == executorService) {
-      return;
-    }
-    current.cancel(false);
-    executorService = resolved;
-    schedulePolling();
-  }
-
   private void poll() {
     try {
       if (!isRunning()) {
@@ -187,18 +167,15 @@ public class PollingEventSource<R, P extends HasMetadata, ID>
   }
 
   /**
-   * Resolves the executor to poll on. Note that this happens on every start, and not once at
-   * creation time, since the operator shuts its executors down when it is stopped and creates new
-   * ones if it is started again.
+   * Resolves the executor to poll on. Note that this happens on every start, since an executor
+   * created by this event source is shut down when it is stopped.
    */
   private ScheduledExecutorService resolveExecutorService() {
     if (configuredExecutorService != null) {
       return configuredExecutorService;
     }
-    if (configurationService != null) {
-      return configurationService.getExecutorServiceManager().scheduledExecutorService();
-    }
-    return ExecutorUtilsInternal.daemonScheduledThreadPool(1, "josdk-polling-" + name());
+    return ExecutorServiceManager.newScheduledExecutorService(
+        1, useVirtualThreads, "josdk-polling-" + name());
   }
 
   protected synchronized void getStateAndFillCache() {

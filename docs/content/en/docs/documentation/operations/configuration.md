@@ -51,12 +51,12 @@ Things to keep in mind:
   Java 25, removed that pinning. This is checked at runtime: on an older JVM, including the ones
   where virtual threads exist (Java 21 to 24), a warning is logged and platform threads are used
   instead, so the same configuration works on any Java version the operator runs on.
-- The scheduled tasks (the polling event sources, and the retried and rescheduled reconciliations)
-  run on virtual threads too. The JDK has no scheduled executor backed by virtual threads, so the
-  default ones keep a single platform thread for the timing only and run each task they fire on a
-  virtual thread. The number of those tasks running at the same time is not limited, so
-  `withConcurrentScheduledTaskThreads(int)` and `withConcurrentRetryAndRescheduleThreads(int)` only
-  apply to platform threads.
+- The scheduled tasks (the polls of the polling event sources, which each create an executor of
+  their own unless one is provided, and the retried and rescheduled reconciliations) run on virtual
+  threads too. The JDK has no scheduled executor backed by virtual threads, so the default ones keep
+  a single platform thread for the timing only and run each task they fire on a virtual thread. The
+  number of those tasks running at the same time is not limited, so
+  `withConcurrentRetryAndRescheduleThreads(int)` only applies to platform threads.
 - Virtual threads are always daemon threads, so unlike the threads of the platform thread pools they
   don't keep the JVM running: if the `main` method of your application returns after starting the
   operator, make sure something else keeps the JVM alive.
@@ -351,11 +351,10 @@ All operator-level keys are prefixed with `josdk.`.
 |---|---|---|
 | `josdk.workflow.executor-threads` | `Integer` | Thread pool size for workflow execution |
 
-#### Scheduled Tasks
+#### Retry and Reschedule
 
 | Key | Type | Description |
 |---|---|---|
-| `josdk.scheduled-tasks.concurrent-threads` | `Integer` | Thread pool size for the operator's scheduled tasks, i.e. the polling event sources |
 | `josdk.retry-and-reschedule.concurrent-threads` | `Integer` | Thread pool size for triggering retried and rescheduled reconciliations |
 
 #### Informer

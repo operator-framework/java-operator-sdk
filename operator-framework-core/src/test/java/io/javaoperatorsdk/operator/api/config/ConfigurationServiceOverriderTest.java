@@ -120,40 +120,28 @@ class ConfigurationServiceOverriderTest {
   }
 
   @Test
-  void scheduledExecutorCanBeOverridden() {
-    final var scheduledExecutorService = Executors.newScheduledThreadPool(1);
+  void retryAndRescheduleExecutorCanBeOverridden() {
     final var retryExecutorService = Executors.newScheduledThreadPool(1);
     try {
       final var overridden =
           new ConfigurationServiceOverrider(config)
-              .withConcurrentScheduledTaskThreads(7)
-              .withScheduledExecutorService(scheduledExecutorService)
               .withConcurrentRetryAndRescheduleThreads(5)
               .withRetryAndRescheduleExecutorService(retryExecutorService)
               .build();
 
-      assertThat(overridden.concurrentScheduledTaskThreads()).isEqualTo(7);
-      assertThat(overridden.getScheduledExecutorService()).isSameAs(scheduledExecutorService);
       assertThat(overridden.concurrentRetryAndRescheduleThreads()).isEqualTo(5);
       assertThat(overridden.getRetryAndRescheduleExecutorService()).isSameAs(retryExecutorService);
     } finally {
-      scheduledExecutorService.shutdownNow();
       retryExecutorService.shutdownNow();
     }
   }
 
   @Test
-  void executorsOfTheOriginalConfigurationAreKeptUnlessTheirSettingsAreOverridden() {
-    final var scheduledExecutorService = Executors.newScheduledThreadPool(1);
+  void executorOfTheOriginalConfigurationIsKeptUnlessItsSettingsAreOverridden() {
     final var retryExecutorService = Executors.newScheduledThreadPool(1);
     try {
       final var original =
           new BaseConfigurationService() {
-            @Override
-            public ScheduledExecutorService getScheduledExecutorService() {
-              return scheduledExecutorService;
-            }
-
             @Override
             public ScheduledExecutorService getRetryAndRescheduleExecutorService() {
               return retryExecutorService;
@@ -163,38 +151,28 @@ class ConfigurationServiceOverriderTest {
       final var overridden =
           new ConfigurationServiceOverrider(original).withCloseClientOnStop(false);
 
-      assertThat(overridden.build().getScheduledExecutorService())
-          .isSameAs(scheduledExecutorService);
       assertThat(overridden.build().getRetryAndRescheduleExecutorService())
           .isSameAs(retryExecutorService);
 
-      final var resized = overridden.withConcurrentScheduledTaskThreads(3).build();
-      final var defaultScheduled = resized.getScheduledExecutorService();
+      final var resized = overridden.withConcurrentRetryAndRescheduleThreads(3).build();
+      final var defaultRetry = resized.getRetryAndRescheduleExecutorService();
       try {
-        assertThat(defaultScheduled).isNotSameAs(scheduledExecutorService);
-        assertThat(((ScheduledThreadPoolExecutor) defaultScheduled).getCorePoolSize()).isEqualTo(3);
-        assertThat(resized.getRetryAndRescheduleExecutorService()).isSameAs(retryExecutorService);
+        assertThat(defaultRetry).isNotSameAs(retryExecutorService);
+        assertThat(((ScheduledThreadPoolExecutor) defaultRetry).getCorePoolSize()).isEqualTo(3);
       } finally {
-        defaultScheduled.shutdownNow();
+        defaultRetry.shutdownNow();
       }
     } finally {
-      scheduledExecutorService.shutdownNow();
       retryExecutorService.shutdownNow();
     }
   }
 
   @Test
-  void executorsOfTheOriginalConfigurationAreKeptWhenOverridesDoNotChangeTheirSettings() {
-    final var scheduledExecutorService = Executors.newScheduledThreadPool(1);
+  void executorOfTheOriginalConfigurationIsKeptWhenOverridesDoNotChangeItsSettings() {
     final var retryExecutorService = Executors.newScheduledThreadPool(1);
     try {
       final var original =
           new BaseConfigurationService() {
-            @Override
-            public ScheduledExecutorService getScheduledExecutorService() {
-              return scheduledExecutorService;
-            }
-
             @Override
             public ScheduledExecutorService getRetryAndRescheduleExecutorService() {
               return retryExecutorService;
@@ -204,27 +182,24 @@ class ConfigurationServiceOverriderTest {
       final var overridden =
           new ConfigurationServiceOverrider(original)
               .withUseVirtualThreads(original.useVirtualThreads())
-              .withConcurrentScheduledTaskThreads(original.concurrentScheduledTaskThreads())
               .withConcurrentRetryAndRescheduleThreads(
                   original.concurrentRetryAndRescheduleThreads())
               .build();
 
-      assertThat(overridden.getScheduledExecutorService()).isSameAs(scheduledExecutorService);
       assertThat(overridden.getRetryAndRescheduleExecutorService()).isSameAs(retryExecutorService);
     } finally {
-      scheduledExecutorService.shutdownNow();
       retryExecutorService.shutdownNow();
     }
   }
 
   @Test
-  void scheduledExecutorDefaultsToADaemonPoolOfTheConfiguredSize() {
+  void retryAndRescheduleExecutorDefaultsToADaemonPoolOfTheConfiguredSize() {
     final var overridden =
         (ScheduledThreadPoolExecutor)
             new ConfigurationServiceOverrider(config)
-                .withConcurrentScheduledTaskThreads(3)
+                .withConcurrentRetryAndRescheduleThreads(3)
                 .build()
-                .getScheduledExecutorService();
+                .getRetryAndRescheduleExecutorService();
 
     try {
       assertThat(overridden.getCorePoolSize()).isEqualTo(3);
@@ -233,22 +208,6 @@ class ConfigurationServiceOverriderTest {
       assertThat(overridden.getThreadFactory().newThread(() -> {}).isDaemon()).isTrue();
     } finally {
       overridden.shutdownNow();
-    }
-  }
-
-  @Test
-  void retryAndRescheduleExecutorIsSeparateFromTheScheduledTaskOne() {
-    final var scheduled = config.getScheduledExecutorService();
-    final var retryAndReschedule = config.getRetryAndRescheduleExecutorService();
-
-    try {
-      // a slow poll on the scheduled task executor must not be able to delay a retry
-      assertThat(retryAndReschedule).isNotSameAs(scheduled);
-      assertThat(((ScheduledThreadPoolExecutor) retryAndReschedule).getCorePoolSize())
-          .isEqualTo(ConfigurationService.DEFAULT_RETRY_AND_RESCHEDULE_THREADS_NUMBER);
-    } finally {
-      scheduled.shutdownNow();
-      retryAndReschedule.shutdownNow();
     }
   }
 

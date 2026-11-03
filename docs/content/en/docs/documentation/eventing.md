@@ -224,33 +224,32 @@ actually observed primary resources.
 
 #### Threading of the polling event sources
 
-Both polling event sources schedule their polls on an executor the operator shares between all of
-its polling event sources. A poll therefore only starts once one of that executor's threads is
-free, so if your operator registers many polling event sources, or if fetching your external
-resources is slow, size the pool accordingly with
-`ConfigurationServiceOverrider.withConcurrentScheduledTaskThreads` (4 threads by default):
+Each polling event source polls on a scheduled executor of its own, so a slow poll of one event
+source never delays the polls of the others. Unless you provide one, the event source creates a
+single daemon thread executor when it is started and shuts it down when it is stopped. A poll only
+starts once the previous one is done, so a source that fetches slowly, or one with many registered
+resources in the case of `PerResourcePollingEventSource`, can be given an executor with more threads
+using the `withExecutorService` method of its configuration builder:
 
 ```java
-Operator operator = new Operator(overrider -> overrider.withConcurrentScheduledTaskThreads(20));
+var config =
+    new PollingConfigurationBuilder<>(this::fetchResources, Duration.ofSeconds(5))
+        .withExecutorService(Executors.newScheduledThreadPool(4))
+        .build();
 ```
 
-With virtual threads enabled, see [virtual threads](../operations/configuration/#virtual-threads), the
-polls run on virtual threads, the executor only keeping one platform thread to do the timing. The
-number of polls running at the same time is then not limited, so `withConcurrentScheduledTaskThreads`
-doesn't apply, and a slow poll doesn't delay the others.
+An executor provided that way is not managed by the operator: it is your responsibility to shut it
+down. It is only ever used as is, the virtual threads flag has no effect on it. You can also share
+it between multiple event sources deliberately.
+
+With virtual threads enabled, see [virtual threads](../operations/configuration/#virtual-threads),
+the executor the event source creates runs the polls on virtual threads, only keeping one platform
+thread to do the timing. The number of polls running at the same time is then not limited.
 
 Retried and rescheduled reconciliations are triggered on a separate executor, so a slow poll can
 never delay them. It is sized with `withConcurrentRetryAndRescheduleThreads` (2 threads by
 default); few threads are needed there since triggering a reconciliation only enqueues an event
 for one of the reconciliation threads to pick up.
-
-Use `ConfigurationServiceOverrider.withScheduledExecutorService` to replace the polling executor
-altogether. The operator still manages the lifecycle of that executor: it shuts it down when the
-operator is stopped, so don't shut it down yourself.
-
-Use the `withExecutorService` method of the event source's own configuration builder to poll a
-single event source on an executor of its own. An executor provided that way is not managed by the
-operator: it is your responsibility to shut it down.
 
 #### Inbound event sources
 
