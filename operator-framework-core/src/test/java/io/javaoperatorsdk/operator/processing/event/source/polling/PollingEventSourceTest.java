@@ -26,6 +26,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -360,6 +361,42 @@ class PollingEventSourceTest
     } finally {
       eventSource.stop();
     }
+  }
+
+  @Test
+  void stoppingDuringTheInitialFetchEndsStartCleanly() throws Exception {
+    var fetching = new CountDownLatch(1);
+    var release = new CountDownLatch(1);
+    when(resourceFetcher.fetchResources())
+        .thenAnswer(
+            invocation -> {
+              fetching.countDown();
+              release.await();
+              return testResponseWithOneValue();
+            });
+    var eventSource = eventSourceFor(new BaseConfigurationService(), null);
+    var failure = new AtomicReference<Throwable>();
+    var starter =
+        new Thread(
+            () -> {
+              try {
+                eventSource.start();
+              } catch (Throwable t) {
+                failure.set(t);
+              }
+            });
+
+    starter.start();
+    assertThat(fetching.await(5, TimeUnit.SECONDS)).isTrue();
+    eventSource.stop();
+    release.countDown();
+    starter.join(5000);
+
+    assertThat(starter.isAlive()).isFalse();
+    assertThat(failure.get()).isNull();
+    clearInvocations(resourceFetcher);
+    Thread.sleep(DEFAULT_WAIT_PERIOD);
+    verify(resourceFetcher, never()).fetchResources();
   }
 
   private PollingEventSource<SampleExternalResource, HasMetadata, String> eventSourceFor(

@@ -321,6 +321,53 @@ class PerResourcePollingEventSourceTest
   }
 
   @Test
+  void aFetchOutlivingARestartDoesNotOverwriteTheCacheOfTheNewRun() throws Exception {
+    var fetching = new CountDownLatch(1);
+    var release = new CountDownLatch(1);
+    var oldResource = SampleExternalResource.testResource1();
+    var newResource = SampleExternalResource.testResource2();
+    when(supplier.fetchResources(any()))
+        .thenAnswer(
+            invocation -> {
+              fetching.countDown();
+              var interrupted = false;
+              while (release.getCount() > 0) {
+                try {
+                  release.await();
+                } catch (InterruptedException e) {
+                  interrupted = true;
+                }
+              }
+              if (interrupted) {
+                Thread.currentThread().interrupt();
+              }
+              return Set.of(oldResource);
+            })
+        .thenReturn(Set.of(newResource));
+
+    source.onResourceCreated(testCustomResource);
+    assertThat(fetching.await(5, TimeUnit.SECONDS)).isTrue();
+    source.stop();
+    source.start();
+    source.onResourceCreated(testCustomResource);
+    await().untilAsserted(() -> verify(supplier, atLeast(2)).fetchResources(any()));
+    await()
+        .untilAsserted(
+            () ->
+                assertThat(source.getSecondaryResources(testCustomResource))
+                    .containsExactly(newResource));
+
+    release.countDown();
+
+    await()
+        .pollDelay(Duration.ofMillis(PERIOD / 3))
+        .untilAsserted(
+            () ->
+                assertThat(source.getSecondaryResources(testCustomResource))
+                    .containsExactly(newResource));
+  }
+
+  @Test
   void aRegistrationRacingStopDoesNotBlockPollingAfterARestart() throws Exception {
     var configurationService = new BaseConfigurationService();
     var executorServiceManager = configurationService.getExecutorServiceManager();

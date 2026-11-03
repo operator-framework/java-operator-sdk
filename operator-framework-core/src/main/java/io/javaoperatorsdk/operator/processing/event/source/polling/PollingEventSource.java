@@ -18,6 +18,7 @@ package io.javaoperatorsdk.operator.processing.event.source.polling;
 import java.time.Duration;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
@@ -139,15 +140,27 @@ public class PollingEventSource<R, P extends HasMetadata, ID>
   }
 
   private void schedulePolling() {
-    var task =
-        executorService.scheduleWithFixedDelay(
-            this::poll, period.toMillis(), period.toMillis(), TimeUnit.MILLISECONDS);
+    ScheduledFuture<?> task;
+    try {
+      task =
+          executorService.scheduleWithFixedDelay(
+              this::poll, period.toMillis(), period.toMillis(), TimeUnit.MILLISECONDS);
+    } catch (RejectedExecutionException e) {
+      // a stop during the initial fetch shut down the executor this event source owns
+      if (isRunning()) {
+        throw e;
+      }
+      return;
+    }
     pollingTask = task;
     // stop() clears the running flag before it looks for the task, so a stop that happened during
     // the initial fetch is either seen by stop (which cancels the task) or caught here
     if (!isRunning()) {
       task.cancel(false);
       pollingTask = null;
+      if (ownsExecutorService) {
+        executorService.shutdown();
+      }
     }
   }
 

@@ -42,6 +42,7 @@ public class ExecutorServiceManager {
   private ExecutorService executor;
   private ExecutorService workflowExecutor;
   private ExecutorService cachingExecutorService;
+  private ScheduledExecutorService scheduledExecutorService;
   private ScheduledExecutorService retryAndRescheduleExecutorService;
   private boolean started;
   private ConfigurationService configurationService;
@@ -183,6 +184,27 @@ public class ExecutorServiceManager {
   }
 
   /**
+   * A general purpose scheduled executor, created on first use, which is shut down by {@link
+   * #stop(Duration)} and replaced by a fresh one on the next use after a {@link
+   * #start(ConfigurationService)}. The framework itself doesn't use it: the polling event sources
+   * poll on executors of their own, and retries are triggered on {@link
+   * #retryAndRescheduleExecutorService()}.
+   *
+   * @return the executor to run scheduled tasks on
+   * @deprecated the framework doesn't use this executor anymore, create and manage the executor you
+   *     need yourself, e.g. with {@link #newScheduledExecutorService(int, boolean, String)}
+   */
+  @Deprecated(since = "5.7.0")
+  public synchronized ScheduledExecutorService scheduledExecutorService() {
+    if (scheduledExecutorService == null) {
+      scheduledExecutorService =
+          newScheduledExecutorService(
+              1, configurationService.useVirtualThreads(), "josdk-scheduled-task");
+    }
+    return scheduledExecutorService;
+  }
+
+  /**
    * The executor the operator triggers its retried and rescheduled reconciliations on. Note that it
    * is only valid while the manager is started: it is shut down by {@link #stop(Duration)} and
    * replaced by a fresh one on the next {@link #start(ConfigurationService)}, so callers should
@@ -212,6 +234,7 @@ public class ExecutorServiceManager {
             shutdown(executor, gracefulShutdownTimeout),
             shutdown(workflowExecutor, gracefulShutdownTimeout),
             shutdown(cachingExecutorService, gracefulShutdownTimeout),
+            shutdown(scheduledExecutorService, gracefulShutdownTimeout),
             shutdown(retryAndRescheduleExecutorService, gracefulShutdownTimeout));
     var parallelExec = Executors.newFixedThreadPool(shutdowns.size());
     try {
@@ -226,6 +249,7 @@ public class ExecutorServiceManager {
       // silently leaving the manager with already terminated executors
       parallelExec.shutdownNow();
       workflowExecutor = null;
+      scheduledExecutorService = null;
       started = false;
     }
   }

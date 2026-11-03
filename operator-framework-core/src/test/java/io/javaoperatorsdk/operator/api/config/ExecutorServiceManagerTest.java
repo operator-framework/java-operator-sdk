@@ -28,6 +28,26 @@ class ExecutorServiceManagerTest {
   private static final Duration SHUTDOWN_TIMEOUT = Duration.ofMillis(100);
 
   @Test
+  @SuppressWarnings("deprecation")
+  void stopShutsDownTheScheduledExecutorServiceAndItIsReplacedAfterARestart() {
+    ConfigurationService configurationService = new BaseConfigurationService();
+    var manager = configurationService.getExecutorServiceManager();
+    var scheduled = manager.scheduledExecutorService();
+
+    assertThat(scheduled.isShutdown()).isFalse();
+    manager.stop(SHUTDOWN_TIMEOUT);
+    assertThat(scheduled.isShutdown()).isTrue();
+
+    manager.start(configurationService);
+    try {
+      assertThat(manager.scheduledExecutorService()).isNotSameAs(scheduled);
+      assertThat(manager.scheduledExecutorService().isShutdown()).isFalse();
+    } finally {
+      manager.stop(SHUTDOWN_TIMEOUT);
+    }
+  }
+
+  @Test
   void stopShutsDownTheRetryAndRescheduleExecutorService() {
     ConfigurationService configurationService = new BaseConfigurationService();
     var manager = configurationService.getExecutorServiceManager();

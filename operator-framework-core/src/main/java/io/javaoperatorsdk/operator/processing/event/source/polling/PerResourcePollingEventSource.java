@@ -134,10 +134,14 @@ public class PerResourcePollingEventSource<R, P extends HasMetadata, ID>
 
   private Set<R> getAndCacheResource(P primary, boolean fromGetter) {
     var values = resourceFetcher.fetchResources(primary);
+    cacheResources(primary, values, fromGetter);
+    return values;
+  }
+
+  private void cacheResources(P primary, Set<R> values, boolean fromGetter) {
     var primaryID = ResourceID.fromResource(primary);
     handleResources(primaryID, values, !fromGetter);
     fetchedForPrimaries.add(primaryID);
-    return values;
   }
 
   @SuppressWarnings("unchecked")
@@ -238,8 +242,16 @@ public class PerResourcePollingEventSource<R, P extends HasMetadata, ID>
         log.warn("No resource in cache for resource ID: {}", primaryID);
         // no new execution is scheduled in this case, an on delete event should be received shortly
       } else {
-        var actualResources = primary.map(p -> getAndCacheResource(p, false));
-        scheduleNextExecution(primary.get(), actualResources.orElse(null), generation);
+        var values = resourceFetcher.fetchResources(primary.get());
+        // a fetch ignoring the interruption of a stop can return after a restart, its result is
+        // not to overwrite what the polls of the new run cached in the meantime
+        synchronized (PerResourcePollingEventSource.this) {
+          if (generation != lifecycleGeneration) {
+            return;
+          }
+          cacheResources(primary.get(), values, false);
+          scheduleNextExecution(primary.get(), values, generation);
+        }
       }
     }
   }
