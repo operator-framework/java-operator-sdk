@@ -226,14 +226,16 @@ actually observed primary resources.
 
 Each polling event source polls on a scheduled executor of its own, so a slow poll of one event
 source never delays the polls of the others. Unless you provide one, the event source creates a
-single daemon thread executor when it is started and shuts it down when it is stopped. A poll only
-starts once the previous one is done, so a source that fetches slowly, or one with many registered
-resources in the case of `PerResourcePollingEventSource`, can be given an executor with more threads
-using the `withExecutorService` method of its configuration builder:
+single daemon thread executor when it is started and shuts it down when it is stopped. With a single
+thread the polls of a source run one after the other. A `PollingEventSource` runs a single periodic
+task, so more threads would not help it. A `PerResourcePollingEventSource` however polls each
+registered resource on its own, so if it has many registered resources or fetches slowly, it can be
+given an executor with more threads using the `withExecutorService` method of its configuration
+builder:
 
 ```java
 var config =
-    new PollingConfigurationBuilder<>(this::fetchResources, Duration.ofSeconds(5))
+    new PerResourcePollingConfigurationBuilder<>(this::fetchResources, Duration.ofSeconds(5))
         .withExecutorService(Executors.newScheduledThreadPool(4))
         .build();
 ```
