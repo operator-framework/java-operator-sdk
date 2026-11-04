@@ -62,7 +62,11 @@ Things to keep in mind:
   operator and nothing else keeps the JVM alive, call `Operator.keepAlive()`, see
   [Keeping the JVM Alive](#keeping-the-jvm-alive).
 - A custom `ExecutorService` provided through `withExecutorService(...)` or
-  `withWorkflowExecutorService(...)` is always used as is, the flag has no effect on it.
+  `withWorkflowExecutorService(...)` is always used as is, the flag has no effect on it. The same
+  goes for `withRetryAndRescheduleExecutorService(...)`. Note however that overriding the flag, or
+  `withConcurrentRetryAndRescheduleThreads(int)`, of a configuration that provides its own retry and
+  reschedule executor replaces that executor with the default one, so provide it again with
+  `withRetryAndRescheduleExecutorService(...)` in that case.
 - The Kubernetes client the framework creates when none is provided also switches its internal
   task executor (used to dispatch informer events to their handlers and to deliver watch events)
   to virtual threads. A client you provide through `withKubernetesClient(...)` is used as is: to

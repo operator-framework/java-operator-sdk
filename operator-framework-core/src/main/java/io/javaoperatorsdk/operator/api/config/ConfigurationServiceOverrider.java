@@ -94,6 +94,11 @@ public class ConfigurationServiceOverrider {
    * Sets the number of threads used to trigger the operator's retried and rescheduled
    * reconciliations, which are shared by all its controllers.
    *
+   * <p>Note that changing the number of threads makes the overridden configuration build the
+   * default retry and reschedule executor itself, so a custom one provided by the configuration
+   * being overridden is not used anymore. Use {@link #withRetryAndRescheduleExecutorService} to
+   * provide one.
+   *
    * @param threadNumber the maximum number of concurrent retry and reschedule threads
    * @return this {@link ConfigurationServiceOverrider} for chained customization
    * @see ConfigurationService#concurrentRetryAndRescheduleThreads()
@@ -157,6 +162,11 @@ public class ConfigurationServiceOverrider {
    * Makes the framework run the tasks it executes concurrently on virtual threads instead of
    * platform threads. Only supported on Java 25 or later, see {@link
    * ConfigurationService#useVirtualThreads()} for the details.
+   *
+   * <p>Note that if this changes the value of the configuration being overridden, the overridden
+   * configuration builds the default retry and reschedule executor itself, so a custom one provided
+   * by the configuration being overridden is replaced and not used as is. Use {@link
+   * #withRetryAndRescheduleExecutorService} to provide one along with this setting.
    *
    * @param useVirtualThreads {@code true} to use virtual threads
    * @return this {@link ConfigurationServiceOverrider} for chained customization
