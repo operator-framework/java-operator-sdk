@@ -22,6 +22,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
 import org.awaitility.Awaitility;
@@ -158,6 +159,48 @@ class TimerEventSourceTest
 
       untilAsserted(PERIOD * 4, 0, () -> assertThat(eventHandler.events).hasSize(1));
     } finally {
+      second.shutdownNow();
+    }
+  }
+
+  @Test
+  public void timersWhoseHandlerIsStillRunningAreNotScheduledAgainOnTheNewExecutor()
+      throws Exception {
+    var first = Executors.newScheduledThreadPool(1);
+    var second = Executors.newScheduledThreadPool(1);
+    var current = new AtomicReference<ScheduledExecutorService>(first);
+    var handling = new CountDownLatch(1);
+    var release = new CountDownLatch(1);
+    var handled = new AtomicInteger();
+    var timerSource = new TimerEventSource<TestCustomResource>("timer", false, current::get);
+    setUpSource(
+        timerSource,
+        new CapturingEventHandler() {
+          @Override
+          public void handleEvent(Event event) {
+            if (handled.incrementAndGet() > 1) {
+              return;
+            }
+            handling.countDown();
+            try {
+              release.await();
+            } catch (InterruptedException e) {
+              Thread.currentThread().interrupt();
+            }
+          }
+        });
+    try {
+      source.scheduleOnce(ResourceID.fromResource(TestUtils.testCustomResource()), PERIOD);
+      assertThat(handling.await(5, TimeUnit.SECONDS)).isTrue();
+      first.shutdown();
+      current.set(second);
+
+      source.start();
+
+      untilAsserted(PERIOD * 4, 0, () -> assertThat(handled).hasValue(1));
+    } finally {
+      release.countDown();
+      first.shutdownNow();
       second.shutdownNow();
     }
   }

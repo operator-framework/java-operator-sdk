@@ -166,12 +166,14 @@ public class TimerEventSource<R extends HasMetadata> extends AbstractEventSource
   /**
    * The timers that were pending on the replaced executor are gone with it, so they are scheduled
    * again on the new one for what remained of their delay. The ones that already fired are left
-   * alone, and the ones explicitly cancelled are not in the map anymore.
+   * alone, including the ones whose handler is still running, since scheduling those again would
+   * produce the event twice. The ones explicitly cancelled are not in the map anymore.
    */
   private void rearmPendingTimers() {
     onceTasks.forEach(
         (resourceID, future) -> {
-          if (future.isCancelled() || !future.isDone()) {
+          if (future.isCancelled()
+              || (!future.isDone() && future.getDelay(TimeUnit.MILLISECONDS) > 0)) {
             scheduleOnce(resourceID, Math.max(0, future.getDelay(TimeUnit.MILLISECONDS)));
           }
         });
