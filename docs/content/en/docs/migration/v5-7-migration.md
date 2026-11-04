@@ -42,7 +42,7 @@ Other notable Jackson 3 differences:
 client.pods().withShardSelector((String) null);
 ```
 
-## Default HTTP client is now Vert.x
+## Default HTTP client is now Vert.x 5
 
 The `operator-framework` artifact now brings the Vert.x 5 based HTTP client of the Fabric8 client
 (`kubernetes-httpclient-vertx-5`), which is also the default of the Fabric8 client itself, instead of
@@ -71,3 +71,10 @@ dependency and add the one you want:
 
 The implementations provided as part of the Fabric8 client all follow the
 `kubernetes-httpclient-<implementation name>` pattern for their artifact identifier.
+
+If your operator already replaced the default HTTP client, update the exclusion: excluding
+`kubernetes-httpclient-jdk` no longer has any effect and `kubernetes-httpclient-vertx-5` would end up
+on the classpath next to your implementation. This is especially important if you use the Vert.x 4
+based client (`kubernetes-httpclient-vertx`), since Vert.x 4 and Vert.x 5 cannot be used together.
+If you want to keep the Vert.x 4 based client, use it in place of `kubernetes-httpclient-jdk` in the
+snippet above.
