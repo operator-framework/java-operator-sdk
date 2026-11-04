@@ -301,6 +301,11 @@ final class VirtualThreadScheduledExecutor extends AbstractExecutorService
       if (other == this) {
         return 0;
       }
+      if (other instanceof Handle<?> otherHandle) {
+        // the deadlines are compared as they are, sampling the remaining delay of each handle
+        // separately would make a.compareTo(b) and b.compareTo(a) disagree for close deadlines
+        return Long.compare(triggerTime - otherHandle.triggerTime, 0);
+      }
       return Long.compare(getDelay(TimeUnit.NANOSECONDS), other.getDelay(TimeUnit.NANOSECONDS));
     }
   }

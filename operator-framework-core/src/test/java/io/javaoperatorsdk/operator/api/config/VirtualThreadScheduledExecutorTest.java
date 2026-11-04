@@ -19,6 +19,7 @@ import java.time.Duration;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.Delayed;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ScheduledExecutorService;
@@ -145,6 +146,23 @@ class VirtualThreadScheduledExecutorTest {
     await()
         .atMost(Duration.ofSeconds(10))
         .untilAsserted(() -> assertThat(runs).hasValueGreaterThan(3));
+  }
+
+  @Test
+  void scheduledFuturesAreOrderedConsistentlyByTheirDeadline() {
+    var first = (Delayed) executor.schedule(() -> {}, 10, TimeUnit.SECONDS);
+    var second = (Delayed) executor.schedule(() -> {}, 10, TimeUnit.SECONDS);
+    var later = (Delayed) executor.schedule(() -> {}, 20, TimeUnit.SECONDS);
+
+    assertThat(first.compareTo(first)).isZero();
+    assertThat(first.compareTo(later)).isNegative();
+    assertThat(later.compareTo(first)).isPositive();
+    assertThat(first.compareTo(second)).isLessThanOrEqualTo(0);
+    // comparing the futures must not depend on when it happens, i.e. on the remaining delays
+    for (int i = 0; i < 10_000; i++) {
+      assertThat(Integer.signum(first.compareTo(second)))
+          .isEqualTo(-Integer.signum(second.compareTo(first)));
+    }
   }
 
   @Test
