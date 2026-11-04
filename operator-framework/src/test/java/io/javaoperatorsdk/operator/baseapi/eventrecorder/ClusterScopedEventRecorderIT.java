@@ -43,7 +43,8 @@ class ClusterScopedEventRecorderIT {
   @Test
   void recordsAndCountsEventsAboutAClusterScopedResourceInTheDefaultNamespace() {
     var resource = extension.create(testResource());
-    await().untilAsserted(() -> assertThat(eventsForTestResource()).hasSize(1));
+    var uid = resource.getMetadata().getUid();
+    await().untilAsserted(() -> assertThat(eventsAbout(uid)).hasSize(1));
 
     resource.getMetadata().setAnnotations(Map.of("reconcile", "again"));
     extension.replace(resource);
@@ -51,7 +52,7 @@ class ClusterScopedEventRecorderIT {
     await()
         .untilAsserted(
             () -> {
-              var events = eventsForTestResource();
+              var events = eventsAbout(uid);
               assertThat(events).hasSize(1);
               assertThat(events.get(0).getReason())
                   .isEqualTo(ClusterScopedEventRecorderReconciler.REASON);
@@ -60,13 +61,13 @@ class ClusterScopedEventRecorderIT {
             });
   }
 
-  private List<Event> eventsForTestResource() {
+  private List<Event> eventsAbout(String uid) {
     return extension
         .getKubernetesClient()
         .v1()
         .events()
         .inNamespace("default")
-        .withField("involvedObject.name", TEST_RESOURCE_NAME)
+        .withField("involvedObject.uid", uid)
         .list()
         .getItems();
   }

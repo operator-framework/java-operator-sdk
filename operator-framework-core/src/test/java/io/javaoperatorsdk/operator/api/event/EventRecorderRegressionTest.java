@@ -25,8 +25,10 @@ import org.junit.jupiter.api.Test;
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.ConfigMapBuilder;
 import io.fabric8.kubernetes.api.model.Event;
+import io.fabric8.kubernetes.api.model.EventBuilder;
 import io.fabric8.kubernetes.api.model.EventList;
 import io.fabric8.kubernetes.api.model.HasMetadata;
+import io.fabric8.kubernetes.api.model.MicroTime;
 import io.fabric8.kubernetes.api.model.NamespaceBuilder;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
@@ -169,6 +171,33 @@ class EventRecorderRegressionTest {
     recorder.record(EventRecord.warning("Degraded", "replica down"), context);
 
     assertThat(patched.get().getAction()).isNull();
+  }
+
+  @Test
+  void aggregatingOntoAnEventWithAnEventTimeWithoutAnActionFallsBackToTheReason() {
+    var stored = new AtomicReference<Event>();
+    var patched = new AtomicReference<Event>();
+    stored.set(
+        new EventBuilder()
+            .withNewMetadata()
+            .withName("fixed-name")
+            .withNamespace("default")
+            .endMetadata()
+            .withEventTime(new MicroTime("2026-01-01T00:00:00.000000Z"))
+            .withAction("Create")
+            .withCount(1)
+            .build());
+    var sink = new DefaultEventSink(mockClient(stored, patched));
+    var recorder =
+        DefaultEventRecorder.builder(sink)
+            .namingStrategy((regarding, record) -> Optional.of("fixed-name"))
+            .build();
+
+    recorder.record(
+        EventRecord.warning("Degraded", "replica down"), context(configMap("test1"), "default"));
+
+    assertThat(patched.get().getEventTime()).isNotNull();
+    assertThat(patched.get().getAction()).isEqualTo("Degraded");
   }
 
   @Test
