@@ -133,7 +133,7 @@ class VirtualThreadsTest {
 
   @Test
   @EnabledForJreRange(min = JRE.JAVA_25)
-  void invokeAllIsBoundedTooSinceItIsUsedToStartTheEventSources() {
+  void executeAndWaitForAllToCompleteRespectsTheBoundOfTheExecutor() {
     var executor = ExecutorServiceManager.newBoundedExecutorService(MAX_CONCURRENCY, true);
     try {
       final var running = new AtomicInteger();

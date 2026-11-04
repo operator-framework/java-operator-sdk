@@ -36,12 +36,13 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 /**
- * With virtual threads enabled on Java 21 to 24 (no JEP 491, hence only run on Java 25 or later,
- * the official baseline for virtual thread support), starting as many controllers as there are
- * virtual thread carriers deadlocks, because each controller is started on a virtual thread of the
- * caching executor that blocks, while holding the monitors of the synchronized Controller.start /
+ * Starting as many controllers as there are virtual thread carriers must not deadlock. On Java 21
+ * to 24 (no JEP 491) it does: each controller is started on a virtual thread of the caching
+ * executor that blocks, while holding the monitors of the synchronized Controller.start /
  * EventSourceManager.start / ControllerEventSource.start, on informer-start tasks submitted to the
- * very same virtual thread executor.
+ * very same virtual thread executor, and the carriers are pinned by those monitors. This is why the
+ * virtual thread variant only runs on Java 25 or later, the official baseline for virtual thread
+ * support, where the monitors don't pin the carriers anymore.
  */
 class VirtualThreadsStartupDeadlockTest {
 
@@ -67,12 +68,7 @@ class VirtualThreadsStartupDeadlockTest {
     final var executorServiceManager = configService.getExecutorServiceManager();
     final var controllerManager = new ControllerManager(executorServiceManager);
 
-    // default virtual thread scheduler parallelism == number of available processors, e.g. 1 or 2
-    // in a typical resource-limited operator pod
-    final int controllers =
-        System.getenv("AUDIT_N") != null
-            ? Integer.parseInt(System.getenv("AUDIT_N"))
-            : Runtime.getRuntime().availableProcessors();
+    final int controllers = Runtime.getRuntime().availableProcessors();
     for (int i = 0; i < controllers; i++) {
       final var configuration = MockControllerConfiguration.forResource(ConfigMap.class);
       when(configuration.getConfigurationService()).thenReturn(configService);
