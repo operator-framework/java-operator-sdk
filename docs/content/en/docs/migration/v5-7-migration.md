@@ -65,6 +65,7 @@ dependency and add the one you want:
 <dependency>
   <groupId>io.fabric8</groupId>
   <artifactId>kubernetes-httpclient-jdk</artifactId>
+  <version>8.0.0</version>
 </dependency>
 ```
 
