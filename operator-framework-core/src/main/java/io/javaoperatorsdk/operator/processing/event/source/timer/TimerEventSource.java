@@ -49,15 +49,11 @@ public class TimerEventSource<R extends HasMetadata> extends AbstractEventSource
   private volatile ScheduledExecutorService executorService;
 
   public TimerEventSource() {
-    this((Supplier<ScheduledExecutorService>) null);
+    super(Void.class);
+    this.executorServiceSupplier = null;
+    this.ownsExecutorService = true;
   }
 
-  /**
-   * @deprecated use {@link #TimerEventSource(String, boolean, Supplier)} instead, with a {@code
-   *     null} supplier to keep the behavior of this constructor, which is to have the event source
-   *     create, and shut down, an executor of its own
-   */
-  @Deprecated(since = "5.7.0")
   public TimerEventSource(String name, boolean triggerReconcilerOnAllEvents) {
     this(name, triggerReconcilerOnAllEvents, null);
   }
@@ -67,18 +63,10 @@ public class TimerEventSource<R extends HasMetadata> extends AbstractEventSource
    * supplier is called on every start, and not once at creation time, since the operator shuts its
    * executors down when it is stopped and creates new ones if it is started again.
    *
+   * @param name the name of the event source
+   * @param triggerReconcilerOnAllEvents whether the reconciler is triggered on all events
    * @param executorServiceSupplier supplies the executor to schedule on, {@code null} to have the
    *     event source create, and shut down, an executor of its own
-   * @since 5.7.0
-   */
-  public TimerEventSource(Supplier<ScheduledExecutorService> executorServiceSupplier) {
-    super(Void.class);
-    this.executorServiceSupplier = executorServiceSupplier;
-    this.ownsExecutorService = executorServiceSupplier == null;
-  }
-
-  /**
-   * @see #TimerEventSource(Supplier)
    * @since 5.7.0
    */
   public TimerEventSource(
@@ -155,34 +143,14 @@ public class TimerEventSource<R extends HasMetadata> extends AbstractEventSource
   @Override
   public void start() {
     // the operator replaces its executors when it is started again, which can happen while this
-    // event source keeps running, when a previous start failed after it started
+    // event source keeps running, when a previous start failed after it started. The timers
+    // pending on the replaced executor are not scheduled again.
     if (!isRunning() || !ownsExecutorService) {
-      final var resolved = resolveExecutorService();
-      final var replaced = isRunning() && resolved != executorService;
-      executorService = resolved;
-      if (replaced) {
-        rearmPendingTimers();
-      }
+      executorService = resolveExecutorService();
     }
     if (!isRunning()) {
       super.start();
     }
-  }
-
-  /**
-   * The timers that were pending on the replaced executor are gone with it, so they are scheduled
-   * again on the new one for what remained of their delay. The ones that already fired are left
-   * alone, including the ones whose handler is still running, since scheduling those again would
-   * produce the event twice. The ones explicitly cancelled are not in the map anymore.
-   */
-  private void rearmPendingTimers() {
-    onceTasks.forEach(
-        (resourceID, future) -> {
-          if (future.isCancelled()
-              || (!future.isDone() && future.getDelay(TimeUnit.MILLISECONDS) > 0)) {
-            scheduleOnce(resourceID, Math.max(0, future.getDelay(TimeUnit.MILLISECONDS)));
-          }
-        });
   }
 
   private ScheduledExecutorService resolveExecutorService() {

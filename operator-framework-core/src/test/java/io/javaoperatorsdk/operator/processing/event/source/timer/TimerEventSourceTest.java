@@ -122,27 +122,6 @@ class TimerEventSourceTest
   }
 
   @Test
-  public void timersPendingOnTheReplacedExecutorAreScheduledAgainOnTheNewOne() {
-    var first = Executors.newScheduledThreadPool(1);
-    var second = Executors.newScheduledThreadPool(1);
-    var current = new AtomicReference<ScheduledExecutorService>(first);
-    var timerSource = new TimerEventSource<TestCustomResource>("timer", false, current::get);
-    setUpSource(timerSource, new CapturingEventHandler());
-    try {
-      var resourceID = ResourceID.fromResource(TestUtils.testCustomResource());
-      source.scheduleOnce(resourceID, 2 * PERIOD);
-      first.shutdownNow();
-      current.set(second);
-
-      source.start();
-
-      untilAsserted(() -> assertThat(eventHandler.events).hasSize(1));
-    } finally {
-      second.shutdownNow();
-    }
-  }
-
-  @Test
   public void timersThatAlreadyFiredAreNotScheduledAgainOnTheNewExecutor() {
     var first = Executors.newScheduledThreadPool(1);
     var second = Executors.newScheduledThreadPool(1);
@@ -269,7 +248,8 @@ class TimerEventSourceTest
         Executors.newSingleThreadScheduledExecutor(
             ExecutorUtilsInternal.daemonThreadFactory("provided-timer-executor"));
     var handler = new CapturingEventHandler();
-    var eventSource = new TimerEventSource<TestCustomResource>(() -> providedExecutor);
+    var eventSource =
+        new TimerEventSource<TestCustomResource>("timer", false, () -> providedExecutor);
     eventSource.setEventHandler(handler);
 
     try {
