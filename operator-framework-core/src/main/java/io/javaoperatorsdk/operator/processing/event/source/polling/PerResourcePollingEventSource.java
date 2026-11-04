@@ -135,6 +135,14 @@ public class PerResourcePollingEventSource<R, P extends HasMetadata, ID>
     fetchedForPrimaries.add(primaryID);
   }
 
+  // the polling of a resource that is gone ends with its last task, which would otherwise stay
+  // registered and keep the resource from being polled again if it is recreated
+  private synchronized void forgetTask(ResourceID primaryID, long generation) {
+    if (generation == lifecycleGeneration) {
+      scheduledFutures.remove(primaryID);
+    }
+  }
+
   // a fetch ignoring the interruption of a stop can return after a restart, its result is not to
   // overwrite what the polls of the new run cached in the meantime
   private synchronized void cacheAndScheduleNextExecution(
@@ -176,7 +184,7 @@ public class PerResourcePollingEventSource<R, P extends HasMetadata, ID>
   }
 
   @Override
-  public void onResourceDeleted(P resource) {
+  public synchronized void onResourceDeleted(P resource) {
     var resourceID = ResourceID.fromResource(resource);
     var scheduledFuture = scheduledFutures.remove(resourceID);
     if (scheduledFuture != null) {
@@ -227,6 +235,7 @@ public class PerResourcePollingEventSource<R, P extends HasMetadata, ID>
       if (primary.isEmpty()) {
         log.warn("No resource in cache for resource ID: {}", primaryID);
         // no new execution is scheduled in this case, an on delete event should be received shortly
+        forgetTask(primaryID, generation);
       } else {
         var values = resourceFetcher.fetchResources(primary.get());
         cacheAndScheduleNextExecution(primary.get(), values, generation);

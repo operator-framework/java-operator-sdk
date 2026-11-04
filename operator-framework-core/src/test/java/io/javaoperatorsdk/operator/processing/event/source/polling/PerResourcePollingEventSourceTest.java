@@ -574,6 +574,20 @@ class PerResourcePollingEventSourceTest
   }
 
   @Test
+  void aResourceGoneFromTheCacheWhenItsPollRunsIsPolledAgainWhenRecreated() {
+    when(resourceCache.get(any())).thenReturn(Optional.empty());
+    source.onResourceCreated(testCustomResource);
+    await()
+        .pollDelay(Duration.ofMillis(2 * PERIOD))
+        .untilAsserted(() -> verify(supplier, never()).fetchResources(any()));
+
+    when(resourceCache.get(any())).thenReturn(Optional.of(testCustomResource));
+    source.onResourceCreated(testCustomResource);
+
+    await().untilAsserted(() -> verify(supplier, atLeast(1)).fetchResources(any()));
+  }
+
+  @Test
   void deleteEventCancelsTheScheduling() {
     when(supplier.fetchResources(any())).thenReturn(Set.of(SampleExternalResource.testResource1()));
 
