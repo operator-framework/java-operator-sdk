@@ -88,7 +88,7 @@ class ManagedInformerEventSourceStartFailureTest {
             .resources(Deployment.class)
             .inNamespace("ns1")
             .withLabelSelector((String) null)
-            .withShardSelector(null)
+            .withShardSelector((String) null)
             .runnableInformer(0);
     when(informer.getStore()).thenReturn(mock(Cache.class));
   }

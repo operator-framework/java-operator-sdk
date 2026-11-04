@@ -32,7 +32,7 @@ import io.javaoperatorsdk.annotation.Sample;
 import io.javaoperatorsdk.operator.api.config.InformerStoppedHandler;
 import io.javaoperatorsdk.operator.junit.LocallyRunOperatorExtension;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
+import tools.jackson.core.JacksonException;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
@@ -104,7 +104,7 @@ class MultiVersionCRDIT {
                                 .get(0)
                                 .get("apiVersion")
                                 .asText());
-                  } catch (JsonProcessingException e) {
+                  } catch (JacksonException e) {
                     throw new RuntimeException(e);
                   }
                 });

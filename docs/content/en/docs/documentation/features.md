@@ -27,21 +27,35 @@ public class DeploymentReconciler
 
 **Note:** This feature is provided by the [Fabric8 Kubernetes Client](https://github.com/fabric8io/kubernetes-client), not JOSDK itself.
 
-To automatically generate CRD manifests from your annotated Custom Resource classes, add this dependency to your project:
+To automatically generate CRD manifests from your annotated Custom Resource classes, configure the
+Fabric8 CRD generator Maven plugin. Use the same Fabric8 version as the SDK:
 
 ```xml
-
-<dependency>
+<plugin>
     <groupId>io.fabric8</groupId>
-    <artifactId>crd-generator-apt</artifactId>
-    <scope>provided</scope>
-</dependency>
+    <artifactId>crd-generator-maven-plugin</artifactId>
+    <version>${fabric8-client.version}</version>
+    <executions>
+        <execution>
+            <goals>
+                <goal>generate</goal>
+            </goals>
+        </execution>
+    </executions>
+</plugin>
 ```
 
-The CRD will be generated in `target/classes/META-INF/fabric8` (or `target/test-classes/META-INF/fabric8` for test scope) with the CRD name suffixed by the generated spec version. 
+Add the plugin under `build/plugins` and set `fabric8-client.version` to `8.0.0`.
+The old `crd-generator-apt` annotation processor was removed in Fabric8 8.
 
-For example, a CR using the `java-operator-sdk.io` group with a `mycrs` plural form will result in these files:
+The CRD will be generated in `target/classes/META-INF/fabric8` with the filename suffixed by the
+generated spec version. For test resources, configure `classesToScan` to
+`${project.build.testOutputDirectory}` and `classpath` to `WITH_ALL_DEPENDENCIES_AND_TESTS`, and
+bind the plugin execution to `process-test-classes`.
+
+For example, a CR using the `java-operator-sdk.io` group with a `mycrs` plural form will result in:
 - `mycrs.java-operator-sdk.io-v1.yml`
-- `mycrs.java-operator-sdk.io-v1beta1.yml`
+
+Only `apiextensions.k8s.io/v1` CRDs are generated.
 
 **Note for Quarkus users:** If you're using the `quarkus-operator-sdk` extension, you don't need to add any extra dependency for CRD generation - the extension handles this automatically.

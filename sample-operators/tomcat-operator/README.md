@@ -48,8 +48,8 @@ Before you run it you have to install the CRDs on your cluster by running:
 - `kubectl apply -f target/classes/META-INF/fabric8/tomcats.tomcatoperator.io-v1.yml`
 - `kubectl apply -f target/classes/META-INF/fabric8/webapps.tomcatoperator.io-v1.yml`
 
-The CRDs are generated automatically from your code by simply adding the `crd-generator-apt`
-dependency to your `pom.xml` file.
+The CRDs are generated automatically from your code by the `crd-generator-maven-plugin`
+configured in `pom.xml`.
 
 When the Operator is running you can create some Tomcat Custom Resources. You can find a sample
 custom resources in the k8s folder.
@@ -81,4 +81,3 @@ Deployment so the InformerEventSource can watch the right Deployments. The Tomca
 to set `ownerReference` on the Deployment so later the InformerEventSource can identify which Tomcat
 does the Deployment belong to. This is necessary so the framework can call the Controller
 `reconcile` method correctly.
-

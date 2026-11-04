@@ -70,7 +70,7 @@ class ManagedInformerEventSourcePoolIdentityTest {
             .resources(Deployment.class)
             .inNamespace(NAMESPACE)
             .withLabelSelector((String) null)
-            .withShardSelector(null)
+            .withShardSelector((String) null)
             .runnableInformer(0);
     when(informer.getStore()).thenReturn(mock(Cache.class));
   }

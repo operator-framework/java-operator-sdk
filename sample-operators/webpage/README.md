@@ -41,8 +41,8 @@ Kubernetes cluster. When you start it, it will use the current kubectl context o
 Before you run it you have to install the CRD on your cluster by running
 `kubectl apply -f target/classes/META-INF/fabric8/webpages.sample.javaoperatorsdk-v1.yml`.
 
-The CRD is generated automatically from your code by simply adding the `crd-generator-apt`
-dependency to your `pom.xml` file.
+The CRD is generated automatically from your code by the `crd-generator-maven-plugin`
+configured in `pom.xml`.
 
 When the Operator is running you can create some Webserver Custom Resources. You can find a sample custom resource in
 `k8s/webpage.yaml`. You can create it by running `kubectl apply -f k8s/webpage.yaml`

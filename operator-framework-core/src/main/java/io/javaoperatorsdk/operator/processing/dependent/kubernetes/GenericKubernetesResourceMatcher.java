@@ -25,7 +25,7 @@ import io.fabric8.zjsonpatch.JsonDiff;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.processing.dependent.Matcher;
 
-import com.fasterxml.jackson.databind.JsonNode;
+import tools.jackson.databind.JsonNode;
 
 public class GenericKubernetesResourceMatcher<R extends HasMetadata, P extends HasMetadata> {
 

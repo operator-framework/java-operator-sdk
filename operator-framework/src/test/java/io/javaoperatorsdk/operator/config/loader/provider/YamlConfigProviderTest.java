@@ -26,6 +26,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
+import tools.jackson.core.JacksonException;
+
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 import static org.assertj.core.api.Assertions.assertThatIllegalArgumentException;
@@ -173,7 +175,55 @@ class YamlConfigProviderTest {
         - item2
         """);
     assertThatExceptionOfType(UncheckedIOException.class)
-        .isThrownBy(() -> new YamlConfigProvider(file));
+        .isThrownBy(() -> new YamlConfigProvider(file))
+        .withMessageContaining(file.toString())
+        .withCauseInstanceOf(IOException.class)
+        .havingCause()
+        .withCauseInstanceOf(JacksonException.class);
+  }
+
+  @Test
+  void throwsForInvalidYamlSyntax(@TempDir Path dir) throws IOException {
+    var file = dir.resolve("invalid.yaml");
+    Files.writeString(file, "key: [unterminated");
+
+    assertThatExceptionOfType(UncheckedIOException.class)
+        .isThrownBy(() -> new YamlConfigProvider(file))
+        .withMessageContaining(file.toString())
+        .withCauseInstanceOf(IOException.class)
+        .havingCause()
+        .withCauseInstanceOf(JacksonException.class);
+  }
+
+  @Test
+  void nullDocumentReturnsEmpty(@TempDir Path dir) throws IOException {
+    var file = dir.resolve("null.yaml");
+    Files.writeString(file, "null");
+
+    var provider = new YamlConfigProvider(file);
+    assertThat(provider.getValue("any.key", String.class)).isEmpty();
+  }
+
+  @Test
+  void loadsTypedValuesFromFile(@TempDir Path dir) throws IOException {
+    var file = dir.resolve("typed.yaml");
+    Files.writeString(
+        file,
+        """
+        josdk:
+          enabled: true
+          limit: 2147483648
+          ratio: 3.14
+          timeout: PT30S
+          unset: null
+        """);
+
+    var provider = new YamlConfigProvider(file);
+    assertThat(provider.getValue("josdk.enabled", Boolean.class)).hasValue(true);
+    assertThat(provider.getValue("josdk.limit", Long.class)).hasValue(2147483648L);
+    assertThat(provider.getValue("josdk.ratio", Double.class)).hasValue(3.14);
+    assertThat(provider.getValue("josdk.timeout", Duration.class)).hasValue(Duration.ofSeconds(30));
+    assertThat(provider.getValue("josdk.unset", String.class)).isEmpty();
   }
 
   @Test
