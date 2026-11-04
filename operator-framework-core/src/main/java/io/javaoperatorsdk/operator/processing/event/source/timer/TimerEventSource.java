@@ -52,6 +52,12 @@ public class TimerEventSource<R extends HasMetadata> extends AbstractEventSource
     this((Supplier<ScheduledExecutorService>) null);
   }
 
+  /**
+   * @deprecated use {@link #TimerEventSource(String, boolean, Supplier)} instead, with a {@code
+   *     null} supplier to keep the behavior of this constructor, which is to have the event source
+   *     create, and shut down, an executor of its own
+   */
+  @Deprecated(since = "5.7.0")
   public TimerEventSource(String name, boolean triggerReconcilerOnAllEvents) {
     this(name, triggerReconcilerOnAllEvents, null);
   }
