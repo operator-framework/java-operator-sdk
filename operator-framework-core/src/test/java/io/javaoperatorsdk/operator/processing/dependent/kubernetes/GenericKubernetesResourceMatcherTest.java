@@ -78,6 +78,47 @@ class GenericKubernetesResourceMatcherTest {
   }
 
   @Test
+  void matchesAdditiveChangesWithValueEqualToAnExistingValue() {
+    var desired =
+        new ServiceBuilder()
+            .withNewMetadata()
+            .withName("test")
+            .endMetadata()
+            .withNewSpec()
+            .addNewPort()
+            .withPort(80)
+            .endPort()
+            .endSpec()
+            .build();
+    // the API server defaults targetPort to the value of port
+    var actual =
+        new ServiceBuilder(desired)
+            .editSpec()
+            .editFirstPort()
+            .withTargetPort(new IntOrString(80))
+            .endPort()
+            .endSpec()
+            .build();
+    assertThat(GenericKubernetesResourceMatcher.match(desired, actual, context).matched())
+        .withFailMessage(
+            "Additive changes should not cause a mismatch even if the added value equals an"
+                + " existing one")
+        .isTrue();
+  }
+
+  @Test
+  void doesNotMatchRemovedValueAddedBackUnderIgnoredPath() {
+    actual = createDeployment();
+    // revisionHistoryLimit is 10 in desired, the added priority has the same value
+    actual.getSpec().setRevisionHistoryLimit(null);
+    actual.getSpec().getTemplate().getSpec().setPriority(10);
+    assertThat(
+            match(dependentResource, actual, null, context, false, "/spec/template/spec").matched())
+        .withFailMessage("Removing values outside of ignored paths should lead to a mismatch")
+        .isFalse();
+  }
+
+  @Test
   void matchesWithStrongSpecEquality() {
     actual.getSpec().getTemplate().getMetadata().getLabels().put("new-key", "val");
     assertThat(match(desired, actual, true, true, context).matched())
