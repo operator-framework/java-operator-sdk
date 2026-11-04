@@ -24,6 +24,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Stream;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -99,7 +100,7 @@ class PerResourcePollingEventSourceTest
   }
 
   @Test
-  void resourcesSeenBeforeStartArePolledOnceStarted() {
+  void resourcesInThePrimaryCacheArePolledOnceStarted() {
     source.stop();
     setUpSource(
         new PerResourcePollingEventSource<>(
@@ -111,6 +112,7 @@ class PerResourcePollingEventSourceTest
                 .withResourceIDMapper(r -> r.getName() + "#" + r.getValue())
                 .build()),
         false);
+    when(resourceCache.list()).thenAnswer(i -> Stream.of(testCustomResource));
 
     source.onResourceCreated(testCustomResource);
     verify(supplier, never()).fetchResources(any());

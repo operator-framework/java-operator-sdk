@@ -65,8 +65,6 @@ public class PerResourcePollingEventSource<R, P extends HasMetadata, ID>
   private final Predicate<P> registerPredicate;
   private final Duration period;
 
-  private final Map<ResourceID, P> registrationsBeforeStart = new ConcurrentHashMap<>();
-
   private volatile ScheduledExecutorService executorService;
 
   // incremented on every stop, to tell the polls of previous runs apart, which can outlive the
@@ -108,16 +106,9 @@ public class PerResourcePollingEventSource<R, P extends HasMetadata, ID>
     }
     executorService = resolveExecutorService();
     super.start();
-    replayRegistrationsBeforeStart();
-  }
-
-  private void replayRegistrationsBeforeStart() {
-    for (var primaryID : registrationsBeforeStart.keySet()) {
-      var resource = registrationsBeforeStart.remove(primaryID);
-      if (resource != null) {
-        checkAndRegisterTask(resource);
-      }
-    }
+    // the primary informer is started before this event source, and the executor to poll on is
+    // only resolved when this one starts, so the resources seen in the meantime are registered now
+    primaryResourceCache.list().forEach(this::checkAndRegisterTask);
   }
 
   /**
@@ -187,7 +178,6 @@ public class PerResourcePollingEventSource<R, P extends HasMetadata, ID>
   @Override
   public void onResourceDeleted(P resource) {
     var resourceID = ResourceID.fromResource(resource);
-    registrationsBeforeStart.remove(resourceID);
     var scheduledFuture = scheduledFutures.remove(resourceID);
     if (scheduledFuture != null) {
       log.debug("Canceling scheduledFuture for resource: {}", resource);
@@ -200,28 +190,13 @@ public class PerResourcePollingEventSource<R, P extends HasMetadata, ID>
   // This method is always called from the same Thread for the same resource,
   // since events from ResourceEventAware are propagated from the thread of the informer. This is
   // important because otherwise there will be a race condition related to the timerTasks.
-  private void checkAndRegisterTask(P resource) {
-    var primaryID = ResourceID.fromResource(resource);
-    // the primary informer is started before this event source, and the executor to poll on is
-    // only resolved when this one starts, so resources seen in the meantime are registered then
-    if (!isRunning()) {
-      registrationsBeforeStart.put(primaryID, resource);
-      if (!isRunning()) {
-        return;
-      }
-      replayRegistrationsBeforeStart();
-      return;
-    }
-    registerTask(primaryID, resource);
-  }
-
-  private synchronized void registerTask(ResourceID primaryID, P resource) {
+  private synchronized void checkAndRegisterTask(P resource) {
     // stop() clears the running flag before it takes the monitor, so a registration that raced it
-    // has to be held back, otherwise a task scheduled after the stop would block a restart
+    // is dropped, otherwise a task scheduled after the stop would block a restart
     if (!isRunning()) {
-      registrationsBeforeStart.put(primaryID, resource);
       return;
     }
+    var primaryID = ResourceID.fromResource(resource);
     if (scheduledFutures.get(primaryID) == null
         && (registerPredicate == null || registerPredicate.test(resource))) {
       var cachedResources = cachedResourcesFor(primaryID);
@@ -312,7 +287,6 @@ public class PerResourcePollingEventSource<R, P extends HasMetadata, ID>
       scheduledFutures.values().forEach(future -> future.cancel(true));
       scheduledFutures.clear();
     }
-    registrationsBeforeStart.clear();
     if (ownsExecutorService && executorService != null) {
       executorService.shutdownNow();
     }
