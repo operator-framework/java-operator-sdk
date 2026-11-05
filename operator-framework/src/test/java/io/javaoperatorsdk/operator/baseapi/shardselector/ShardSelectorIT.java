@@ -19,6 +19,7 @@ import java.time.Duration;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 import io.fabric8.kubeapitest.junit.EnableKubeAPIServer;
@@ -42,6 +43,8 @@ import static org.awaitility.Awaitility.await;
         given custom resource is reconciled by exactly one instance, never by both and never by \
         neither. Sharding relies on the Kubernetes API server 'ShardedListAndWatch' alpha feature.
         """)
+// rewrites the shared kubeconfig while running, so no other test may build a client concurrently
+@Tag("SequentialIT")
 @EnableKubeAPIServer(
     kubeAPIVersion = "1.36.*",
     apiServerFlags = {"--feature-gates=ShardedListAndWatch=true"},

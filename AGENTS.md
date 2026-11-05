@@ -72,8 +72,11 @@ java-operator-sdk/
 # Run unit tests only
 ./mvnw test
 
-# Run integration tests
+# Run integration tests (test classes run in parallel in 3 forked JVMs)
 ./mvnw verify -Pintegration-tests
+
+# Run integration tests with a different parallelism (1 = sequential)
+./mvnw verify -Pintegration-tests -Dit.fork.count=1
 
 # Run specific test class
 ./mvnw test -Dtest=ClassName
@@ -125,6 +128,12 @@ java-operator-sdk/
 - Test against real Kubernetes API (typically via test cluster like minikube or kind)
 - Suffix with `IT` (e.g., `MyReconcilerIT`)
 - Located in `src/test/java`
+- Integration test classes run in parallel against the same cluster, so they must not depend on
+  cluster-wide state: use the namespace provided by the extension, unique names for cluster-scoped
+  resources, and do not rely on a CRD being absent or deleted after the test (CRDs are not deleted
+  in the `integration-tests` profile, since test classes share them). A test that cannot run next
+  to other tests (e.g. it modifies the kubeconfig) is annotated with `@Tag("SequentialIT")` and is
+  executed alone, after the parallel tests.
 
 ### Test Resources
 
