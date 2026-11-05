@@ -58,6 +58,7 @@ public class VirtualThreadsTestReconciler
     return UpdateControl.noUpdate();
   }
 
+  @Override
   public int getNumberOfExecutions() {
     return numberOfExecutions.get();
   }
