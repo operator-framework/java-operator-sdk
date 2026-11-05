@@ -389,9 +389,11 @@ public interface ConfigurationService {
    * <p>Defaults to the {@code default} namespace, following the Kubernetes convention, which is
    * also what the Go client does, so that events recorded by an operator end up alongside the ones
    * recorded by the built-in controllers. Operators whose RBAC does not allow creating events in
-   * the {@code default} namespace should override this, typically with the namespace the operator
-   * itself runs in. Note that recording an event is best effort, so a missing permission results in
-   * the event being dropped with a warning in the log rather than in an error.
+   * the {@code default} namespace can override this with {@code kube-system}. The API server
+   * rejects events about cluster scoped resources in any other namespace, such as the namespace the
+   * operator itself runs in. Note that recording an event is best effort, so a missing permission
+   * or a rejected namespace results in the event being dropped with a warning in the log rather
+   * than in an error.
    *
    * @return the namespace to record events about cluster scoped resources in
    */

@@ -21,6 +21,8 @@ import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.time.Instant;
+import java.time.ZoneOffset;
+import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
 import java.util.HexFormat;
 import java.util.Objects;
@@ -32,6 +34,7 @@ import org.slf4j.LoggerFactory;
 import io.fabric8.kubernetes.api.model.Event;
 import io.fabric8.kubernetes.api.model.EventBuilder;
 import io.fabric8.kubernetes.api.model.HasMetadata;
+import io.fabric8.kubernetes.api.model.MicroTime;
 import io.fabric8.kubernetes.api.model.ObjectReference;
 import io.fabric8.kubernetes.api.model.ObjectReferenceBuilder;
 import io.javaoperatorsdk.operator.api.config.LeaderElectionConfiguration;
@@ -47,7 +50,8 @@ import static java.util.Objects.requireNonNullElse;
  * <p>Events for cluster scoped objects have to live in some namespace: by default the {@value
  * #CLUSTER_SCOPED_EVENT_NAMESPACE} namespace is used, following the Kubernetes convention, but it
  * can be overridden, see {@link
- * io.javaoperatorsdk.operator.api.config.ConfigurationService#clusterScopedEventNamespace()}.
+ * io.javaoperatorsdk.operator.api.config.ConfigurationService#clusterScopedEventNamespace()}. The
+ * API server only accepts such events in the {@code default} and {@code kube-system} namespaces.
  *
  * <p>By default, events are named deterministically, after the object they are about plus a hash of
  * everything that identifies the event, so that recording the same event again resolves to the
@@ -60,6 +64,8 @@ public class DefaultEventRecorder implements EventRecorder {
   private static final Logger log = LoggerFactory.getLogger(DefaultEventRecorder.class);
 
   public static final String CLUSTER_SCOPED_EVENT_NAMESPACE = "default";
+
+  private static final String KUBE_SYSTEM_NAMESPACE = "kube-system";
 
   /**
    * Kubernetes limits object names to 253 characters, as they have to be valid RFC 1123 DNS
@@ -74,6 +80,12 @@ public class DefaultEventRecorder implements EventRecorder {
   private static final String IDENTITY_DIGEST = "SHA-256";
 
   private static final int IDENTITY_HASH_LENGTH = 32;
+
+  /**
+   * The fixed width format of {@code MicroTime}, which the API server refuses to read otherwise.
+   */
+  private static final DateTimeFormatter EVENT_TIME_FORMAT =
+      DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSSSSS'Z'").withZone(ZoneOffset.UTC);
 
   /** What the API server accepts as an object name, see RFC 1123 on DNS subdomains. */
   private static final Pattern RFC_1123_SUBDOMAIN =
@@ -211,11 +223,12 @@ public class DefaultEventRecorder implements EventRecorder {
     var regarding = context.getPrimaryResource();
     var now = Instant.now().truncatedTo(ChronoUnit.SECONDS).toString();
     var involvedObject = objectReferenceFor(regarding);
+    var namespace = eventNamespace(regarding, context);
     var builder =
         new EventBuilder()
             .withNewMetadata()
             .withName(eventName(regarding, record, controllerName))
-            .withNamespace(eventNamespace(regarding, context))
+            .withNamespace(namespace)
             .withLabels(record.labels())
             .withAnnotations(record.annotations())
             .endMetadata()
@@ -255,8 +268,26 @@ public class DefaultEventRecorder implements EventRecorder {
           .endOwnerReference()
           .endMetadata();
     }
-    record.action().ifPresent(builder::withAction);
+    var action = record.action().filter(a -> !a.isBlank());
+    action.ifPresent(builder::withAction);
+    if (requiresEventTime(regarding, namespace)) {
+      builder.withEventTime(new MicroTime(EVENT_TIME_FORMAT.format(Instant.now())));
+      if (action.isEmpty()) {
+        builder.withAction(record.reason());
+      }
+    }
     return builder.build();
+  }
+
+  /**
+   * The API server only accepts an event without {@code eventTime} for a cluster scoped object if
+   * the event lives in the {@code default} namespace. An event that carries an {@code eventTime}
+   * (and with it an {@code action}) is also accepted in the {@code kube-system} namespace. No other
+   * namespace is accepted for such an event, whether it has an {@code eventTime} or not.
+   */
+  private static boolean requiresEventTime(HasMetadata regarding, String eventNamespace) {
+    return regarding.getMetadata().getNamespace() == null
+        && KUBE_SYSTEM_NAMESPACE.equals(eventNamespace);
   }
 
   private String eventNamespace(HasMetadata regarding, Context<?> context) {
@@ -295,14 +326,20 @@ public class DefaultEventRecorder implements EventRecorder {
     if (name.length() <= MAX_NAME_LENGTH) {
       return name;
     }
-    var truncated = name.substring(0, MAX_NAME_LENGTH);
+    var suffix = "." + identityDigest(name);
+    var shortened = truncate(name, MAX_NAME_LENGTH - suffix.length()) + suffix;
+    log.warn(
+        "Shortened the name of event {} to {} to stay within the Kubernetes name limit",
+        name,
+        shortened);
+    return shortened;
+  }
+
+  private static String truncate(String name, int maxLength) {
+    var truncated = name.substring(0, Math.min(name.length(), maxLength));
     while (truncated.endsWith("-") || truncated.endsWith(".")) {
       truncated = truncated.substring(0, truncated.length() - 1);
     }
-    log.warn(
-        "Truncated the name of event {} to {} to stay within the Kubernetes name limit",
-        name,
-        truncated);
     return truncated;
   }
 
@@ -337,12 +374,7 @@ public class DefaultEventRecorder implements EventRecorder {
                 .orElseGet(() -> requireNonNullElse(record.message(), "")));
 
     var suffix = "." + identityDigest(identity);
-    var prefix = metadata.getName();
-    var maxPrefixLength = MAX_NAME_LENGTH - suffix.length();
-    if (prefix.length() > maxPrefixLength) {
-      prefix = prefix.substring(0, maxPrefixLength);
-    }
-    return prefix + suffix;
+    return truncate(metadata.getName(), MAX_NAME_LENGTH - suffix.length()) + suffix;
   }
 
   /**

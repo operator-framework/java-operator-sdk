@@ -436,19 +436,41 @@ class DefaultEventRecorderTest {
         EventRecord.builder()
             .reason("Created")
             .message("created")
-            .name("a".repeat(252) + "." + "b".repeat(47))
+            .name("a".repeat(219) + "." + "b".repeat(47))
             .build(),
         context(configMap()));
     recorder.record(
         EventRecord.builder()
             .reason("Created")
             .message("created")
-            .name("b".repeat(252) + "-" + "c".repeat(47))
+            .name("b".repeat(219) + "-" + "c".repeat(47))
             .build(),
         context(configMap()));
 
-    assertThat(emitted.get(0).getMetadata().getName()).isEqualTo("a".repeat(252));
-    assertThat(emitted.get(1).getMetadata().getName()).isEqualTo("b".repeat(252));
+    assertThat(emitted.get(0).getMetadata().getName()).matches("a{219}\\.[0-9a-f]{32}");
+    assertThat(emitted.get(1).getMetadata().getName()).matches("b{219}\\.[0-9a-f]{32}");
+  }
+
+  @Test
+  void keepsLongSuppliedNamesSharingTheirPrefixDistinct() {
+    recorder.record(
+        EventRecord.builder()
+            .reason("Created")
+            .message("created")
+            .name("a".repeat(300) + "-one")
+            .build(),
+        context(configMap()));
+    recorder.record(
+        EventRecord.builder()
+            .reason("Created")
+            .message("created")
+            .name("a".repeat(300) + "-two")
+            .build(),
+        context(configMap()));
+
+    assertThat(emitted.get(0).getMetadata().getName()).hasSize(253);
+    assertThat(emitted.get(0).getMetadata().getName())
+        .isNotEqualTo(emitted.get(1).getMetadata().getName());
   }
 
   @Test
