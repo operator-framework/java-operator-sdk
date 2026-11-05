@@ -41,9 +41,12 @@ public class MySQLSchemaOperator {
     Operator operator =
         new Operator(
             overrider ->
-                overrider.withMetrics(
-                    new MicrometerMetricsV2.MicrometerMetricsV2Builder(new LoggingMeterRegistry())
-                        .build()));
+                overrider
+                    .withMetrics(
+                        new MicrometerMetricsV2.MicrometerMetricsV2Builder(
+                                new LoggingMeterRegistry())
+                            .build())
+                    .withUseVirtualThreads(true));
 
     MySQLSchemaReconciler schemaReconciler = new MySQLSchemaReconciler();
 

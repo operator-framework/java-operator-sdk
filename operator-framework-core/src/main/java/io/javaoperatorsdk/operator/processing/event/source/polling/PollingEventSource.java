@@ -18,8 +18,10 @@ package io.javaoperatorsdk.operator.processing.event.source.polling;
 import java.time.Duration;
 import java.util.Map;
 import java.util.Set;
-import java.util.Timer;
-import java.util.TimerTask;
+import java.util.concurrent.RejectedExecutionException;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.slf4j.Logger;
@@ -27,6 +29,9 @@ import org.slf4j.LoggerFactory;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.OperatorException;
+import io.javaoperatorsdk.operator.api.config.ConfigurationService;
+import io.javaoperatorsdk.operator.api.config.ExecutorServiceManager;
+import io.javaoperatorsdk.operator.api.reconciler.EventSourceContext;
 import io.javaoperatorsdk.operator.health.Status;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
 import io.javaoperatorsdk.operator.processing.event.source.ExternalResourceCachingEventSource;
@@ -62,45 +67,128 @@ public class PollingEventSource<R, P extends HasMetadata, ID>
 
   private static final Logger log = LoggerFactory.getLogger(PollingEventSource.class);
 
-  private Timer timer;
   private final GenericResourceFetcher<R> genericResourceFetcher;
   private final Duration period;
   private final AtomicBoolean healthy = new AtomicBoolean(true);
+  private final ScheduledExecutorService configuredExecutorService;
+  private final boolean useVirtualThreads;
+  private final boolean ownsExecutorService;
 
+  private volatile ScheduledExecutorService executorService;
+  private volatile ScheduledFuture<?> pollingTask;
+
+  /**
+   * Creates an event source polling on an executor of its own: the one provided by the
+   * configuration, or otherwise one it creates and shuts down itself, which runs on virtual threads
+   * if {@link ConfigurationService#useVirtualThreads()} is enabled.
+   *
+   * @param resourceClass the type of the polled resource
+   * @param context the context this event source is created for
+   * @param config the configuration of the polling
+   * @since 5.7.0
+   */
+  public PollingEventSource(
+      Class<R> resourceClass, EventSourceContext<P> context, PollingConfiguration<R, ID> config) {
+    this(resourceClass, config, configurationServiceOf(context));
+  }
+
+  /**
+   * @deprecated use {@link #PollingEventSource(Class, EventSourceContext, PollingConfiguration)}
+   *     instead: without a context, and unless the configuration provides an executor, this event
+   *     source polls on a platform thread even if the operator is configured to use virtual
+   *     threads.
+   */
+  @Deprecated(since = "5.7.0")
   public PollingEventSource(Class<R> resourceClass, PollingConfiguration<R, ID> config) {
+    this(resourceClass, config, null);
+  }
+
+  private PollingEventSource(
+      Class<R> resourceClass,
+      PollingConfiguration<R, ID> config,
+      ConfigurationService configurationService) {
     super(config.name(), resourceClass, config.resourceIDMapper());
     this.genericResourceFetcher = config.genericResourceFetcher();
     this.period = config.period();
+    this.configuredExecutorService = config.executorService();
+    this.useVirtualThreads =
+        configurationService != null && configurationService.useVirtualThreads();
+    this.ownsExecutorService = configuredExecutorService == null;
+  }
+
+  /**
+   * The configuration of the operator the event source belongs to, or {@code null} if it doesn't
+   * belong to one, which only happens when the event source is used standalone, outside an
+   * operator.
+   */
+  private static ConfigurationService configurationServiceOf(EventSourceContext<?> context) {
+    final var controllerConfiguration = context.getControllerConfiguration();
+    return controllerConfiguration == null
+        ? null
+        : controllerConfiguration.getConfigurationService();
   }
 
   @Override
   public void start() throws OperatorException {
-    if (timer != null) {
+    if (pollingTask != null) {
       return;
     }
     super.start();
+    executorService = resolveExecutorService();
     getStateAndFillCache();
-    timer = new Timer(true);
-    timer.schedule(
-        new TimerTask() {
-          @Override
-          public void run() {
-            try {
-              if (!isRunning()) {
-                log.debug("Event source not yet started. Will not run.");
-                return;
-              }
-              getStateAndFillCache();
-              healthy.set(true);
-            } catch (Exception e) {
-              // Exception is required because of Kotlin
-              healthy.set(false);
-              log.error("Error during polling.", e);
-            }
-          }
-        },
-        period.toMillis(),
-        period.toMillis());
+    schedulePolling();
+  }
+
+  private void schedulePolling() {
+    ScheduledFuture<?> task;
+    try {
+      task =
+          executorService.scheduleWithFixedDelay(
+              this::poll, period.toMillis(), period.toMillis(), TimeUnit.MILLISECONDS);
+    } catch (RejectedExecutionException e) {
+      // a stop during the initial fetch shut down the executor this event source owns
+      if (isRunning()) {
+        throw e;
+      }
+      return;
+    }
+    pollingTask = task;
+    // stop() clears the running flag before it looks for the task, so a stop that happened during
+    // the initial fetch is either seen by stop (which cancels the task) or caught here
+    if (!isRunning()) {
+      task.cancel(false);
+      pollingTask = null;
+      if (ownsExecutorService) {
+        executorService.shutdown();
+      }
+    }
+  }
+
+  private void poll() {
+    try {
+      if (!isRunning()) {
+        log.debug("Event source not yet started. Will not run.");
+        return;
+      }
+      getStateAndFillCache();
+      healthy.set(true);
+    } catch (Exception e) {
+      // Exception is required because of Kotlin
+      healthy.set(false);
+      log.error("Error during polling.", e);
+    }
+  }
+
+  /**
+   * Resolves the executor to poll on. Note that this happens on every start, since an executor
+   * created by this event source is shut down when it is stopped.
+   */
+  private ScheduledExecutorService resolveExecutorService() {
+    if (configuredExecutorService != null) {
+      return configuredExecutorService;
+    }
+    return ExecutorServiceManager.newScheduledExecutorService(
+        1, useVirtualThreads, "josdk-polling-" + name());
   }
 
   protected synchronized void getStateAndFillCache() {
@@ -115,9 +203,13 @@ public class PollingEventSource<R, P extends HasMetadata, ID>
   @Override
   public void stop() throws OperatorException {
     super.stop();
-    if (timer != null) {
-      timer.cancel();
-      timer = null;
+    if (pollingTask != null) {
+      // as with the java.util.Timer this replaces, an ongoing poll is left to finish
+      pollingTask.cancel(false);
+      pollingTask = null;
+    }
+    if (ownsExecutorService && executorService != null) {
+      executorService.shutdown();
     }
   }
 

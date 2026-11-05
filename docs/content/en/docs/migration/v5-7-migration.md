@@ -78,3 +78,35 @@ on the classpath next to your implementation. This is especially important if yo
 based client (`kubernetes-httpclient-vertx`), since Vert.x 4 and Vert.x 5 cannot be used together.
 If you want to keep the Vert.x 4 based client, use it in place of `kubernetes-httpclient-jdk` in the
 snippet above.
+
+## Executors of the polling and timer event sources
+
+The polling event sources and the internal `TimerEventSource` no longer use a `java.util.Timer`, and
+`PerResourcePollingEventSource` no longer creates its executor when its configuration is built. They
+run on scheduled executors, see [virtual threads](../documentation/operations/configuration/#virtual-threads)
+and [Threading of the polling event sources](../documentation/eventing/#threading-of-the-polling-event-sources).
+This is transparent unless your operator provides an executor to a polling event source, or relies
+on one of the following:
+
+- A `ScheduledExecutorService` provided with `withExecutorService(...)` to a
+  `PerResourcePollingConfigurationBuilder` was shut down with `shutdownNow()` when the event source
+  was stopped. It is not anymore: **an executor you provide is yours to shut down**, like it is for
+  `PollingConfigurationBuilder`. If you relied on the event source for this, shut it down yourself
+  after stopping the operator, otherwise its threads can keep the JVM from exiting if they are not
+  daemon threads.
+- `PerResourcePollingConfiguration.executorService()` returns `null` when no executor was provided,
+  it used to be a `ScheduledThreadPoolExecutor` with a single non-daemon thread created by the
+  configuration. The event source now creates a single daemon thread executor, or one running on
+  virtual threads if `useVirtualThreads` is enabled, when it starts, shuts it down when it stops, and
+  creates a new one if it is started again. `PerResourcePollingConfiguration.DEFAULT_EXECUTOR_THREAD_NUMBER`
+  is deprecated, it isn't used anymore.
+- Each polling event source has an executor of its own: they don't share threads, and the number of
+  threads of a source is not configurable other than by providing an executor.
+- `new PollingEventSource<>(Class, PollingConfiguration)` is deprecated. Use the constructor that
+  takes the `EventSourceContext` as well, `new PollingEventSource<>(Class, EventSourceContext,
+  PollingConfiguration)`, otherwise the event source cannot know about the `useVirtualThreads`
+  setting and polls on a platform thread.
+- `TimerEventSource(String, boolean)` is deprecated, use the constructor that also takes an
+  executor supplier, `null` to have the event source create an executor of its own.
+- `ExecutorServiceManager.scheduledExecutorService()` is deprecated. The framework doesn't use it
+  anymore, it creates the executor on first use, and shuts it down when the manager is stopped.

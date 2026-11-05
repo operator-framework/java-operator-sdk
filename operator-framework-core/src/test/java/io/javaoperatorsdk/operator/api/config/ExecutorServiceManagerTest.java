@@ -18,6 +18,8 @@ package io.javaoperatorsdk.operator.api.config;
 import java.time.Duration;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.EnabledForJreRange;
+import org.junit.jupiter.api.condition.JRE;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -26,18 +28,38 @@ class ExecutorServiceManagerTest {
   private static final Duration SHUTDOWN_TIMEOUT = Duration.ofMillis(100);
 
   @Test
-  void stopShutsDownTheScheduledExecutorService() {
+  @SuppressWarnings("deprecation")
+  void stopShutsDownTheScheduledExecutorServiceAndItIsReplacedAfterARestart() {
     ConfigurationService configurationService = new BaseConfigurationService();
     var manager = configurationService.getExecutorServiceManager();
     var scheduled = manager.scheduledExecutorService();
 
+    assertThat(scheduled.isShutdown()).isFalse();
+    manager.stop(SHUTDOWN_TIMEOUT);
+    assertThat(scheduled.isShutdown()).isTrue();
+
+    manager.start(configurationService);
     try {
-      assertThat(scheduled.isShutdown()).isFalse();
+      assertThat(manager.scheduledExecutorService()).isNotSameAs(scheduled);
+      assertThat(manager.scheduledExecutorService().isShutdown()).isFalse();
+    } finally {
+      manager.stop(SHUTDOWN_TIMEOUT);
+    }
+  }
+
+  @Test
+  void stopShutsDownTheRetryAndRescheduleExecutorService() {
+    ConfigurationService configurationService = new BaseConfigurationService();
+    var manager = configurationService.getExecutorServiceManager();
+    var retryAndReschedule = manager.retryAndRescheduleExecutorService();
+
+    try {
+      assertThat(retryAndReschedule.isShutdown()).isFalse();
     } finally {
       manager.stop(SHUTDOWN_TIMEOUT);
     }
 
-    assertThat(scheduled.isShutdown()).isTrue();
+    assertThat(retryAndReschedule.isShutdown()).isTrue();
   }
 
   @Test
@@ -52,8 +74,24 @@ class ExecutorServiceManagerTest {
     // handing out already terminated executors
     assertThat(manager.reconcileExecutorService().isShutdown()).isFalse();
     assertThat(manager.cachingExecutorService().isShutdown()).isFalse();
-    assertThat(manager.scheduledExecutorService().isShutdown()).isFalse();
+    assertThat(manager.retryAndRescheduleExecutorService().isShutdown()).isFalse();
 
     manager.stop(SHUTDOWN_TIMEOUT);
+  }
+
+  @Test
+  @EnabledForJreRange(min = JRE.JAVA_25)
+  void cachingExecutorRunsOnVirtualThreadsWhenRequested() throws Exception {
+    var configurationService =
+        ConfigurationService.newOverriddenConfigurationService(
+            new BaseConfigurationService(), o -> o.withUseVirtualThreads(true));
+    var manager = configurationService.getExecutorServiceManager();
+    try {
+      var virtual =
+          manager.cachingExecutorService().submit(() -> VirtualThreadsTest.onVirtualThread()).get();
+      assertThat(virtual).isTrue();
+    } finally {
+      manager.stop(SHUTDOWN_TIMEOUT);
+    }
   }
 }
