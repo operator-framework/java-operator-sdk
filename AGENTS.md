@@ -130,10 +130,9 @@ java-operator-sdk/
 - Located in `src/test/java`
 - Integration test classes run in parallel against the same cluster, so they must not depend on
   cluster-wide state: use the namespace provided by the extension, unique names for cluster-scoped
-  resources, and do not rely on a CRD being absent or deleted after the test (CRDs are not deleted
-  in the `integration-tests` profile, since test classes share them). A test that cannot run next
-  to other tests (e.g. it modifies the kubeconfig) is annotated with
-  `@Tag(IntegrationTestTags.SEQUENTIAL_IT)` and is executed alone, after the parallel tests.
+  resources, do not modify shared files such as the kubeconfig, and do not rely on a CRD being
+  absent or deleted after the test (CRDs are not deleted in the `integration-tests` profile, since
+  test classes share them). Distinct CRDs must not declare the same short name.
 
 ### Test Resources
 

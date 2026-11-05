@@ -469,9 +469,6 @@
           <!--
             Integration tests run in parallel: each test class gets its own namespace, and test
             classes are spread over it.fork.count JVMs (e.g. -Dit.fork.count=1 to run sequentially).
-            Tests that cannot share the cluster with other tests are tagged with
-            @Tag(IntegrationTestTags.SEQUENTIAL_IT) and run on their own, after the parallel
-            execution.
             CRDs are not deleted after a test class (testsuite.deleteCRDs=false) since multiple test
             classes share the same CRDs and one deleting it would break the others.
           -->
@@ -486,32 +483,12 @@
                 <exclude>**/*Test.java</exclude>
                 <exclude>**/*E2E.java</exclude>
               </excludes>
+              <forkCount>${it.fork.count}</forkCount>
+              <reuseForks>true</reuseForks>
+              <systemPropertyVariables>
+                <testsuite.deleteCRDs>false</testsuite.deleteCRDs>
+              </systemPropertyVariables>
             </configuration>
-            <executions>
-              <execution>
-                <id>default-test</id>
-                <configuration>
-                  <forkCount>${it.fork.count}</forkCount>
-                  <reuseForks>true</reuseForks>
-                  <excludedGroups>WatchPermissionAwareTest,SequentialIT</excludedGroups>
-                  <systemPropertyVariables>
-                    <testsuite.deleteCRDs>false</testsuite.deleteCRDs>
-                  </systemPropertyVariables>
-                </configuration>
-              </execution>
-              <execution>
-                <id>sequential-integration-tests</id>
-                <goals>
-                  <goal>test</goal>
-                </goals>
-                <phase>test</phase>
-                <configuration>
-                  <forkCount>1</forkCount>
-                  <groups>SequentialIT</groups>
-                  <failIfNoSpecifiedTests>false</failIfNoSpecifiedTests>
-                </configuration>
-              </execution>
-            </executions>
           </plugin>
         </plugins>
       </build>
