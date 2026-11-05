@@ -23,6 +23,8 @@ import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentNavigableMap;
 import java.util.concurrent.ConcurrentSkipListMap;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.function.Supplier;
 import java.util.stream.Stream;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
@@ -41,8 +43,17 @@ class EventSources<P extends HasMetadata> {
   private ControllerEventSource<P> controllerEventSource;
 
   public EventSources(boolean triggerReconcilerOnAllEvents) {
+    this(triggerReconcilerOnAllEvents, null);
+  }
+
+  public EventSources(
+      boolean triggerReconcilerOnAllEvents,
+      Supplier<ScheduledExecutorService> scheduledExecutorServiceSupplier) {
     retryAndRescheduleTimerEventSource =
-        new TimerEventSource<>("RetryAndRescheduleTimerEventSource", triggerReconcilerOnAllEvents);
+        new TimerEventSource<>(
+            "RetryAndRescheduleTimerEventSource",
+            triggerReconcilerOnAllEvents,
+            scheduledExecutorServiceSupplier);
   }
 
   EventSources() {

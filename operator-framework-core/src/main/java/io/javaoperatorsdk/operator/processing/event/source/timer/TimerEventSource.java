@@ -17,14 +17,20 @@ package io.javaoperatorsdk.operator.processing.event.source.timer;
 
 import java.util.Map;
 import java.util.Set;
-import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.RejectedExecutionException;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Supplier;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
+import io.javaoperatorsdk.operator.ExecutorUtilsInternal;
 import io.javaoperatorsdk.operator.api.reconciler.BaseControl;
 import io.javaoperatorsdk.operator.health.Status;
 import io.javaoperatorsdk.operator.processing.event.Event;
@@ -36,17 +42,41 @@ public class TimerEventSource<R extends HasMetadata> extends AbstractEventSource
     implements ResourceEventAware<R> {
   private static final Logger log = LoggerFactory.getLogger(TimerEventSource.class);
 
-  private Timer timer;
-  private final Map<ResourceID, EventProducerTimeTask> onceTasks = new ConcurrentHashMap<>();
+  private final Map<ResourceID, ScheduledFuture<?>> onceTasks = new ConcurrentHashMap<>();
+  private final Supplier<ScheduledExecutorService> executorServiceSupplier;
+  private final boolean ownsExecutorService;
   private boolean triggerReconcilerOnAllEvents;
+  private volatile ScheduledExecutorService executorService;
 
   public TimerEventSource() {
     super(Void.class);
+    this.executorServiceSupplier = null;
+    this.ownsExecutorService = true;
   }
 
   public TimerEventSource(String name, boolean triggerReconcilerOnAllEvents) {
+    this(name, triggerReconcilerOnAllEvents, null);
+  }
+
+  /**
+   * Creates an event source scheduling on the executor provided by the specified supplier. The
+   * supplier is called on every start, and not once at creation time, since the operator shuts its
+   * executors down when it is stopped and creates new ones if it is started again.
+   *
+   * @param name the name of the event source
+   * @param triggerReconcilerOnAllEvents whether the reconciler is triggered on all events
+   * @param executorServiceSupplier supplies the executor to schedule on, {@code null} to have the
+   *     event source create, and shut down, an executor of its own
+   * @since 5.7.0
+   */
+  public TimerEventSource(
+      String name,
+      boolean triggerReconcilerOnAllEvents,
+      Supplier<ScheduledExecutorService> executorServiceSupplier) {
     super(Void.class, name);
     this.triggerReconcilerOnAllEvents = triggerReconcilerOnAllEvents;
+    this.executorServiceSupplier = executorServiceSupplier;
+    this.ownsExecutorService = executorServiceSupplier == null;
   }
 
   @SuppressWarnings("unused")
@@ -55,19 +85,40 @@ public class TimerEventSource<R extends HasMetadata> extends AbstractEventSource
   }
 
   public void scheduleOnce(ResourceID resourceID, long delay) {
-    if (!isRunning()) {
+    final var executor = executorService;
+    if (!isRunning() || executor == null) {
       throw new IllegalStateException("The TimerEventSource is not running");
     }
 
-    if (onceTasks.containsKey(resourceID)) {
-      cancelOnceSchedule(resourceID);
-    }
-    EventProducerTimeTask task = new EventProducerTimeTask(resourceID);
     if (delay == BaseControl.INSTANT_RESCHEDULE) {
-      task.run();
-    } else {
-      onceTasks.put(resourceID, task);
-      timer.schedule(task, delay);
+      cancelOnceSchedule(resourceID);
+      new EventProducerTimeTask(resourceID).run();
+      return;
+    }
+
+    var scheduled = new AtomicReference<ScheduledFuture<?>>();
+    try {
+      onceTasks.compute(
+          resourceID,
+          (id, alreadyScheduled) -> {
+            if (alreadyScheduled != null) {
+              alreadyScheduled.cancel(false);
+            }
+            var future =
+                executor.schedule(new EventProducerTimeTask(id), delay, TimeUnit.MILLISECONDS);
+            scheduled.set(future);
+            return future;
+          });
+    } catch (RejectedExecutionException e) {
+      if (isRunning()) {
+        throw e;
+      }
+      throw new IllegalStateException("The TimerEventSource is not running", e);
+    }
+    // stop() clears the running flag before cancelling the tasks, so a task that got registered
+    // concurrently with it is either cancelled by stop, or withdrawn here
+    if (!isRunning() && onceTasks.remove(resourceID, scheduled.get())) {
+      scheduled.get().cancel(false);
     }
   }
 
@@ -81,26 +132,42 @@ public class TimerEventSource<R extends HasMetadata> extends AbstractEventSource
   }
 
   public void cancelOnceSchedule(ResourceID customResourceUid) {
-    TimerTask timerTask = onceTasks.remove(customResourceUid);
-    if (timerTask != null) {
-      timerTask.cancel();
+    var scheduled = onceTasks.remove(customResourceUid);
+    if (scheduled != null) {
+      // as with the java.util.TimerTask this replaces, a task that is already running is left to
+      // finish
+      scheduled.cancel(false);
     }
   }
 
   @Override
   public void start() {
+    // the operator replaces its executors when it is started again, which can happen while this
+    // event source keeps running, when a previous start failed after it started. The timers
+    // pending on the replaced executor are not scheduled again.
+    if (!isRunning() || !ownsExecutorService) {
+      executorService = resolveExecutorService();
+    }
     if (!isRunning()) {
       super.start();
-      timer = new Timer(true);
     }
+  }
+
+  private ScheduledExecutorService resolveExecutorService() {
+    if (executorServiceSupplier != null) {
+      return executorServiceSupplier.get();
+    }
+    return ExecutorUtilsInternal.daemonScheduledThreadPool(1, "josdk-timer-" + name());
   }
 
   @Override
   public void stop() {
     if (isRunning()) {
-      onceTasks.keySet().forEach(this::cancelOnceSchedule);
-      timer.cancel();
       super.stop();
+      onceTasks.keySet().forEach(this::cancelOnceSchedule);
+      if (ownsExecutorService && executorService != null) {
+        executorService.shutdown();
+      }
     }
   }
 

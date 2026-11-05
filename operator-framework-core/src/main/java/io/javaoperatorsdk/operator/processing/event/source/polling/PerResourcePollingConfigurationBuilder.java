@@ -39,6 +39,14 @@ public final class PerResourcePollingConfigurationBuilder<R, P extends HasMetada
     this.defaultPollingPeriod = defaultPollingPeriod;
   }
 
+  /**
+   * Runs the polls on the specified executor instead of the one the event source creates by
+   * default. Note that an explicitly provided executor is not managed by the operator: it is the
+   * caller's responsibility to shut it down. It can be shared between event sources.
+   *
+   * @param executorService the executor to run the polls on
+   * @return this builder for chained customization
+   */
   @SuppressWarnings("unused")
   public PerResourcePollingConfigurationBuilder<R, P, ID> withExecutorService(
       ScheduledExecutorService executorService) {

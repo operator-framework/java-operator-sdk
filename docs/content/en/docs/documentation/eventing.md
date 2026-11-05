@@ -222,6 +222,37 @@ is similar to `PerResourcePollingEventSource` except that, contrary to that even
 doesn't poll a specific API separately per resource, but periodically and independently of
 actually observed primary resources.
 
+#### Threading of the polling event sources
+
+Each polling event source polls on a scheduled executor of its own, so a slow poll of one event
+source never delays the polls of the others. Unless you provide one, the event source creates a
+single daemon thread executor when it is started and shuts it down when it is stopped. With a single
+thread the polls of a source run one after the other. A `PollingEventSource` runs a single periodic
+task, so more threads would not help it. A `PerResourcePollingEventSource` however polls each
+registered resource on its own, so if it has many registered resources or fetches slowly, it can be
+given an executor with more threads using the `withExecutorService` method of its configuration
+builder:
+
+```java
+var config =
+    new PerResourcePollingConfigurationBuilder<>(this::fetchResources, Duration.ofSeconds(5))
+        .withExecutorService(Executors.newScheduledThreadPool(4))
+        .build();
+```
+
+An executor provided that way is not managed by the operator: it is your responsibility to shut it
+down. It is only ever used as is, the virtual threads flag has no effect on it. You can also share
+it between multiple event sources deliberately.
+
+With virtual threads enabled, see [virtual threads](../operations/configuration/#virtual-threads),
+the executor the event source creates runs the polls on virtual threads, only keeping one platform
+thread to do the timing. The number of polls running at the same time is then not limited.
+
+Retried and rescheduled reconciliations are triggered on a separate executor, so a slow poll can
+never delay them. It is sized with `withConcurrentRetryAndRescheduleThreads` (2 threads by
+default); few threads are needed there since triggering a reconciliation only enqueues an event
+for one of the reconciliation threads to pick up.
+
 #### Inbound event sources
 
 [SimpleInboundEventSource](https://github.com/operator-framework/java-operator-sdk/blob/main/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/processing/event/source/inbound/SimpleInboundEventSource.java)

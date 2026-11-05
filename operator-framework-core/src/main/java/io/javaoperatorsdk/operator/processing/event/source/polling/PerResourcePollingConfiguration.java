@@ -18,12 +18,16 @@ package io.javaoperatorsdk.operator.processing.event.source.polling;
 import java.time.Duration;
 import java.util.Objects;
 import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.function.Predicate;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.processing.ResourceIDMapper;
 
+/**
+ * @param executorService the executor to run the polls on, {@code null} (the default) to have the
+ *     event source create one of its own, on virtual threads if enabled, which it shuts down when
+ *     stopped. A provided executor is not shut down by the event source.
+ */
 public record PerResourcePollingConfiguration<R, P extends HasMetadata, ID>(
     String name,
     ScheduledExecutorService executorService,
@@ -32,6 +36,11 @@ public record PerResourcePollingConfiguration<R, P extends HasMetadata, ID>(
     Predicate<P> registerPredicate,
     Duration defaultPollingPeriod) {
 
+  /**
+   * @deprecated not used anymore, the event source creates an executor of its own unless one is
+   *     explicitly configured
+   */
+  @Deprecated(forRemoval = true)
   public static final int DEFAULT_EXECUTOR_THREAD_NUMBER = 1;
 
   public PerResourcePollingConfiguration(
@@ -42,10 +51,7 @@ public record PerResourcePollingConfiguration<R, P extends HasMetadata, ID>(
       Predicate<P> registerPredicate,
       Duration defaultPollingPeriod) {
     this.name = name;
-    this.executorService =
-        executorService == null
-            ? new ScheduledThreadPoolExecutor(DEFAULT_EXECUTOR_THREAD_NUMBER)
-            : executorService;
+    this.executorService = executorService;
     this.resourceIDMapper =
         resourceIDMapper == null ? ResourceIDMapper.resourceIdProviderMapper() : resourceIDMapper;
     this.resourceFetcher = Objects.requireNonNull(resourceFetcher);
