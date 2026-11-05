@@ -102,11 +102,11 @@ class EventRecorderRegressionTest {
   /**
    * A naming strategy (here the one EventNamingStrategy's javadoc suggests, a fixed suffix per
    * object) makes the name the aggregation identity on its own, so records with different type and
-   * reason resolve to the same event. DefaultEventSink then only patches count, lastTimestamp and
-   * message: the Warning is published under the type and reason of the earlier Normal event.
+   * reason resolve to the same event. DefaultEventSink patches type and reason along with count,
+   * lastTimestamp and message, so the event describes the latest occurrence.
    */
   @Test
-  void aggregatingOntoANamedEventKeepsTheTypeAndReasonOfTheFirstOccurrence() {
+  void aggregatingOntoANamedEventTakesTheTypeAndReasonOfTheLatestOccurrence() {
     var stored = new AtomicReference<Event>();
     var patched = new AtomicReference<Event>();
     var sink = new DefaultEventSink(mockClient(stored, patched));
@@ -212,11 +212,11 @@ class EventRecorderRegressionTest {
   }
 
   /**
-   * Supplied names are truncated to 253 characters, which silently maps distinct names onto the
-   * same event, so two different events of a long-named object are aggregated as one.
+   * Supplied names longer than 253 characters are shortened with a hash of the full name, so two
+   * different events of a long-named object are not merged into one.
    */
   @Test
-  void truncatingSuppliedNamesMergesDistinctEvents() {
+  void longSuppliedNamesStayDistinct() {
     var recorder =
         DefaultEventRecorder.builder((event, context) -> emitted.add(event))
             .namingStrategy(

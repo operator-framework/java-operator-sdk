@@ -268,10 +268,11 @@ public class DefaultEventRecorder implements EventRecorder {
           .endOwnerReference()
           .endMetadata();
     }
-    record.action().ifPresent(builder::withAction);
+    var action = record.action().filter(a -> !a.isBlank());
+    action.ifPresent(builder::withAction);
     if (requiresEventTime(regarding, namespace)) {
       builder.withEventTime(new MicroTime(EVENT_TIME_FORMAT.format(Instant.now())));
-      if (record.action().isEmpty()) {
+      if (action.isEmpty()) {
         builder.withAction(record.reason());
       }
     }
