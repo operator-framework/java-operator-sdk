@@ -31,6 +31,8 @@ import org.slf4j.LoggerFactory;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.OperatorException;
+import io.javaoperatorsdk.operator.api.config.ConfigurationService;
+import io.javaoperatorsdk.operator.api.config.ExecutorServiceManager;
 import io.javaoperatorsdk.operator.api.reconciler.EventSourceContext;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
 import io.javaoperatorsdk.operator.processing.event.source.Cache;
@@ -56,10 +58,18 @@ public class PerResourcePollingEventSource<R, P extends HasMetadata, ID>
   private final Cache<P> primaryResourceCache;
   private final Set<ResourceID> fetchedForPrimaries = ConcurrentHashMap.newKeySet();
 
-  private final ScheduledExecutorService executorService;
+  private final ScheduledExecutorService configuredExecutorService;
+  private final boolean useVirtualThreads;
+  private final boolean ownsExecutorService;
   private final ResourceFetcher<R, P> resourceFetcher;
   private final Predicate<P> registerPredicate;
   private final Duration period;
+
+  private volatile ScheduledExecutorService executorService;
+
+  // incremented on every stop, to tell the polls of previous runs apart, which can outlive the
+  // stop when the fetcher ignores the interruption; guarded by this
+  private long lifecycleGeneration;
 
   public PerResourcePollingEventSource(
       Class<R> resourceClass,
@@ -69,20 +79,87 @@ public class PerResourcePollingEventSource<R, P extends HasMetadata, ID>
     this.primaryResourceCache = context.getPrimaryCache();
     this.resourceFetcher = config.resourceFetcher();
     this.registerPredicate = config.registerPredicate();
-    this.executorService = config.executorService();
+    this.configuredExecutorService = config.executorService();
+    var configurationService = configurationServiceOf(context);
+    this.useVirtualThreads =
+        configurationService != null && configurationService.useVirtualThreads();
+    this.ownsExecutorService = configuredExecutorService == null;
     this.period = config.defaultPollingPeriod();
+  }
+
+  /**
+   * The configuration of the operator the event source belongs to, or {@code null} if it doesn't
+   * belong to one, which only happens when the event source is used standalone, outside an
+   * operator.
+   */
+  private static ConfigurationService configurationServiceOf(EventSourceContext<?> context) {
+    final var controllerConfiguration = context.getControllerConfiguration();
+    return controllerConfiguration == null
+        ? null
+        : controllerConfiguration.getConfigurationService();
+  }
+
+  @Override
+  public void start() throws OperatorException {
+    if (isRunning()) {
+      return;
+    }
+    executorService = resolveExecutorService();
+    super.start();
+    // the primary informer is started before this event source, and the executor to poll on is
+    // only resolved when this one starts, so the resources seen in the meantime are registered now
+    primaryResourceCache.list().forEach(this::checkAndRegisterTask);
+  }
+
+  /**
+   * Resolves the executor to poll on. Note that this happens on every start, since an executor
+   * created by this event source is shut down when it is stopped.
+   */
+  private ScheduledExecutorService resolveExecutorService() {
+    if (configuredExecutorService != null) {
+      return configuredExecutorService;
+    }
+    return ExecutorServiceManager.newScheduledExecutorService(
+        1, useVirtualThreads, "josdk-polling-" + name());
   }
 
   private Set<R> getAndCacheResource(P primary, boolean fromGetter) {
     var values = resourceFetcher.fetchResources(primary);
-    var primaryID = ResourceID.fromResource(primary);
-    handleResources(primaryID, values, !fromGetter);
-    fetchedForPrimaries.add(primaryID);
+    cacheResources(primary, values, fromGetter);
     return values;
   }
 
+  private void cacheResources(P primary, Set<R> values, boolean fromGetter) {
+    var primaryID = ResourceID.fromResource(primary);
+    handleResources(primaryID, values, !fromGetter);
+    fetchedForPrimaries.add(primaryID);
+  }
+
+  // the polling of a resource that is gone ends with its last task, which would otherwise stay
+  // registered and keep the resource from being polled again if it is recreated
+  private synchronized void forgetTask(ResourceID primaryID, long generation) {
+    if (generation == lifecycleGeneration) {
+      scheduledFutures.remove(primaryID);
+    }
+  }
+
+  // a fetch ignoring the interruption of a stop can return after a restart, its result is not to
+  // overwrite what the polls of the new run cached in the meantime
+  private synchronized void cacheAndScheduleNextExecution(
+      P primary, Set<R> values, long generation) {
+    if (generation != lifecycleGeneration) {
+      return;
+    }
+    cacheResources(primary, values, false);
+    scheduleNextExecution(primary, values, generation);
+  }
+
   @SuppressWarnings("unchecked")
-  private void scheduleNextExecution(P primary, Set<R> actualResources) {
+  private synchronized void scheduleNextExecution(
+      P primary, Set<R> actualResources, long generation) {
+    if (generation != lifecycleGeneration) {
+      return;
+    }
     var primaryID = ResourceID.fromResource(primary);
     var fetchDelay = resourceFetcher.fetchDelay(actualResources, primary);
     var fetchDuration = fetchDelay.orElse(period);
@@ -90,7 +167,9 @@ public class PerResourcePollingEventSource<R, P extends HasMetadata, ID>
     ScheduledFuture<Void> scheduledFuture =
         (ScheduledFuture<Void>)
             executorService.schedule(
-                new FetchingExecutor(primaryID), fetchDuration.toMillis(), TimeUnit.MILLISECONDS);
+                new FetchingExecutor(primaryID, generation),
+                fetchDuration.toMillis(),
+                TimeUnit.MILLISECONDS);
     scheduledFutures.put(primaryID, scheduledFuture);
   }
 
@@ -105,7 +184,7 @@ public class PerResourcePollingEventSource<R, P extends HasMetadata, ID>
   }
 
   @Override
-  public void onResourceDeleted(P resource) {
+  public synchronized void onResourceDeleted(P resource) {
     var resourceID = ResourceID.fromResource(resource);
     var scheduledFuture = scheduledFutures.remove(resourceID);
     if (scheduledFuture != null) {
@@ -119,7 +198,12 @@ public class PerResourcePollingEventSource<R, P extends HasMetadata, ID>
   // This method is always called from the same Thread for the same resource,
   // since events from ResourceEventAware are propagated from the thread of the informer. This is
   // important because otherwise there will be a race condition related to the timerTasks.
-  private void checkAndRegisterTask(P resource) {
+  private synchronized void checkAndRegisterTask(P resource) {
+    // stop() clears the running flag before it takes the monitor, so a registration that raced it
+    // is dropped, otherwise a task scheduled after the stop would block a restart
+    if (!isRunning()) {
+      return;
+    }
     var primaryID = ResourceID.fromResource(resource);
     if (scheduledFutures.get(primaryID) == null
         && (registerPredicate == null || registerPredicate.test(resource))) {
@@ -127,15 +211,17 @@ public class PerResourcePollingEventSource<R, P extends HasMetadata, ID>
       var actualResources = cachedResources.isEmpty() ? null : cachedResources;
       // note that there is a delay, to not do two fetches when the resources first appeared
       // and getSecondaryResource is called on reconciliation.
-      scheduleNextExecution(resource, actualResources);
+      scheduleNextExecution(resource, actualResources, lifecycleGeneration);
     }
   }
 
   private class FetchingExecutor implements Runnable {
     private final ResourceID primaryID;
+    private final long generation;
 
-    public FetchingExecutor(ResourceID primaryID) {
+    public FetchingExecutor(ResourceID primaryID, long generation) {
       this.primaryID = primaryID;
+      this.generation = generation;
     }
 
     @Override
@@ -149,9 +235,10 @@ public class PerResourcePollingEventSource<R, P extends HasMetadata, ID>
       if (primary.isEmpty()) {
         log.warn("No resource in cache for resource ID: {}", primaryID);
         // no new execution is scheduled in this case, an on delete event should be received shortly
+        forgetTask(primaryID, generation);
       } else {
-        var actualResources = primary.map(p -> getAndCacheResource(p, false));
-        scheduleNextExecution(primary.get(), actualResources.orElse(null));
+        var values = resourceFetcher.fetchResources(primary.get());
+        cacheAndScheduleNextExecution(primary.get(), values, generation);
       }
     }
   }
@@ -202,6 +289,15 @@ public class PerResourcePollingEventSource<R, P extends HasMetadata, ID>
   @Override
   public void stop() throws OperatorException {
     super.stop();
-    executorService.shutdownNow();
+    // the tasks have to be cancelled explicitly since a provided executor is not shut down, and the
+    // map cleared so that they are registered again on a restart
+    synchronized (this) {
+      lifecycleGeneration++;
+      scheduledFutures.values().forEach(future -> future.cancel(true));
+      scheduledFutures.clear();
+    }
+    if (ownsExecutorService && executorService != null) {
+      executorService.shutdownNow();
+    }
   }
 }

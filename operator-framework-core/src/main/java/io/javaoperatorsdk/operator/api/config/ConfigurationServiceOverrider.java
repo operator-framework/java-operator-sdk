@@ -21,6 +21,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.ScheduledExecutorService;
 import java.util.function.Function;
 
 import org.slf4j.Logger;
@@ -45,11 +46,14 @@ public class ConfigurationServiceOverrider {
   private Boolean checkCR;
   private Integer concurrentReconciliationThreads;
   private Integer concurrentWorkflowExecutorThreads;
+  private Integer concurrentRetryAndRescheduleThreads;
   private Cloner cloner;
   private Boolean closeClientOnStop;
   private KubernetesClient client;
   private ExecutorService executorService;
   private ExecutorService workflowExecutorService;
+  private Boolean useVirtualThreads;
+  private ScheduledExecutorService retryAndRescheduleExecutorService;
   private LeaderElectionConfiguration leaderElectionConfiguration;
   private String clusterScopedEventNamespace;
   private EventRecorder eventRecorder;
@@ -86,6 +90,25 @@ public class ConfigurationServiceOverrider {
     return this;
   }
 
+  /**
+   * Sets the number of threads used to trigger the operator's retried and rescheduled
+   * reconciliations, which are shared by all its controllers.
+   *
+   * <p>Note that changing the number of threads makes the overridden configuration build the
+   * default retry and reschedule executor itself, so a custom one provided by the configuration
+   * being overridden is not used anymore. Use {@link #withRetryAndRescheduleExecutorService} to
+   * provide one.
+   *
+   * @param threadNumber the maximum number of concurrent retry and reschedule threads
+   * @return this {@link ConfigurationServiceOverrider} for chained customization
+   * @see ConfigurationService#concurrentRetryAndRescheduleThreads()
+   * @since 5.7.0
+   */
+  public ConfigurationServiceOverrider withConcurrentRetryAndRescheduleThreads(int threadNumber) {
+    this.concurrentRetryAndRescheduleThreads = threadNumber;
+    return this;
+  }
+
   @SuppressWarnings("rawtypes")
   public ConfigurationServiceOverrider withDependentResourceFactory(
       DependentResourceFactory dependentResourceFactory) {
@@ -116,6 +139,41 @@ public class ConfigurationServiceOverrider {
   public ConfigurationServiceOverrider withWorkflowExecutorService(
       ExecutorService workflowExecutorService) {
     this.workflowExecutorService = workflowExecutorService;
+    return this;
+  }
+
+  /**
+   * Replaces the executor used to trigger the operator's retried and rescheduled reconciliations,
+   * which is shared by all its controllers.
+   *
+   * @param retryAndRescheduleExecutorService the executor to trigger retried and rescheduled
+   *     reconciliations on
+   * @return this {@link ConfigurationServiceOverrider} for chained customization
+   * @see ConfigurationService#getRetryAndRescheduleExecutorService()
+   * @since 5.7.0
+   */
+  public ConfigurationServiceOverrider withRetryAndRescheduleExecutorService(
+      ScheduledExecutorService retryAndRescheduleExecutorService) {
+    this.retryAndRescheduleExecutorService = retryAndRescheduleExecutorService;
+    return this;
+  }
+
+  /**
+   * Makes the framework run the tasks it executes concurrently on virtual threads instead of
+   * platform threads. Only supported on Java 25 or later, see {@link
+   * ConfigurationService#useVirtualThreads()} for the details.
+   *
+   * <p>Note that if this changes the value of the configuration being overridden, the overridden
+   * configuration builds the default retry and reschedule executor itself, so a custom one provided
+   * by the configuration being overridden is replaced and not used as is. Use {@link
+   * #withRetryAndRescheduleExecutorService} to provide one along with this setting.
+   *
+   * @param useVirtualThreads {@code true} to use virtual threads
+   * @return this {@link ConfigurationServiceOverrider} for chained customization
+   * @since 5.7.0
+   */
+  public ConfigurationServiceOverrider withUseVirtualThreads(boolean useVirtualThreads) {
+    this.useVirtualThreads = useVirtualThreads;
     return this;
   }
 
@@ -313,6 +371,17 @@ public class ConfigurationServiceOverrider {
       }
 
       @Override
+      public int concurrentRetryAndRescheduleThreads() {
+        return Utils.ensureValid(
+            overriddenValueOrDefault(
+                concurrentRetryAndRescheduleThreads,
+                ConfigurationService::concurrentRetryAndRescheduleThreads),
+            "maximum retry and reschedule threads",
+            1,
+            original.concurrentRetryAndRescheduleThreads());
+      }
+
+      @Override
       public Metrics getMetrics() {
         return overriddenValueOrDefault(metrics, ConfigurationService::getMetrics);
       }
@@ -320,6 +389,11 @@ public class ConfigurationServiceOverrider {
       @Override
       public boolean closeClientOnStop() {
         return overriddenValueOrDefault(closeClientOnStop, ConfigurationService::closeClientOnStop);
+      }
+
+      @Override
+      public boolean useVirtualThreads() {
+        return overriddenValueOrDefault(useVirtualThreads, ConfigurationService::useVirtualThreads);
       }
 
       @Override
@@ -338,6 +412,26 @@ public class ConfigurationServiceOverrider {
         } else {
           return super.getWorkflowExecutorService();
         }
+      }
+
+      @Override
+      public ScheduledExecutorService getRetryAndRescheduleExecutorService() {
+        if (retryAndRescheduleExecutorService != null) {
+          return retryAndRescheduleExecutorService;
+        } else if (!changes(
+            concurrentRetryAndRescheduleThreads, original.concurrentRetryAndRescheduleThreads())) {
+          return original.getRetryAndRescheduleExecutorService();
+        } else {
+          return super.getRetryAndRescheduleExecutorService();
+        }
+      }
+
+      // the default scheduled executors are only built anew when an override actually changes the
+      // way they are built, otherwise the ones of the original configuration are kept, which also
+      // preserves a custom executor the original provides
+      private boolean changes(Integer overriddenThreads, int originalThreads) {
+        return (overriddenThreads != null && overriddenThreads != originalThreads)
+            || (useVirtualThreads != null && useVirtualThreads != original.useVirtualThreads());
       }
 
       @Override
