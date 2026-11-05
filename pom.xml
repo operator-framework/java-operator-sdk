@@ -485,7 +485,6 @@
                 <exclude>**/*Test.java</exclude>
                 <exclude>**/*E2E.java</exclude>
               </excludes>
-              <failIfNoSpecifiedTests>false</failIfNoSpecifiedTests>
             </configuration>
             <executions>
               <execution>
@@ -508,6 +507,7 @@
                 <configuration>
                   <forkCount>1</forkCount>
                   <groups>SequentialIT</groups>
+                  <failIfNoSpecifiedTests>false</failIfNoSpecifiedTests>
                 </configuration>
               </execution>
             </executions>

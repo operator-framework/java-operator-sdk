@@ -25,6 +25,6 @@ import io.fabric8.kubernetes.model.annotation.Version;
 @Group("sample.javaoperatorsdk")
 @Version("v1")
 @Kind("CleanerForReconcilerCustomResource")
-@ShortNames("cfr")
+@ShortNames("cfmd")
 public class CleanerForManagedDependentCustomResource extends CustomResource<Void, String>
     implements Namespaced {}

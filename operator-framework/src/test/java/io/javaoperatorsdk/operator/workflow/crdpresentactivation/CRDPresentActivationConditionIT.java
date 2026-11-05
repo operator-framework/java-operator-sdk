@@ -17,6 +17,8 @@ package io.javaoperatorsdk.operator.workflow.crdpresentactivation;
 
 import java.time.Duration;
 import java.util.Map;
+import java.util.Objects;
+import java.util.concurrent.TimeUnit;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
@@ -53,11 +55,13 @@ public class CRDPresentActivationConditionIT {
   @Test
   void resourceCreatedOnlyIfCRDPresent() {
     // deleted so test can be repeated
-    extension
-        .getKubernetesClient()
-        .resources(CustomResourceDefinition.class)
-        .withName(CRD_NAME)
-        .delete();
+    var crdResource =
+        extension
+            .getKubernetesClient()
+            .resources(CustomResourceDefinition.class)
+            .withName(CRD_NAME);
+    crdResource.delete();
+    crdResource.waitUntilCondition(Objects::isNull, 60, TimeUnit.SECONDS);
 
     var resource = extension.create(testResource());
 
