@@ -30,6 +30,7 @@ import io.javaoperatorsdk.annotation.Sample;
 import io.javaoperatorsdk.operator.Operator;
 import io.javaoperatorsdk.operator.junit.LocallyRunOperatorExtension;
 
+import static io.javaoperatorsdk.operator.IntegrationTestTags.SEQUENTIAL_IT;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
 
@@ -44,7 +45,7 @@ import static org.awaitility.Awaitility.await;
         neither. Sharding relies on the Kubernetes API server 'ShardedListAndWatch' alpha feature.
         """)
 // rewrites the shared kubeconfig while running, so no other test may build a client concurrently
-@Tag("SequentialIT")
+@Tag(SEQUENTIAL_IT)
 @EnableKubeAPIServer(
     kubeAPIVersion = "1.36.*",
     apiServerFlags = {"--feature-gates=ShardedListAndWatch=true"},

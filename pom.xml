@@ -470,7 +470,8 @@
             Integration tests run in parallel: each test class gets its own namespace, and test
             classes are spread over it.fork.count JVMs (e.g. -Dit.fork.count=1 to run sequentially).
             Tests that cannot share the cluster with other tests are tagged with
-            @Tag("SequentialIT") and run on their own, after the parallel execution.
+            @Tag(IntegrationTestTags.SEQUENTIAL_IT) and run on their own, after the parallel
+            execution.
             CRDs are not deleted after a test class (testsuite.deleteCRDs=false) since multiple test
             classes share the same CRDs and one deleting it would break the others.
           -->
