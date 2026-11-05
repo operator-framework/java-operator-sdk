@@ -30,8 +30,9 @@ import static io.javaoperatorsdk.operator.api.reconciler.Experimental.API_MIGHT_
  *
  * <p>A name must be a valid RFC 1123 DNS subdomain: at most 253 lowercase alphanumeric characters,
  * {@code -} or {@code .}, starting and ending with an alphanumeric character. Names longer than the
- * limit are truncated. A name derived from the object and a fixed lowercase suffix (such as {@code
- * <object>-status-report}) satisfies all of this by construction.
+ * limit are shortened, keeping a hash of the full name so distinct names stay distinct. A name
+ * derived from the object and a fixed lowercase suffix (such as {@code <object>-status-report})
+ * satisfies all of this by construction.
  *
  * <p>An empty result or an invalid name falls back to the default {@code <object>.<identity hash>}
  * name, rather than the event being lost to the API server rejecting the name.
