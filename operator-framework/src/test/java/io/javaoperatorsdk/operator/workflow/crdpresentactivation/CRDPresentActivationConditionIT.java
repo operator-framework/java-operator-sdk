@@ -81,6 +81,16 @@ public class CRDPresentActivationConditionIT {
               assertThat(dr).isNull();
             });
 
+    // the workflow, thus the CRD presence check, runs before the reconcile method
+    await()
+        .untilAsserted(
+            () ->
+                assertThat(
+                        extension
+                            .getReconcilerOfType(CRDPresentActivationReconciler.class)
+                            .getNumberOfExecutions())
+                    .isPositive());
+
     LocallyRunOperatorExtension.applyCrd(
         CRDPresentActivationDependentCustomResource.class, extension.getKubernetesClient());
 
