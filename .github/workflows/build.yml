@@ -10,15 +10,19 @@ jobs:
   integration_tests:
     strategy:
       matrix:
-        java: [ 17, 21, 25 ]
+        # Only the oldest and newest supported Java and Kubernetes versions are covered
+        java: [ 17, 25 ]
         # Use the latest versions supported by minikube, otherwise GitHub it will
         # end up in a throttling requests from minikube and workflow will fail.
         # Minikube does such requests only if a version is not officially supported.
-        kubernetes: [ 'v1.34.11', 'v1.35.8', 'v1.36.4', 'v1.37.0' ]
+        kubernetes: [ 'v1.34.11', 'v1.37.0' ]
+        # Matches the integration-tests-<category> profiles in the root pom.xml
+        it-category: [ 'baseapi', 'dependent', 'workflow', 'other' ]
     uses: ./.github/workflows/integration-tests.yml
     with:
       java-version: ${{ matrix.java }}
       kube-version: ${{ matrix.kubernetes }}
+      it-category: ${{ matrix.it-category }}
 
   httpclient-tests:
     strategy:

@@ -539,6 +539,29 @@
         </plugins>
       </build>
     </profile>
+    <profile>
+      <id>integration-tests-other</id>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-surefire-plugin</artifactId>
+            <configuration>
+              <includes>
+                <include>**/*IT.java</include>
+              </includes>
+              <excludes>
+                <exclude>**/*Test.java</exclude>
+                <exclude>**/*E2E.java</exclude>
+                <exclude>io/javaoperatorsdk/operator/baseapi/**</exclude>
+                <exclude>io/javaoperatorsdk/operator/dependent/**</exclude>
+                <exclude>io/javaoperatorsdk/operator/workflow/**</exclude>
+              </excludes>
+            </configuration>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
     <!--     Special category of tests. See usage in source code.   -->
     <profile>
       <id>minimal-watch-timeout-dependent-it</id>

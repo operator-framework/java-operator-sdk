@@ -21,10 +21,15 @@ on:
         type: string
         required: false
         default: ''
+      it-category:
+        description: 'Integration test category (baseapi, dependent, workflow, other); all tests if empty'
+        type: string
+        required: false
+        default: ''
 
 jobs:
   integration_tests:
-    name: Integration tests (${{ inputs.java-version }}, ${{ inputs.kube-version }}, ${{ inputs.http-client }})
+    name: Integration tests (${{ inputs.java-version }}, ${{ inputs.kube-version }}, ${{ inputs.http-client }}${{ inputs.it-category != '' && format(', {0}', inputs.it-category) || '' }})
     runs-on: ubuntu-latest
     continue-on-error: ${{ inputs.experimental }}
     timeout-minutes: 120
