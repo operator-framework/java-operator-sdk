@@ -25,6 +25,6 @@ import io.fabric8.kubernetes.model.annotation.Version;
 @Group("sample.javaoperatorsdk")
 @Version("v1")
 @Kind("MaxIntervalTestCustomResource")
-@ShortNames("mit")
+@ShortNames("dasm")
 public class DependentAnnotationSecondaryMapperResource extends CustomResource<Void, Void>
     implements Namespaced {}

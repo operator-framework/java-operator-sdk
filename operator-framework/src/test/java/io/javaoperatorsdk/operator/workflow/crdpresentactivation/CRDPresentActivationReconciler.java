@@ -15,6 +15,8 @@
  */
 package io.javaoperatorsdk.operator.workflow.crdpresentactivation;
 
+import java.util.concurrent.atomic.AtomicInteger;
+
 import io.javaoperatorsdk.operator.api.reconciler.*;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.Dependent;
 import io.javaoperatorsdk.operator.processing.dependent.workflow.CRDPresentActivationCondition;
@@ -31,12 +33,18 @@ public class CRDPresentActivationReconciler
     implements Reconciler<CRDPresentActivationCustomResource>,
         Cleaner<CRDPresentActivationCustomResource> {
 
+  private final AtomicInteger numberOfExecutions = new AtomicInteger(0);
+
   @Override
   public UpdateControl<CRDPresentActivationCustomResource> reconcile(
       CRDPresentActivationCustomResource resource,
       Context<CRDPresentActivationCustomResource> context) {
-
+    numberOfExecutions.incrementAndGet();
     return UpdateControl.noUpdate();
+  }
+
+  public int getNumberOfExecutions() {
+    return numberOfExecutions.get();
   }
 
   @Override

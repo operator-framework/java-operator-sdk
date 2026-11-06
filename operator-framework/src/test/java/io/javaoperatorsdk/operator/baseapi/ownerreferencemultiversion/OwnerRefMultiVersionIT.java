@@ -16,7 +16,10 @@
 package io.javaoperatorsdk.operator.baseapi.ownerreferencemultiversion;
 
 import java.time.Duration;
+import java.util.Objects;
+import java.util.concurrent.TimeUnit;
 
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 import org.slf4j.Logger;
@@ -69,6 +72,13 @@ class OwnerRefMultiVersionIT {
                 }
               })
           .build();
+
+  @AfterEach
+  void deleteModifiedCrd() {
+    var crdClient = operator.getKubernetesClient().apiextensions().v1().customResourceDefinitions();
+    crdClient.withName(CRD_NAME).delete();
+    crdClient.withName(CRD_NAME).waitUntilCondition(Objects::isNull, 60, TimeUnit.SECONDS);
+  }
 
   @Test
   void mapperWorksAcrossVersionChange() {

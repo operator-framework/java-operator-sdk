@@ -461,8 +461,17 @@
   <profiles>
     <profile>
       <id>integration-tests</id>
+      <properties>
+        <it.fork.count>5</it.fork.count>
+      </properties>
       <build>
         <plugins>
+          <!--
+            Integration tests run in parallel: each test class gets its own namespace, and test
+            classes are spread over it.fork.count JVMs (e.g. -Dit.fork.count=1 to run sequentially).
+            CRDs are not deleted after a test class (testsuite.deleteCRDs=false) since multiple test
+            classes share the same CRDs and one deleting it would break the others.
+          -->
           <plugin>
             <groupId>org.apache.maven.plugins</groupId>
             <artifactId>maven-surefire-plugin</artifactId>
@@ -474,6 +483,11 @@
                 <exclude>**/*Test.java</exclude>
                 <exclude>**/*E2E.java</exclude>
               </excludes>
+              <forkCount>${it.fork.count}</forkCount>
+              <reuseForks>true</reuseForks>
+              <systemPropertyVariables>
+                <testsuite.deleteCRDs>false</testsuite.deleteCRDs>
+              </systemPropertyVariables>
             </configuration>
           </plugin>
         </plugins>

@@ -22,7 +22,9 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import io.fabric8.kubeapitest.junit.EnableKubeAPIServer;
+import io.fabric8.kubeapitest.junit.KubeConfig;
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
+import io.fabric8.kubernetes.client.Config;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClientBuilder;
 import io.javaoperatorsdk.annotation.Sample;
@@ -44,9 +46,11 @@ import static org.awaitility.Awaitility.await;
         """)
 @EnableKubeAPIServer(
     kubeAPIVersion = "1.36.*",
-    apiServerFlags = {"--feature-gates=ShardedListAndWatch=true"},
-    updateKubeConfigFile = true)
+    apiServerFlags = {"--feature-gates=ShardedListAndWatch=true"})
 class ShardSelectorIT {
+
+  // injected by Kube API Test, the shared kubeconfig file is intentionally not modified
+  @KubeConfig static String kubeConfigYaml;
 
   // The two selectors split the 64-bit UID hash space in half: [0x0, 0x8000000000000000) and
   // [0x8000000000000000, 0x10000000000000000). Together they cover the whole space with no overlap,
@@ -59,7 +63,7 @@ class ShardSelectorIT {
   private static final String TEST_RESOURCE_NAME = "shard-test1";
   private static final Duration EVENT_SETTLE_WINDOW = Duration.ofMillis(500);
 
-  private final KubernetesClient adminClient = new KubernetesClientBuilder().build();
+  private final KubernetesClient adminClient = newClient();
 
   private Operator operator1;
   private Operator operator2;
@@ -104,7 +108,7 @@ class ShardSelectorIT {
 
   private ShardSelectorTestReconciler startOperatorForShard(String shardSelector) {
     var reconciler = new ShardSelectorTestReconciler();
-    var operator = new Operator(o -> o.withKubernetesClient(new KubernetesClientBuilder().build()));
+    var operator = new Operator(o -> o.withKubernetesClient(newClient()));
     operator.register(reconciler, o -> o.withShardSelector(shardSelector));
     operator.start();
     if (operator1 == null) {
@@ -113,6 +117,10 @@ class ShardSelectorIT {
       operator2 = operator;
     }
     return reconciler;
+  }
+
+  private static KubernetesClient newClient() {
+    return new KubernetesClientBuilder().withConfig(Config.fromKubeconfig(kubeConfigYaml)).build();
   }
 
   private ShardSelectorTestCustomResource testCustomResource() {
