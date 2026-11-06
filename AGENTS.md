@@ -193,6 +193,7 @@ public class ConfigMapDependent extends CRUDKubernetesDependentResource<ConfigMa
 
 - Keep changes focused and atomic
 - We use conventional commits 
+- Always sign off commits (`git commit -s`), the DCO check fails on commits without a `Signed-off-by` line
 - Reference issues in commit messages when applicable
 - Ensure CI checks pass (format, license, tests)
 
