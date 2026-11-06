@@ -231,6 +231,7 @@ public class SSABasedGenericKubernetesResourceMatcher<R extends HasMetadata> {
     }
   }
 
+  @SuppressWarnings("unchecked")
   private static void sanitizeVolumeClaimTemplates(
       Map<String, Object> actualMap, StatefulSetSpec actualSpec, StatefulSetSpec desiredSpec) {
     int claims = desiredSpec.getVolumeClaimTemplates().size();
@@ -250,6 +251,18 @@ public class SSABasedGenericKubernetesResourceMatcher<R extends HasMetadata> {
                 GenericKubernetesResource.get(actualMap, "spec", "volumeClaimTemplates", i))
             .map(Map.class::cast)
             .ifPresent(m -> m.remove("status"));
+      }
+      var desiredResources = claim.getSpec().getResources();
+      var actualResources = actualSpec.getVolumeClaimTemplates().get(i).getSpec().getResources();
+      if (desiredResources != null && actualResources != null) {
+        Optional.ofNullable(
+                GenericKubernetesResource.get(
+                    actualMap, "spec", "volumeClaimTemplates", i, "spec", "resources", "requests"))
+            .map(Map.class::cast)
+            .ifPresent(
+                m ->
+                    QuantitySanitizer.sanitizeQuantities(
+                        m, actualResources.getRequests(), desiredResources.getRequests()));
       }
     }
   }
