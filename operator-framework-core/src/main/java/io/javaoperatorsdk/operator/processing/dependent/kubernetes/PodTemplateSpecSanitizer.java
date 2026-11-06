@@ -139,26 +139,7 @@ class PodTemplateSpecSanitizer {
                 "resources",
                 quantityPath))
         .map(Map.class::cast)
-        .ifPresent(
-            m ->
-                actualResource.forEach(
-                    (key, actualQuantity) -> {
-                      final var desiredQuantity = desiredResource.get(key);
-                      if (desiredQuantity == null) {
-                        return;
-                      }
-                      // check if the string representation of the Quantity instances is equal
-                      if (actualQuantity.getAmount().equals(desiredQuantity.getAmount())
-                          && actualQuantity.getFormat().equals(desiredQuantity.getFormat())) {
-                        return;
-                      }
-                      // check if the numerical amount of the Quantity instances is equal
-                      if (actualQuantity.equals(desiredQuantity)) {
-                        // replace the actual Quantity with the desired Quantity to prevent a
-                        // resource update
-                        m.replace(key, desiredQuantity.toString());
-                      }
-                    }));
+        .ifPresent(m -> QuantitySanitizer.sanitizeQuantities(m, actualResource, desiredResource));
   }
 
   @SuppressWarnings("unchecked")
