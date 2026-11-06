@@ -25,11 +25,13 @@ import org.junit.jupiter.params.provider.ValueSource;
 
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.HasMetadata;
+import io.fabric8.kubernetes.api.model.Quantity;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.apps.DaemonSet;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.api.model.apps.ReplicaSet;
 import io.fabric8.kubernetes.api.model.apps.StatefulSet;
+import io.fabric8.kubernetes.api.model.autoscaling.v2.HorizontalPodAutoscaler;
 import io.javaoperatorsdk.operator.MockKubernetesClient;
 import io.javaoperatorsdk.operator.OperatorException;
 import io.javaoperatorsdk.operator.ReconcilerUtilsInternal;
@@ -251,7 +253,8 @@ class SSABasedGenericKubernetesResourceMatcherTest {
       strings = {
         "sample-sts-volumeclaimtemplates-desired.yaml",
         "sample-sts-volumeclaimtemplates-desired-with-status.yaml",
-        "sample-sts-volumeclaimtemplates-desired-with-volumemode.yaml"
+        "sample-sts-volumeclaimtemplates-desired-with-volumemode.yaml",
+        "sample-sts-volumeclaimtemplates-desired-with-equivalent-storage.yaml"
       })
   void testSanitizeState_statefulSetWithVolumeClaims(String desiredResourceFileName) {
     var desiredStatefulSet = loadResource(desiredResourceFileName, StatefulSet.class);
@@ -356,6 +359,31 @@ class SSABasedGenericKubernetesResourceMatcherTest {
     var actualDaemonSet = loadResource("sample-ds-resources.yaml", DaemonSet.class);
 
     assertThat(matcher.matches(actualDaemonSet, desiredReplicaSet, mockedContext)).isFalse();
+  }
+
+  @Test
+  void testSanitizeState_horizontalPodAutoscalerWithQuantities() {
+    var desiredHpa =
+        loadResource("sample-hpa-quantities-desired.yaml", HorizontalPodAutoscaler.class);
+    var actualHpa = loadResource("sample-hpa-quantities.yaml", HorizontalPodAutoscaler.class);
+
+    assertThat(matcher.matches(actualHpa, desiredHpa, mockedContext)).isTrue();
+  }
+
+  @Test
+  void testSanitizeState_horizontalPodAutoscalerWithQuantities_withMismatch() {
+    var desiredHpa =
+        loadResource("sample-hpa-quantities-desired.yaml", HorizontalPodAutoscaler.class);
+    desiredHpa
+        .getSpec()
+        .getMetrics()
+        .get(0)
+        .getExternal()
+        .getTarget()
+        .setAverageValue(new Quantity("2000"));
+    var actualHpa = loadResource("sample-hpa-quantities.yaml", HorizontalPodAutoscaler.class);
+
+    assertThat(matcher.matches(actualHpa, desiredHpa, mockedContext)).isFalse();
   }
 
   @ParameterizedTest
