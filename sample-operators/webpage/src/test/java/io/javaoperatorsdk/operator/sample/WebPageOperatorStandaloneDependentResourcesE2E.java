@@ -35,6 +35,7 @@ class WebPageOperatorStandaloneDependentResourcesE2E extends WebPageOperatorAbst
               .waitForNamespaceDeletion(false)
               .withDeleteCRDs(false)
               .withReconciler(new WebPageStandaloneDependentsReconciler())
+              .withConfigurationService(o -> o.withUseVirtualThreads(true))
               .build()
           : ClusterDeployedOperatorExtension.builder()
               .waitForNamespaceDeletion(false)

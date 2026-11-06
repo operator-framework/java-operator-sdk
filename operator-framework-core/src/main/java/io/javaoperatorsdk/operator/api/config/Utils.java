@@ -42,6 +42,8 @@ public class Utils {
   public static final String GENERIC_PARAMETER_TYPE_ERROR_PREFIX =
       "Couldn't retrieve generic parameter type from ";
 
+  public static final String VERSION_PROPERTIES_FILE_NAME = "operator-sdk-version.properties";
+
   public static final Version VERSION = loadFromProperties();
 
   /**
@@ -52,7 +54,9 @@ public class Utils {
    */
   private static Version loadFromProperties() {
     final var is =
-        Thread.currentThread().getContextClassLoader().getResourceAsStream("version.properties");
+        Thread.currentThread()
+            .getContextClassLoader()
+            .getResourceAsStream(VERSION_PROPERTIES_FILE_NAME);
 
     final var properties = new Properties();
     if (is != null) {
@@ -62,7 +66,9 @@ public class Utils {
         log.warn("Couldn't load version information: {}", e.getMessage());
       }
     } else {
-      log.warn("Couldn't find version.properties file. Default version information will be used.");
+      log.warn(
+          "Couldn't find {} file. Default version information will be used.",
+          VERSION_PROPERTIES_FILE_NAME);
     }
 
     Date builtTime;

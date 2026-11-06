@@ -31,6 +31,7 @@ import io.javaoperatorsdk.operator.processing.event.source.filter.OnUpdateFilter
 import static io.javaoperatorsdk.operator.api.reconciler.Constants.DEFAULT_COMPARABLE_RESOURCE_VERSION;
 import static io.javaoperatorsdk.operator.api.reconciler.Constants.DEFAULT_FOLLOW_CONTROLLER_NAMESPACE_CHANGES;
 import static io.javaoperatorsdk.operator.api.reconciler.Constants.DEFAULT_GHOST_RESOURCE_CHECK_INTERVAL_MILLIS;
+import static io.javaoperatorsdk.operator.api.reconciler.Constants.DEFAULT_WITHOUT_NAMESPACE_INDEX;
 import static io.javaoperatorsdk.operator.api.reconciler.Constants.NO_LONG_VALUE_SET;
 import static io.javaoperatorsdk.operator.api.reconciler.Constants.NO_VALUE_SET;
 
@@ -152,6 +153,23 @@ public @interface Informer {
    * @since 5.3.0
    */
   boolean comparableResourceVersions() default DEFAULT_COMPARABLE_RESOURCE_VERSION;
+
+  /**
+   * Whether to remove the namespace index that the underlying informer maintains by default.
+   *
+   * <p>The framework never reads that index, it only reads the indexes registered through {@link
+   * io.javaoperatorsdk.operator.processing.event.source.IndexerResourceCache#addIndexers}, so
+   * dropping it saves an entry per cached resource. It is worth setting when the informer caches a
+   * large number of resources and nothing looks them up by namespace, in particular together with a
+   * custom {@link #itemStore()} that keeps only a reduced form of each resource.
+   *
+   * <p>Note that this makes the informer a distinct one for pooling purposes: event sources that
+   * disagree on this setting do not share an informer, because the index cannot be present for one
+   * of them and absent for the other.
+   *
+   * @since 5.7.0
+   */
+  boolean withoutNamespaceIndex() default DEFAULT_WITHOUT_NAMESPACE_INDEX;
 
   /**
    * @deprecated Ghost resource checking is now triggered by the informer's onList callback. This

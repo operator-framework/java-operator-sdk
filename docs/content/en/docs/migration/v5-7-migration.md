@@ -1,0 +1,112 @@
+---
+title: Migrating from v5.6 to v5.7
+description: Migrating from v5.6 to v5.7
+---
+
+## Fabric8 Kubernetes Client upgraded to v8.0.0
+
+v5.7 uses version 8.0.0 of the
+[Fabric8 Kubernetes Client](https://github.com/fabric8io/kubernetes-client). Please consult the
+client's own release notes and migration guide for the complete list of changes. The ones that are
+most likely to affect operators built with JOSDK are described below.
+
+### Jackson 3
+
+The client moved from Jackson 2 to Jackson 3. The packages changed from `com.fasterxml.jackson` to
+`tools.jackson` (the annotations from `jackson-annotations` are the exception and remain in
+`com.fasterxml.jackson.annotation`). If your operator uses Jackson types directly, for example
+`JsonNode` obtained from the client's `KubernetesSerialization`, update the imports and the
+dependencies accordingly:
+
+```java
+// before
+import com.fasterxml.jackson.databind.JsonNode;
+
+// after
+import tools.jackson.databind.JsonNode;
+```
+
+Other notable Jackson 3 differences:
+
+- `JsonProcessingException` was replaced by `JacksonException`, which is unchecked.
+- `JsonNode.fields()` was replaced by `properties()`, `fieldNames()` by `propertyNames()` and
+  `asText()` by `asString()`.
+- `ObjectMapper` instances are created using builders, for example `YAMLMapper.builder().build()`.
+
+### Ambiguous `withShardSelector(null)`
+
+`Filterable` now has an additional `withShardSelector(ShardSelector)` overload next to
+`withShardSelector(String)`. Calls passing a bare `null` no longer compile, cast the argument:
+
+```java
+client.pods().withShardSelector((String) null);
+```
+
+## Default HTTP client is now Vert.x 5
+
+The `operator-framework` artifact now brings the Vert.x 5 based HTTP client of the Fabric8 client
+(`kubernetes-httpclient-vertx-5`), which is also the default of the Fabric8 client itself, instead of
+the JDK one (`kubernetes-httpclient-jdk`). If your operator doesn't declare an HTTP client
+implementation of its own there is nothing to do, it gets the new default. To keep using the JDK
+client, or to use another implementation, exclude the default from the `operator-framework`
+dependency and add the one you want:
+
+```xml
+<dependency>
+  <groupId>io.javaoperatorsdk</groupId>
+  <artifactId>operator-framework</artifactId>
+  <exclusions>
+    <exclusion>
+      <groupId>io.fabric8</groupId>
+      <artifactId>kubernetes-httpclient-vertx-5</artifactId>
+    </exclusion>
+  </exclusions>
+</dependency>
+<dependency>
+  <groupId>io.fabric8</groupId>
+  <artifactId>kubernetes-httpclient-jdk</artifactId>
+  <version>8.0.0</version>
+</dependency>
+```
+
+The implementations provided as part of the Fabric8 client all follow the
+`kubernetes-httpclient-<implementation name>` pattern for their artifact identifier.
+
+If your operator already replaced the default HTTP client, update the exclusion: excluding
+`kubernetes-httpclient-jdk` no longer has any effect and `kubernetes-httpclient-vertx-5` would end up
+on the classpath next to your implementation. This is especially important if you use the Vert.x 4
+based client (`kubernetes-httpclient-vertx`), since Vert.x 4 and Vert.x 5 cannot be used together.
+If you want to keep the Vert.x 4 based client, use it in place of `kubernetes-httpclient-jdk` in the
+snippet above.
+
+## Executors of the polling and timer event sources
+
+The polling event sources and the internal `TimerEventSource` no longer use a `java.util.Timer`, and
+`PerResourcePollingEventSource` no longer creates its executor when its configuration is built. They
+run on scheduled executors, see [virtual threads](../documentation/operations/configuration/#virtual-threads)
+and [Threading of the polling event sources](../documentation/eventing/#threading-of-the-polling-event-sources).
+This is transparent unless your operator provides an executor to a polling event source, or relies
+on one of the following:
+
+- A `ScheduledExecutorService` provided with `withExecutorService(...)` to a
+  `PerResourcePollingConfigurationBuilder` was shut down with `shutdownNow()` when the event source
+  was stopped. It is not anymore: **an executor you provide is yours to shut down**, like it is for
+  `PollingConfigurationBuilder`. If you relied on the event source for this, shut it down yourself
+  after stopping the operator, otherwise its threads can keep the JVM from exiting if they are not
+  daemon threads.
+- `PerResourcePollingConfiguration.executorService()` returns `null` when no executor was provided,
+  it used to be a `ScheduledThreadPoolExecutor` with a single non-daemon thread created by the
+  configuration. The event source now creates a single daemon thread executor, or one running on
+  virtual threads if `useVirtualThreads` is enabled, when it starts, shuts it down when it stops, and
+  creates a new one if it is started again. `PerResourcePollingConfiguration.DEFAULT_EXECUTOR_THREAD_NUMBER`
+  is deprecated, it isn't used anymore.
+- Each polling event source has an executor of its own: they don't share threads, and the number of
+  threads of a source is not configurable other than by providing an executor.
+- `new PollingEventSource<>(Class, PollingConfiguration)` is deprecated. Use the constructor that
+  takes the `EventSourceContext` as well, `new PollingEventSource<>(Class, EventSourceContext,
+  PollingConfiguration)`, otherwise the event source cannot know about the `useVirtualThreads`
+  setting and polls on a platform thread.
+- `TimerEventSource(String, boolean)` is deprecated, use the constructor that also takes an
+  executor supplier, `null` to have the event source create an executor of its own.
+- `ExecutorServiceManager.scheduledExecutorService()` is deprecated. The framework doesn't use it
+  anymore, it creates the executor on first use, and shuts it down when the manager is stopped.

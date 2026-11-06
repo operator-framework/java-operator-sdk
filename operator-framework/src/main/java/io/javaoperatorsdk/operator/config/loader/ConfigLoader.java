@@ -83,9 +83,17 @@ public class ConfigLoader {
               Integer.class,
               ConfigurationServiceOverrider::withConcurrentWorkflowExecutorThreads),
           new ConfigBinding<>(
+              "retry-and-reschedule.concurrent-threads",
+              Integer.class,
+              ConfigurationServiceOverrider::withConcurrentRetryAndRescheduleThreads),
+          new ConfigBinding<>(
               "close-client-on-stop",
               Boolean.class,
               ConfigurationServiceOverrider::withCloseClientOnStop),
+          new ConfigBinding<>(
+              "use-virtual-threads",
+              Boolean.class,
+              ConfigurationServiceOverrider::withUseVirtualThreads),
           new ConfigBinding<>(
               "informer.stop-on-error-during-startup",
               Boolean.class,
@@ -190,7 +198,11 @@ public class ConfigLoader {
           new ConfigBinding<>(
               "informer.comparable-resource-versions",
               Boolean.class,
-              ControllerConfigurationOverrider::withComparableResourceVersions));
+              ControllerConfigurationOverrider::withComparableResourceVersions),
+          new ConfigBinding<>(
+              "informer.without-namespace-index",
+              Boolean.class,
+              ControllerConfigurationOverrider::withoutNamespaceIndex));
 
   private final ConfigProvider configProvider;
 
@@ -252,7 +264,7 @@ public class ConfigLoader {
     }
     Consumer<ControllerConfigurationOverrider<R>> retryStep = buildRetryConsumer(prefix);
     if (retryStep != null) {
-      consumer = consumer == null ? retryStep : consumer.andThen(retryStep);
+      consumer = consumer.andThen(retryStep);
     }
     Consumer<ControllerConfigurationOverrider<R>> rateLimiterStep =
         buildRateLimiterConsumer(prefix);
