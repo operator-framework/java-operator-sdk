@@ -72,7 +72,7 @@ java-operator-sdk/
 # Run unit tests only
 ./mvnw test
 
-# Run integration tests (test classes run in parallel in 3 forked JVMs)
+# Run integration tests (test classes run in parallel in 5 forked JVMs)
 ./mvnw verify -Pintegration-tests
 
 # Run integration tests with a different parallelism (1 = sequential)
