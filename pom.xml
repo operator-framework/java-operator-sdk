@@ -462,7 +462,7 @@
     <profile>
       <id>integration-tests</id>
       <properties>
-        <it.fork.count>3</it.fork.count>
+        <it.fork.count>5</it.fork.count>
       </properties>
       <build>
         <plugins>
