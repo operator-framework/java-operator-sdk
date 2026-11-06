@@ -53,7 +53,9 @@ class HorizontalPodAutoscalerSanitizer {
     }
     final List<MetricSpec> actualMetrics = actualSpec.getMetrics();
     final List<MetricSpec> desiredMetrics = desiredSpec.getMetrics();
-    if (actualMetrics.size() != desiredMetrics.size()) {
+    if (actualMetrics == null
+        || desiredMetrics == null
+        || actualMetrics.size() != desiredMetrics.size()) {
       return;
     }
     for (int metricIndex = 0; metricIndex < desiredMetrics.size(); metricIndex++) {
