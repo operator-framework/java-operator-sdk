@@ -30,7 +30,6 @@ import org.slf4j.LoggerFactory;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.OperatorException;
 import io.javaoperatorsdk.operator.api.config.ConfigurationService;
-import io.javaoperatorsdk.operator.api.config.ExecutorServiceManager;
 import io.javaoperatorsdk.operator.api.reconciler.EventSourceContext;
 import io.javaoperatorsdk.operator.health.Status;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
@@ -89,7 +88,7 @@ public class PollingEventSource<R, P extends HasMetadata, ID>
    */
   public PollingEventSource(
       Class<R> resourceClass, EventSourceContext<P> context, PollingConfiguration<R, ID> config) {
-    this(resourceClass, config, configurationServiceOf(context));
+    this(resourceClass, config, PollingExecutors.useVirtualThreads(context));
   }
 
   /**
@@ -100,32 +99,17 @@ public class PollingEventSource<R, P extends HasMetadata, ID>
    */
   @Deprecated(since = "5.7.0")
   public PollingEventSource(Class<R> resourceClass, PollingConfiguration<R, ID> config) {
-    this(resourceClass, config, null);
+    this(resourceClass, config, false);
   }
 
   private PollingEventSource(
-      Class<R> resourceClass,
-      PollingConfiguration<R, ID> config,
-      ConfigurationService configurationService) {
+      Class<R> resourceClass, PollingConfiguration<R, ID> config, boolean useVirtualThreads) {
     super(config.name(), resourceClass, config.resourceIDMapper());
     this.genericResourceFetcher = config.genericResourceFetcher();
     this.period = config.period();
     this.configuredExecutorService = config.executorService();
-    this.useVirtualThreads =
-        configurationService != null && configurationService.useVirtualThreads();
+    this.useVirtualThreads = useVirtualThreads;
     this.ownsExecutorService = configuredExecutorService == null;
-  }
-
-  /**
-   * The configuration of the operator the event source belongs to, or {@code null} if it doesn't
-   * belong to one, which only happens when the event source is used standalone, outside an
-   * operator.
-   */
-  private static ConfigurationService configurationServiceOf(EventSourceContext<?> context) {
-    final var controllerConfiguration = context.getControllerConfiguration();
-    return controllerConfiguration == null
-        ? null
-        : controllerConfiguration.getConfigurationService();
   }
 
   @Override
@@ -187,8 +171,7 @@ public class PollingEventSource<R, P extends HasMetadata, ID>
     if (configuredExecutorService != null) {
       return configuredExecutorService;
     }
-    return ExecutorServiceManager.newScheduledExecutorService(
-        1, useVirtualThreads, "josdk-polling-" + name());
+    return PollingExecutors.newExecutor(name(), useVirtualThreads);
   }
 
   protected synchronized void getStateAndFillCache() {
@@ -204,7 +187,6 @@ public class PollingEventSource<R, P extends HasMetadata, ID>
   public void stop() throws OperatorException {
     super.stop();
     if (pollingTask != null) {
-      // as with the java.util.Timer this replaces, an ongoing poll is left to finish
       pollingTask.cancel(false);
       pollingTask = null;
     }

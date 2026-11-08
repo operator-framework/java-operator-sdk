@@ -117,7 +117,6 @@ public abstract class AbstractInformerPool implements InformerPool {
     Optional.ofNullable(classifier.itemStore()).ifPresent(informer::itemStore);
 
     if (classifier.withoutNamespaceIndex()) {
-      // the framework only reads the indexes registered through the resource cache, never this one
       informer.removeNamespaceIndex();
     }
 

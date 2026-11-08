@@ -54,6 +54,11 @@ public class TimerEventSource<R extends HasMetadata> extends AbstractEventSource
     this.ownsExecutorService = true;
   }
 
+  /**
+   * @deprecated use {@link #TimerEventSource(String, boolean, Supplier)} instead, passing {@code
+   *     null} as the supplier to keep the previous behavior.
+   */
+  @Deprecated(since = "5.7.0")
   public TimerEventSource(String name, boolean triggerReconcilerOnAllEvents) {
     this(name, triggerReconcilerOnAllEvents, null);
   }
@@ -134,8 +139,6 @@ public class TimerEventSource<R extends HasMetadata> extends AbstractEventSource
   public void cancelOnceSchedule(ResourceID customResourceUid) {
     var scheduled = onceTasks.remove(customResourceUid);
     if (scheduled != null) {
-      // as with the java.util.TimerTask this replaces, a task that is already running is left to
-      // finish
       scheduled.cancel(false);
     }
   }
