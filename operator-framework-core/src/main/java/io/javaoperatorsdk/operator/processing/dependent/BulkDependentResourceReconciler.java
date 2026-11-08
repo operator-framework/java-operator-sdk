@@ -117,9 +117,6 @@ class BulkDependentResourceReconciler<R, P extends HasMetadata, ID>
 
     @Override
     public Result<R> match(R resource, P primary, Context<P> context) {
-      // retrieve the desired state via the context so that it is processed the same way as for
-      // non-bulk dependents, in particular so that configured DesiredStateAspects are applied
-      // before matching
       return bulkDependentResource.match(resource, getOrComputeDesired(context), primary, context);
     }
 
