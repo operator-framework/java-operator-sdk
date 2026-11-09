@@ -39,6 +39,7 @@ import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.api.model.apps.ReplicaSet;
 import io.fabric8.kubernetes.api.model.apps.StatefulSet;
 import io.fabric8.kubernetes.api.model.apps.StatefulSetSpec;
+import io.fabric8.kubernetes.api.model.autoscaling.v2.HorizontalPodAutoscaler;
 import io.fabric8.kubernetes.client.utils.KubernetesSerialization;
 import io.javaoperatorsdk.operator.OperatorException;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
@@ -47,6 +48,7 @@ import io.javaoperatorsdk.operator.processing.LoggingUtils;
 import com.github.difflib.DiffUtils;
 import com.github.difflib.UnifiedDiffUtils;
 
+import static io.javaoperatorsdk.operator.processing.dependent.kubernetes.HorizontalPodAutoscalerSanitizer.sanitizeHorizontalPodAutoscalerSpec;
 import static io.javaoperatorsdk.operator.processing.dependent.kubernetes.PodTemplateSpecSanitizer.sanitizePodTemplateSpec;
 
 /**
@@ -220,6 +222,12 @@ public class SSABasedGenericKubernetesResourceMatcher<R extends HasMetadata> {
           actualMap,
           actualDaemonSet.getSpec().getTemplate(),
           desiredDaemonSet.getSpec().getTemplate());
+    } else if (actual instanceof HorizontalPodAutoscaler actualHorizontalPodAutoscaler
+        && desired instanceof HorizontalPodAutoscaler desiredHorizontalPodAutoscaler) {
+      sanitizeHorizontalPodAutoscalerSpec(
+          actualMap,
+          actualHorizontalPodAutoscaler.getSpec(),
+          desiredHorizontalPodAutoscaler.getSpec());
     }
   }
 

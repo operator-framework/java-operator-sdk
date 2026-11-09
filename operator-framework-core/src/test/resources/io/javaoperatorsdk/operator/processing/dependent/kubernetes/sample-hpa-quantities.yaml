@@ -1,0 +1,83 @@
+#
+# Copyright Java Operator SDK Authors
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#         http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+
+# actual HorizontalPodAutoscaler with target quantities in the canonical form stored by the API server
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  managedFields:
+    - manager: controller
+      operation: Apply
+      apiVersion: autoscaling/v2
+      time: '2026-11-06T10:00:00Z'
+      fieldsType: FieldsV1
+      fieldsV1:
+        f:spec:
+          f:maxReplicas: { }
+          f:metrics: { }
+          f:minReplicas: { }
+          f:scaleTargetRef:
+            f:apiVersion: { }
+            f:kind: { }
+            f:name: { }
+  name: "test"
+  uid: 0d6f5b8e-2c1a-4f3e-9b7d-5a4c3b2a1f00
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: test
+  minReplicas: 1
+  maxReplicas: 4
+  metrics:
+    - type: External
+      external:
+        metric:
+          name: queue-depth
+        target:
+          type: AverageValue
+          averageValue: "1k"
+    - type: Object
+      object:
+        describedObject:
+          apiVersion: v1
+          kind: Service
+          name: test
+        metric:
+          name: requests-per-second
+        target:
+          type: Value
+          value: "2"
+    - type: Pods
+      pods:
+        metric:
+          name: packets-per-second
+        target:
+          type: AverageValue
+          averageValue: "500m"
+    - type: Resource
+      resource:
+        name: memory
+        target:
+          type: AverageValue
+          averageValue: "1Gi"
+    - type: ContainerResource
+      containerResource:
+        name: cpu
+        container: app
+        target:
+          type: AverageValue
+          averageValue: "1500m"
