@@ -32,8 +32,11 @@ final class PollingExecutors {
    */
   static boolean useVirtualThreads(EventSourceContext<?> context) {
     final var controllerConfiguration = context.getControllerConfiguration();
-    return controllerConfiguration != null
-        && controllerConfiguration.getConfigurationService().useVirtualThreads();
+    if (controllerConfiguration == null) {
+      return false;
+    }
+    final var configurationService = controllerConfiguration.getConfigurationService();
+    return configurationService != null && configurationService.useVirtualThreads();
   }
 
   static ScheduledExecutorService newExecutor(String eventSourceName, boolean useVirtualThreads) {
