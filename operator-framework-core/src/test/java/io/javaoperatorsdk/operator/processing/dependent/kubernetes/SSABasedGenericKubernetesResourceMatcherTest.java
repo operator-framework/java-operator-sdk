@@ -253,7 +253,8 @@ class SSABasedGenericKubernetesResourceMatcherTest {
       strings = {
         "sample-sts-volumeclaimtemplates-desired.yaml",
         "sample-sts-volumeclaimtemplates-desired-with-status.yaml",
-        "sample-sts-volumeclaimtemplates-desired-with-volumemode.yaml"
+        "sample-sts-volumeclaimtemplates-desired-with-volumemode.yaml",
+        "sample-sts-volumeclaimtemplates-desired-with-equivalent-storage.yaml"
       })
   void testSanitizeState_statefulSetWithVolumeClaims(String desiredResourceFileName) {
     var desiredStatefulSet = loadResource(desiredResourceFileName, StatefulSet.class);
