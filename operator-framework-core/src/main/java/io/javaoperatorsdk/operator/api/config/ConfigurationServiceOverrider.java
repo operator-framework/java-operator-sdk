@@ -16,9 +16,12 @@
 package io.javaoperatorsdk.operator.api.config;
 
 import java.time.Duration;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.ScheduledExecutorService;
 import java.util.function.Function;
 
 import org.slf4j.Logger;
@@ -31,6 +34,7 @@ import io.javaoperatorsdk.operator.api.event.EventRecorder;
 import io.javaoperatorsdk.operator.api.monitoring.Metrics;
 import io.javaoperatorsdk.operator.api.reconciler.Experimental;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResourceFactory;
+import io.javaoperatorsdk.operator.api.reconciler.dependent.DesiredStateAspect;
 import io.javaoperatorsdk.operator.processing.event.source.informer.pool.InformerPool;
 
 @SuppressWarnings({"unused", "UnusedReturnValue"})
@@ -42,11 +46,14 @@ public class ConfigurationServiceOverrider {
   private Boolean checkCR;
   private Integer concurrentReconciliationThreads;
   private Integer concurrentWorkflowExecutorThreads;
+  private Integer concurrentRetryAndRescheduleThreads;
   private Cloner cloner;
   private Boolean closeClientOnStop;
   private KubernetesClient client;
   private ExecutorService executorService;
   private ExecutorService workflowExecutorService;
+  private Boolean useVirtualThreads;
+  private ScheduledExecutorService retryAndRescheduleExecutorService;
   private LeaderElectionConfiguration leaderElectionConfiguration;
   private String clusterScopedEventNamespace;
   private EventRecorder eventRecorder;
@@ -59,6 +66,7 @@ public class ConfigurationServiceOverrider {
   private Boolean useSSAToPatchPrimaryResource;
   private Boolean cloneSecondaryResourcesWhenGettingFromCache;
   private InformerPool informerPool;
+  private List<DesiredStateAspect> desiredStateAspects;
 
   @SuppressWarnings("rawtypes")
   private DependentResourceFactory dependentResourceFactory;
@@ -79,6 +87,25 @@ public class ConfigurationServiceOverrider {
 
   public ConfigurationServiceOverrider withConcurrentWorkflowExecutorThreads(int threadNumber) {
     this.concurrentWorkflowExecutorThreads = threadNumber;
+    return this;
+  }
+
+  /**
+   * Sets the number of threads used to trigger the operator's retried and rescheduled
+   * reconciliations, which are shared by all its controllers.
+   *
+   * <p>Note that changing the number of threads makes the overridden configuration build the
+   * default retry and reschedule executor itself, so a custom one provided by the configuration
+   * being overridden is not used anymore. Use {@link #withRetryAndRescheduleExecutorService} to
+   * provide one.
+   *
+   * @param threadNumber the maximum number of concurrent retry and reschedule threads
+   * @return this {@link ConfigurationServiceOverrider} for chained customization
+   * @see ConfigurationService#concurrentRetryAndRescheduleThreads()
+   * @since 5.7.0
+   */
+  public ConfigurationServiceOverrider withConcurrentRetryAndRescheduleThreads(int threadNumber) {
+    this.concurrentRetryAndRescheduleThreads = threadNumber;
     return this;
   }
 
@@ -116,6 +143,41 @@ public class ConfigurationServiceOverrider {
   }
 
   /**
+   * Replaces the executor used to trigger the operator's retried and rescheduled reconciliations,
+   * which is shared by all its controllers.
+   *
+   * @param retryAndRescheduleExecutorService the executor to trigger retried and rescheduled
+   *     reconciliations on
+   * @return this {@link ConfigurationServiceOverrider} for chained customization
+   * @see ConfigurationService#getRetryAndRescheduleExecutorService()
+   * @since 5.7.0
+   */
+  public ConfigurationServiceOverrider withRetryAndRescheduleExecutorService(
+      ScheduledExecutorService retryAndRescheduleExecutorService) {
+    this.retryAndRescheduleExecutorService = retryAndRescheduleExecutorService;
+    return this;
+  }
+
+  /**
+   * Makes the framework run the tasks it executes concurrently on virtual threads instead of
+   * platform threads. Only supported on Java 25 or later, see {@link
+   * ConfigurationService#useVirtualThreads()} for the details.
+   *
+   * <p>Note that if this changes the value of the configuration being overridden, the overridden
+   * configuration builds the default retry and reschedule executor itself, so a custom one provided
+   * by the configuration being overridden is replaced and not used as is. Use {@link
+   * #withRetryAndRescheduleExecutorService} to provide one along with this setting.
+   *
+   * @param useVirtualThreads {@code true} to use virtual threads
+   * @return this {@link ConfigurationServiceOverrider} for chained customization
+   * @since 5.7.0
+   */
+  public ConfigurationServiceOverrider withUseVirtualThreads(boolean useVirtualThreads) {
+    this.useVirtualThreads = useVirtualThreads;
+    return this;
+  }
+
+  /**
    * Replaces the default {@link KubernetesClient} instance by the specified one. This is the
    * preferred mechanism to configure which client will be used to access the cluster.
    *
@@ -139,8 +201,8 @@ public class ConfigurationServiceOverrider {
 
   /**
    * Sets the namespace in which Kubernetes events about cluster scoped resources are recorded. Use
-   * this when the operator is not allowed to create events in the {@code default} namespace,
-   * passing for example the namespace the operator itself runs in.
+   * this when the operator is not allowed to create events in the {@code default} namespace. The
+   * API server only accepts {@code default} and {@code kube-system} for such events.
    *
    * @param namespace the namespace to record events about cluster scoped resources in
    * @return this {@link ConfigurationServiceOverrider} for chained customization
@@ -229,6 +291,38 @@ public class ConfigurationServiceOverrider {
     return this;
   }
 
+  /**
+   * Replaces the {@link DesiredStateAspect}s applied to the desired state of all the Kubernetes
+   * dependent resources managed by the operator by the specified ones.
+   *
+   * @param desiredStateAspects the aspects to apply, in the order in which they should be applied
+   * @return this {@link ConfigurationServiceOverrider} for chained customization
+   * @since 5.6.0
+   */
+  public ConfigurationServiceOverrider withDesiredStateAspects(
+      List<DesiredStateAspect> desiredStateAspects) {
+    this.desiredStateAspects = new ArrayList<>(desiredStateAspects);
+    return this;
+  }
+
+  /**
+   * Appends the specified {@link DesiredStateAspect}s to the already configured ones, which are the
+   * ones configured on the overridden {@link ConfigurationService} unless {@link
+   * #withDesiredStateAspects(List)} was called on this overrider first.
+   *
+   * @param desiredStateAspects the aspects to append, in the order in which they should be applied
+   * @return this {@link ConfigurationServiceOverrider} for chained customization
+   * @since 5.6.0
+   */
+  public ConfigurationServiceOverrider addDesiredStateAspects(
+      DesiredStateAspect... desiredStateAspects) {
+    if (this.desiredStateAspects == null) {
+      this.desiredStateAspects = new ArrayList<>(original.desiredStateAspects());
+    }
+    this.desiredStateAspects.addAll(List.of(desiredStateAspects));
+    return this;
+  }
+
   public ConfigurationService build() {
     return new BaseConfigurationService(original.getVersion(), cloner, client) {
       @Override
@@ -277,6 +371,17 @@ public class ConfigurationServiceOverrider {
       }
 
       @Override
+      public int concurrentRetryAndRescheduleThreads() {
+        return Utils.ensureValid(
+            overriddenValueOrDefault(
+                concurrentRetryAndRescheduleThreads,
+                ConfigurationService::concurrentRetryAndRescheduleThreads),
+            "maximum retry and reschedule threads",
+            1,
+            original.concurrentRetryAndRescheduleThreads());
+      }
+
+      @Override
       public Metrics getMetrics() {
         return overriddenValueOrDefault(metrics, ConfigurationService::getMetrics);
       }
@@ -284,6 +389,11 @@ public class ConfigurationServiceOverrider {
       @Override
       public boolean closeClientOnStop() {
         return overriddenValueOrDefault(closeClientOnStop, ConfigurationService::closeClientOnStop);
+      }
+
+      @Override
+      public boolean useVirtualThreads() {
+        return overriddenValueOrDefault(useVirtualThreads, ConfigurationService::useVirtualThreads);
       }
 
       @Override
@@ -302,6 +412,26 @@ public class ConfigurationServiceOverrider {
         } else {
           return super.getWorkflowExecutorService();
         }
+      }
+
+      @Override
+      public ScheduledExecutorService getRetryAndRescheduleExecutorService() {
+        if (retryAndRescheduleExecutorService != null) {
+          return retryAndRescheduleExecutorService;
+        } else if (!changes(
+            concurrentRetryAndRescheduleThreads, original.concurrentRetryAndRescheduleThreads())) {
+          return original.getRetryAndRescheduleExecutorService();
+        } else {
+          return super.getRetryAndRescheduleExecutorService();
+        }
+      }
+
+      // the default scheduled executors are only built anew when an override actually changes the
+      // way they are built, otherwise the ones of the original configuration are kept, which also
+      // preserves a custom executor the original provides
+      private boolean changes(Integer overriddenThreads, int originalThreads) {
+        return (overriddenThreads != null && overriddenThreads != originalThreads)
+            || (useVirtualThreads != null && useVirtualThreads != original.useVirtualThreads());
       }
 
       @Override
@@ -382,6 +512,12 @@ public class ConfigurationServiceOverrider {
         }
         informerPool.setConfigurationService(this);
         return informerPool;
+      }
+
+      @Override
+      public List<DesiredStateAspect> desiredStateAspects() {
+        return overriddenValueOrDefault(
+            desiredStateAspects, ConfigurationService::desiredStateAspects);
       }
     };
   }

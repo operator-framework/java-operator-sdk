@@ -16,10 +16,11 @@
 package io.javaoperatorsdk.operator.api.config;
 
 import java.time.Duration;
+import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
 import java.util.function.Consumer;
 
 import org.slf4j.Logger;
@@ -41,6 +42,7 @@ import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.Experimental;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResourceFactory;
+import io.javaoperatorsdk.operator.api.reconciler.dependent.DesiredStateAspect;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependent;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependentResource;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependentResourceConfig;
@@ -61,6 +63,12 @@ public interface ConfigurationService {
 
   /** The default number of threads used to process dependent workflows */
   int DEFAULT_WORKFLOW_EXECUTOR_THREAD_NUMBER = DEFAULT_RECONCILIATION_THREADS_NUMBER;
+
+  /**
+   * The default number of threads used to trigger the operator's retried and rescheduled
+   * reconciliations
+   */
+  int DEFAULT_RETRY_AND_RESCHEDULE_THREADS_NUMBER = 2;
 
   /**
    * Creates a new {@link ConfigurationService} instance used to configure an {@link
@@ -145,13 +153,19 @@ public interface ConfigurationService {
    * you do not need to worry about setting the namespace information in most cases).
    *
    * <p>Previous versions of this class provided direct access to the serialization mechanism (via
-   * {@link com.fasterxml.jackson.databind.ObjectMapper}) or the client's configuration. This was
-   * somewhat confusing, in particular with respect to changes made in the Fabric8 client
-   * serialization architecture made in 6.7. The proper way to configure these aspects is now to
-   * configure the Kubernetes client accordingly and the SDK will extract the information it needs
-   * from this instance. The recommended way to do so is to create your operator with {@link
+   * {@link tools.jackson.databind.ObjectMapper}) or the client's configuration. This was somewhat
+   * confusing, in particular with respect to changes made in the Fabric8 client serialization
+   * architecture made in 6.7. The proper way to configure these aspects is now to configure the
+   * Kubernetes client accordingly and the SDK will extract the information it needs from this
+   * instance. The recommended way to do so is to create your operator with {@link
    * io.javaoperatorsdk.operator.Operator#Operator(Consumer)}, passing your custom instance with
    * {@link ConfigurationServiceOverrider#withKubernetesClient(KubernetesClient)}.
+   *
+   * <p>When {@link #useVirtualThreads()} is enabled (and supported by the JVM), the default client
+   * runs its internal asynchronous tasks, such as dispatching informer events to their handlers and
+   * delivering watch events, on virtual threads instead of its default cached platform thread pool.
+   * A client provided by overriding this method or through {@link
+   * ConfigurationServiceOverrider#withKubernetesClient(KubernetesClient)} is used as is.
    *
    * <p><em>NOTE:</em> It is strongly suggested that implementors override this method since the
    * default implementation creates a new {@link KubernetesClient} instance each time this method is
@@ -161,13 +175,17 @@ public interface ConfigurationService {
    * @since 4.4.0
    */
   default KubernetesClient getKubernetesClient() {
-    return new KubernetesClientBuilder()
-        .withConfig(
-            new ConfigBuilder(Config.autoConfigure(null))
-                .withMaxConcurrentRequests(DEFAULT_MAX_CONCURRENT_REQUEST)
-                .build())
-        .withKubernetesSerialization(new KubernetesSerialization())
-        .build();
+    final var builder =
+        new KubernetesClientBuilder()
+            .withConfig(
+                new ConfigBuilder(Config.autoConfigure(null))
+                    .withMaxConcurrentRequests(DEFAULT_MAX_CONCURRENT_REQUEST)
+                    .build())
+            .withKubernetesSerialization(new KubernetesSerialization());
+    if (VirtualThreads.shouldUse(useVirtualThreads())) {
+      builder.withTaskExecutorSupplier(VirtualThreads.newKubernetesClientTaskExecutorSupplier());
+    }
+    return builder.build();
   }
 
   /**
@@ -201,6 +219,11 @@ public interface ConfigurationService {
    * The number of threads the operator can spin out to dispatch reconciliation requests to
    * reconcilers with the default executors
    *
+   * <p>This is a concurrency limit and applies regardless of whether the default executor is backed
+   * by platform or by virtual threads, see {@link #useVirtualThreads()}: with virtual threads it
+   * caps how many reconciliations run at the same time rather than the size of a thread pool. Since
+   * virtual threads are cheap, the limit can be set considerably higher when they are enabled.
+   *
    * @return the number of concurrent reconciliation threads
    */
   default int concurrentReconciliationThreads() {
@@ -211,10 +234,30 @@ public interface ConfigurationService {
    * Number of threads the operator can spin out to be used in the workflows with the default
    * executor.
    *
+   * <p>This is a concurrency limit and applies regardless of whether the default executor is backed
+   * by platform or by virtual threads, see {@link #useVirtualThreads()}: with virtual threads it
+   * caps how many dependent resources are processed at the same time rather than the size of a
+   * thread pool. Since virtual threads are cheap, the limit can be set considerably higher when
+   * they are enabled.
+   *
    * @return the maximum number of concurrent workflow threads
    */
   default int concurrentWorkflowExecutorThreads() {
     return DEFAULT_WORKFLOW_EXECUTOR_THREAD_NUMBER;
+  }
+
+  /**
+   * Number of threads the operator can spin out to trigger its retried and rescheduled
+   * reconciliations with the default executor. These threads are shared by all the controllers of
+   * the operator, but the tasks they run only enqueue an event for the reconciliation to happen on
+   * a reconciliation thread, so few of them are needed. Not used when virtual threads are enabled,
+   * see {@link #useVirtualThreads()}.
+   *
+   * @return the maximum number of concurrent retry and reschedule threads
+   * @since 5.7.0
+   */
+  default int concurrentRetryAndRescheduleThreads() {
+    return DEFAULT_RETRY_AND_RESCHEDULE_THREADS_NUMBER;
   }
 
   /**
@@ -227,6 +270,46 @@ public interface ConfigurationService {
   }
 
   /**
+   * Whether the framework should run the tasks it executes concurrently &mdash; reconciliations,
+   * dependent workflows and internal housekeeping such as starting the informers &mdash; on virtual
+   * threads instead of platform threads.
+   *
+   * <p>Virtual threads make blocking operations, which is essentially all a reconciler does while
+   * talking to the Kubernetes API server or to external systems, much cheaper. Enabling them does
+   * <em>not</em> lift the configured concurrency limits: {@link #concurrentReconciliationThreads()}
+   * and {@link #concurrentWorkflowExecutorThreads()} still cap how many reconciliations,
+   * respectively dependent resources, are processed at the same time, they just aren't backed by a
+   * pool of platform threads anymore. Since virtual threads are cheap, those limits can be set
+   * considerably higher than what would be reasonable for platform threads.
+   *
+   * <p>Virtual threads are only supported on Java 25 or later, where <a
+   * href="https://openjdk.org/jeps/491">JEP 491</a> removed the pinning of the carrier thread by
+   * {@code synchronized} blocks. This is checked at runtime: on an older JVM, a warning is logged
+   * and platform threads are used, so that the same configuration works regardless of the Java
+   * version the operator runs on.
+   *
+   * <p>Note that this only affects the executors created by the framework: a custom {@link
+   * ExecutorService} provided through {@link #getExecutorService()} or {@link
+   * #getWorkflowExecutorService()}, or a custom {@link ScheduledExecutorService} provided through
+   * {@link #getRetryAndRescheduleExecutorService()} or the polling configuration, is used as is.
+   * The default scheduled executors, including the ones the polling event sources create for
+   * themselves, keep a single platform thread for the timing and run each task they fire on a
+   * virtual thread. The same goes for the {@link KubernetesClient}: the default client created by
+   * {@link #getKubernetesClient()} then also runs its internal asynchronous tasks (informer event
+   * dispatching, watch event delivery) on virtual threads, while a custom client, e.g. provided
+   * through {@link ConfigurationServiceOverrider#withKubernetesClient(KubernetesClient)}, keeps
+   * whatever task executor it was built with. The blocking calls a reconciler performs through the
+   * client don't need any of this: they already park the calling virtual thread rather than its
+   * carrier.
+   *
+   * @return {@code true} to use virtual threads, {@code false} (default) to use platform threads
+   * @since 5.7.0
+   */
+  default boolean useVirtualThreads() {
+    return false;
+  }
+
+  /**
    * Override to provide a custom {@link ExecutorService} implementation to change how threads
    * handle concurrent reconciliations
    *
@@ -234,7 +317,8 @@ public interface ConfigurationService {
    *     processing
    */
   default ExecutorService getExecutorService() {
-    return Executors.newFixedThreadPool(concurrentReconciliationThreads());
+    return ExecutorServiceManager.newBoundedExecutorService(
+        concurrentReconciliationThreads(), useVirtualThreads());
   }
 
   /**
@@ -244,7 +328,26 @@ public interface ConfigurationService {
    * @return the {@link ExecutorService} implementation to use for dependent workflow processing
    */
   default ExecutorService getWorkflowExecutorService() {
-    return Executors.newFixedThreadPool(concurrentWorkflowExecutorThreads());
+    return ExecutorServiceManager.newBoundedExecutorService(
+        concurrentWorkflowExecutorThreads(), useVirtualThreads());
+  }
+
+  /**
+   * Override to provide a custom {@link ScheduledExecutorService} implementation to change how the
+   * operator's retried and rescheduled reconciliations are triggered.
+   *
+   * <p>Note that the default implementation lets the executor discard the tasks that were scheduled
+   * for later when it is shut down, so that they don't delay the termination of the operator, and
+   * that it creates daemon threads so that a never stopped operator doesn't keep the JVM alive.
+   * Custom implementations are advised to do the same.
+   *
+   * @return the {@link ScheduledExecutorService} implementation to use to trigger retried and
+   *     rescheduled reconciliations
+   * @since 5.7.0
+   */
+  default ScheduledExecutorService getRetryAndRescheduleExecutorService() {
+    return ExecutorServiceManager.newScheduledExecutorService(
+        concurrentRetryAndRescheduleThreads(), useVirtualThreads(), "josdk-retry-reschedule");
   }
 
   /**
@@ -286,9 +389,11 @@ public interface ConfigurationService {
    * <p>Defaults to the {@code default} namespace, following the Kubernetes convention, which is
    * also what the Go client does, so that events recorded by an operator end up alongside the ones
    * recorded by the built-in controllers. Operators whose RBAC does not allow creating events in
-   * the {@code default} namespace should override this, typically with the namespace the operator
-   * itself runs in. Note that recording an event is best effort, so a missing permission results in
-   * the event being dropped with a warning in the log rather than in an error.
+   * the {@code default} namespace can override this with {@code kube-system}. The API server
+   * rejects events about cluster scoped resources in any other namespace, such as the namespace the
+   * operator itself runs in. Note that recording an event is best effort by default, so a missing
+   * permission or a rejected namespace results in the event being dropped with a warning in the log
+   * rather than in an error.
    *
    * @return the namespace to record events about cluster scoped resources in
    */
@@ -538,5 +643,19 @@ public interface ConfigurationService {
     var pool = new DefaultInformerPool();
     pool.setConfigurationService(this);
     return pool;
+  }
+
+  /**
+   * Retrieves the {@link DesiredStateAspect}s applied to the desired state of all the Kubernetes
+   * dependent resources managed by the operator. Aspects are applied in the order in which they are
+   * returned, right after the desired state has been computed, and are typically used to add common
+   * metadata (such as a label identifying the operator managing the resource) to all the resources
+   * the operator creates or updates.
+   *
+   * @return the list of aspects to apply to computed desired states, empty by default
+   * @since 5.6.0
+   */
+  default List<DesiredStateAspect> desiredStateAspects() {
+    return List.of();
   }
 }

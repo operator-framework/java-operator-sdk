@@ -23,6 +23,60 @@ Operator operator = new Operator( override -> override
         .withLeaderElectionConfiguration(new LeaderElectionConfiguration("bar", "barNS")));
 ```
 
+### Virtual Threads
+
+Reconciliation is mostly about blocking: talking to the Kubernetes API server or to external
+systems. Virtual threads make such blocking calls much cheaper than platform threads, and the
+framework can be switched over to them with a single flag:
+
+```java
+Operator operator = new Operator(override -> override.withUseVirtualThreads(true));
+```
+
+When enabled, reconciliations, dependent resource workflows and the framework's internal
+housekeeping (starting the informers, for example) all run on virtual threads.
+
+Enabling virtual threads does **not** remove the concurrency limits, parallelism is configured
+exactly as before: `withConcurrentReconciliationThreads(int)` still caps how many reconciliations
+run at the same time and `withConcurrentWorkflowExecutorThreads(int)` how many dependent resources
+of a workflow are processed concurrently. Only the threads backing those limits change. Since
+virtual threads are cheap, these limits can usually be raised significantly compared to what is
+reasonable with platform threads.
+
+Things to keep in mind:
+
+- Virtual threads are only supported on **Java 25 or later**. Before Java 25 a virtual thread pins
+  its carrier thread while it is inside a `synchronized` block, which can starve the carrier pool
+  and even deadlock the operator on startup. [JEP 491](https://openjdk.org/jeps/491), delivered in
+  Java 25, removed that pinning. This is checked at runtime: on an older JVM, including the ones
+  where virtual threads exist (Java 21 to 24), a warning is logged and platform threads are used
+  instead, so the same configuration works on any Java version the operator runs on.
+- The scheduled tasks (the polls of the polling event sources, which each create an executor of
+  their own unless one is provided, and the retried and rescheduled reconciliations) run on virtual
+  threads too. The JDK has no scheduled executor backed by virtual threads, so the default ones keep
+  a single platform thread for the timing only and run each task they fire on a virtual thread. The
+  number of those tasks running at the same time is not limited, so
+  `withConcurrentRetryAndRescheduleThreads(int)` only applies to platform threads.
+- Virtual threads are always daemon threads, so unlike the threads of the platform thread pools they
+  don't keep the JVM running: if the `main` method of your application returns after starting the
+  operator and nothing else keeps the JVM alive, call `Operator.keepAlive()`, see
+  [Keeping the JVM Alive](#keeping-the-jvm-alive).
+- A custom `ExecutorService` provided through `withExecutorService(...)` or
+  `withWorkflowExecutorService(...)` is always used as is, the flag has no effect on it. The same
+  goes for `withRetryAndRescheduleExecutorService(...)`. Note however that overriding the flag, or
+  `withConcurrentRetryAndRescheduleThreads(int)`, of a configuration that provides its own retry and
+  reschedule executor replaces that executor with the default one, so provide it again with
+  `withRetryAndRescheduleExecutorService(...)` in that case.
+- The Kubernetes client the framework creates when none is provided also switches its internal
+  task executor (used to dispatch informer events to their handlers and to deliver watch events)
+  to virtual threads. A client you provide through `withKubernetesClient(...)` is used as is: to
+  get the same behavior, configure it yourself, e.g. with
+  `new KubernetesClientBuilder().withTaskExecutor(Executors.newVirtualThreadPerTaskExecutor())`
+  (the client doesn't shut down an executor passed that way, use `withTaskExecutorSupplier(...)`
+  if it should be shut down when the client is closed).
+  Either way, the blocking calls your reconciler makes through the client work well on virtual
+  threads without any client-side change.
+
 ## Reconciler-Level Configuration
 
 While reconcilers are typically configured using the `@ControllerConfiguration` annotation, you can also override configuration at runtime when registering the reconciler with the operator. You can either:
@@ -100,6 +154,24 @@ controller, but also will adjust the target namespaces if it changes for the con
 See also
 the [integration test](https://github.com/operator-framework/java-operator-sdk/tree/main/operator-framework/src/test/java/io/javaoperatorsdk/operator/baseapi/changenamespace)
 for this feature.
+
+## Keeping the JVM Alive
+
+The operator normally keeps the JVM running through the non-daemon threads of its thread pools. If
+nothing else does, for example because all the threads of the operator are daemon threads as it is
+the case with virtual threads, the JVM exits as soon as the `main` method returns after starting
+the operator. Call `Operator.keepAlive()` to have a non-daemon thread keep the JVM running until the
+operator is stopped:
+
+```java
+public static void main(String[] args) {
+    Operator operator = new Operator();
+    operator.register(new MyReconciler());
+    operator.installShutdownHook();
+    operator.start();
+    operator.keepAlive();
+}
+```
 
 ## DependentResource-level configuration
 
@@ -267,6 +339,7 @@ All operator-level keys are prefixed with `josdk.`.
 |---|---|---|
 | `josdk.check-crd` | `Boolean` | Validate CRDs against local model on startup |
 | `josdk.close-client-on-stop` | `Boolean` | Close the Kubernetes client when the operator stops |
+| `josdk.use-virtual-threads` | `Boolean` | Run the framework's concurrent work on virtual threads (only supported on Java 25+, platform threads are used on older versions) |
 | `josdk.use-ssa-to-patch-primary-resource` | `Boolean` | Use Server-Side Apply to patch the primary resource |
 | `josdk.clone-secondary-resources-when-getting-from-cache` | `Boolean` | Clone secondary resources on cache reads |
 
@@ -282,6 +355,12 @@ All operator-level keys are prefixed with `josdk.`.
 | Key | Type | Description |
 |---|---|---|
 | `josdk.workflow.executor-threads` | `Integer` | Thread pool size for workflow execution |
+
+#### Retry and Reschedule
+
+| Key | Type | Description |
+|---|---|---|
+| `josdk.retry-and-reschedule.concurrent-threads` | `Integer` | Thread pool size for triggering retried and rescheduled reconciliations |
 
 #### Informer
 
@@ -300,21 +379,42 @@ All operator-level keys are prefixed with `josdk.`.
 
 | Key | Type | Description |
 |---|---|---|
-| `josdk.events.cluster-scoped-namespace` | `String` | Namespace to record events about cluster scoped resources in (defaults to `default`) |
+| `josdk.events.cluster-scoped-namespace` | `String` | Namespace to record events about cluster scoped resources in (defaults to `default`); the API server only accepts `default` and `kube-system` |
 
 Recording events requires the operator's service account to be allowed `get`, `create` and `patch` on
 `events` in the core (`""`) API group. All three are used: an event that does not exist yet is
 created, and an event that does is a repeat of one already recorded, which is patched to count the
 new occurrence instead of being recorded a second time. The
 [generic Helm chart](helm-chart.md) grants all three. If you write your own RBAC and a permission is
-missing, recording fails silently as far as reconciliation is concerned: the failure is swallowed so
-that it cannot break a reconciliation, and only shows up as a warning in the operator log.
+missing, recording fails silently as far as reconciliation is concerned by default: the failure is
+swallowed so that it cannot break a reconciliation, and only shows up as a warning in the operator
+log. Kubernetes treats events as best effort, supplemental data, so this is usually what you want.
+Where an event that is not recorded must not go unnoticed, configure a recorder that propagates the
+failure to the reconciler instead, so that the reconciliation fails and is retried like any other
+failed one:
+
+```java
+KubernetesClient client = new KubernetesClientBuilder().build();
+Operator operator = new Operator(override -> override
+        .withKubernetesClient(client)
+        .withEventRecorder(DefaultEventRecorder.builder(new DefaultEventSink(client))
+            .failOnError(true)
+            .build()));
+```
+
+Every failure propagates then, transient ones included, such as the conflict two replicas run into
+when they count the same occurrence of an event at the same time.
 
 Note that events live in a namespace of their own choosing, which is the namespace of the object
 they are about, and for cluster scoped objects the namespace configured above. A namespaced `Role`
 therefore has to grant the permission in every namespace events are recorded in — including
 `default`, or whatever `josdk.events.cluster-scoped-namespace` is set to, if the operator reconciles
 cluster scoped resources. A `ClusterRole` covers all of them at once.
+
+The API server only accepts events about cluster scoped objects in the `default` and `kube-system`
+namespaces, so those are the only values `josdk.events.cluster-scoped-namespace` can usefully be set
+to. In particular, the namespace the operator itself runs in is rejected, and the event dropped with
+a warning in the operator log (or, with `failOnError(true)`, the reconciliation failed).
 
 #### Leader Election
 
@@ -385,6 +485,7 @@ josdk.controller.mycontroller.namespaces=team-a,team-b
 | `josdk.controller.<name>.informer.shard-selector` | `String` | Shard selector for the primary resource informer (alias for `shard-selector`) |
 | `josdk.controller.<name>.informer.list-limit` | `Long` | Page size for paginated informer list requests; omit for no pagination |
 | `josdk.controller.<name>.informer.comparable-resource-versions` | `Boolean` | Whether the resource versions of the primary resource can be treated as integers and thus compared |
+| `josdk.controller.<name>.informer.without-namespace-index` | `Boolean` | Removes the namespace index the informer maintains; defaults to `false`. See [Removing the Namespace Index](../eventing#removing-the-namespace-index) |
 
 #### Retry
 

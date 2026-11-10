@@ -26,6 +26,7 @@ import java.util.stream.Collectors;
 
 import org.junit.jupiter.api.Test;
 
+import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.javaoperatorsdk.operator.api.config.BaseConfigurationService;
 import io.javaoperatorsdk.operator.api.config.ConfigurationService;
 import io.javaoperatorsdk.operator.api.config.ConfigurationServiceOverrider;
@@ -86,6 +87,18 @@ class ConfigLoaderTest {
   }
 
   @Test
+  void applyConfigsAppliesConcurrentRetryAndRescheduleThreads() {
+    var loader =
+        new ConfigLoader(mapProvider(Map.of("josdk.retry-and-reschedule.concurrent-threads", 6)));
+
+    var base = new BaseConfigurationService(null);
+    var result =
+        ConfigurationService.newOverriddenConfigurationService(base, loader.applyConfigs());
+
+    assertThat(result.concurrentRetryAndRescheduleThreads()).isEqualTo(6);
+  }
+
+  @Test
   void applyConfigsAppliesBooleanFlags() {
     var values = new HashMap<String, Object>();
     values.put("josdk.check-crd", true);
@@ -94,6 +107,7 @@ class ConfigLoaderTest {
     values.put("josdk.dependent-resources.ssa-based-create-update-match", false);
     values.put("josdk.use-ssa-to-patch-primary-resource", false);
     values.put("josdk.clone-secondary-resources-when-getting-from-cache", true);
+    values.put("josdk.use-virtual-threads", true);
     var loader = new ConfigLoader(mapProvider(values));
 
     var base = new BaseConfigurationService(null);
@@ -106,6 +120,7 @@ class ConfigLoaderTest {
     assertThat(result.ssaBasedCreateUpdateMatchForDependentResources()).isFalse();
     assertThat(result.useSSAToPatchPrimaryResource()).isFalse();
     assertThat(result.cloneSecondaryResourcesWhenGettingFromCache()).isTrue();
+    assertThat(result.useVirtualThreads()).isTrue();
   }
 
   @Test
@@ -222,8 +237,21 @@ class ConfigLoaderTest {
             "josdk.controller.ctrl.informer.list-limit",
             "josdk.controller.ctrl.informer.comparable-resource-versions",
             "josdk.controller.ctrl.namespaces",
+            "josdk.controller.ctrl.informer.without-namespace-index",
             "josdk.controller.ctrl.rate-limiter.refresh-period",
             "josdk.controller.ctrl.rate-limiter.limit-for-period");
+  }
+
+  @Test
+  void applyControllerConfigsAppliesInformerWithoutNamespaceIndex() {
+    var loader =
+        new ConfigLoader(
+            mapProvider(Map.of("josdk.controller.ctrl.informer.without-namespace-index", true)));
+    var overrider = ControllerConfigurationOverrider.override(baseControllerConfig());
+
+    loader.<ConfigMap>applyControllerConfigs("ctrl").accept(overrider);
+
+    assertThat(overrider.build().getInformerConfig().isWithoutNamespaceIndex()).isTrue();
   }
 
   @Test
@@ -297,7 +325,10 @@ class ConfigLoaderTest {
           Map.entry(
               "withCloneSecondaryResourcesWhenGettingFromCache",
               "clone-secondary-resources-when-getting-from-cache"),
-          Map.entry("withClusterScopedEventNamespace", "events.cluster-scoped-namespace"));
+          Map.entry("withClusterScopedEventNamespace", "events.cluster-scoped-namespace"),
+          Map.entry(
+              "withConcurrentRetryAndRescheduleThreads", "retry-and-reschedule.concurrent-threads"),
+          Map.entry("withUseVirtualThreads", "use-virtual-threads"));
 
   /**
    * Maps every scalar setter of {@link ControllerConfigurationOverrider} to the property key suffix
@@ -316,6 +347,7 @@ class ConfigLoaderTest {
           Map.entry("withDefaultFilters", "default-filters"),
           Map.entry("withInformerListLimit", "informer.list-limit"),
           Map.entry("withComparableResourceVersions", "informer.comparable-resource-versions"),
+          Map.entry("withoutNamespaceIndex", "informer.without-namespace-index"),
           // not a plain binding: the value is a comma-separated list of namespaces
           Map.entry("settingNamespace", "namespaces"));
 
@@ -626,7 +658,18 @@ class ConfigLoaderTest {
     assertThat(betaRetry.getMaxAttempts()).isEqualTo(9);
   }
 
-  // -- watched namespaces -----------------------------------------------------
+  private static boolean isTypeCompatible(Class<?> methodParam, Class<?> bindingType) {
+    if (methodParam == bindingType) return true;
+    if (methodParam == boolean.class && bindingType == Boolean.class) return true;
+    if (methodParam == Boolean.class && bindingType == boolean.class) return true;
+    if (methodParam == int.class && bindingType == Integer.class) return true;
+    if (methodParam == Integer.class && bindingType == int.class) return true;
+    if (methodParam == long.class && bindingType == Long.class) return true;
+    if (methodParam == Long.class && bindingType == long.class) return true;
+    if (methodParam == double.class && bindingType == Double.class) return true;
+    return methodParam == Double.class && bindingType == double.class;
+    // -- watched namespaces -----------------------------------------------------
+  }
 
   private static Set<String> applyAndGetNamespaces(
       java.util.function.Consumer<

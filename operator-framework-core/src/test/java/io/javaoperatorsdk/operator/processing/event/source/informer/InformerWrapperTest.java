@@ -112,7 +112,7 @@ class InformerWrapperTest {
         informer,
         "default",
         new InformerClassifier<>(
-            null, null, null, "default", TestCustomResource.class, null, null, null, null),
+            null, null, null, "default", TestCustomResource.class, null, null, null, null, false),
         controller,
         eventSource);
   }

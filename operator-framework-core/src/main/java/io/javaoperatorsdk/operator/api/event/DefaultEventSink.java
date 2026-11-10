@@ -30,14 +30,18 @@ import static java.util.Objects.requireNonNullElse;
  * <p>An event that does not exist yet is created. An event that does is a repeat of one already
  * recorded, since the name of an event is derived from everything that identifies it (see {@link
  * DefaultEventRecorder}), and is aggregated onto the recorded one by patching its {@code count} and
- * {@code lastTimestamp}. That is what makes {@code kubectl describe} report a repeating event once,
- * as {@code (x12 over 3m)}, rather than filling the event list with copies of it.
+ * {@code lastTimestamp}, along with its {@code message}, {@code type}, {@code reason} and {@code
+ * action}, which events sharing a name explicitly may differ in: they describe the latest
+ * occurrence. The API server only makes them immutable for {@code events.k8s.io/v1} requests, not
+ * for the core group this sink writes to. An event that carries an {@code eventTime} needs an
+ * {@code action}, so the reason stands in for it when the occurrence has none. That is what makes
+ * {@code kubectl describe} report a repeating event once, as {@code (x12 over 3m)}, rather than
+ * filling the event list with copies of it.
  *
  * <p>Recording therefore needs {@code get}, {@code create} and {@code patch} on {@code events} in
  * the core API group. The patch is made on the resource version the event was read at, so two
  * writers counting the same occurrence at the same time conflict, and the one that loses leaves the
- * occurrence uncounted and the conflict logged by {@link DefaultEventRecorder}, recording being
- * best effort.
+ * occurrence uncounted and the conflict to {@link DefaultEventRecorder} to handle.
  */
 public class DefaultEventSink implements EventSink {
 
@@ -55,11 +59,18 @@ public class DefaultEventSink implements EventSink {
     if (existing == null) {
       events.resource(event).create();
     } else {
+      var action = event.getAction();
+      if (action == null && existing.getEventTime() != null) {
+        action = event.getReason();
+      }
       var aggregated =
           new EventBuilder(existing)
               .withCount(requireNonNullElse(existing.getCount(), 1) + 1)
               .withLastTimestamp(event.getLastTimestamp())
               .withMessage(event.getMessage())
+              .withType(event.getType())
+              .withReason(event.getReason())
+              .withAction(action)
               .build();
       events.resource(existing).patch(aggregated);
     }

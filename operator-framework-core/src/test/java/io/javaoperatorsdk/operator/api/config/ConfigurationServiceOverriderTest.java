@@ -16,9 +16,12 @@
 package io.javaoperatorsdk.operator.api.config;
 
 import java.time.Duration;
+import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.ThreadPoolExecutor;
 
 import org.junit.jupiter.api.Test;
@@ -33,6 +36,7 @@ import io.javaoperatorsdk.operator.api.event.ResourceEventRecorder;
 import io.javaoperatorsdk.operator.api.monitoring.Metrics;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResourceFactory;
+import io.javaoperatorsdk.operator.api.reconciler.dependent.DesiredStateAspect;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
@@ -116,6 +120,98 @@ class ConfigurationServiceOverriderTest {
   }
 
   @Test
+  void retryAndRescheduleExecutorCanBeOverridden() {
+    final var retryExecutorService = Executors.newScheduledThreadPool(1);
+    try {
+      final var overridden =
+          new ConfigurationServiceOverrider(config)
+              .withConcurrentRetryAndRescheduleThreads(5)
+              .withRetryAndRescheduleExecutorService(retryExecutorService)
+              .build();
+
+      assertThat(overridden.concurrentRetryAndRescheduleThreads()).isEqualTo(5);
+      assertThat(overridden.getRetryAndRescheduleExecutorService()).isSameAs(retryExecutorService);
+    } finally {
+      retryExecutorService.shutdownNow();
+    }
+  }
+
+  @Test
+  void executorOfTheOriginalConfigurationIsKeptUnlessItsSettingsAreOverridden() {
+    final var retryExecutorService = Executors.newScheduledThreadPool(1);
+    try {
+      final var original =
+          new BaseConfigurationService() {
+            @Override
+            public ScheduledExecutorService getRetryAndRescheduleExecutorService() {
+              return retryExecutorService;
+            }
+          };
+
+      final var overridden =
+          new ConfigurationServiceOverrider(original).withCloseClientOnStop(false);
+
+      assertThat(overridden.build().getRetryAndRescheduleExecutorService())
+          .isSameAs(retryExecutorService);
+
+      final var resized = overridden.withConcurrentRetryAndRescheduleThreads(3).build();
+      final var defaultRetry = resized.getRetryAndRescheduleExecutorService();
+      try {
+        assertThat(defaultRetry).isNotSameAs(retryExecutorService);
+        assertThat(((ScheduledThreadPoolExecutor) defaultRetry).getCorePoolSize()).isEqualTo(3);
+      } finally {
+        defaultRetry.shutdownNow();
+      }
+    } finally {
+      retryExecutorService.shutdownNow();
+    }
+  }
+
+  @Test
+  void executorOfTheOriginalConfigurationIsKeptWhenOverridesDoNotChangeItsSettings() {
+    final var retryExecutorService = Executors.newScheduledThreadPool(1);
+    try {
+      final var original =
+          new BaseConfigurationService() {
+            @Override
+            public ScheduledExecutorService getRetryAndRescheduleExecutorService() {
+              return retryExecutorService;
+            }
+          };
+
+      final var overridden =
+          new ConfigurationServiceOverrider(original)
+              .withUseVirtualThreads(original.useVirtualThreads())
+              .withConcurrentRetryAndRescheduleThreads(
+                  original.concurrentRetryAndRescheduleThreads())
+              .build();
+
+      assertThat(overridden.getRetryAndRescheduleExecutorService()).isSameAs(retryExecutorService);
+    } finally {
+      retryExecutorService.shutdownNow();
+    }
+  }
+
+  @Test
+  void retryAndRescheduleExecutorDefaultsToADaemonPoolOfTheConfiguredSize() {
+    final var overridden =
+        (ScheduledThreadPoolExecutor)
+            new ConfigurationServiceOverrider(config)
+                .withConcurrentRetryAndRescheduleThreads(3)
+                .build()
+                .getRetryAndRescheduleExecutorService();
+
+    try {
+      assertThat(overridden.getCorePoolSize()).isEqualTo(3);
+      // scheduled tasks must not delay the termination of the operator, nor keep the JVM alive
+      assertThat(overridden.getExecuteExistingDelayedTasksAfterShutdownPolicy()).isFalse();
+      assertThat(overridden.getThreadFactory().newThread(() -> {}).isDaemon()).isTrue();
+    } finally {
+      overridden.shutdownNow();
+    }
+  }
+
+  @Test
   void eventRecorderIsNotConfiguredByDefaultAndCanBeOverridden() {
     final var eventRecorder =
         new EventRecorder() {
@@ -148,6 +244,13 @@ class ConfigurationServiceOverriderTest {
         .isEqualTo(13);
     assertThat(((ThreadPoolExecutor) overridden.getWorkflowExecutorService()).getMaximumPoolSize())
         .isEqualTo(14);
+  }
+
+  @Test
+  void virtualThreadsAreDisabledByDefaultAndCanBeOverridden() {
+    assertThat(config.useVirtualThreads()).isFalse();
+    assertThat(new ConfigurationServiceOverrider(config).withUseVirtualThreads(true).build())
+        .returns(true, ConfigurationService::useVirtualThreads);
   }
 
   @SuppressWarnings("rawtypes")
@@ -186,5 +289,37 @@ class ConfigurationServiceOverriderTest {
                 .build()
                 .clusterScopedEventNamespace())
         .isEqualTo("operator-ns");
+  }
+
+  @Test
+  void desiredStateAspectsAreEmptyByDefaultAndCanBeOverridden() {
+    assertThat(config.desiredStateAspects()).isEmpty();
+
+    final DesiredStateAspect first = (desired, dependentResource, context) -> {};
+    final DesiredStateAspect second = (desired, dependentResource, context) -> {};
+
+    assertThat(
+            new ConfigurationServiceOverrider(config)
+                .withDesiredStateAspects(List.of(first, second))
+                .build()
+                .desiredStateAspects())
+        .containsExactly(first, second);
+  }
+
+  @Test
+  void desiredStateAspectsCanBeAppendedToAlreadyConfiguredOnes() {
+    final DesiredStateAspect first = (desired, dependentResource, context) -> {};
+    final DesiredStateAspect second = (desired, dependentResource, context) -> {};
+    final DesiredStateAspect third = (desired, dependentResource, context) -> {};
+
+    final var configWithAspect =
+        new ConfigurationServiceOverrider(config).withDesiredStateAspects(List.of(first)).build();
+
+    assertThat(
+            new ConfigurationServiceOverrider(configWithAspect)
+                .addDesiredStateAspects(second, third)
+                .build()
+                .desiredStateAspects())
+        .containsExactly(first, second, third);
   }
 }

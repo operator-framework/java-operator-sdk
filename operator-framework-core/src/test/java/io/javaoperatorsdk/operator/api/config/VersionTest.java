@@ -18,6 +18,8 @@ package io.javaoperatorsdk.operator.api.config;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 class VersionTest {
 
@@ -27,5 +29,14 @@ class VersionTest {
     String versionFromMaven = Version.UNKNOWN.getSdkVersion();
 
     assertEquals(versionFromProperties, versionFromMaven);
+  }
+
+  @Test
+  void versionShouldBeLoadedFromTheGeneratedPropertiesFile() {
+    assertNotNull(
+        Thread.currentThread()
+            .getContextClassLoader()
+            .getResource(Utils.VERSION_PROPERTIES_FILE_NAME));
+    assertNotEquals(Version.UNKNOWN.getCommit(), Utils.VERSION.getCommit());
   }
 }
