@@ -34,8 +34,8 @@ import static io.javaoperatorsdk.operator.api.reconciler.Experimental.API_MIGHT_
  * io.javaoperatorsdk.operator.api.reconciler.Context#eventRecorder()}, which is already bound to
  * the context.
  *
- * <p>Recording an event is best effort: failures to write the event to the cluster are logged and
- * swallowed, and never fail the caller.
+ * <p>Whether a failure to record an event fails the caller is up to the implementation, see {@link
+ * DefaultEventRecorder} for the default.
  */
 @Experimental(API_MIGHT_CHANGE)
 public interface EventRecorder {

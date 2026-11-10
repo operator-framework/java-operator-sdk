@@ -41,8 +41,7 @@ import static java.util.Objects.requireNonNullElse;
  * <p>Recording therefore needs {@code get}, {@code create} and {@code patch} on {@code events} in
  * the core API group. The patch is made on the resource version the event was read at, so two
  * writers counting the same occurrence at the same time conflict, and the one that loses leaves the
- * occurrence uncounted and the conflict logged by {@link DefaultEventRecorder}, recording being
- * best effort.
+ * occurrence uncounted and the conflict to {@link DefaultEventRecorder} to handle.
  */
 public class DefaultEventSink implements EventSink {
 

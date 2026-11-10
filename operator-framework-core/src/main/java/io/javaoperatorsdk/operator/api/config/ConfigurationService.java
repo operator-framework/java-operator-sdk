@@ -391,9 +391,9 @@ public interface ConfigurationService {
    * recorded by the built-in controllers. Operators whose RBAC does not allow creating events in
    * the {@code default} namespace can override this with {@code kube-system}. The API server
    * rejects events about cluster scoped resources in any other namespace, such as the namespace the
-   * operator itself runs in. Note that recording an event is best effort, so a missing permission
-   * or a rejected namespace results in the event being dropped with a warning in the log rather
-   * than in an error.
+   * operator itself runs in. Note that recording an event is best effort by default, so a missing
+   * permission or a rejected namespace results in the event being dropped with a warning in the log
+   * rather than in an error.
    *
    * @return the namespace to record events about cluster scoped resources in
    */
