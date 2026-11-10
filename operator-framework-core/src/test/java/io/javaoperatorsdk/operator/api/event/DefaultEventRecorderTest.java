@@ -35,6 +35,7 @@ import static io.javaoperatorsdk.operator.api.config.LeaderElectionConfiguration
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatIllegalArgumentException;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -169,6 +170,36 @@ class DefaultEventRecorderTest {
             (event, context) -> {
               throw new RuntimeException("API server said no");
             });
+
+    assertThatCode(
+            () -> failing.record(EventRecord.normal("Created", "created"), context(configMap())))
+        .doesNotThrowAnyException();
+  }
+
+  @Test
+  void aFailingSinkFailsTheCallerWhenTheRecorderIsBuiltToFailOnError() {
+    var failure = new RuntimeException("API server said no");
+    var failing =
+        DefaultEventRecorder.builder(
+                (event, context) -> {
+                  throw failure;
+                })
+            .failOnError(true)
+            .build();
+
+    assertThatThrownBy(
+            () -> failing.record(EventRecord.normal("Created", "created"), context(configMap())))
+        .isSameAs(failure);
+  }
+
+  @Test
+  void aFailingSinkNeverFailsTheCallerWhenTheRecorderIsBuiltWithDefaults() {
+    var failing =
+        DefaultEventRecorder.builder(
+                (event, context) -> {
+                  throw new RuntimeException("API server said no");
+                })
+            .build();
 
     assertThatCode(
             () -> failing.record(EventRecord.normal("Created", "created"), context(configMap())))

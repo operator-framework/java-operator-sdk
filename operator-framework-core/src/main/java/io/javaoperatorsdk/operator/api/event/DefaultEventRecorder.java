@@ -58,6 +58,11 @@ import static java.util.Objects.requireNonNullElse;
  * event already recorded for it. Repeat occurrences are then counted on that event rather than
  * recorded as copies of it, see {@link DefaultEventSink}. How events aggregate, how they are named
  * and whether they carry an owner reference can be configured, see {@link #builder(EventSink)}.
+ *
+ * <p>Recording is best effort by default: an event that cannot be written is logged and dropped,
+ * and the caller carries on. A recorder built with {@link Builder#failOnError(boolean)} propagates
+ * the failure to the caller instead, so that a reconciliation that cannot record its events fails
+ * and is retried.
  */
 public class DefaultEventRecorder implements EventRecorder {
 
@@ -95,20 +100,23 @@ public class DefaultEventRecorder implements EventRecorder {
   private final EventNamingStrategy namingStrategy;
   private final EventKeyStrategy keyStrategy;
   private final boolean ownerReference;
+  private final boolean failOnError;
 
   public DefaultEventRecorder(EventSink sink) {
-    this(sink, EventNamingStrategy.none(), EventKeyStrategy.none(), false);
+    this(sink, EventNamingStrategy.none(), EventKeyStrategy.none(), false, false);
   }
 
   private DefaultEventRecorder(
       EventSink sink,
       EventNamingStrategy namingStrategy,
       EventKeyStrategy keyStrategy,
-      boolean ownerReference) {
+      boolean ownerReference,
+      boolean failOnError) {
     this.sink = sink;
     this.namingStrategy = namingStrategy;
     this.keyStrategy = keyStrategy;
     this.ownerReference = ownerReference;
+    this.failOnError = failOnError;
   }
 
   public static Builder builder(EventSink sink) {
@@ -122,6 +130,7 @@ public class DefaultEventRecorder implements EventRecorder {
     private EventNamingStrategy namingStrategy = EventNamingStrategy.none();
     private EventKeyStrategy keyStrategy = EventKeyStrategy.none();
     private boolean ownerReference = false;
+    private boolean failOnError = false;
 
     private Builder(EventSink sink) {
       this.sink = Objects.requireNonNull(sink, "sink must not be null");
@@ -157,8 +166,26 @@ public class DefaultEventRecorder implements EventRecorder {
       return this;
     }
 
+    /**
+     * When set, a failure to record an event is propagated to the caller rather than logged and
+     * swallowed, so that the reconciliation recording the event fails and goes through the usual
+     * error handling and retries. Off by default: Kubernetes treats events as best effort,
+     * supplemental data, and a controller that cannot reconcile because it cannot write an event is
+     * usually worse off than one that records nothing. Enable it only where an event that is not
+     * recorded must not go unnoticed.
+     *
+     * <p>Every failure propagates, transient ones included, such as a conflicting write when two
+     * replicas aggregate the same event at the same time; the reconciliation is then retried like
+     * any other failed one.
+     */
+    public Builder failOnError(boolean failOnError) {
+      this.failOnError = failOnError;
+      return this;
+    }
+
     public DefaultEventRecorder build() {
-      return new DefaultEventRecorder(sink, namingStrategy, keyStrategy, ownerReference);
+      return new DefaultEventRecorder(
+          sink, namingStrategy, keyStrategy, ownerReference, failOnError);
     }
   }
 
@@ -199,8 +226,12 @@ public class DefaultEventRecorder implements EventRecorder {
       assembled = toEvent(context, event);
       sink.emit(assembled, context);
     } catch (Exception e) {
-      // recording an event must never break the caller: a controller that fails to reconcile
-      // because it could not write an event is strictly worse than one that records nothing
+      if (failOnError) {
+        throw e;
+      }
+      // by default recording an event must not break the caller: a controller that fails to
+      // reconcile because it could not write an event is usually worse off than one that records
+      // nothing
       log.warn(
           "Could not record {} event named {} with reason {} for resource {} in namespace {}",
           event.type(),
