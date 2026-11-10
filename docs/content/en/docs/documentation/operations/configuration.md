@@ -386,8 +386,24 @@ Recording events requires the operator's service account to be allowed `get`, `c
 created, and an event that does is a repeat of one already recorded, which is patched to count the
 new occurrence instead of being recorded a second time. The
 [generic Helm chart](helm-chart.md) grants all three. If you write your own RBAC and a permission is
-missing, recording fails silently as far as reconciliation is concerned: the failure is swallowed so
-that it cannot break a reconciliation, and only shows up as a warning in the operator log.
+missing, recording fails silently as far as reconciliation is concerned by default: the failure is
+swallowed so that it cannot break a reconciliation, and only shows up as a warning in the operator
+log. Kubernetes treats events as best effort, supplemental data, so this is usually what you want.
+Where an event that is not recorded must not go unnoticed, configure a recorder that propagates the
+failure to the reconciler instead, so that the reconciliation fails and is retried like any other
+failed one:
+
+```java
+KubernetesClient client = new KubernetesClientBuilder().build();
+Operator operator = new Operator(override -> override
+        .withKubernetesClient(client)
+        .withEventRecorder(DefaultEventRecorder.builder(new DefaultEventSink(client))
+            .failOnError(true)
+            .build()));
+```
+
+Every failure propagates then, transient ones included, such as the conflict two replicas run into
+when they count the same occurrence of an event at the same time.
 
 Note that events live in a namespace of their own choosing, which is the namespace of the object
 they are about, and for cluster scoped objects the namespace configured above. A namespaced `Role`
@@ -398,7 +414,7 @@ cluster scoped resources. A `ClusterRole` covers all of them at once.
 The API server only accepts events about cluster scoped objects in the `default` and `kube-system`
 namespaces, so those are the only values `josdk.events.cluster-scoped-namespace` can usefully be set
 to. In particular, the namespace the operator itself runs in is rejected, and the event dropped with
-a warning in the operator log.
+a warning in the operator log (or, with `failOnError(true)`, the reconciliation failed).
 
 #### Leader Election
 
