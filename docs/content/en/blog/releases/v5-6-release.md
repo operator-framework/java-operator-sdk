@@ -90,15 +90,18 @@ context.eventRecorder().record(EventRecord.builder()
     .build());
 ```
 
-Outside of the reconciliation loop — from a status listener or a background task, or about an object
-other than the primary — use the unbound form from
-`RegisteredController#eventRecorder()`, which is scoped to the controller rather than to a
-reconciliation:
+To record events differently — assemble them another way by extending `DefaultEventRecorder`, or
+send them somewhere else entirely — plug in an `EventRecorder` of your own for the whole operator:
 
 ```java
-EventRecorder recorder = registeredController.eventRecorder();
-recorder.record(someOtherResource, EventRecord.normal("Noticed", "something happened"));
+var operator = new Operator(o -> o.withEventRecorder(new MyEventRecorder()));
 ```
+
+A custom recorder is shared by all controllers, so it must be stateless and thread safe: the
+`Context` of the reconciliation an event is recorded from is passed to it per call, as in
+`EventRecorder#record(EventRecord, Context)`. `context.eventRecorder()` is the same recorder, already
+bound to that context. Without a custom recorder, every controller records its events through a
+`DefaultEventRecorder` of its own.
 
 Two properties are worth calling out:
 
