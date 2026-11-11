@@ -27,6 +27,8 @@ public class EventRecorderReconciler implements Reconciler<EventRecorderCustomRe
 
   public static final String NORMAL_REASON = "Reconciled";
   public static final String WARNING_REASON = "SomethingIsOff";
+  public static final String OTHER_OBJECT_REASON = "ChildReconciled";
+  public static final String OTHER_OBJECT_NAME = "parent-of-the-resource";
 
   private final AtomicInteger numberOfExecutions = new AtomicInteger();
 
@@ -36,6 +38,21 @@ public class EventRecorderReconciler implements Reconciler<EventRecorderCustomRe
     numberOfExecutions.incrementAndGet();
     context.eventRecorder().normal(NORMAL_REASON, "resource reconciled");
     context.eventRecorder().warn(WARNING_REASON, "this is a warning about the resource");
+
+    // the test that exercises events about another object creates this config map first; the
+    // other tests have no such object and record nothing about it
+    var other =
+        context
+            .getClient()
+            .configMaps()
+            .inNamespace(resource.getMetadata().getNamespace())
+            .withName(OTHER_OBJECT_NAME)
+            .get();
+    if (other != null) {
+      context
+          .eventRecorder(other)
+          .normal(OTHER_OBJECT_REASON, "child " + resource.getMetadata().getName() + " reconciled");
+    }
     return UpdateControl.noUpdate();
   }
 

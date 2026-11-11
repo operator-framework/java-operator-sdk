@@ -31,6 +31,8 @@ import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.PodBuilder;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.SecretBuilder;
+import io.javaoperatorsdk.operator.api.event.ControllerEventRecorder;
+import io.javaoperatorsdk.operator.api.event.ResourceEventRecorder;
 import io.javaoperatorsdk.operator.processing.Controller;
 import io.javaoperatorsdk.operator.processing.event.EventSourceManager;
 import io.javaoperatorsdk.operator.processing.event.NoEventSourceForClassException;
@@ -402,5 +404,26 @@ class DefaultContextTest {
     assertThat(result).hasSize(1);
     HasMetadata resultPod = result.iterator().next();
     assertThat(resultPod.getMetadata().getResourceVersion()).isEqualTo("1000");
+  }
+
+  @Test
+  void eventRecorderIsBoundToThePrimaryResource() {
+    var controllerRecorder = mock(ControllerEventRecorder.class);
+    var bound = mock(ResourceEventRecorder.class);
+    when(mockController.eventRecorder()).thenReturn(controllerRecorder);
+    when(controllerRecorder.forResource(context.getPrimaryResource())).thenReturn(bound);
+
+    assertThat(context.eventRecorder()).isSameAs(bound);
+  }
+
+  @Test
+  void eventRecorderCanBeBoundToAnotherObject() {
+    var other = new ConfigMapBuilder().withNewMetadata().withName("parent").endMetadata().build();
+    var controllerRecorder = mock(ControllerEventRecorder.class);
+    var bound = mock(ResourceEventRecorder.class);
+    when(mockController.eventRecorder()).thenReturn(controllerRecorder);
+    when(controllerRecorder.forResource(other)).thenReturn(bound);
+
+    assertThat(context.eventRecorder(other)).isSameAs(bound);
   }
 }

@@ -37,7 +37,6 @@ import io.fabric8.kubernetes.client.dsl.Resource;
 import io.fabric8.kubernetes.client.dsl.V1APIGroupDSL;
 import io.javaoperatorsdk.operator.api.config.ConfigurationService;
 import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
-import io.javaoperatorsdk.operator.api.reconciler.Context;
 
 import static io.javaoperatorsdk.operator.api.config.LeaderElectionConfigurationBuilder.aLeaderElectionConfiguration;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -62,7 +61,7 @@ class EventRecorderRegressionTest {
     var recorder = new DefaultEventRecorder((event, context) -> emitted.add(event));
 
     recorder.record(
-        EventRecord.normal("Created", "created"), context(clusterScoped("ns1"), "kube-system"));
+        clusterScoped("ns1"), EventRecord.normal("Created", "created"), controller("kube-system"));
 
     var event = emitted.get(0);
     assertThat(event.getInvolvedObject().getNamespace()).isNull();
@@ -77,13 +76,14 @@ class EventRecorderRegressionTest {
     var recorder = new DefaultEventRecorder((event, context) -> emitted.add(event));
 
     recorder.record(
+        clusterScoped("ns1"),
         EventRecord.builder()
             .type(EventType.NORMAL)
             .reason("Created")
             .message("created")
             .action("Create")
             .build(),
-        context(clusterScoped("ns1"), "kube-system"));
+        controller("kube-system"));
 
     assertThat(emitted.get(0).getAction()).isEqualTo("Create");
   }
@@ -93,7 +93,7 @@ class EventRecorderRegressionTest {
     var recorder = new DefaultEventRecorder((event, context) -> emitted.add(event));
 
     recorder.record(
-        EventRecord.normal("Created", "created"), context(clusterScoped("ns1"), "default"));
+        clusterScoped("ns1"), EventRecord.normal("Created", "created"), controller("default"));
 
     assertThat(emitted.get(0).getEventTime()).isNull();
     assertThat(emitted.get(0).getMetadata().getNamespace()).isEqualTo("default");
@@ -116,10 +116,11 @@ class EventRecorderRegressionTest {
                 (regarding, record) ->
                     Optional.of(regarding.getMetadata().getName() + "-status-report"))
             .build();
-    var context = context(configMap("test1"), "default");
+    var controller = controller("default");
 
-    recorder.record(EventRecord.normal("Ready", "all good"), context);
-    recorder.record(EventRecord.warning("Degraded", "replica down"), context);
+    recorder.record(configMap("test1"), EventRecord.normal("Ready", "all good"), controller);
+    recorder.record(
+        configMap("test1"), EventRecord.warning("Degraded", "replica down"), controller);
 
     assertThat(patched.get()).isNotNull();
     assertThat(patched.get().getCount()).isEqualTo(2);
@@ -137,10 +138,11 @@ class EventRecorderRegressionTest {
         DefaultEventRecorder.builder(sink)
             .namingStrategy((regarding, record) -> Optional.of("fixed-name"))
             .build();
-    var context = context(clusterScoped("ns1"), "kube-system");
+    var controller = controller("kube-system");
 
-    recorder.record(EventRecord.normal("Ready", "all good"), context);
-    recorder.record(EventRecord.warning("Degraded", "replica down"), context);
+    recorder.record(clusterScoped("ns1"), EventRecord.normal("Ready", "all good"), controller);
+    recorder.record(
+        clusterScoped("ns1"), EventRecord.warning("Degraded", "replica down"), controller);
 
     assertThat(stored.get().getEventTime()).isNotNull();
     assertThat(patched.get().getCount()).isEqualTo(2);
@@ -158,17 +160,19 @@ class EventRecorderRegressionTest {
         DefaultEventRecorder.builder(sink)
             .namingStrategy((regarding, record) -> Optional.of("fixed-name"))
             .build();
-    var context = context(configMap("test1"), "default");
+    var controller = controller("default");
 
     recorder.record(
+        configMap("test1"),
         EventRecord.builder()
             .type(EventType.NORMAL)
             .reason("Created")
             .message("created")
             .action("Create")
             .build(),
-        context);
-    recorder.record(EventRecord.warning("Degraded", "replica down"), context);
+        controller);
+    recorder.record(
+        configMap("test1"), EventRecord.warning("Degraded", "replica down"), controller);
 
     assertThat(patched.get().getAction()).isNull();
   }
@@ -194,7 +198,7 @@ class EventRecorderRegressionTest {
             .build();
 
     recorder.record(
-        EventRecord.warning("Degraded", "replica down"), context(configMap("test1"), "default"));
+        configMap("test1"), EventRecord.warning("Degraded", "replica down"), controller("default"));
 
     assertThat(patched.get().getEventTime()).isNotNull();
     assertThat(patched.get().getAction()).isEqualTo("Degraded");
@@ -205,8 +209,9 @@ class EventRecorderRegressionTest {
     var recorder = new DefaultEventRecorder((event, context) -> emitted.add(event));
 
     recorder.record(
+        configMap("a".repeat(219) + "-" + "b".repeat(10)),
         EventRecord.normal("Created", "created"),
-        context(configMap("a".repeat(219) + "-" + "b".repeat(10)), "default"));
+        controller("default"));
 
     assertThat(emitted.get(0).getMetadata().getName()).matches("a{219}\\.[0-9a-f]{32}");
   }
@@ -224,10 +229,16 @@ class EventRecorderRegressionTest {
                     Optional.of(
                         regarding.getMetadata().getName() + "-" + record.reason().toLowerCase()))
             .build();
-    var context = context(configMap("a".repeat(245)), "default");
+    var controller = controller("default");
 
-    recorder.record(EventRecord.warning("BackoffLimitExceeded", "job failed"), context);
-    recorder.record(EventRecord.warning("BackoffStarted", "job retrying"), context);
+    recorder.record(
+        configMap("a".repeat(245)),
+        EventRecord.warning("BackoffLimitExceeded", "job failed"),
+        controller);
+    recorder.record(
+        configMap("a".repeat(245)),
+        EventRecord.warning("BackoffStarted", "job retrying"),
+        controller);
 
     assertThat(emitted.get(0).getMetadata().getName())
         .isNotEqualTo(emitted.get(1).getMetadata().getName());
@@ -272,7 +283,7 @@ class EventRecorderRegressionTest {
   }
 
   @SuppressWarnings("rawtypes")
-  private Context<?> context(HasMetadata primaryResource, String clusterScopedEventNamespace) {
+  private ControllerConfiguration<?> controller(String clusterScopedEventNamespace) {
     var configurationService = mock(ConfigurationService.class);
     when(configurationService.getLeaderElectionConfiguration())
         .thenReturn(
@@ -282,10 +293,7 @@ class EventRecorderRegressionTest {
     ControllerConfiguration controllerConfiguration = mock(ControllerConfiguration.class);
     when(controllerConfiguration.getName()).thenReturn("testcontroller");
     when(controllerConfiguration.getConfigurationService()).thenReturn(configurationService);
-    Context context = mock(Context.class);
-    when(context.getPrimaryResource()).thenReturn(primaryResource);
-    when(context.getControllerConfiguration()).thenReturn(controllerConfiguration);
-    return context;
+    return controllerConfiguration;
   }
 
   private HasMetadata clusterScoped(String name) {

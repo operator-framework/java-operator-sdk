@@ -21,7 +21,7 @@ import static io.javaoperatorsdk.operator.api.reconciler.Experimental.API_MIGHT_
 
 /**
  * An {@link EventRecorder} bound to a single object, typically the primary resource of the current
- * reconciliation.
+ * reconciliation, and to the controller recording events about it.
  */
 @Experimental(API_MIGHT_CHANGE)
 public interface ResourceEventRecorder {

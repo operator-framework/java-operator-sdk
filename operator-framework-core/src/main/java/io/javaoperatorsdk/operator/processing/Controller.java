@@ -39,6 +39,7 @@ import io.javaoperatorsdk.operator.RegisteredController;
 import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.config.ExecutorServiceManager;
 import io.javaoperatorsdk.operator.api.config.workflow.WorkflowSpec;
+import io.javaoperatorsdk.operator.api.event.ControllerEventRecorder;
 import io.javaoperatorsdk.operator.api.event.DefaultEventRecorder;
 import io.javaoperatorsdk.operator.api.event.DefaultEventSink;
 import io.javaoperatorsdk.operator.api.event.EventRecorder;
@@ -99,7 +100,7 @@ public class Controller<P extends HasMetadata>
   private final EventProcessor<P> eventProcessor;
   private final ControllerHealthInfo controllerHealthInfo;
   private final EventSourceContext<P> eventSourceContext;
-  private final EventRecorder eventRecorder;
+  private final ControllerEventRecorder eventRecorder;
 
   public Controller(
       Reconciler<P> reconciler,
@@ -116,7 +117,8 @@ public class Controller<P extends HasMetadata>
     this.eventRecorder =
         configurationService
             .eventRecorder()
-            .orElseGet(() -> new DefaultEventRecorder(new DefaultEventSink(kubernetesClient)));
+            .orElseGet(() -> new DefaultEventRecorder(new DefaultEventSink(kubernetesClient)))
+            .forController(configuration);
     contextInitializer = reconciler instanceof ContextInitializer;
     isCleaner = reconciler instanceof Cleaner;
 
@@ -352,12 +354,13 @@ public class Controller<P extends HasMetadata>
   }
 
   /**
-   * The {@link EventRecorder} this controller records its Kubernetes events through, either the one
-   * configured for the operator, see {@link
+   * The event recorder this controller records its Kubernetes events through, bound to it: either
+   * the {@link EventRecorder} configured for the operator, see {@link
    * io.javaoperatorsdk.operator.api.config.ConfigurationService#eventRecorder()}, or a {@link
    * DefaultEventRecorder} of its own.
    */
-  public EventRecorder eventRecorder() {
+  @Override
+  public ControllerEventRecorder eventRecorder() {
     return eventRecorder;
   }
 

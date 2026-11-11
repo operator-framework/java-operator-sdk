@@ -18,11 +18,31 @@ package io.javaoperatorsdk.operator;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.config.NamespaceChangeable;
+import io.javaoperatorsdk.operator.api.event.ControllerEventRecorder;
+import io.javaoperatorsdk.operator.api.reconciler.Experimental;
 import io.javaoperatorsdk.operator.health.ControllerHealthInfo;
+
+import static io.javaoperatorsdk.operator.api.reconciler.Experimental.API_MIGHT_CHANGE;
 
 public interface RegisteredController<P extends HasMetadata> extends NamespaceChangeable {
 
   ControllerConfiguration<P> getConfiguration();
 
   ControllerHealthInfo getControllerHealthInfo();
+
+  /**
+   * Returns an event recorder bound to this controller, to record Kubernetes events about any
+   * object outside of a reconciliation, for example from a background task. Within a
+   * reconciliation, use {@link io.javaoperatorsdk.operator.api.reconciler.Context#eventRecorder()}
+   * or {@link io.javaoperatorsdk.operator.api.reconciler.Context#eventRecorder(HasMetadata)}
+   * instead.
+   *
+   * @return an event recorder bound to this controller
+   * @throws UnsupportedOperationException if the implementation does not provide an event recorder
+   */
+  @Experimental(API_MIGHT_CHANGE)
+  default ControllerEventRecorder eventRecorder() {
+    throw new UnsupportedOperationException(
+        "This implementation of RegisteredController does not provide a ControllerEventRecorder");
+  }
 }

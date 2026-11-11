@@ -110,3 +110,28 @@ on one of the following:
   executor supplier, `null` to have the event source create an executor of its own.
 - `ExecutorServiceManager.scheduledExecutorService()` is deprecated. The framework doesn't use it
   anymore, it creates the executor on first use, and shuts it down when the manager is stopped.
+
+## Event recorder: events about any object
+
+The event recorder can now record events about objects other than the primary resource, from a
+reconciliation with `context.eventRecorder(otherObject)`, and outside of a reconciliation through
+`RegisteredController#eventRecorder()`, see
+[Recording Kubernetes Events](../documentation/kubernetes-events.md). Reconcilers that only use
+`context.eventRecorder()` are not affected. The low level API, which is experimental, changed to
+make this possible:
+
+- A custom `EventRecorder` implements
+  `record(HasMetadata regarding, EventRecord event, ControllerConfiguration<?> controller)`.
+  `record(EventRecord, Context<?>)` and `forContext(Context<?>)` are gone, which also means that an
+  override of either in a subclass of `DefaultEventRecorder` no longer compiles: move its logic to
+  the new `record`. Callers use `context.eventRecorder()` instead, or
+  `forResource(context.getPrimaryResource(), context.getControllerConfiguration())` when only the
+  recorder is at hand. The bound views `forResource(...)` and `forController(...)` are default
+  methods that delegate to `record`.
+- A custom `EventSink` implements `emit(Event, ControllerConfiguration<?>)` instead of
+  `emit(Event, Context<?>)`.
+- A subclass of `DefaultEventRecorder` overrides
+  `toEvent(HasMetadata regarding, EventRecord record, ControllerConfiguration<?> controller)`
+  instead of `toEvent(Context<?>, EventRecord)`.
+- `Controller#eventRecorder()` returns the `ControllerEventRecorder` bound to the controller
+  instead of the `EventRecorder` configured for the operator.

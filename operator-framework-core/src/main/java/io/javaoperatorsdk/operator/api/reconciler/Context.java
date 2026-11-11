@@ -217,12 +217,31 @@ public interface Context<P extends HasMetadata> {
   /**
    * Returns a {@link ResourceEventRecorder} bound to this context, to record Kubernetes events
    * about the primary resource. To record them through an implementation of your own, see {@link
-   * io.javaoperatorsdk.operator.api.config.ConfigurationService#eventRecorder()}.
+   * io.javaoperatorsdk.operator.api.config.ConfigurationService#eventRecorder()}. For events about
+   * another object, see {@link #eventRecorder(HasMetadata)}.
    *
    * @return an event recorder bound to the primary resource
    * @throws UnsupportedOperationException if the implementation does not provide an event recorder
    */
   default ResourceEventRecorder eventRecorder() {
+    throw new UnsupportedOperationException(
+        "This implementation of Context does not provide a ResourceEventRecorder");
+  }
+
+  /**
+   * Returns a {@link ResourceEventRecorder} bound to the given object, to record Kubernetes events
+   * about an object other than the primary resource from this reconciliation, for example about the
+   * parent of the primary resource. The events are attributed to the controller of this
+   * reconciliation and live in the namespace of the given object, or, for a cluster scoped object,
+   * in the namespace configured for such events, see {@link
+   * io.javaoperatorsdk.operator.api.config.ConfigurationService#clusterScopedEventNamespace()}.
+   *
+   * @param regarding the object subsequent events will be about
+   * @return an event recorder bound to {@code regarding}
+   * @throws UnsupportedOperationException if the implementation does not provide an event recorder
+   */
+  @Experimental(Experimental.API_MIGHT_CHANGE)
+  default ResourceEventRecorder eventRecorder(HasMetadata regarding) {
     throw new UnsupportedOperationException(
         "This implementation of Context does not provide a ResourceEventRecorder");
   }
