@@ -46,6 +46,8 @@ class CleanerForManagedDependentResourcesOnlyIT {
 
   @Test
   void addsFinalizerAndCallsCleanupIfCleanerImplemented() {
+    CleanerForManagedDependentTestReconciler reconciler =
+        (CleanerForManagedDependentTestReconciler) operator.getFirstReconciler();
     var testResource = createTestResource();
     operator.create(testResource);
 
@@ -57,6 +59,9 @@ class CleanerForManagedDependentResourcesOnlyIT {
                     .getMetadata()
                     .getFinalizers()
                     .isEmpty());
+    // adding the finalizer does not reconcile, the update event it produces does: deleting before
+    // that event is processed turns the pending execution into a cleanup and no reconcile ever runs
+    await().until(() -> reconciler.getNumberOfExecutions() == 1);
 
     operator.delete(testResource);
 
@@ -65,9 +70,6 @@ class CleanerForManagedDependentResourcesOnlyIT {
             () ->
                 operator.get(CleanerForManagedDependentCustomResource.class, TEST_RESOURCE_NAME)
                     == null);
-
-    CleanerForManagedDependentTestReconciler reconciler =
-        (CleanerForManagedDependentTestReconciler) operator.getFirstReconciler();
 
     assertThat(reconciler.getNumberOfExecutions()).isEqualTo(1);
     assertThat(ConfigMapDependentResource.getNumberOfCleanupExecutions()).isEqualTo(1);

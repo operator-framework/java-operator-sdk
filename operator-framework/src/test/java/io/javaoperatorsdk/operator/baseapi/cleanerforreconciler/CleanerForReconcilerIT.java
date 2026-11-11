@@ -63,6 +63,9 @@ class CleanerForReconcilerIT {
                     .getMetadata()
                     .getFinalizers()
                     .isEmpty());
+    // adding the finalizer does not reconcile, the update event it produces does: deleting before
+    // that event is processed turns the pending execution into a cleanup and no reconcile ever runs
+    await().until(() -> reconciler.getNumberOfExecutions() == 1);
 
     operator.delete(testResource);
 
