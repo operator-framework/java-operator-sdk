@@ -408,8 +408,9 @@ public interface ConfigurationService {
    *
    * <p>When empty, which is the default, every controller gets a {@link DefaultEventRecorder} of
    * its own. A recorder configured here is shared by all controllers of the operator instead, which
-   * is why the reconciliation an event is recorded from is passed to it per call rather than
-   * configured on it: implementations have to be stateless and thread safe.
+   * is why the object an event is about and the configuration of the controller recording it are
+   * passed to it per call rather than configured on it: implementations have to be stateless and
+   * thread safe.
    *
    * @return the event recorder to use for the whole operator, or an empty optional to let each
    *     controller use its own default one

@@ -18,7 +18,7 @@ package io.javaoperatorsdk.operator.api.event;
 import io.fabric8.kubernetes.api.model.Event;
 import io.fabric8.kubernetes.api.model.EventBuilder;
 import io.fabric8.kubernetes.client.KubernetesClient;
-import io.javaoperatorsdk.operator.api.reconciler.Context;
+import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
 
 import static java.util.Objects.requireNonNullElse;
 
@@ -52,7 +52,7 @@ public class DefaultEventSink implements EventSink {
   }
 
   @Override
-  public void emit(Event event, Context<?> context) {
+  public void emit(Event event, ControllerConfiguration<?> controller) {
     var events = client.v1().events().inNamespace(event.getMetadata().getNamespace());
     var name = event.getMetadata().getName();
     var existing = events.withName(name).get();

@@ -16,7 +16,7 @@
 package io.javaoperatorsdk.operator.api.event;
 
 import io.fabric8.kubernetes.api.model.Event;
-import io.javaoperatorsdk.operator.api.reconciler.Context;
+import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.Experimental;
 
 import static io.javaoperatorsdk.operator.api.reconciler.Experimental.API_MIGHT_CHANGE;
@@ -35,10 +35,10 @@ public interface EventSink {
    *
    * @param event the event to deliver, fully assembled: everything the event says is already built
    *     into it
-   * @param context the context of the reconciliation the event was recorded from, for
+   * @param controller the configuration of the controller the event is recorded for, for
    *     implementations that route the event based on it rather than on its contents. Ignored by
    *     {@link DefaultEventSink}.
    */
   @Experimental(API_MIGHT_CHANGE)
-  void emit(Event event, Context<?> context);
+  void emit(Event event, ControllerConfiguration<?> controller);
 }

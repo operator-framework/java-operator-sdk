@@ -30,7 +30,6 @@ import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClientException;
 import io.javaoperatorsdk.operator.api.config.ConfigurationService;
 import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
-import io.javaoperatorsdk.operator.api.reconciler.Context;
 
 import static io.javaoperatorsdk.operator.api.config.LeaderElectionConfigurationBuilder.aLeaderElectionConfiguration;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -49,10 +48,10 @@ class DefaultEventRecorderIntegrationTest {
   @Test
   void countsRepeatedEventsAboutANamespacedResource() {
     var configMap = configMap("test1");
-    var context = context(configMap, "default");
+    var controller = controller("default");
 
-    recorder().record(EventRecord.normal("Ready", "all good"), context);
-    recorder().record(EventRecord.normal("Ready", "all good"), context);
+    recorder().record(configMap, EventRecord.normal("Ready", "all good"), controller);
+    recorder().record(configMap, EventRecord.normal("Ready", "all good"), controller);
 
     var events = eventsAbout(configMap, configMap.getMetadata().getNamespace());
     assertThat(events).hasSize(1);
@@ -62,10 +61,10 @@ class DefaultEventRecorderIntegrationTest {
   @Test
   void countsRepeatedEventsAboutAClusterScopedResourceInTheDefaultNamespace() {
     var namespace = clusterScoped();
-    var context = context(namespace, "default");
+    var controller = controller("default");
 
-    recorder().record(EventRecord.normal("Ready", "all good"), context);
-    recorder().record(EventRecord.normal("Ready", "all good"), context);
+    recorder().record(namespace, EventRecord.normal("Ready", "all good"), controller);
+    recorder().record(namespace, EventRecord.normal("Ready", "all good"), controller);
 
     var events = eventsAbout(namespace, "default");
     assertThat(events).hasSize(1);
@@ -76,10 +75,10 @@ class DefaultEventRecorderIntegrationTest {
   @Test
   void countsRepeatedEventsAboutAClusterScopedResourceInTheKubeSystemNamespace() {
     var namespace = clusterScoped();
-    var context = context(namespace, "kube-system");
+    var controller = controller("kube-system");
 
-    recorder().record(EventRecord.normal("Ready", "all good"), context);
-    recorder().record(EventRecord.normal("Ready", "all good"), context);
+    recorder().record(namespace, EventRecord.normal("Ready", "all good"), controller);
+    recorder().record(namespace, EventRecord.normal("Ready", "all good"), controller);
 
     var events = eventsAbout(namespace, "kube-system");
     assertThat(events).hasSize(1);
@@ -96,10 +95,10 @@ class DefaultEventRecorderIntegrationTest {
             new NamespaceBuilder().withNewMetadata().withName("operator-ns").endMetadata().build())
         .serverSideApply();
     var namespace = clusterScoped();
-    var context = context(namespace, "operator-ns");
-    var event = recorder().toEvent(context, EventRecord.normal("Ready", "all good"));
+    var controller = controller("operator-ns");
+    var event = recorder().toEvent(namespace, EventRecord.normal("Ready", "all good"), controller);
 
-    assertThatThrownBy(() -> new DefaultEventSink(client).emit(event, context))
+    assertThatThrownBy(() -> new DefaultEventSink(client).emit(event, controller))
         .isInstanceOf(KubernetesClientException.class);
     assertThat(eventsAbout(namespace, "operator-ns")).isEmpty();
   }
@@ -107,18 +106,19 @@ class DefaultEventRecorderIntegrationTest {
   @Test
   void aggregatingOntoANamedEventTakesTheTypeReasonAndActionOfTheLatestOccurrence() {
     var configMap = configMap("test2");
-    var context = context(configMap, "default");
+    var controller = controller("default");
     var recorder = namedRecorder("named-event-" + UUID.randomUUID());
 
     recorder.record(
+        configMap,
         EventRecord.builder()
             .type(EventType.NORMAL)
             .reason("Ready")
             .message("all good")
             .action("Create")
             .build(),
-        context);
-    recorder.record(EventRecord.warning("Degraded", "replica down"), context);
+        controller);
+    recorder.record(configMap, EventRecord.warning("Degraded", "replica down"), controller);
 
     var events = eventsAbout(configMap, "default");
     assertThat(events).hasSize(1);
@@ -133,11 +133,11 @@ class DefaultEventRecorderIntegrationTest {
   @Test
   void aggregatingOntoANamedEventWithAnEventTimeTakesTheTypeReasonAndActionOfTheLatestOccurrence() {
     var namespace = clusterScoped();
-    var context = context(namespace, "kube-system");
+    var controller = controller("kube-system");
     var recorder = namedRecorder("named-event-" + UUID.randomUUID());
 
-    recorder.record(EventRecord.normal("Ready", "all good"), context);
-    recorder.record(EventRecord.warning("Degraded", "replica down"), context);
+    recorder.record(namespace, EventRecord.normal("Ready", "all good"), controller);
+    recorder.record(namespace, EventRecord.warning("Degraded", "replica down"), controller);
 
     var events = eventsAbout(namespace, "kube-system");
     assertThat(events).hasSize(1);
@@ -151,7 +151,7 @@ class DefaultEventRecorderIntegrationTest {
   @Test
   void longSuppliedNamesAreAcceptedAndStayDistinct() {
     var configMap = configMap("test3");
-    var context = context(configMap, "default");
+    var controller = controller("default");
     var prefix = "a".repeat(219) + "-";
     var recorder =
         DefaultEventRecorder.builder(new DefaultEventSink(client))
@@ -159,8 +159,8 @@ class DefaultEventRecorderIntegrationTest {
                 (regarding, record) -> Optional.of(prefix + record.reason().toLowerCase() + "x"))
             .build();
 
-    recorder.record(EventRecord.normal("First", "first"), context);
-    recorder.record(EventRecord.normal("Second", "second"), context);
+    recorder.record(configMap, EventRecord.normal("First", "first"), controller);
+    recorder.record(configMap, EventRecord.normal("Second", "second"), controller);
 
     var events = eventsAbout(configMap, "default");
     assertThat(events).hasSize(2);
@@ -171,9 +171,9 @@ class DefaultEventRecorderIntegrationTest {
   @Test
   void generatedNamesShortenedAtASeparatorAreAccepted() {
     var configMap = configMap("a".repeat(219) + "-" + "b".repeat(10));
-    var context = context(configMap, "default");
+    var controller = controller("default");
 
-    recorder().record(EventRecord.normal("Ready", "all good"), context);
+    recorder().record(configMap, EventRecord.normal("Ready", "all good"), controller);
 
     assertThat(eventsAbout(configMap, "default")).hasSize(1);
   }
@@ -218,7 +218,7 @@ class DefaultEventRecorderIntegrationTest {
   }
 
   @SuppressWarnings({"rawtypes", "unchecked"})
-  private static Context<?> context(HasMetadata primaryResource, String clusterScopedNamespace) {
+  private static ControllerConfiguration<?> controller(String clusterScopedNamespace) {
     var configurationService = mock(ConfigurationService.class);
     when(configurationService.getLeaderElectionConfiguration())
         .thenReturn(
@@ -227,9 +227,6 @@ class DefaultEventRecorderIntegrationTest {
     ControllerConfiguration controllerConfiguration = mock(ControllerConfiguration.class);
     when(controllerConfiguration.getName()).thenReturn("testcontroller");
     when(controllerConfiguration.getConfigurationService()).thenReturn(configurationService);
-    Context context = mock(Context.class);
-    when(context.getPrimaryResource()).thenReturn(primaryResource);
-    when(context.getControllerConfiguration()).thenReturn(controllerConfiguration);
-    return context;
+    return controllerConfiguration;
   }
 }

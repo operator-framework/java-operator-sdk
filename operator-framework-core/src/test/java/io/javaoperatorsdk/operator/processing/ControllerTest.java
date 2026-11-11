@@ -15,20 +15,24 @@
  */
 package io.javaoperatorsdk.operator.processing;
 
+import java.util.ArrayList;
 import java.util.Optional;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 
+import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.Secret;
+import io.fabric8.kubernetes.api.model.SecretBuilder;
 import io.javaoperatorsdk.operator.MockKubernetesClient;
 import io.javaoperatorsdk.operator.OperatorException;
 import io.javaoperatorsdk.operator.api.config.BaseConfigurationService;
 import io.javaoperatorsdk.operator.api.config.ConfigurationService;
+import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.config.MockControllerConfiguration;
 import io.javaoperatorsdk.operator.api.config.workflow.WorkflowSpec;
-import io.javaoperatorsdk.operator.api.event.DefaultEventRecorder;
+import io.javaoperatorsdk.operator.api.event.EventRecord;
 import io.javaoperatorsdk.operator.api.event.EventRecorder;
 import io.javaoperatorsdk.operator.api.monitoring.Metrics;
 import io.javaoperatorsdk.operator.api.reconciler.Cleaner;
@@ -45,6 +49,7 @@ import static io.javaoperatorsdk.operator.api.monitoring.Metrics.NOOP;
 import static io.javaoperatorsdk.operator.processing.Controller.CLEANER_NOT_SUPPORTED_ON_ALL_EVENT_ERROR_MESSAGE;
 import static io.javaoperatorsdk.operator.processing.Controller.MANAGED_WORKFLOWS_NOT_SUPPORTED_TRIGGER_RECONCILER_ON_ALL_EVENT_ERROR_MESSAGE;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
@@ -115,17 +120,33 @@ class ControllerTest {
   @Test
   void recordsEventsThroughTheEventRecorderConfiguredForTheOperator() {
     final var client = MockKubernetesClient.client(Secret.class);
-    final var eventRecorder = mock(EventRecorder.class);
+    final var recorded = new ArrayList<HasMetadata>();
+    final var recordedFor = new ArrayList<ControllerConfiguration<?>>();
+    final EventRecorder eventRecorder =
+        (regarding, event, controller) -> {
+          recorded.add(regarding);
+          recordedFor.add(controller);
+        };
     final var configurationService =
         ConfigurationService.newOverriddenConfigurationService(
             new BaseConfigurationService(),
             o -> o.withEventRecorder(eventRecorder).withKubernetesClient(client));
     final var configuration =
         MockControllerConfiguration.forResource(Secret.class, configurationService);
-
     final var controller = new Controller<Secret>(reconciler, configuration, client);
+    final var secret =
+        new SecretBuilder()
+            .withNewMetadata()
+            .withName("s")
+            .withNamespace("ns")
+            .endMetadata()
+            .build();
 
-    assertThat(controller.eventRecorder()).isSameAs(eventRecorder);
+    controller.eventRecorder().record(secret, EventRecord.normal("Created", "created"));
+
+    assertThat(recorded).containsExactly(secret);
+    assertThat(recordedFor).hasSize(1);
+    assertThat(recordedFor.get(0)).isSameAs(configuration);
   }
 
   @Test
@@ -136,10 +157,22 @@ class ControllerTest {
             Secret.class,
             ConfigurationService.newOverriddenConfigurationService(
                 new BaseConfigurationService(), o -> o.withKubernetesClient(client)));
-
     final var controller = new Controller<Secret>(reconciler, configuration, client);
+    final var secret =
+        new SecretBuilder()
+            .withNewMetadata()
+            .withName("s")
+            .withNamespace("ns")
+            .endMetadata()
+            .build();
 
-    assertThat(controller.eventRecorder()).isInstanceOf(DefaultEventRecorder.class);
+    // the default recorder is best effort: the mock client cannot write the event, and the caller
+    // must not notice
+    assertThatCode(
+            () ->
+                controller.eventRecorder().record(secret, EventRecord.normal("Created", "created")))
+        .doesNotThrowAnyException();
+    verify(client).v1();
   }
 
   @Test

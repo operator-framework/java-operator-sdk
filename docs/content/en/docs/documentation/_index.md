@@ -25,6 +25,7 @@ This section contains detailed documentation for all Java Operator SDK features 
 - **[Eventing](eventing/)** - Understanding the event-driven model
 - **[Event filters](event-filters/)** - Filtering events and the default filter behavior
 - **[Accessing Resources in Caches](working-with-es-caches/)** - How to access resources in caches
+- **[Recording Kubernetes Events](kubernetes-events/)** - Surfacing what a controller does in `kubectl describe`
 - **[Operations](operations/)** - Helm chart, metrics, logging, configurations, leader election 
 - **[Other Features](features/)** - Additional capabilities and integrations
 
