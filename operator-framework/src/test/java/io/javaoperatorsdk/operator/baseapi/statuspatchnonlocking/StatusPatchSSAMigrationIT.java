@@ -15,6 +15,8 @@
  */
 package io.javaoperatorsdk.operator.baseapi.statuspatchnonlocking;
 
+import java.time.Duration;
+
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -62,6 +64,7 @@ public class StatusPatchSSAMigrationIT {
   void afterEach() {
     client.namespaces().withName(testNamespace).delete();
     await()
+        .atMost(Duration.ofSeconds(60))
         .untilAsserted(
             () -> {
               var ns = client.namespaces().withName(testNamespace).get();
