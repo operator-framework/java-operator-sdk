@@ -15,7 +15,7 @@
  */
 package io.javaoperatorsdk.operator.baseapi.statuspatchnonlocking;
 
-import java.time.Duration;
+import java.util.concurrent.TimeUnit;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -32,6 +32,7 @@ import io.javaoperatorsdk.annotation.Sample;
 import io.javaoperatorsdk.operator.Operator;
 import io.javaoperatorsdk.operator.junit.LocallyRunOperatorExtension;
 
+import static io.javaoperatorsdk.operator.junit.AbstractOperatorExtension.DEFAULT_NAMESPACE_DELETE_TIMEOUT;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
 
@@ -64,7 +65,7 @@ public class StatusPatchSSAMigrationIT {
   void afterEach() {
     client.namespaces().withName(testNamespace).delete();
     await()
-        .atMost(Duration.ofSeconds(60))
+        .atMost(DEFAULT_NAMESPACE_DELETE_TIMEOUT, TimeUnit.SECONDS)
         .untilAsserted(
             () -> {
               var ns = client.namespaces().withName(testNamespace).get();
