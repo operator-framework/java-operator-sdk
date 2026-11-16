@@ -16,6 +16,7 @@
 package io.javaoperatorsdk.operator.api.event;
 
 import io.fabric8.kubernetes.api.model.Event;
+import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.Experimental;
 
@@ -36,7 +37,9 @@ public interface EventSink {
    * @param event the event to deliver, fully assembled: everything the event says is already built
    *     into it
    * @param context the context of the reconciliation the event was recorded from, for
-   *     implementations that route the event based on it rather than on its contents. Ignored by
+   *     implementations that route the event based on it rather than on its contents; note that the
+   *     event is not necessarily about the primary resource of that reconciliation, see {@link
+   *     io.javaoperatorsdk.operator.api.reconciler.Context#eventRecorder(HasMetadata)}. Ignored by
    *     {@link DefaultEventSink}.
    */
   @Experimental(API_MIGHT_CHANGE)

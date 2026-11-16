@@ -21,6 +21,7 @@ import java.util.Map;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
+import io.fabric8.kubernetes.api.model.ConfigMapBuilder;
 import io.fabric8.kubernetes.api.model.Event;
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
 import io.javaoperatorsdk.annotation.Sample;
@@ -37,11 +38,13 @@ import static org.awaitility.Awaitility.await;
         recorder available from the reconciliation context. Verifies that both normal and warning \
         events reach the cluster, refer to the primary resource as their involved object, and are \
         attributed to the reporting controller, and that recording the same event again counts the \
-        occurrence on the event already recorded instead of recording it a second time.
+        occurrence on the event already recorded instead of recording it a second time. Also \
+        records an event about an object other than the primary resource from the reconciliation.
         """)
 class EventRecorderIT {
 
   public static final String TEST_RESOURCE_NAME = "test1";
+  public static final String PARENT_NAME = "parent-of-the-resource";
 
   private final EventRecorderReconciler reconciler = new EventRecorderReconciler();
 
@@ -106,15 +109,57 @@ class EventRecorderIT {
             });
   }
 
+  @Test
+  void recordsEventsAboutAnotherObjectFromTheReconciliation() {
+    extension.create(
+        new ConfigMapBuilder().withNewMetadata().withName(PARENT_NAME).endMetadata().build());
+    var resource = testResource();
+    resource
+        .getMetadata()
+        .setAnnotations(Map.of(EventRecorderReconciler.PARENT_ANNOTATION, PARENT_NAME));
+    extension.create(resource);
+
+    await()
+        .untilAsserted(
+            () -> {
+              var events = eventsAbout(PARENT_NAME);
+              assertThat(events)
+                  .extracting(Event::getReason)
+                  .contains(EventRecorderReconciler.OTHER_OBJECT_REASON);
+              var event =
+                  events.stream()
+                      .filter(
+                          e -> EventRecorderReconciler.OTHER_OBJECT_REASON.equals(e.getReason()))
+                      .findFirst()
+                      .orElseThrow();
+              assertThat(event.getInvolvedObject().getKind()).isEqualTo("ConfigMap");
+              assertThat(event.getInvolvedObject().getName()).isEqualTo(PARENT_NAME);
+              assertThat(event.getInvolvedObject().getUid()).isNotBlank();
+              assertThat(event.getMessage())
+                  .isEqualTo("child " + TEST_RESOURCE_NAME + " reconciled");
+              assertThat(event.getReportingComponent()).isEqualTo(controllerName());
+            });
+  }
+
   private List<Event> eventsForTestResource() {
+    return eventsAbout(TEST_RESOURCE_NAME);
+  }
+
+  private List<Event> eventsAbout(String involvedObjectName) {
     return extension
         .getKubernetesClient()
-        .v1()
-        .events()
+        .resources(Event.class)
         .inNamespace(extension.getNamespace())
-        .withField("involvedObject.name", TEST_RESOURCE_NAME)
+        .withField("involvedObject.name", involvedObjectName)
         .list()
         .getItems();
+  }
+
+  private String controllerName() {
+    return extension
+        .getRegisteredControllerForReconcile(EventRecorderReconciler.class)
+        .getConfiguration()
+        .getName();
   }
 
   EventRecorderCustomResource testResource() {

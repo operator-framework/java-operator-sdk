@@ -27,6 +27,8 @@ public class EventRecorderReconciler implements Reconciler<EventRecorderCustomRe
 
   public static final String NORMAL_REASON = "Reconciled";
   public static final String WARNING_REASON = "SomethingIsOff";
+  public static final String OTHER_OBJECT_REASON = "ChildReconciled";
+  public static final String PARENT_ANNOTATION = "sample.javaoperatorsdk/parent";
 
   private final AtomicInteger numberOfExecutions = new AtomicInteger();
 
@@ -36,6 +38,24 @@ public class EventRecorderReconciler implements Reconciler<EventRecorderCustomRe
     numberOfExecutions.incrementAndGet();
     context.eventRecorder().normal(NORMAL_REASON, "resource reconciled");
     context.eventRecorder().warn(WARNING_REASON, "this is a warning about the resource");
+
+    var annotations = resource.getMetadata().getAnnotations();
+    var parentName = annotations == null ? null : annotations.get(PARENT_ANNOTATION);
+    if (parentName != null) {
+      var parent =
+          context
+              .getClient()
+              .configMaps()
+              .inNamespace(resource.getMetadata().getNamespace())
+              .withName(parentName)
+              .get();
+      if (parent != null) {
+        context
+            .eventRecorder(parent)
+            .normal(
+                OTHER_OBJECT_REASON, "child " + resource.getMetadata().getName() + " reconciled");
+      }
+    }
     return UpdateControl.noUpdate();
   }
 
