@@ -1,0 +1,12 @@
+{
+  "resources": {
+    "includes": [
+      { "pattern": "log4j2\\.xml" },
+      { "pattern": "otlp-config\\.yaml" },
+      { "pattern": "io/javaoperatorsdk/operator/sample/.*\\.yaml" },
+      { "pattern": "META-INF/services/.*" },
+      { "pattern": ".*\\.properties" }
+    ]
+  },
+  "bundles": []
+}
