@@ -43,9 +43,9 @@ import io.javaoperatorsdk.operator.api.reconciler.Context;
 import static java.util.Objects.requireNonNullElse;
 
 /**
- * Default {@link EventRecorder}. Assembles events from an {@link EventRecord} plus the context the
- * controller already knows about (the involved object reference, the reporting controller and
- * instance), then hands them to an {@link EventSink}.
+ * Default {@link EventRecorder}. Assembles events from an {@link EventRecord} plus what is known
+ * about the object the event is about (the involved object reference) and the controller recording
+ * it (the reporting controller and instance), then hands them to an {@link EventSink}.
  *
  * <p>Events for cluster scoped objects have to live in some namespace: by default the {@value
  * #CLUSTER_SCOPED_EVENT_NAMESPACE} namespace is used, following the Kubernetes convention, but it
@@ -63,6 +63,9 @@ import static java.util.Objects.requireNonNullElse;
  * and the caller carries on. A recorder built with {@link Builder#failOnError(boolean)} propagates
  * the failure to the caller instead, so that a reconciliation that cannot record its events fails
  * and is retried.
+ *
+ * <p>An event can be about any object, not only the primary resource of the reconciliation
+ * recording it: the object is passed per call, see {@link EventRecorder}.
  */
 public class DefaultEventRecorder implements EventRecorder {
 
@@ -218,12 +221,15 @@ public class DefaultEventRecorder implements EventRecorder {
   }
 
   @Override
-  public void record(EventRecord event, Context<?> context) {
-    Objects.requireNonNull(context, "the context of the reconciliation must not be null");
+  public void record(HasMetadata regarding, EventRecord event, Context<?> context) {
+    Objects.requireNonNull(regarding, "the object the event is about must not be null");
+    Objects.requireNonNull(
+        regarding.getMetadata(), "the object the event is about must have metadata");
     Objects.requireNonNull(event, "event must not be null");
+    Objects.requireNonNull(context, "the context of the reconciliation must not be null");
     Event assembled = null;
     try {
-      assembled = toEvent(context, event);
+      assembled = toEvent(regarding, event, context);
       sink.emit(assembled, context);
     } catch (Exception e) {
       if (failOnError) {
@@ -233,25 +239,19 @@ public class DefaultEventRecorder implements EventRecorder {
       // reconcile because it could not write an event is usually worse off than one that records
       // nothing
       log.warn(
-          "Could not record {} event named {} with reason {} for resource {} in namespace {}",
+          "Could not record {} event named {} with reason {} about {} {} in namespace {}",
           event.type(),
           assembled != null ? assembled.getMetadata().getName() : "unknown",
           event.reason(),
-          context.getPrimaryResource().getMetadata().getName(),
-          context.getPrimaryResource().getMetadata().getNamespace(),
+          regarding.getKind(),
+          regarding.getMetadata().getName(),
+          regarding.getMetadata().getNamespace(),
           e);
     }
   }
 
-  @Override
-  public ResourceEventRecorder forContext(Context<?> context) {
-    Objects.requireNonNull(context, "the context events will be recorded from must not be null");
-    return new BoundEventRecorder(this, context);
-  }
-
-  protected Event toEvent(Context<?> context, EventRecord record) {
+  protected Event toEvent(HasMetadata regarding, EventRecord record, Context<?> context) {
     var controllerName = context.getControllerConfiguration().getName();
-    var regarding = context.getPrimaryResource();
     var now = Instant.now().truncatedTo(ChronoUnit.SECONDS).toString();
     var involvedObject = objectReferenceFor(regarding);
     var namespace = eventNamespace(regarding, context);
@@ -442,24 +442,5 @@ public class DefaultEventRecorder implements EventRecorder {
         .withUid(resource.getMetadata().getUid())
         .withResourceVersion(resource.getMetadata().getResourceVersion())
         .build();
-  }
-
-  private record BoundEventRecorder(EventRecorder delegate, Context<?> context)
-      implements ResourceEventRecorder {
-
-    @Override
-    public void normal(String reason, String message) {
-      delegate.record(EventRecord.normal(reason, message), context);
-    }
-
-    @Override
-    public void warn(String reason, String message) {
-      delegate.record(EventRecord.warning(reason, message), context);
-    }
-
-    @Override
-    public void record(EventRecord event) {
-      delegate.record(event, context);
-    }
   }
 }

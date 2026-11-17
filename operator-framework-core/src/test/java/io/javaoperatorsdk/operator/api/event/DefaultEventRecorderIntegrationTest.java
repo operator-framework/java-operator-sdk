@@ -97,7 +97,7 @@ class DefaultEventRecorderIntegrationTest {
         .serverSideApply();
     var namespace = clusterScoped();
     var context = context(namespace, "operator-ns");
-    var event = recorder().toEvent(context, EventRecord.normal("Ready", "all good"));
+    var event = recorder().toEvent(namespace, EventRecord.normal("Ready", "all good"), context);
 
     assertThatThrownBy(() -> new DefaultEventSink(client).emit(event, context))
         .isInstanceOf(KubernetesClientException.class);
@@ -217,7 +217,7 @@ class DefaultEventRecorderIntegrationTest {
         .build();
   }
 
-  @SuppressWarnings({"rawtypes", "unchecked"})
+  @SuppressWarnings({"rawtypes"})
   private static Context<?> context(HasMetadata primaryResource, String clusterScopedNamespace) {
     var configurationService = mock(ConfigurationService.class);
     when(configurationService.getLeaderElectionConfiguration())

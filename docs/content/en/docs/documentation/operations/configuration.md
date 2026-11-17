@@ -377,6 +377,9 @@ All operator-level keys are prefixed with `josdk.`.
 
 #### Events
 
+See [Recording Kubernetes Events](../kubernetes-events.md) for how events are recorded. The key
+below configures where events about cluster scoped resources go.
+
 | Key | Type | Description |
 |---|---|---|
 | `josdk.events.cluster-scoped-namespace` | `String` | Namespace to record events about cluster scoped resources in (defaults to `default`); the API server only accepts `default` and `kube-system` |
