@@ -27,11 +27,8 @@ import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.javaoperatorsdk.operator.api.event.DefaultEventRecorder;
-import io.javaoperatorsdk.operator.api.event.EventRecord;
 import io.javaoperatorsdk.operator.api.event.EventRecorder;
-import io.javaoperatorsdk.operator.api.event.ResourceEventRecorder;
 import io.javaoperatorsdk.operator.api.monitoring.Metrics;
-import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResourceFactory;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -117,16 +114,7 @@ class ConfigurationServiceOverriderTest {
 
   @Test
   void eventRecorderIsNotConfiguredByDefaultAndCanBeOverridden() {
-    final var eventRecorder =
-        new EventRecorder() {
-          @Override
-          public void record(EventRecord event, Context<?> context) {}
-
-          @Override
-          public ResourceEventRecorder forContext(Context<?> context) {
-            return null;
-          }
-        };
+    final EventRecorder eventRecorder = (regarding, event, context) -> {};
 
     assertThat(config.eventRecorder()).isEmpty();
     assertThat(

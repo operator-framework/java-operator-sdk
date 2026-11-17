@@ -215,6 +215,11 @@ public class DefaultContext<P extends HasMetadata> implements Context<P> {
   }
 
   @Override
+  public ResourceEventRecorder eventRecorder(HasMetadata regarding) {
+    return controller.eventRecorder().forResource(regarding, this);
+  }
+
+  @Override
   public ExecutorService getWorkflowExecutorService() {
     // note that this should be always received from executor service manager, so we are able to do
     // restarts.

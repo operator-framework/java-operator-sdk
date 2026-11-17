@@ -27,6 +27,7 @@ import io.fabric8.kubernetes.api.model.Event;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.Namespace;
 import io.fabric8.kubernetes.api.model.NamespaceBuilder;
+import io.fabric8.kubernetes.api.model.SecretBuilder;
 import io.javaoperatorsdk.operator.api.config.ConfigurationService;
 import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
@@ -35,6 +36,7 @@ import static io.javaoperatorsdk.operator.api.config.LeaderElectionConfiguration
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatIllegalArgumentException;
+import static org.assertj.core.api.Assertions.assertThatNullPointerException;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -232,6 +234,98 @@ class DefaultEventRecorderTest {
   }
 
   @Test
+  void recordsEventsAboutAnObjectOtherThanThePrimaryResource() {
+    var other =
+        new ConfigMapBuilder()
+            .withNewMetadata()
+            .withName("parent")
+            .withNamespace("ns2")
+            .withUid("uid-parent")
+            .endMetadata()
+            .build();
+
+    recorder.record(
+        other, EventRecord.warning("ChildFailed", "child failed"), context(configMap()));
+
+    assertThat(emitted).hasSize(1);
+    var event = emitted.get(0);
+    assertThat(event.getInvolvedObject().getKind()).isEqualTo("ConfigMap");
+    assertThat(event.getInvolvedObject().getName()).isEqualTo("parent");
+    assertThat(event.getInvolvedObject().getNamespace()).isEqualTo("ns2");
+    assertThat(event.getInvolvedObject().getUid()).isEqualTo("uid-parent");
+    assertThat(event.getMetadata().getNamespace()).isEqualTo("ns2");
+    assertThat(event.getMetadata().getName()).startsWith("parent.");
+    assertThat(event.getReportingComponent()).isEqualTo(CONTROLLER);
+    assertThat(event.getReportingInstance()).isEqualTo(INSTANCE);
+  }
+
+  @Test
+  void recordsEventsAboutClusterScopedObjectsOtherThanThePrimaryInTheConfiguredNamespace() {
+    recorder.record(
+        clusterScoped(),
+        EventRecord.normal("Noticed", "noticed"),
+        context(configMap(), "kube-system"));
+
+    assertThat(emitted.get(0).getMetadata().getNamespace()).isEqualTo("kube-system");
+    assertThat(emitted.get(0).getInvolvedObject().getKind()).isEqualTo("Namespace");
+  }
+
+  @Test
+  void theSameRecordAboutObjectsDifferingOnlyInKindResolvesToDifferentEvents() {
+    var record = EventRecord.normal("Noticed", "noticed");
+    var context = context(configMap());
+    var configMap =
+        new ConfigMapBuilder()
+            .withNewMetadata()
+            .withName("test1")
+            .withNamespace("ns1")
+            .endMetadata()
+            .build();
+    var secret =
+        new SecretBuilder()
+            .withNewMetadata()
+            .withName("test1")
+            .withNamespace("ns1")
+            .endMetadata()
+            .build();
+
+    recorder.record(configMap, record, context);
+    recorder.record(secret, record, context);
+
+    assertThat(emitted).hasSize(2);
+    assertThat(emitted).allSatisfy(e -> assertThat(e.getMetadata().getName()).startsWith("test1."));
+    assertThat(emitted.get(0).getMetadata().getName())
+        .isNotEqualTo(emitted.get(1).getMetadata().getName());
+  }
+
+  @Test
+  void boundRecorderRecordsAboutTheOtherObjectItIsBoundTo() {
+    var bound = recorder.forResource(clusterScoped(), context(configMap()));
+
+    bound.normal("Created", "created");
+    bound.warn("Failed", "failed");
+
+    assertThat(emitted).hasSize(2);
+    assertThat(emitted)
+        .allSatisfy(e -> assertThat(e.getInvolvedObject().getKind()).isEqualTo("Namespace"));
+    assertThat(emitted)
+        .allSatisfy(e -> assertThat(e.getReportingComponent()).isEqualTo(CONTROLLER));
+  }
+
+  @Test
+  void rejectsAnObjectWithoutMetadata() {
+    assertThatNullPointerException()
+        .isThrownBy(
+            () ->
+                recorder.record(
+                    new ConfigMap(),
+                    EventRecord.normal("Noticed", "noticed"),
+                    context(configMap())))
+        .withMessageContaining("metadata");
+    assertThat(emitted).isEmpty();
+  }
+
+  @Test
   void truncatesTheNameOfTheInvolvedObjectToStayWithinTheKubernetesNameLimit() {
     var longName = "a".repeat(253);
     var configMap =
@@ -368,6 +462,26 @@ class DefaultEventRecorderTest {
               assertThat(owner.getKind()).isEqualTo("ConfigMap");
               assertThat(owner.getName()).isEqualTo("test1");
               assertThat(owner.getUid()).isEqualTo("uid-1");
+            });
+  }
+
+  @Test
+  void setsTheOwnerReferenceToTheOtherObjectWhenRecordingAboutIt() {
+    var recorder =
+        DefaultEventRecorder.builder((event, context) -> emitted.add(event))
+            .ownerReference(true)
+            .build();
+
+    recorder.record(
+        clusterScoped(), EventRecord.normal("Created", "created"), context(configMap()));
+
+    assertThat(emitted.get(0).getMetadata().getOwnerReferences())
+        .singleElement()
+        .satisfies(
+            owner -> {
+              assertThat(owner.getKind()).isEqualTo("Namespace");
+              assertThat(owner.getName()).isEqualTo("ns1");
+              assertThat(owner.getUid()).isEqualTo("uid-2");
             });
   }
 
@@ -576,10 +690,10 @@ class DefaultEventRecorderTest {
   }
 
   /**
-   * The recorder reads everything it does not get from the {@link EventRecord} off the context: the
-   * primary resource the event is about, the name of the controller the event is attributed to, and
-   * the configuration service the reporting instance and the cluster scoped event namespace come
-   * from.
+   * The recorder reads everything it does not get from the {@link EventRecord} or the object the
+   * event is about off the context: the primary resource, which the event is about unless another
+   * object is given, the name of the controller the event is attributed to, and the configuration
+   * service the reporting instance and the cluster scoped event namespace come from.
    */
   @SuppressWarnings("rawtypes")
   Context<?> context(HasMetadata primaryResource, String clusterScopedEventNamespace) {
