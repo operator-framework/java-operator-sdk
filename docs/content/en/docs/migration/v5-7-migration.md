@@ -110,3 +110,20 @@ on one of the following:
   executor supplier, `null` to have the event source create an executor of its own.
 - `ExecutorServiceManager.scheduledExecutorService()` is deprecated. The framework doesn't use it
   anymore, it creates the executor on first use, and shuts it down when the manager is stopped.
+
+## Event recorder: events about any object
+
+The event recorder can now record events about objects other than the primary resource, with
+`context.eventRecorder(otherObject)`, see
+[Recording Kubernetes Events](../documentation/kubernetes-events.md). Reconcilers that only use
+`context.eventRecorder()` are not affected. The low level API, which is experimental, changed to
+make this possible:
+
+- A custom `EventRecorder` implements
+  `record(HasMetadata regarding, EventRecord event, Context<?> context)` instead of
+  `record(EventRecord, Context<?>)` and `forContext(Context<?>)`. Those two are now default methods
+  that delegate to the new one, as is the new `forResource(HasMetadata, Context<?>)`.
+- A subclass of `DefaultEventRecorder` overrides or calls
+  `toEvent(HasMetadata regarding, EventRecord record, Context<?> context)` instead of
+  `toEvent(Context<?>, EventRecord)`. An override of the old signature without `@Override` still
+  compiles but is no longer called.
