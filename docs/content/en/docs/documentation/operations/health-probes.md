@@ -34,6 +34,28 @@ individual `InformerHealthIndicator` instances. Each indicator exposes `hasSynce
 `isRunning()`, and `getTargetNamespace()`. This is typically not needed for a standard health probe but can
 be valuable for operational dashboards or troubleshooting.
 
+### Detecting Stale Informers
+
+An informer whose watch is open but delivers nothing (for example, when the API server replica it’s connected
+to serves reads from a stale watch cache) still reports `hasSynced()` and `isRunning()`, so its status stays
+healthy. `InformerHealthIndicator.getLastSyncResourceVersion()` exposes the resource version of the last
+event, bookmark or list the informer processed, and returns `null` before the first list. Since events and
+bookmarks keep moving this value, a probe can remember it per informer and report the informer unhealthy
+once it has not changed for longer than a timeout of your choosing:
+
+```java
+operator.getRuntimeInfo().getRegisteredControllers().forEach(controller ->
+    controller.getControllerHealthInfo().informerEventSourceHealthIndicators()
+        .forEach((eventSourceName, eventSource) ->
+            eventSource.informerHealthIndicators().forEach((namespace, informer) -> {
+              String resourceVersion = informer.getLastSyncResourceVersion();
+              // compare with the value seen by the previous check
+            })));
+```
+
+The API server makes no guarantees about how often it sends bookmarks, so set a conservative timeout
+(several minutes) to avoid restarting an operator that is simply watching a quiet cluster.
+
 ## Setting Up a Probe Endpoint
 
 The example below uses [Jetty](https://eclipse.dev/jetty/) to expose a `/healthz` endpoint. Any HTTP

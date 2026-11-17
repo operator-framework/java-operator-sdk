@@ -30,4 +30,8 @@ public interface InformerHealthIndicator extends EventSourceHealthIndicator {
   boolean isRunning();
 
   String getTargetNamespace();
+
+  default String getLastSyncResourceVersion() {
+    return null;
+  }
 }
