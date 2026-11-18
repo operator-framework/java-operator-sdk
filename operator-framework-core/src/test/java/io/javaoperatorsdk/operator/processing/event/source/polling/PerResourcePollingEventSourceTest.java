@@ -274,6 +274,39 @@ class PerResourcePollingEventSourceTest
   }
 
   @Test
+  void keepsPollingAfterTheFetcherThrowsAnException() {
+    when(supplier.fetchResources(any()))
+        .thenThrow(new IllegalStateException("temporary failure"))
+        .thenReturn(Set.of(SampleExternalResource.testResource1()));
+
+    source.onResourceCreated(testCustomResource);
+
+    await()
+        .untilAsserted(
+            () -> {
+              verify(supplier, atLeast(3)).fetchResources(eq(testCustomResource));
+              verify(eventHandler, atLeastOnce()).handleEvent(any());
+            });
+  }
+
+  @Test
+  void pollingFailedWithAnErrorIsRegisteredAgainWhenTheResourceIsUpdated() {
+    when(supplier.fetchResources(any()))
+        .thenThrow(new OutOfMemoryError("test"))
+        .thenReturn(Set.of(SampleExternalResource.testResource1()));
+
+    source.onResourceCreated(testCustomResource);
+    await().untilAsserted(() -> verify(supplier, times(1)).fetchResources(any()));
+    await()
+        .pollDelay(Duration.ofMillis(2 * PERIOD))
+        .untilAsserted(() -> verify(supplier, times(1)).fetchResources(any()));
+
+    source.onResourceUpdated(testCustomResource, testCustomResource);
+
+    await().untilAsserted(() -> verify(supplier, atLeast(3)).fetchResources(any()));
+  }
+
+  @Test
   void pollsAgainAfterRestart() {
     source.onResourceCreated(testCustomResource);
     await().untilAsserted(() -> verify(supplier, atLeast(2)).fetchResources(any()));

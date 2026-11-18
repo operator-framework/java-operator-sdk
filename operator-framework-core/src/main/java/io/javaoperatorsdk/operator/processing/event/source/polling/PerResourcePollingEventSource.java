@@ -20,7 +20,9 @@ import java.util.Collections;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.CancellationException;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
@@ -188,6 +190,7 @@ public class PerResourcePollingEventSource<R, P extends HasMetadata, ID>
       return;
     }
     var primaryID = ResourceID.fromResource(resource);
+    discardTaskIfFailed(primaryID);
     if (scheduledFutures.get(primaryID) == null
         && (registerPredicate == null || registerPredicate.test(resource))) {
       var cachedResources = cachedResourcesFor(primaryID);
@@ -196,6 +199,44 @@ public class PerResourcePollingEventSource<R, P extends HasMetadata, ID>
       // and getSecondaryResource is called on reconciliation.
       scheduleNextExecution(resource, actualResources, lifecycleGeneration);
     }
+  }
+
+  // a task that ended without scheduling the next one, e.g. on an Error, would otherwise stay
+  // registered and keep the resource from being polled again
+  private void discardTaskIfFailed(ResourceID primaryID) {
+    var future = scheduledFutures.get(primaryID);
+    if (future == null || !future.isDone()) {
+      return;
+    }
+    try {
+      future.get();
+    } catch (ExecutionException e) {
+      log.error(
+          "Previous polling task for resource {} failed unexpectedly, polling is rescheduled",
+          primaryID,
+          e.getCause());
+    } catch (CancellationException e) {
+      log.debug("Previous polling task for resource {} was cancelled", primaryID);
+    } catch (InterruptedException e) {
+      Thread.currentThread().interrupt();
+      return;
+    }
+    scheduledFutures.remove(primaryID, future);
+  }
+
+  private synchronized void rescheduleAfterFailure(
+      ResourceID primaryID, long generation, Exception failure) {
+    if (generation != lifecycleGeneration) {
+      log.debug("Polling of resource {} failed after the event source was stopped", primaryID);
+      return;
+    }
+    log.error("Exception during polling for resource: {}", primaryID, failure);
+    // not scheduled for a resource that is gone, the polling of it was cancelled with its deletion
+    primaryResourceCache
+        .get(primaryID)
+        .ifPresentOrElse(
+            primary -> scheduleNextExecution(primary, null, generation),
+            () -> forgetTask(primaryID, generation));
   }
 
   private class FetchingExecutor implements Runnable {
@@ -220,8 +261,15 @@ public class PerResourcePollingEventSource<R, P extends HasMetadata, ID>
         // no new execution is scheduled in this case, an on delete event should be received shortly
         forgetTask(primaryID, generation);
       } else {
-        var values = resourceFetcher.fetchResources(primary.get());
-        cacheAndScheduleNextExecution(primary.get(), values, generation);
+        try {
+          var values = resourceFetcher.fetchResources(primary.get());
+          cacheAndScheduleNextExecution(primary.get(), values, generation);
+        } catch (Exception e) {
+          rescheduleAfterFailure(primaryID, generation, e);
+        } catch (Error e) {
+          log.error("Fatal error during polling for resource: {}", primaryID, e);
+          throw e;
+        }
       }
     }
   }
