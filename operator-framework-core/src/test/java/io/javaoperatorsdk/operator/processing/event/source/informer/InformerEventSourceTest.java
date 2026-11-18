@@ -23,6 +23,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Stream;
 
 import org.junit.jupiter.api.BeforeEach;
@@ -440,6 +441,73 @@ class InformerEventSourceTest {
     var result = informerEventSource.byIndexStream("idx", "key").toList();
 
     assertThat(result).containsExactly(ghost);
+  }
+
+  @Test
+  void listKeepsGhostResourceIfInformerCatchesUpWhileReadingTheInformerState() {
+    var ghostResource = testDeployment();
+    ghostResource.getMetadata().setName("ghost");
+    var other = testDeployment();
+    other.getMetadata().setName("other");
+    var lastSync = new AtomicReference<>("1");
+
+    when(temporaryResourceCache.getResources())
+        .thenReturn(new HashMap<>(Map.of(ResourceID.fromResource(ghostResource), ghostResource)));
+    var mim = mock(InformerManager.class);
+    when(mim.isWatchingNamespace(any())).thenReturn(true);
+    when(mim.lastSyncResourceVersion(any())).thenAnswer(i -> lastSync.get());
+    when(mim.list(nullable(String.class)))
+        .thenReturn(Stream.of(other).peek(r -> lastSync.set("5")));
+    when(informerEventSource.manager()).thenReturn(mim);
+
+    var result = informerEventSource.list(null, r -> true).toList();
+
+    assertThat(result).containsExactlyInAnyOrder(other, ghostResource);
+  }
+
+  @Test
+  void byIndexKeepsGhostResourceIfInformerCatchesUpWhileReadingTheInformerState() {
+    var ghostResource = testDeployment();
+    ghostResource.getMetadata().setName("ghost");
+    var other = testDeployment();
+    other.getMetadata().setName("other");
+    var lastSync = new AtomicReference<>("1");
+
+    when(temporaryResourceCache.getResources())
+        .thenReturn(new HashMap<>(Map.of(ResourceID.fromResource(ghostResource), ghostResource)));
+    var mim = mock(InformerManager.class);
+    when(mim.isWatchingNamespace(any())).thenReturn(true);
+    when(mim.lastSyncResourceVersion(any())).thenAnswer(i -> lastSync.get());
+    when(mim.byIndexStream(any(), any())).thenReturn(Stream.of(other).peek(r -> lastSync.set("5")));
+    when(informerEventSource.manager()).thenReturn(mim);
+    informerEventSource.addIndexers(Map.of("idx", d -> List.of("key")));
+
+    var result = informerEventSource.byIndexStream("idx", "key").toList();
+
+    assertThat(result).containsExactlyInAnyOrder(other, ghostResource);
+  }
+
+  @Test
+  void keysKeepGhostResourceKeyIfInformerCatchesUpWhileReadingTheInformerState() {
+    var ghostResource = testDeployment();
+    ghostResource.getMetadata().setName("ghost");
+    var other = testDeployment();
+    other.getMetadata().setName("other");
+    var ghostResourceId = ResourceID.fromResource(ghostResource);
+    var otherId = ResourceID.fromResource(other);
+    var lastSync = new AtomicReference<>("1");
+
+    when(temporaryResourceCache.getResources()).thenReturn(Map.of(ghostResourceId, ghostResource));
+    when(temporaryResourceCache.isEmpty()).thenReturn(false);
+    var mim = mock(InformerManager.class);
+    when(mim.isWatchingNamespace(any())).thenReturn(true);
+    when(mim.lastSyncResourceVersion(any())).thenAnswer(i -> lastSync.get());
+    when(mim.keys()).thenReturn(Stream.of(otherId).peek(r -> lastSync.set("5")));
+    when(informerEventSource.manager()).thenReturn(mim);
+
+    var result = informerEventSource.keys().toList();
+
+    assertThat(result).containsExactlyInAnyOrder(otherId, ghostResourceId);
   }
 
   private void stubLastSyncResourceVersion(InformerManager mim, String resourceVersion) {
