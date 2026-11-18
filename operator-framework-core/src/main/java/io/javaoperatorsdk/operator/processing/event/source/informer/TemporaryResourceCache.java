@@ -16,6 +16,7 @@
 package io.javaoperatorsdk.operator.processing.event.source.informer;
 
 import java.util.Map;
+import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -173,7 +174,16 @@ public class TemporaryResourceCache<T extends HasMetadata> {
     //
     // this also prevents resurrecting recently deleted entities for which the delete event
     // has already been processed
-    var latestRV = getLastSyncResourceVersion(ns);
+    final String latestRV;
+    try {
+      latestRV = getLastSyncResourceVersion(ns);
+    } catch (NoSuchElementException e) {
+      log.debug(
+          "Skipping caching of resource: {} since namespace is not being watched anymore: {}",
+          resourceId,
+          ns);
+      return;
+    }
     if (latestRV != null
         && ReconcilerUtilsInternal.compareResourceVersions(
                 latestRV, newResource.getMetadata().getResourceVersion())
@@ -225,8 +235,17 @@ public class TemporaryResourceCache<T extends HasMetadata> {
       var e = iterator.next();
 
       var ns = e.getValue().getMetadata().getNamespace();
+      String lastSyncResourceVersion = null;
+      var watched = managedInformerEventSource.manager().isWatchingNamespace(ns);
+      if (watched) {
+        try {
+          lastSyncResourceVersion = getLastSyncResourceVersion(ns);
+        } catch (NoSuchElementException ex) {
+          watched = false;
+        }
+      }
       // this can happen if followed namespaces are changed dynamically
-      if (!managedInformerEventSource.manager().isWatchingNamespace(ns)) {
+      if (!watched) {
         log.debug(
             "Removing resource: {} from cache as part of ghost cleanup. Namespace is not followed"
                 + " anymore: {}",
@@ -236,8 +255,9 @@ public class TemporaryResourceCache<T extends HasMetadata> {
         eventFilteringSupport.handleGhostResourceRemoval(e.getKey());
         continue;
       }
-      if ((ReconcilerUtilsInternal.compareResourceVersions(
-                  e.getValue().getMetadata().getResourceVersion(), getLastSyncResourceVersion(ns))
+      if (lastSyncResourceVersion != null
+          && (ReconcilerUtilsInternal.compareResourceVersions(
+                  e.getValue().getMetadata().getResourceVersion(), lastSyncResourceVersion)
               < 0)
           // making sure we have the situation where resource is missing from the cache
           && managedInformerEventSource.manager().get(e.getKey()).isEmpty()) {
