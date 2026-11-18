@@ -16,6 +16,7 @@
 package io.javaoperatorsdk.operator.processing.event.source.informer;
 
 import java.util.HashSet;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -203,10 +204,31 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
       log.debug(
           "Propagating event for {}, resource with same version not result of a our update.",
           event.getAction());
-      propagateEvent(resource, previousResource, primaryIds);
+      propagateEvent(
+          resource,
+          previousResource,
+          primaryIdsOfMergedEvent(primaryIds, resource, previousResource, oldObject));
     } else {
       log.debug("Event filtered out for operation: {}, resourceID: {}", action, resourceID);
     }
+  }
+
+  private Set<ResourceID> primaryIdsOfMergedEvent(
+      Set<ResourceID> primaryIds, R resource, R previousResource, R rawOldResource) {
+    var ids = new HashSet<ResourceID>();
+    var mapper = configuration().getSecondaryToPrimaryMapper();
+    if (primaryIds != null) {
+      ids.addAll(primaryIds);
+    } else {
+      ids.addAll(mapper.toPrimaryResourceIDs(resource));
+      if (rawOldResource != null) {
+        ids.addAll(mapper.toPrimaryResourceIDs(rawOldResource));
+      }
+    }
+    if (previousResource != null) {
+      ids.addAll(mapper.toPrimaryResourceIDs(previousResource));
+    }
+    return ids;
   }
 
   protected void propagateEvent(R resource, R oldResource, Set<ResourceID> primaryResourceIdSet) {
@@ -294,12 +316,21 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
     return configuration().followControllerNamespaceChanges();
   }
 
+  private boolean isRecreation(ResourceAction action, R newObject, R oldObject) {
+    return action == ResourceAction.UPDATED
+        && oldObject != null
+        && !Objects.equals(oldObject.getMetadata().getUid(), newObject.getMetadata().getUid());
+  }
+
   private boolean eventAcceptedByFilter(
       ResourceAction action, R newObject, R oldObject, Boolean deletedFinalStateUnknown) {
     if (genericFilter != null && !genericFilter.accept(newObject)) {
       return false;
     }
-    return switch (action) {
+    // a merged event can span a deletion and recreation, that is a new resource, thus an add
+    var effectiveAction =
+        isRecreation(action, newObject, oldObject) ? ResourceAction.ADDED : action;
+    return switch (effectiveAction) {
       case ADDED -> onAddFilter == null || onAddFilter.accept(newObject);
       case UPDATED -> onUpdateFilter == null || onUpdateFilter.accept(newObject, oldObject);
       case DELETED ->

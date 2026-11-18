@@ -28,6 +28,7 @@ import java.util.stream.Stream;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 
 import io.fabric8.kubernetes.api.model.ObjectMeta;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
@@ -41,6 +42,7 @@ import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.config.InformerStoppedHandler;
 import io.javaoperatorsdk.operator.api.config.informer.InformerConfiguration;
 import io.javaoperatorsdk.operator.api.config.informer.InformerEventSourceConfiguration;
+import io.javaoperatorsdk.operator.processing.event.Event;
 import io.javaoperatorsdk.operator.processing.event.EventHandler;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
 import io.javaoperatorsdk.operator.processing.event.source.Cache;
@@ -176,6 +178,53 @@ class InformerEventSourceTest {
     informerEventSource.onAdd(latest);
 
     verify(eventHandlerMock, times(1)).handleEvent(any());
+  }
+
+  @Test
+  void mergedEventSpanningRecreationIsFilteredAsAdd() {
+    var previous = deploymentWithRV("10");
+    previous.getMetadata().setUid("old-uid");
+    var latest = deploymentWithRV("12");
+    latest.getMetadata().setUid("new-uid");
+    when(temporaryResourceCache.onAddOrUpdateEvent(any(), any(), any()))
+        .thenReturn(
+            Optional.of(new ExtendedResourceEvent(ResourceAction.UPDATED, latest, previous, null)));
+    informerEventSource.setOnUpdateFilter((newR, oldR) -> false);
+
+    informerEventSource.onUpdate(previous, latest);
+
+    verify(eventHandlerMock, times(1)).handleEvent(any());
+  }
+
+  @Test
+  void mergedEventNotifiesPrimariesOfRawAndMergedTransitions() {
+    var primaryA = ResourceID.fromResource(testDeployment());
+    var primaryB = new ResourceID("b", primaryA.getNamespace().orElse(null));
+    var primaryC = new ResourceID("c", primaryA.getNamespace().orElse(null));
+    var previous = deploymentWithRV("10");
+    previous.getMetadata().setAnnotations(Map.of("primary", "a"));
+    var rawOld = deploymentWithRV("11");
+    rawOld.getMetadata().setAnnotations(Map.of("primary", "b"));
+    var latest = deploymentWithRV("12");
+    latest.getMetadata().setAnnotations(Map.of("primary", "c"));
+    when(secondaryToPrimaryMapper.toPrimaryResourceIDs(any()))
+        .thenAnswer(
+            i -> {
+              var name =
+                  ((Deployment) i.getArgument(0)).getMetadata().getAnnotations().get("primary");
+              return Set.of(new ResourceID(name, primaryA.getNamespace().orElse(null)));
+            });
+    when(temporaryResourceCache.onAddOrUpdateEvent(any(), any(), any()))
+        .thenReturn(
+            Optional.of(new ExtendedResourceEvent(ResourceAction.UPDATED, latest, previous, null)));
+
+    informerEventSource.onUpdate(rawOld, latest);
+
+    var captor = ArgumentCaptor.forClass(Event.class);
+    verify(eventHandlerMock, times(3)).handleEvent(captor.capture());
+    assertThat(captor.getAllValues().stream().map(Event::getRelatedCustomResourceID))
+        .containsExactlyInAnyOrder(
+            new ResourceID("a", primaryA.getNamespace().orElse(null)), primaryB, primaryC);
   }
 
   private Deployment deploymentWithRV(String resourceVersion) {
