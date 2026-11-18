@@ -70,6 +70,7 @@ class InformerWrapper<T extends HasMetadata>
     return Optional.ofNullable(cache.getByKey(getKey(resourceID)));
   }
 
+  @Override
   public String getLastSyncResourceVersion() {
     return this.informer.lastSyncResourceVersion();
   }

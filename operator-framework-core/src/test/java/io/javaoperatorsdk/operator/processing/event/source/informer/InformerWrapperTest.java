@@ -23,6 +23,7 @@ import org.mockito.ArgumentCaptor;
 
 import io.fabric8.kubernetes.client.informers.SharedIndexInformer;
 import io.fabric8.kubernetes.client.informers.cache.Cache;
+import io.javaoperatorsdk.operator.health.InformerHealthIndicator;
 import io.javaoperatorsdk.operator.processing.event.source.informer.pool.InformerClassifier;
 import io.javaoperatorsdk.operator.sample.simple.TestCustomResource;
 
@@ -48,6 +49,9 @@ class InformerWrapperTest {
 
   @SuppressWarnings("unchecked")
   private final Cache<TestCustomResource> indexer = mock(Cache.class);
+
+  @SuppressWarnings("unchecked")
+  private final SharedIndexInformer<TestCustomResource> informer = mock(SharedIndexInformer.class);
 
   @Test
   void indexNamesAreQualifiedOnRegistrationAndOnLookup() {
@@ -103,9 +107,17 @@ class InformerWrapperTest {
     verify(indexer, never()).removeIndexer(any());
   }
 
-  @SuppressWarnings("unchecked")
+  @Test
+  void healthIndicatorExposesLastSyncResourceVersionOfTheInformer() {
+    InformerHealthIndicator indicator = wrapper("controller", "event-source");
+    assertThat(indicator.getLastSyncResourceVersion()).isNull();
+
+    when(informer.lastSyncResourceVersion()).thenReturn("42");
+
+    assertThat(indicator.getLastSyncResourceVersion()).isEqualTo("42");
+  }
+
   private InformerWrapper<TestCustomResource> wrapper(String controller, String eventSource) {
-    SharedIndexInformer<TestCustomResource> informer = mock(SharedIndexInformer.class);
     when(informer.getStore()).thenReturn(indexer);
     when(informer.getIndexer()).thenReturn(indexer);
     return new InformerWrapper<>(
