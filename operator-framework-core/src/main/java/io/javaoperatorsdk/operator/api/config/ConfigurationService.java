@@ -653,7 +653,7 @@ public interface ConfigurationService {
    * the operator creates or updates.
    *
    * @return the list of aspects to apply to computed desired states, empty by default
-   * @since 5.6.0
+   * @since 5.7.0
    */
   default List<DesiredStateAspect> desiredStateAspects() {
     return List.of();

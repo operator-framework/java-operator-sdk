@@ -297,7 +297,7 @@ public class ConfigurationServiceOverrider {
    *
    * @param desiredStateAspects the aspects to apply, in the order in which they should be applied
    * @return this {@link ConfigurationServiceOverrider} for chained customization
-   * @since 5.6.0
+   * @since 5.7.0
    */
   public ConfigurationServiceOverrider withDesiredStateAspects(
       List<DesiredStateAspect> desiredStateAspects) {
@@ -312,7 +312,7 @@ public class ConfigurationServiceOverrider {
    *
    * @param desiredStateAspects the aspects to append, in the order in which they should be applied
    * @return this {@link ConfigurationServiceOverrider} for chained customization
-   * @since 5.6.0
+   * @since 5.7.0
    */
   public ConfigurationServiceOverrider addDesiredStateAspects(
       DesiredStateAspect... desiredStateAspects) {

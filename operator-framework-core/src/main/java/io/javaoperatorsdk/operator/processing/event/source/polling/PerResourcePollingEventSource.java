@@ -31,8 +31,6 @@ import org.slf4j.LoggerFactory;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.OperatorException;
-import io.javaoperatorsdk.operator.api.config.ConfigurationService;
-import io.javaoperatorsdk.operator.api.config.ExecutorServiceManager;
 import io.javaoperatorsdk.operator.api.reconciler.EventSourceContext;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
 import io.javaoperatorsdk.operator.processing.event.source.Cache;
@@ -80,23 +78,9 @@ public class PerResourcePollingEventSource<R, P extends HasMetadata, ID>
     this.resourceFetcher = config.resourceFetcher();
     this.registerPredicate = config.registerPredicate();
     this.configuredExecutorService = config.executorService();
-    var configurationService = configurationServiceOf(context);
-    this.useVirtualThreads =
-        configurationService != null && configurationService.useVirtualThreads();
+    this.useVirtualThreads = PollingExecutors.useVirtualThreads(context);
     this.ownsExecutorService = configuredExecutorService == null;
     this.period = config.defaultPollingPeriod();
-  }
-
-  /**
-   * The configuration of the operator the event source belongs to, or {@code null} if it doesn't
-   * belong to one, which only happens when the event source is used standalone, outside an
-   * operator.
-   */
-  private static ConfigurationService configurationServiceOf(EventSourceContext<?> context) {
-    final var controllerConfiguration = context.getControllerConfiguration();
-    return controllerConfiguration == null
-        ? null
-        : controllerConfiguration.getConfigurationService();
   }
 
   @Override
@@ -119,8 +103,7 @@ public class PerResourcePollingEventSource<R, P extends HasMetadata, ID>
     if (configuredExecutorService != null) {
       return configuredExecutorService;
     }
-    return ExecutorServiceManager.newScheduledExecutorService(
-        1, useVirtualThreads, "josdk-polling-" + name());
+    return PollingExecutors.newExecutor(name(), useVirtualThreads);
   }
 
   private Set<R> getAndCacheResource(P primary, boolean fromGetter) {
