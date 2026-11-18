@@ -94,4 +94,15 @@ class LinearRateLimiterTest {
 
     assertThat(res).isEmpty();
   }
+
+  @Test
+  void expiredPeriodIsResetEvenIfLimitWasNotReached() {
+    var rl = new LinearRateLimiter(REFRESH_PERIOD, 2);
+    var staleState =
+        new RateState(System.nanoTime() - REFRESH_PERIOD.multipliedBy(10).toNanos(), 1);
+
+    assertThat(rl.isLimited(staleState)).isEmpty();
+    assertThat(rl.isLimited(staleState)).isEmpty();
+    assertThat(rl.isLimited(staleState)).isPresent();
+  }
 }
