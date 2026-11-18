@@ -16,7 +16,6 @@
 package io.javaoperatorsdk.operator.processing.event.rate;
 
 import java.time.Duration;
-import java.time.LocalDateTime;
 import java.util.Optional;
 
 import io.javaoperatorsdk.operator.api.config.AnnotationConfigurable;
@@ -53,18 +52,17 @@ public class LinearRateLimiter
     if (!isActivated() || !(rateLimitState instanceof RateState actualState)) {
       return Optional.empty();
     }
-    var now = LocalDateTime.now();
+    var now = System.nanoTime();
+    var periodNanos = refreshPeriod.toNanos();
+    var elapsedNanos = now - actualState.getLastRefreshNanos();
+    if (elapsedNanos > periodNanos) {
+      actualState.reset(now);
+    }
     if (actualState.getCount() < limitForPeriod) {
       actualState.increaseCount();
       return Optional.empty();
-    } else if (actualState.getLastRefreshTime().isBefore(now.minus(refreshPeriod))) {
-      actualState.reset();
-      actualState.increaseCount();
-      return Optional.empty();
-    } else {
-      var remaining = Duration.between(now, actualState.getLastRefreshTime().plus(refreshPeriod));
-      return Optional.of(remaining.isNegative() ? Duration.ZERO : remaining);
     }
+    return Optional.of(Duration.ofNanos(Math.max(0, periodNanos - elapsedNanos)));
   }
 
   @Override

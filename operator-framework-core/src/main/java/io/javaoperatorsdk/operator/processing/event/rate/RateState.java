@@ -15,21 +15,19 @@
  */
 package io.javaoperatorsdk.operator.processing.event.rate;
 
-import java.time.LocalDateTime;
-
 import io.javaoperatorsdk.operator.processing.event.rate.RateLimiter.RateLimitState;
 
 class RateState implements RateLimitState {
 
-  private LocalDateTime lastRefreshTime;
+  private long lastRefreshNanos;
   private int count;
 
   public static RateState initialState() {
-    return new RateState(LocalDateTime.now(), 0);
+    return new RateState(System.nanoTime(), 0);
   }
 
-  RateState(LocalDateTime lastRefreshTime, int count) {
-    this.lastRefreshTime = lastRefreshTime;
+  RateState(long lastRefreshNanos, int count) {
+    this.lastRefreshNanos = lastRefreshNanos;
     this.count = count;
   }
 
@@ -37,13 +35,13 @@ class RateState implements RateLimitState {
     count = count + 1;
   }
 
-  public void reset() {
-    lastRefreshTime = LocalDateTime.now();
+  public void reset(long nowNanos) {
+    lastRefreshNanos = nowNanos;
     count = 0;
   }
 
-  public LocalDateTime getLastRefreshTime() {
-    return lastRefreshTime;
+  public long getLastRefreshNanos() {
+    return lastRefreshNanos;
   }
 
   public int getCount() {
