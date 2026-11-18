@@ -16,6 +16,7 @@
 package io.javaoperatorsdk.operator.dependent.statefulsetdesiredsanitizer;
 
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
+import io.fabric8.kubernetes.api.model.Quantity;
 import io.fabric8.kubernetes.api.model.apps.StatefulSet;
 import io.javaoperatorsdk.operator.ReconcilerUtilsInternal;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
@@ -39,6 +40,15 @@ public class StatefulSetDesiredSanitizerDependentResource
             .withName(primary.getMetadata().getName())
             .withNamespace(primary.getMetadata().getNamespace())
             .build());
+    // the API server stores 1024Mi as 1Gi
+    template
+        .getSpec()
+        .getVolumeClaimTemplates()
+        .get(0)
+        .getSpec()
+        .getResources()
+        .getRequests()
+        .put("storage", new Quantity("1024Mi"));
     return template;
   }
 

@@ -39,6 +39,7 @@ import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.api.model.apps.ReplicaSet;
 import io.fabric8.kubernetes.api.model.apps.StatefulSet;
 import io.fabric8.kubernetes.api.model.apps.StatefulSetSpec;
+import io.fabric8.kubernetes.api.model.autoscaling.v2.HorizontalPodAutoscaler;
 import io.fabric8.kubernetes.client.utils.KubernetesSerialization;
 import io.javaoperatorsdk.operator.OperatorException;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
@@ -47,6 +48,7 @@ import io.javaoperatorsdk.operator.processing.LoggingUtils;
 import com.github.difflib.DiffUtils;
 import com.github.difflib.UnifiedDiffUtils;
 
+import static io.javaoperatorsdk.operator.processing.dependent.kubernetes.HorizontalPodAutoscalerSanitizer.sanitizeHorizontalPodAutoscalerSpec;
 import static io.javaoperatorsdk.operator.processing.dependent.kubernetes.PodTemplateSpecSanitizer.sanitizePodTemplateSpec;
 
 /**
@@ -220,9 +222,16 @@ public class SSABasedGenericKubernetesResourceMatcher<R extends HasMetadata> {
           actualMap,
           actualDaemonSet.getSpec().getTemplate(),
           desiredDaemonSet.getSpec().getTemplate());
+    } else if (actual instanceof HorizontalPodAutoscaler actualHorizontalPodAutoscaler
+        && desired instanceof HorizontalPodAutoscaler desiredHorizontalPodAutoscaler) {
+      sanitizeHorizontalPodAutoscalerSpec(
+          actualMap,
+          actualHorizontalPodAutoscaler.getSpec(),
+          desiredHorizontalPodAutoscaler.getSpec());
     }
   }
 
+  @SuppressWarnings("unchecked")
   private static void sanitizeVolumeClaimTemplates(
       Map<String, Object> actualMap, StatefulSetSpec actualSpec, StatefulSetSpec desiredSpec) {
     int claims = desiredSpec.getVolumeClaimTemplates().size();
@@ -242,6 +251,18 @@ public class SSABasedGenericKubernetesResourceMatcher<R extends HasMetadata> {
                 GenericKubernetesResource.get(actualMap, "spec", "volumeClaimTemplates", i))
             .map(Map.class::cast)
             .ifPresent(m -> m.remove("status"));
+      }
+      var desiredResources = claim.getSpec().getResources();
+      var actualResources = actualSpec.getVolumeClaimTemplates().get(i).getSpec().getResources();
+      if (desiredResources != null && actualResources != null) {
+        Optional.ofNullable(
+                GenericKubernetesResource.get(
+                    actualMap, "spec", "volumeClaimTemplates", i, "spec", "resources", "requests"))
+            .map(Map.class::cast)
+            .ifPresent(
+                m ->
+                    QuantitySanitizer.sanitizeQuantities(
+                        m, actualResources.getRequests(), desiredResources.getRequests()));
       }
     }
   }
