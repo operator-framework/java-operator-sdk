@@ -16,6 +16,7 @@
 package io.javaoperatorsdk.operator.processing.event.source.informer;
 
 import java.util.Map;
+import java.util.NoSuchElementException;
 import java.util.Optional;
 
 import org.junit.jupiter.api.BeforeEach;
@@ -28,6 +29,7 @@ import io.javaoperatorsdk.operator.processing.event.ResourceID;
 import io.javaoperatorsdk.operator.processing.event.source.ResourceAction;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
@@ -398,5 +400,42 @@ class TemporaryResourceCacheTest {
     configMap.getMetadata().setResourceVersion(RESOURCE_VERSION);
     configMap.getMetadata().setUid("test-uid");
     return configMap;
+  }
+
+  @Test
+  void putResourceIgnoredIfNamespaceRemovedAfterWatchCheck() {
+    var mim = managedInformerEventSource.manager();
+    when(mim.lastSyncResourceVersion(any())).thenThrow(new NoSuchElementException());
+    var testResource = testResource();
+
+    assertDoesNotThrow(() -> temporaryResourceCache.putResource(testResource));
+
+    assertThat(temporaryResourceCache.getResourceFromCache(ResourceID.fromResource(testResource)))
+        .isEmpty();
+  }
+
+  @Test
+  void ghostCheckRemovesResourceIfNamespaceRemovedAfterWatchCheck() {
+    var testResource = testResource();
+    temporaryResourceCache.putResource(testResource);
+    var mim = managedInformerEventSource.manager();
+    when(mim.lastSyncResourceVersion(any())).thenThrow(new NoSuchElementException());
+
+    assertDoesNotThrow(() -> temporaryResourceCache.checkGhostResources());
+
+    assertThat(temporaryResourceCache.getResourceFromCache(ResourceID.fromResource(testResource)))
+        .isEmpty();
+  }
+
+  @Test
+  void ghostCheckKeepsResourceIfLastSyncResourceVersionUnknown() {
+    var testResource = testResource();
+    temporaryResourceCache.putResource(testResource);
+    latestSyncVersion = null;
+
+    assertDoesNotThrow(() -> temporaryResourceCache.checkGhostResources());
+
+    assertThat(temporaryResourceCache.getResourceFromCache(ResourceID.fromResource(testResource)))
+        .isPresent();
   }
 }
