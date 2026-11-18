@@ -81,6 +81,23 @@ class BoundedItemStoreTest {
   }
 
   @Test
+  void doesNotResurrectResourceRemovedWhileFetchingFromServer() {
+    boundedItemStore.put(testRes1Key(), TestUtils.testCustomResource1());
+    when(resourceFetcher.fetchResource(testRes1Key()))
+        .thenAnswer(
+            invocation -> {
+              boundedItemStore.remove(testRes1Key());
+              return TestUtils.testCustomResource1();
+            });
+
+    var res = boundedItemStore.get(testRes1Key());
+
+    assertThat(res).isNull();
+    assertThat(boundedItemStore.keySet()).isEmpty();
+    verify(boundedCache, times(1)).put(any(), any());
+  }
+
+  @Test
   void removesResourceFromCache() {
     boundedItemStore.put(testRes1Key(), TestUtils.testCustomResource1());
 
