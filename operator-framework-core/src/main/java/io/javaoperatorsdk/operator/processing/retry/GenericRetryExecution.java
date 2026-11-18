@@ -17,6 +17,7 @@ package io.javaoperatorsdk.operator.processing.retry;
 
 import java.time.Duration;
 import java.util.Optional;
+import java.util.concurrent.TimeUnit;
 
 public class GenericRetryExecution implements RetryExecution {
 
@@ -24,7 +25,7 @@ public class GenericRetryExecution implements RetryExecution {
 
   private int lastAttemptIndex = 0;
   private long currentInterval;
-  private Long lastNextDelayCallEpochMillis;
+  private Long lastNextDelayCallNanos;
 
   public GenericRetryExecution(GenericRetry genericRetry) {
     this.genericRetry = genericRetry;
@@ -42,7 +43,7 @@ public class GenericRetryExecution implements RetryExecution {
       }
     }
     lastAttemptIndex++;
-    lastNextDelayCallEpochMillis = System.currentTimeMillis();
+    lastNextDelayCallNanos = System.nanoTime();
     return Optional.of(currentInterval);
   }
 
@@ -58,13 +59,15 @@ public class GenericRetryExecution implements RetryExecution {
 
   @Override
   public Optional<Duration> remainingDurationUntilNextRetry() {
-    if (lastNextDelayCallEpochMillis == null) {
+    if (lastNextDelayCallNanos == null) {
       return Optional.empty();
     }
-    long remaining = (lastNextDelayCallEpochMillis + currentInterval) - System.currentTimeMillis();
-    if (remaining <= 0) {
+    var remainingNanos =
+        TimeUnit.MILLISECONDS.toNanos(currentInterval)
+            - (System.nanoTime() - lastNextDelayCallNanos);
+    if (remainingNanos <= 0) {
       return Optional.empty();
     }
-    return Optional.of(Duration.ofMillis(remaining));
+    return Optional.of(Duration.ofNanos(remainingNanos));
   }
 }
