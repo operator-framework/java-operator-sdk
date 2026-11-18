@@ -149,6 +149,42 @@ class InformerEventSourceTest {
   }
 
   @Test
+  void updateFilterIsAppliedToMergedEventPreviousResource() {
+    var previous = deploymentWithRV("10");
+    var observedOld = deploymentWithRV("11");
+    var latest = deploymentWithRV("12");
+    when(temporaryResourceCache.onAddOrUpdateEvent(any(), any(), any()))
+        .thenReturn(
+            Optional.of(new ExtendedResourceEvent(ResourceAction.UPDATED, latest, previous, null)));
+    informerEventSource.setOnUpdateFilter(
+        (newR, oldR) -> "10".equals(oldR.getMetadata().getResourceVersion()));
+
+    informerEventSource.onUpdate(observedOld, latest);
+
+    verify(eventHandlerMock, times(1)).handleEvent(any());
+  }
+
+  @Test
+  void filtersAreAppliedToActionOfMergedEvent() {
+    var previous = deploymentWithRV("10");
+    var latest = deploymentWithRV("12");
+    when(temporaryResourceCache.onAddOrUpdateEvent(any(), any(), any()))
+        .thenReturn(
+            Optional.of(new ExtendedResourceEvent(ResourceAction.UPDATED, latest, previous, null)));
+    informerEventSource.setOnAddFilter(r -> false);
+
+    informerEventSource.onAdd(latest);
+
+    verify(eventHandlerMock, times(1)).handleEvent(any());
+  }
+
+  private Deployment deploymentWithRV(String resourceVersion) {
+    var deployment = testDeployment();
+    deployment.getMetadata().setResourceVersion(resourceVersion);
+    return deployment;
+  }
+
+  @Test
   void onAddFilterRejectsAdd() {
     informerEventSource.setOnAddFilter(r -> false);
     when(temporaryResourceCache.getResourceFromCache(any())).thenReturn(Optional.empty());

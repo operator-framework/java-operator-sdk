@@ -191,12 +191,19 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
 
     if (resultEvent.isEmpty()) {
       log.debug("Deferring event propagation");
-    } else if (eventAcceptedByFilter(action, newObject, oldObject, null)) {
+      return;
+    }
+    // the temporary cache might have merged multiple events, so filters have to be applied to the
+    // event that is actually propagated
+    var event = resultEvent.get();
+    var resource = (R) event.getResource().orElseThrow();
+    var previousResource = (R) event.getPreviousResource().orElse(null);
+    if (eventAcceptedByFilter(
+        event.getAction(), resource, previousResource, event.isLastStateUnknown())) {
       log.debug(
           "Propagating event for {}, resource with same version not result of a our update.",
-          action);
-      var event = resultEvent.get();
-      propagateEvent((R) event.getResource().orElseThrow(), oldObject, primaryIds);
+          event.getAction());
+      propagateEvent(resource, previousResource, primaryIds);
     } else {
       log.debug("Event filtered out for operation: {}, resourceID: {}", action, resourceID);
     }
