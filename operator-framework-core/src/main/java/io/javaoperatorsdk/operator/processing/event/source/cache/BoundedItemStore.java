@@ -140,6 +140,10 @@ public class BoundedItemStore<R extends HasMetadata> implements ItemStore<R> {
     var newRes = resourceFetcher.fetchResource(key);
     synchronized (this) {
       log.debug("Fetched resource: {}", newRes);
+      if (!existingMinimalResources.containsKey(key)) {
+        // the resource was removed (deleted) while fetching, must not be resurrected
+        return null;
+      }
       var actual = cache.get(key);
       if (newRes == null) {
         // double-checking if actual, not received since.
