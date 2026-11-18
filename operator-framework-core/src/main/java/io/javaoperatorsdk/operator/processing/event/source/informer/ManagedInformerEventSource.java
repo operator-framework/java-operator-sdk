@@ -376,6 +376,7 @@ public abstract class ManagedInformerEventSource<
 
     return Stream.concat(
         tempResources.values().stream()
+            .filter(this::isLaterThanLastSyncResourceVersion)
             .filter(filterResourceByNamespaceAndPredicate(namespace, predicate)),
         upToDateList.stream());
   }
@@ -413,9 +414,12 @@ public abstract class ManagedInformerEventSource<
             .filter(Objects::nonNull)
             .toList();
 
-    // remaining temp resources are ghost resources — include only those matching the index
+    // remaining temp resources are ghost resources — include only those matching the index and
+    // not already superseded in the informer
     return Stream.concat(
-        tempResources.values().stream().filter(r -> indexer.apply(r).contains(indexKey)),
+        tempResources.values().stream()
+            .filter(this::isLaterThanLastSyncResourceVersion)
+            .filter(r -> indexer.apply(r).contains(indexKey)),
         upToDateList.stream());
   }
 
@@ -453,9 +457,11 @@ public abstract class ManagedInformerEventSource<
       return manager().keys();
     }
     var managerKeys = manager().keys().collect(Collectors.toSet());
-    var tempKeys = temporaryResourceCache.getResources().keySet();
-    return Stream.concat(
-        managerKeys.stream(), tempKeys.stream().filter(k -> !managerKeys.contains(k)));
+    var tempKeys =
+        temporaryResourceCache.getResources().entrySet().stream()
+            .filter(e -> isLaterThanLastSyncResourceVersion(e.getValue()))
+            .map(Map.Entry::getKey);
+    return Stream.concat(managerKeys.stream(), tempKeys.filter(k -> !managerKeys.contains(k)));
   }
 
   @Override
