@@ -24,6 +24,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Supplier;
 import java.util.stream.Stream;
 
 import org.junit.jupiter.api.BeforeEach;
@@ -317,6 +318,55 @@ class PerResourcePollingEventSourceTest
     source.onResourceCreated(testCustomResource);
 
     await().untilAsserted(() -> verify(supplier, atLeast(2)).fetchResources(any()));
+  }
+
+  @Test
+  void aFailingFetchOutlivingTheDeletionDoesNotStartASecondPollingChain() throws Exception {
+    verifyFetchOutlivingDeletionDoesNotStartASecondPollingChain(
+        () -> {
+          throw new IllegalStateException("failure after the deletion");
+        });
+  }
+
+  @Test
+  void aFetchOutlivingTheDeletionDoesNotStartASecondPollingChain() throws Exception {
+    verifyFetchOutlivingDeletionDoesNotStartASecondPollingChain(
+        () -> Set.of(SampleExternalResource.testResource1()));
+  }
+
+  private void verifyFetchOutlivingDeletionDoesNotStartASecondPollingChain(
+      Supplier<Set<SampleExternalResource>> result) throws Exception {
+    var fetching = new CountDownLatch(1);
+    var release = new CountDownLatch(1);
+    when(supplier.fetchResources(any()))
+        .thenAnswer(
+            invocation -> {
+              fetching.countDown();
+              var interrupted = false;
+              while (release.getCount() > 0) {
+                try {
+                  release.await();
+                } catch (InterruptedException e) {
+                  interrupted = true;
+                }
+              }
+              if (interrupted) {
+                Thread.currentThread().interrupt();
+              }
+              return result.get();
+            })
+        .thenReturn(Set.of(SampleExternalResource.testResource1()));
+
+    source.onResourceCreated(testCustomResource);
+    assertThat(fetching.await(5, TimeUnit.SECONDS)).isTrue();
+    source.onResourceDeleted(testCustomResource);
+    source.onResourceCreated(testCustomResource);
+    clearInvocations(supplier);
+    release.countDown();
+
+    await()
+        .pollDelay(Duration.ofMillis(10 * PERIOD))
+        .untilAsserted(() -> verify(supplier, atMost(15)).fetchResources(any()));
   }
 
   @Test

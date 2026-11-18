@@ -54,7 +54,7 @@ public class PerResourcePollingEventSource<R, P extends HasMetadata, ID>
 
   private static final Logger log = LoggerFactory.getLogger(PerResourcePollingEventSource.class);
 
-  private final Map<ResourceID, ScheduledFuture<Void>> scheduledFutures = new ConcurrentHashMap<>();
+  private final Map<ResourceID, ScheduledPoll> scheduledFutures = new ConcurrentHashMap<>();
   private final Cache<P> primaryResourceCache;
   private final Set<ResourceID> fetchedForPrimaries = ConcurrentHashMap.newKeySet();
 
@@ -122,26 +122,34 @@ public class PerResourcePollingEventSource<R, P extends HasMetadata, ID>
 
   // the polling of a resource that is gone ends with its last task, which would otherwise stay
   // registered and keep the resource from being polled again if it is recreated
-  private synchronized void forgetTask(ResourceID primaryID, long generation) {
-    if (generation == lifecycleGeneration) {
+  private synchronized void forgetTask(ResourceID primaryID, long generation, Object chain) {
+    if (generation == lifecycleGeneration && isCurrentChain(primaryID, chain)) {
       scheduledFutures.remove(primaryID);
     }
+  }
+
+  // a chain is replaced or dropped when its resource is deleted, a fetch of the replaced chain
+  // outliving that is not to continue it, or it would run next to the one of a recreated resource
+  private boolean isCurrentChain(ResourceID primaryID, Object chain) {
+    var current = scheduledFutures.get(primaryID);
+    return current != null && current.chain() == chain;
   }
 
   // a fetch ignoring the interruption of a stop can return after a restart, its result is not to
   // overwrite what the polls of the new run cached in the meantime
   private synchronized void cacheAndScheduleNextExecution(
-      P primary, Set<R> values, long generation) {
-    if (generation != lifecycleGeneration) {
+      P primary, Set<R> values, long generation, Object chain) {
+    if (generation != lifecycleGeneration
+        || !isCurrentChain(ResourceID.fromResource(primary), chain)) {
       return;
     }
     cacheResources(primary, values, false);
-    scheduleNextExecution(primary, values, generation);
+    scheduleNextExecution(primary, values, generation, chain);
   }
 
   @SuppressWarnings("unchecked")
   private synchronized void scheduleNextExecution(
-      P primary, Set<R> actualResources, long generation) {
+      P primary, Set<R> actualResources, long generation, Object chain) {
     if (generation != lifecycleGeneration) {
       return;
     }
@@ -152,10 +160,10 @@ public class PerResourcePollingEventSource<R, P extends HasMetadata, ID>
     ScheduledFuture<Void> scheduledFuture =
         (ScheduledFuture<Void>)
             executorService.schedule(
-                new FetchingExecutor(primaryID, generation),
+                new FetchingExecutor(primaryID, generation, chain),
                 fetchDuration.toMillis(),
                 TimeUnit.MILLISECONDS);
-    scheduledFutures.put(primaryID, scheduledFuture);
+    scheduledFutures.put(primaryID, new ScheduledPoll(chain, scheduledFuture));
   }
 
   @Override
@@ -171,10 +179,10 @@ public class PerResourcePollingEventSource<R, P extends HasMetadata, ID>
   @Override
   public synchronized void onResourceDeleted(P resource) {
     var resourceID = ResourceID.fromResource(resource);
-    var scheduledFuture = scheduledFutures.remove(resourceID);
-    if (scheduledFuture != null) {
+    var scheduledPoll = scheduledFutures.remove(resourceID);
+    if (scheduledPoll != null) {
       log.debug("Canceling scheduledFuture for resource: {}", resource);
-      scheduledFuture.cancel(true);
+      scheduledPoll.future().cancel(true);
     }
     handleDelete(resourceID);
     fetchedForPrimaries.remove(resourceID);
@@ -197,17 +205,18 @@ public class PerResourcePollingEventSource<R, P extends HasMetadata, ID>
       var actualResources = cachedResources.isEmpty() ? null : cachedResources;
       // note that there is a delay, to not do two fetches when the resources first appeared
       // and getSecondaryResource is called on reconciliation.
-      scheduleNextExecution(resource, actualResources, lifecycleGeneration);
+      scheduleNextExecution(resource, actualResources, lifecycleGeneration, new Object());
     }
   }
 
   // a task that ended without scheduling the next one, e.g. on an Error, would otherwise stay
   // registered and keep the resource from being polled again
   private void discardTaskIfFailed(ResourceID primaryID) {
-    var future = scheduledFutures.get(primaryID);
-    if (future == null || !future.isDone()) {
+    var poll = scheduledFutures.get(primaryID);
+    if (poll == null || !poll.future().isDone()) {
       return;
     }
+    var future = poll.future();
     try {
       future.get();
     } catch (ExecutionException e) {
@@ -221,13 +230,14 @@ public class PerResourcePollingEventSource<R, P extends HasMetadata, ID>
       Thread.currentThread().interrupt();
       return;
     }
-    scheduledFutures.remove(primaryID, future);
+    scheduledFutures.remove(primaryID, poll);
   }
 
   private synchronized void rescheduleAfterFailure(
-      ResourceID primaryID, long generation, Exception failure) {
-    if (generation != lifecycleGeneration) {
-      log.debug("Polling of resource {} failed after the event source was stopped", primaryID);
+      ResourceID primaryID, long generation, Object chain, Exception failure) {
+    if (generation != lifecycleGeneration || !isCurrentChain(primaryID, chain)) {
+      log.debug(
+          "Polling of resource {} failed after it was stopped or its resource deleted", primaryID);
       return;
     }
     log.error("Exception during polling for resource: {}", primaryID, failure);
@@ -235,17 +245,21 @@ public class PerResourcePollingEventSource<R, P extends HasMetadata, ID>
     primaryResourceCache
         .get(primaryID)
         .ifPresentOrElse(
-            primary -> scheduleNextExecution(primary, null, generation),
-            () -> forgetTask(primaryID, generation));
+            primary -> scheduleNextExecution(primary, null, generation, chain),
+            () -> forgetTask(primaryID, generation, chain));
   }
+
+  private record ScheduledPoll(Object chain, ScheduledFuture<Void> future) {}
 
   private class FetchingExecutor implements Runnable {
     private final ResourceID primaryID;
     private final long generation;
+    private final Object chain;
 
-    public FetchingExecutor(ResourceID primaryID, long generation) {
+    public FetchingExecutor(ResourceID primaryID, long generation, Object chain) {
       this.primaryID = primaryID;
       this.generation = generation;
+      this.chain = chain;
     }
 
     @Override
@@ -259,13 +273,13 @@ public class PerResourcePollingEventSource<R, P extends HasMetadata, ID>
       if (primary.isEmpty()) {
         log.warn("No resource in cache for resource ID: {}", primaryID);
         // no new execution is scheduled in this case, an on delete event should be received shortly
-        forgetTask(primaryID, generation);
+        forgetTask(primaryID, generation, chain);
       } else {
         try {
           var values = resourceFetcher.fetchResources(primary.get());
-          cacheAndScheduleNextExecution(primary.get(), values, generation);
+          cacheAndScheduleNextExecution(primary.get(), values, generation, chain);
         } catch (Exception e) {
-          rescheduleAfterFailure(primaryID, generation, e);
+          rescheduleAfterFailure(primaryID, generation, chain, e);
         } catch (Error e) {
           log.error("Fatal error during polling for resource: {}", primaryID, e);
           throw e;
@@ -324,7 +338,7 @@ public class PerResourcePollingEventSource<R, P extends HasMetadata, ID>
     // map cleared so that they are registered again on a restart
     synchronized (this) {
       lifecycleGeneration++;
-      scheduledFutures.values().forEach(future -> future.cancel(true));
+      scheduledFutures.values().forEach(poll -> poll.future().cancel(true));
       scheduledFutures.clear();
     }
     if (ownsExecutorService && executorService != null) {
