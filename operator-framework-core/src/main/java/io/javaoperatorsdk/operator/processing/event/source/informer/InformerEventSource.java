@@ -185,8 +185,7 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
 
   @SuppressWarnings("unchecked")
   private synchronized void onAddOrUpdate(ResourceAction action, R newObject, R oldObject) {
-    var primaryIds = primaryToSecondaryIndex.onAddOrUpdate(newObject, oldObject);
-    var resourceID = ResourceID.fromResource(newObject);
+    primaryToSecondaryIndex.onAddOrUpdate(newObject, oldObject);
 
     var resultEvent = temporaryResourceCache.onAddOrUpdateEvent(action, newObject, oldObject);
 
@@ -207,23 +206,22 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
       propagateEvent(
           resource,
           previousResource,
-          primaryIdsOfMergedEvent(primaryIds, resource, previousResource, oldObject));
+          primaryIdsOfMergedEvent(resource, previousResource, oldObject));
     } else {
-      log.debug("Event filtered out for operation: {}, resourceID: {}", action, resourceID);
+      log.debug(
+          "Event filtered out for operation: {}, resourceID: {}",
+          event.getAction(),
+          ResourceID.fromResource(resource));
     }
   }
 
   private Set<ResourceID> primaryIdsOfMergedEvent(
-      Set<ResourceID> primaryIds, R resource, R previousResource, R rawOldResource) {
+      R resource, R previousResource, R rawOldResource) {
     var ids = new HashSet<ResourceID>();
     var mapper = configuration().getSecondaryToPrimaryMapper();
-    if (primaryIds != null) {
-      ids.addAll(primaryIds);
-    } else {
-      ids.addAll(mapper.toPrimaryResourceIDs(resource));
-      if (rawOldResource != null) {
-        ids.addAll(mapper.toPrimaryResourceIDs(rawOldResource));
-      }
+    ids.addAll(mapper.toPrimaryResourceIDs(resource));
+    if (rawOldResource != null) {
+      ids.addAll(mapper.toPrimaryResourceIDs(rawOldResource));
     }
     if (previousResource != null) {
       ids.addAll(mapper.toPrimaryResourceIDs(previousResource));
