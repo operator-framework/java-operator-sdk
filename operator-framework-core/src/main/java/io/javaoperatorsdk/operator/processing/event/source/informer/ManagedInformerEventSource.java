@@ -348,6 +348,9 @@ public abstract class ManagedInformerEventSource<
   }
 
   // namespace is filtered on informer manager level
+  // The informer stream is supplied lazily because the namespace-scoped list snapshots the informer
+  // cache as soon as it is created. The superseded ids have to be computed before that snapshot,
+  // otherwise a resource the informer catches up with in between is missing from both.
   private Stream<R> mergeWithTempCacheForList(
       Supplier<Stream<R>> streamSupplier, String namespace, Predicate<R> predicate) {
     if (!comparableResourceVersions || temporaryResourceCache.isEmpty()) {
