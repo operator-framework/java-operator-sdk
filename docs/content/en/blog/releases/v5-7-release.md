@@ -236,7 +236,7 @@ deprecated; use the constructors that take an `EventSourceContext` and an execut
 
 ### Low level event recorder API
 
-The (experimental) low level event recorder API changed to support events about any object: a custom
+The low level event recorder API changed to support events about any object: a custom
 `EventRecorder` now implements `record(HasMetadata regarding, EventRecord event, Context<?> context)`
 and a subclass of `DefaultEventRecorder` overrides `toEvent(HasMetadata, EventRecord, Context<?>)`.
 Reconcilers that only use `context.eventRecorder()` are not affected.
