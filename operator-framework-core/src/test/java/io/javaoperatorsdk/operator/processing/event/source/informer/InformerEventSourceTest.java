@@ -466,6 +466,32 @@ class InformerEventSourceTest {
   }
 
   @Test
+  void listKeepsGhostResourceIfInformerCatchesUpWhenTheInformerSnapshotIsTaken() {
+    var ghostResource = testDeployment();
+    ghostResource.getMetadata().setName("ghost");
+    var other = testDeployment();
+    other.getMetadata().setName("other");
+    var lastSync = new AtomicReference<>("1");
+
+    when(temporaryResourceCache.getResources())
+        .thenReturn(new HashMap<>(Map.of(ResourceID.fromResource(ghostResource), ghostResource)));
+    var mim = mock(InformerManager.class);
+    when(mim.isWatchingNamespace(any())).thenReturn(true);
+    when(mim.lastSyncResourceVersion(any())).thenAnswer(i -> lastSync.get());
+    when(mim.list(nullable(String.class)))
+        .thenAnswer(
+            i -> {
+              lastSync.set("5");
+              return Stream.of(other);
+            });
+    when(informerEventSource.manager()).thenReturn(mim);
+
+    var result = informerEventSource.list(null, r -> true).toList();
+
+    assertThat(result).containsExactlyInAnyOrder(other, ghostResource);
+  }
+
+  @Test
   void byIndexKeepsGhostResourceIfInformerCatchesUpWhileReadingTheInformerState() {
     var ghostResource = testDeployment();
     ghostResource.getMetadata().setName("ghost");

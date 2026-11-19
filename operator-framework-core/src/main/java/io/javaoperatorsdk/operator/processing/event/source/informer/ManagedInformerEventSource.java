@@ -24,6 +24,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.function.Predicate;
+import java.util.function.Supplier;
 import java.util.function.UnaryOperator;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -307,7 +308,7 @@ public abstract class ManagedInformerEventSource<
    */
   @Override
   public Stream<R> list(String namespace, Predicate<R> predicate) {
-    return mergeWithTempCacheForList(manager().list(namespace), namespace, predicate);
+    return mergeWithTempCacheForList(() -> manager().list(namespace), namespace, predicate);
   }
 
   /**
@@ -318,7 +319,7 @@ public abstract class ManagedInformerEventSource<
    */
   @Override
   public Stream<R> list(Predicate<R> predicate) {
-    return mergeWithTempCacheForList(manager().list(), null, predicate);
+    return mergeWithTempCacheForList(() -> manager().list(), null, predicate);
   }
 
   /**
@@ -348,19 +349,19 @@ public abstract class ManagedInformerEventSource<
 
   // namespace is filtered on informer manager level
   private Stream<R> mergeWithTempCacheForList(
-      Stream<R> stream, String namespace, Predicate<R> predicate) {
+      Supplier<Stream<R>> streamSupplier, String namespace, Predicate<R> predicate) {
     if (!comparableResourceVersions || temporaryResourceCache.isEmpty()) {
-
-      return stream.filter(filterResourceByPredicate(predicate));
+      return streamSupplier.get().filter(filterResourceByPredicate(predicate));
     }
     var tempResources = new HashMap<>(temporaryResourceCache.getResources());
     if (tempResources.isEmpty()) {
-      return stream.filter(filterResourceByPredicate(predicate));
+      return streamSupplier.get().filter(filterResourceByPredicate(predicate));
     }
     var supersededIds = idsSupersededByInformer(tempResources);
 
     var upToDateList =
-        stream
+        streamSupplier
+            .get()
             .map(
                 r -> {
                   var resourceID = ResourceID.fromResource(r);
