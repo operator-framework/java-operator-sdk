@@ -24,6 +24,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.function.Predicate;
+import java.util.function.Supplier;
 import java.util.function.UnaryOperator;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -307,7 +308,7 @@ public abstract class ManagedInformerEventSource<
    */
   @Override
   public Stream<R> list(String namespace, Predicate<R> predicate) {
-    return mergeWithTempCacheForList(manager().list(namespace), namespace, predicate);
+    return mergeWithTempCacheForList(() -> manager().list(namespace), namespace, predicate);
   }
 
   /**
@@ -318,7 +319,7 @@ public abstract class ManagedInformerEventSource<
    */
   @Override
   public Stream<R> list(Predicate<R> predicate) {
-    return mergeWithTempCacheForList(manager().list(), null, predicate);
+    return mergeWithTempCacheForList(() -> manager().list(), null, predicate);
   }
 
   /**
@@ -347,19 +348,23 @@ public abstract class ManagedInformerEventSource<
   }
 
   // namespace is filtered on informer manager level
+  // The informer stream is supplied lazily because the namespace-scoped list snapshots the informer
+  // cache as soon as it is created. The superseded ids have to be computed before that snapshot,
+  // otherwise a resource the informer catches up with in between is missing from both.
   private Stream<R> mergeWithTempCacheForList(
-      Stream<R> stream, String namespace, Predicate<R> predicate) {
+      Supplier<Stream<R>> streamSupplier, String namespace, Predicate<R> predicate) {
     if (!comparableResourceVersions || temporaryResourceCache.isEmpty()) {
-
-      return stream.filter(filterResourceByPredicate(predicate));
+      return streamSupplier.get().filter(filterResourceByPredicate(predicate));
     }
     var tempResources = new HashMap<>(temporaryResourceCache.getResources());
     if (tempResources.isEmpty()) {
-      return stream.filter(filterResourceByPredicate(predicate));
+      return streamSupplier.get().filter(filterResourceByPredicate(predicate));
     }
+    var supersededIds = idsSupersededByInformer(tempResources);
 
     var upToDateList =
-        stream
+        streamSupplier
+            .get()
             .map(
                 r -> {
                   var resourceID = ResourceID.fromResource(r);
@@ -376,6 +381,7 @@ public abstract class ManagedInformerEventSource<
 
     return Stream.concat(
         tempResources.values().stream()
+            .filter(r -> !supersededIds.contains(ResourceID.fromResource(r)))
             .filter(filterResourceByNamespaceAndPredicate(namespace, predicate)),
         upToDateList.stream());
   }
@@ -394,6 +400,7 @@ public abstract class ManagedInformerEventSource<
     if (indexer == null) {
       throw new IllegalArgumentException("Indexer not found for: " + indexName);
     }
+    var supersededIds = idsSupersededByInformer(tempResources);
 
     var upToDateList =
         stream
@@ -413,9 +420,12 @@ public abstract class ManagedInformerEventSource<
             .filter(Objects::nonNull)
             .toList();
 
-    // remaining temp resources are ghost resources — include only those matching the index
+    // remaining temp resources are ghost resources — include only those matching the index and
+    // not already superseded in the informer
     return Stream.concat(
-        tempResources.values().stream().filter(r -> indexer.apply(r).contains(indexKey)),
+        tempResources.values().stream()
+            .filter(r -> !supersededIds.contains(ResourceID.fromResource(r)))
+            .filter(r -> indexer.apply(r).contains(indexKey)),
         upToDateList.stream());
   }
 
@@ -452,10 +462,24 @@ public abstract class ManagedInformerEventSource<
     if (!comparableResourceVersions || temporaryResourceCache.isEmpty()) {
       return manager().keys();
     }
+    var tempResources = temporaryResourceCache.getResources();
+    var supersededIds = idsSupersededByInformer(tempResources);
     var managerKeys = manager().keys().collect(Collectors.toSet());
-    var tempKeys = temporaryResourceCache.getResources().keySet();
     return Stream.concat(
-        managerKeys.stream(), tempKeys.stream().filter(k -> !managerKeys.contains(k)));
+        managerKeys.stream(),
+        tempResources.keySet().stream()
+            .filter(k -> !managerKeys.contains(k) && !supersededIds.contains(k)));
+  }
+
+  /**
+   * Has to be evaluated before the informer state is read, so a resource that the informer catches
+   * up with in the meantime is not missing from both.
+   */
+  private Set<ResourceID> idsSupersededByInformer(Map<ResourceID, R> tempResources) {
+    return tempResources.entrySet().stream()
+        .filter(e -> !isLaterThanLastSyncResourceVersion(e.getValue()))
+        .map(Map.Entry::getKey)
+        .collect(Collectors.toSet());
   }
 
   @Override
