@@ -37,14 +37,18 @@ raised significantly compared to what is reasonable with platform threads.
 
 A few things to keep in mind:
 
-- Virtual threads are only supported on **Java 25 or later**. Before Java 25 a virtual thread pins its
-  carrier thread while inside a `synchronized` block, which can starve the carrier pool and even
-  deadlock an operator on startup ([JEP 491](https://openjdk.org/jeps/491) removed that pinning in
-  Java 25). This is checked at runtime: on an older JVM a warning is logged and platform threads are
-  used, so the same configuration works on any Java version the operator runs on.
+- Virtual threads are only supported on **Java 25 or later**, the first LTS release where a virtual
+  thread no longer pins its carrier thread while inside a `synchronized` block
+  ([JEP 491](https://openjdk.org/jeps/491), delivered in Java 24). Without that, pinning can starve
+  the carrier pool and even deadlock an operator on startup. This is checked at runtime: on an older
+  JVM a warning is logged and platform threads are used, so the same configuration works on any Java
+  version the operator runs on.
 - Virtual threads are daemon threads, so they don't keep the JVM running. If nothing else does, call
   the new `Operator.keepAlive()` after starting the operator (see below).
-- An executor you provide yourself is always used as is, the flag has no effect on it.
+- An executor you provide yourself is always used as is, the flag has no effect on it. There is one
+  catch: overriding `useVirtualThreads`, or `withConcurrentRetryAndRescheduleThreads`, of a
+  configuration that provides its own retry and reschedule executor replaces that executor with the
+  default one, so provide it again with `withRetryAndRescheduleExecutorService(...)` in that case.
 
 #### Keeping the JVM alive
 
