@@ -181,7 +181,49 @@ class InformerEventSourceTest {
   }
 
   @Test
-  void mergedEventSpanningRecreationIsFilteredAsAdd() {
+  void mergedEventSpanningRecreationIsAcceptedIfAddFilterAccepts() {
+    mergedRecreationEvent();
+    informerEventSource.setOnAddFilter(r -> true);
+    informerEventSource.setOnUpdateFilter((newR, oldR) -> false);
+
+    informerEventSource.onUpdate(deploymentWithRV("11"), deploymentWithRV("12"));
+
+    verify(eventHandlerMock, times(1)).handleEvent(any());
+  }
+
+  @Test
+  void mergedEventSpanningRecreationIsAcceptedIfUpdateFilterAccepts() {
+    mergedRecreationEvent();
+    informerEventSource.setOnAddFilter(r -> false);
+    informerEventSource.setOnUpdateFilter((newR, oldR) -> true);
+
+    informerEventSource.onUpdate(deploymentWithRV("11"), deploymentWithRV("12"));
+
+    verify(eventHandlerMock, times(1)).handleEvent(any());
+  }
+
+  @Test
+  void mergedEventSpanningRecreationIsRejectedIfBothFiltersReject() {
+    mergedRecreationEvent();
+    informerEventSource.setOnAddFilter(r -> false);
+    informerEventSource.setOnUpdateFilter((newR, oldR) -> false);
+
+    informerEventSource.onUpdate(deploymentWithRV("11"), deploymentWithRV("12"));
+
+    verify(eventHandlerMock, never()).handleEvent(any());
+  }
+
+  @Test
+  void updateOfSameResourceIsNotFilteredAsAdd() {
+    informerEventSource.setOnAddFilter(r -> true);
+    informerEventSource.setOnUpdateFilter((newR, oldR) -> false);
+
+    informerEventSource.onUpdate(deploymentWithRV("11"), deploymentWithRV("12"));
+
+    verify(eventHandlerMock, never()).handleEvent(any());
+  }
+
+  private void mergedRecreationEvent() {
     var previous = deploymentWithRV("10");
     previous.getMetadata().setUid("old-uid");
     var latest = deploymentWithRV("12");
@@ -189,11 +231,6 @@ class InformerEventSourceTest {
     when(temporaryResourceCache.onAddOrUpdateEvent(any(), any(), any()))
         .thenReturn(
             Optional.of(new ExtendedResourceEvent(ResourceAction.UPDATED, latest, previous, null)));
-    informerEventSource.setOnUpdateFilter((newR, oldR) -> false);
-
-    informerEventSource.onUpdate(previous, latest);
-
-    verify(eventHandlerMock, times(1)).handleEvent(any());
   }
 
   @Test

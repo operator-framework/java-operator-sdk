@@ -316,9 +316,16 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
     return configuration().followControllerNamespaceChanges();
   }
 
-  private boolean isRecreation(ResourceAction action, R newObject, R oldObject) {
-    return action == ResourceAction.UPDATED
-        && oldObject != null
+  private boolean acceptedAsAdd(R newObject) {
+    return onAddFilter == null || onAddFilter.accept(newObject);
+  }
+
+  private boolean acceptedAsUpdate(R newObject, R oldObject) {
+    return onUpdateFilter == null || onUpdateFilter.accept(newObject, oldObject);
+  }
+
+  private boolean isRecreation(R newObject, R oldObject) {
+    return oldObject != null
         && !Objects.equals(oldObject.getMetadata().getUid(), newObject.getMetadata().getUid());
   }
 
@@ -327,12 +334,12 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
     if (genericFilter != null && !genericFilter.accept(newObject)) {
       return false;
     }
-    // a merged event can span a deletion and recreation, that is a new resource, thus an add
-    var effectiveAction =
-        isRecreation(action, newObject, oldObject) ? ResourceAction.ADDED : action;
-    return switch (effectiveAction) {
-      case ADDED -> onAddFilter == null || onAddFilter.accept(newObject);
-      case UPDATED -> onUpdateFilter == null || onUpdateFilter.accept(newObject, oldObject);
+    return switch (action) {
+      case ADDED -> acceptedAsAdd(newObject);
+      case UPDATED ->
+          acceptedAsUpdate(newObject, oldObject)
+              // a merged event can span a deletion and recreation, that is also a new resource
+              || (isRecreation(newObject, oldObject) && acceptedAsAdd(newObject));
       case DELETED ->
           onDeleteFilter == null
               || onDeleteFilter.accept(newObject, Boolean.TRUE.equals(deletedFinalStateUnknown));
