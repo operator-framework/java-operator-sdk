@@ -215,36 +215,8 @@ Thanks to [Antonio Fernandez Alhambra](https://github.com/afalhambra-hivemq) for
 
 ## Migration Notes
 
-### Fabric8 Kubernetes Client 8.0 / Jackson 3
-
-This is the only source-incompatible change for most operators. Besides the package change
-(`com.fasterxml.jackson` to `tools.jackson`), `JsonProcessingException` was replaced by the unchecked
-`JacksonException`, some `JsonNode` methods were renamed (`fields()` to `properties()`, `asText()` to
-`asString()`), and `ObjectMapper` instances are created using builders. Also, calls to
-`withShardSelector(null)` no longer compile because of an additional overload, cast the argument:
-`withShardSelector((String) null)`.
-
-### Default HTTP client is now Vert.x 5
-
-If your operator already replaced the default HTTP client by excluding `kubernetes-httpclient-jdk`,
-update the exclusion to `kubernetes-httpclient-vertx-5`, otherwise it ends up on the classpath next to
-your implementation. This is especially important with the Vert.x 4 based client, since Vert.x 4 and
-Vert.x 5 cannot be used together.
-
-### Polling and timer event sources
-
-An executor provided to a `PerResourcePollingConfigurationBuilder` is no longer shut down by the event
-source, and `PerResourcePollingConfiguration.executorService()` returns `null` when none was provided.
-`PollingEventSource(Class, PollingConfiguration)` and `TimerEventSource(String, boolean)` are
-deprecated; use the constructors that take an `EventSourceContext` and an executor supplier respectively.
-
-### Low level event recorder API
-
-The low level event recorder API changed to support events about any object: a custom
-`EventRecorder` now implements `record(HasMetadata regarding, EventRecord event, Context<?> context)`
-and a subclass of `DefaultEventRecorder` overrides `toEvent(HasMetadata, EventRecord, Context<?>)`.
-Reconcilers that only use `context.eventRecorder()` are not affected.
-
+This release contains breaking changes: the Fabric8 client upgrade moves to Jackson 3, the default
+HTTP client is now the Vert.x 5 one, and the polling, timer and low level event recorder APIs changed.
 See the [migration guide](/docs/migration/v5-7-migration) for all the details.
 
 ## Getting Started
