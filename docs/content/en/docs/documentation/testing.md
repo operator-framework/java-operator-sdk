@@ -362,6 +362,7 @@ The test extensions can be configured via system properties (useful in CI):
 | `josdk.it.waitForNamespaceDeletion`  | `true`  | Wait for namespace to be fully deleted              |
 | `josdk.it.oneNamespacePerClass`      | `false` | Reuse the same namespace for all tests in a class  |
 | `josdk.it.namespaceDeleteTimeout`    | `90`    | Namespace deletion timeout in seconds              |
+| `josdk.it.useVirtualThreads`        | `false` | Run the operators of `LocallyRunOperatorExtension` on virtual threads |
 | `testsuite.deleteCRDs`              | `true`  | Delete applied CRDs after tests                    |
 
 Example:
@@ -369,3 +370,14 @@ Example:
 ```bash
 mvn test -Djosdk.it.preserveNamespaceOnError=true -Djosdk.it.oneNamespacePerClass=true
 ```
+
+The `josdk.it.*` properties can also be set as environment variables, upper-cased with dots
+replaced by underscores. For example, to run a whole test suite with
+[virtual threads](operations/configuration.md#virtual-threads) enabled (Java 25 or later):
+
+```bash
+JOSDK_IT_USEVIRTUALTHREADS=true mvn verify -Pintegration-tests
+```
+
+A test configuring `withUseVirtualThreads(...)` explicitly through `withConfigurationService(...)`
+keeps its own setting.

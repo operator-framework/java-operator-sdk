@@ -21,15 +21,20 @@ on:
         type: string
         required: false
         default: ''
+      use-virtual-threads:
+        type: boolean
+        required: false
+        default: false
 
 jobs:
   integration_tests:
-    name: Integration tests (${{ inputs.java-version }}, ${{ inputs.kube-version }}, ${{ inputs.http-client }})
+    name: IT (${{ inputs.java-version }}, ${{ inputs.kube-version }}, ${{ inputs.http-client }}${{ inputs.use-virtual-threads && ', vt' || '' }})
     runs-on: ubuntu-latest
     continue-on-error: ${{ inputs.experimental }}
     timeout-minutes: 120
     env:
       MINIKUBE_VERSION: v1.39.0
+      JOSDK_IT_USEVIRTUALTHREADS: ${{ inputs.use-virtual-threads }}
     steps:
       - uses: actions/checkout@v7
         with:
