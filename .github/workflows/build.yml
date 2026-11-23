@@ -32,6 +32,7 @@ jobs:
       experimental: true
 
   virtual-threads-tests:
+    name: virtual-threads
     uses: ./.github/workflows/integration-tests.yml
     with:
       java-version: 25

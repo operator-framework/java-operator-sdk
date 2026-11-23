@@ -28,7 +28,7 @@ on:
 
 jobs:
   integration_tests:
-    name: Integration tests (${{ inputs.java-version }}, ${{ inputs.kube-version }}, ${{ inputs.http-client }}${{ inputs.use-virtual-threads && ', virtual threads' || '' }})
+    name: IT (${{ inputs.java-version }}, ${{ inputs.kube-version }}, ${{ inputs.http-client }}${{ inputs.use-virtual-threads && ', vt' || '' }})
     runs-on: ubuntu-latest
     continue-on-error: ${{ inputs.experimental }}
     timeout-minutes: 120
