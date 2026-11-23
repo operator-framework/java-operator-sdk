@@ -31,6 +31,13 @@ jobs:
       http-client: ${{ matrix.httpclient }}
       experimental: true
 
+  virtual-threads-tests:
+    uses: ./.github/workflows/integration-tests.yml
+    with:
+      java-version: 25
+      kube-version: 'v1.37.0'
+      use-virtual-threads: true
+
   special_integration_tests:
     name: "Special integration tests (${{ matrix.java }})"
     runs-on: ubuntu-latest

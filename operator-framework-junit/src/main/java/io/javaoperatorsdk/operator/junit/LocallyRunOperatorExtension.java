@@ -97,7 +97,8 @@ public class LocallyRunOperatorExtension extends AbstractOperatorExtension {
       Function<ExtensionContext, String> perClassNamespaceNameSupplier,
       List<String> additionalCrds,
       Consumer<LocallyRunOperatorExtension> beforeStartHook,
-      Boolean deleteCRDsOverride) {
+      Boolean deleteCRDsOverride,
+      boolean useVirtualThreads) {
     super(
         infrastructure,
         infrastructureTimeout,
@@ -116,12 +117,16 @@ public class LocallyRunOperatorExtension extends AbstractOperatorExtension {
     this.additionalCustomResourceDefinitions = additionalCustomResourceDefinitions;
     this.additionalCustomResourceDefinitionInstances = additionalCustomResourceDefinitionInstances;
     this.beforeStartHook = beforeStartHook;
-    configurationServiceOverrider =
-        configurationServiceOverrider != null
-            ? configurationServiceOverrider.andThen(
-                overrider -> overrider.withKubernetesClient(kubernetesClient))
-            : overrider -> overrider.withKubernetesClient(kubernetesClient);
-    this.operator = new Operator(configurationServiceOverrider);
+    Consumer<ConfigurationServiceOverrider> overrider =
+        o -> {
+          if (useVirtualThreads) {
+            o.withUseVirtualThreads(true);
+          }
+        };
+    if (configurationServiceOverrider != null) {
+      overrider = overrider.andThen(configurationServiceOverrider);
+    }
+    this.operator = new Operator(overrider.andThen(o -> o.withKubernetesClient(kubernetesClient)));
     this.registeredControllers = new HashMap<>();
     crdMappings = getAdditionalCRDsFromFiles(additionalCrds, getKubernetesClient());
     if (deleteCRDsOverride != null) {
@@ -632,7 +637,8 @@ public class LocallyRunOperatorExtension extends AbstractOperatorExtension {
           perClassNamespaceNameSupplier,
           additionalCRDs,
           beforeStartHook,
-          deleteCRDs);
+          deleteCRDs,
+          useVirtualThreads);
     }
   }
 

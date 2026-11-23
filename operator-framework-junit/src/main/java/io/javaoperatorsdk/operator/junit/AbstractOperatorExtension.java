@@ -242,6 +242,7 @@ public abstract class AbstractOperatorExtension
     protected boolean waitForNamespaceDeletion;
     protected boolean oneNamespacePerClass;
     protected int namespaceDeleteTimeout;
+    protected boolean useVirtualThreads;
     protected Consumer<ConfigurationServiceOverrider> configurationServiceOverrider;
     protected Function<ExtensionContext, String> namespaceNameSupplier =
         new DefaultNamespaceNameSupplier();
@@ -267,6 +268,8 @@ public abstract class AbstractOperatorExtension
       this.namespaceDeleteTimeout =
           Utils.getSystemPropertyOrEnvVar(
               "josdk.it.namespaceDeleteTimeout", DEFAULT_NAMESPACE_DELETE_TIMEOUT);
+
+      this.useVirtualThreads = Utils.getSystemPropertyOrEnvVar("josdk.it.useVirtualThreads", false);
     }
 
     public T preserveNamespaceOnError(boolean value) {
