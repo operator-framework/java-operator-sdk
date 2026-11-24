@@ -18,7 +18,7 @@ package io.javaoperatorsdk.operator.api.reconciler;
 import java.util.Optional;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
-import io.fabric8.kubernetes.client.CustomResource;
+import io.javaoperatorsdk.operator.api.config.ConfigurationService;
 
 public class UpdateControl<P extends HasMetadata> extends BaseControl<UpdateControl<P>> {
 
@@ -36,12 +36,19 @@ public class UpdateControl<P extends HasMetadata> extends BaseControl<UpdateCont
   }
 
   /**
-   * Preferred way to update the status. Uses JSON Patch to patch the resource.
+   * Preferred way to update the status.
    *
-   * <p>Note that this does not work, if the {@link CustomResource#initStatus()} is implemented,
-   * since it breaks the diffing process. Don't implement it if using this method. There is also an
-   * issue with setting value to {@code null} with older Kubernetes versions (1.19 and below). See:
-   * <a href=
+   * <p>By default the status is patched with Server-Side Apply, see {@link
+   * ConfigurationService#useSSAToPatchPrimaryResource()}. The framework builds the applied body
+   * from the given resource: it carries only the fields identifying the resource (name, namespace
+   * and the resource version when set, which keeps optimistic locking) and the status, so the
+   * controller does not take ownership of any other field, such as labels or the spec, through the
+   * status subresource. The given resource itself is not modified.
+   *
+   * <p>Without Server-Side Apply, a JSON Patch is used. Note that this does not work, if the {@code
+   * CustomResource#initStatus()} is implemented, since it breaks the diffing process. Don't
+   * implement it if using this method. There is also an issue with setting value to {@code null}
+   * with older Kubernetes versions (1.19 and below). See: <a href=
    * "https://github.com/fabric8io/kubernetes-client/issues/4158">https://github.com/fabric8io/kubernetes-client/issues/4158</a>
    *
    * @param <T> resource type
@@ -57,6 +64,9 @@ public class UpdateControl<P extends HasMetadata> extends BaseControl<UpdateCont
   }
 
   /**
+   * Patches the resource first and then the status, with two separate requests. The status is
+   * patched the same way as with {@link #patchStatus(HasMetadata)}.
+   *
    * @param customResource to update
    * @return UpdateControl instance
    * @param <T> resource type

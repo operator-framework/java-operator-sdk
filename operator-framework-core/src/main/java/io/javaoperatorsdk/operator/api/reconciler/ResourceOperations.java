@@ -15,7 +15,6 @@
  */
 package io.javaoperatorsdk.operator.api.reconciler;
 
-import java.lang.reflect.InvocationTargetException;
 import java.net.HttpURLConnection;
 import java.util.Optional;
 import java.util.function.IntPredicate;
@@ -30,6 +29,7 @@ import io.fabric8.kubernetes.client.KubernetesClientException;
 import io.fabric8.kubernetes.client.dsl.base.PatchContext;
 import io.fabric8.kubernetes.client.dsl.base.PatchType;
 import io.javaoperatorsdk.operator.OperatorException;
+import io.javaoperatorsdk.operator.ReconcilerUtilsInternal;
 import io.javaoperatorsdk.operator.api.reconciler.matcher.Matcher;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
 import io.javaoperatorsdk.operator.processing.event.source.informer.InformerEventSource;
@@ -308,6 +308,11 @@ public class ResourceOperations<P extends HasMetadata> {
   /**
    * Server-Side Applies the primary resource {@code status} subresource, caching and filtering the
    * own event through the controller's own event source and using the given {@link Options}.
+   *
+   * <p>The desired resource is applied as given. Unlike {@link
+   * UpdateControl#patchStatus(HasMetadata)}, which derives such a body from any resource, it should
+   * carry only the fields identifying the resource and the status, otherwise the controller takes
+   * ownership of the other fields as well.
    *
    * @param desired the desired primary resource (with the status to apply)
    * @param options controls caching and own-event filtering; see {@link Options}
@@ -901,7 +906,6 @@ public class ResourceOperations<P extends HasMetadata> {
     return resourcePatch(resource, updateOperation, Options.filterWithOptimisticLocking());
   }
 
-  @SuppressWarnings({"rawtypes", "unchecked"})
   private <R extends HasMetadata> R resourcePatch(
       R desired, UnaryOperator<R> updateOperation, Options options) {
     return resourcePatch(desired, null, updateOperation, options);
@@ -1299,23 +1303,11 @@ public class ResourceOperations<P extends HasMetadata> {
   }
 
   private P finalizerApplyFor(P actualResource, String finalizerName) {
-    try {
-      @SuppressWarnings("unchecked")
-      P resource = (P) actualResource.getClass().getConstructor().newInstance();
-      resource.initNameAndNamespaceFrom(actualResource);
-      resource.getMetadata().setUid(actualResource.getMetadata().getUid());
-      resource.addFinalizer(finalizerName);
-      return resource;
-    } catch (InstantiationException
-        | IllegalAccessException
-        | InvocationTargetException
-        | NoSuchMethodException e) {
-      throw new RuntimeException(
-          "Issue with creating custom resource instance with reflection."
-              + " Custom Resources must provide a no-arg constructor. Class: "
-              + actualResource.getClass().getName(),
-          e);
-    }
+    P resource = ReconcilerUtilsInternal.newEmptyInstanceOf(actualResource);
+    resource.initNameAndNamespaceFrom(actualResource);
+    resource.getMetadata().setUid(actualResource.getMetadata().getUid());
+    resource.addFinalizer(finalizerName);
+    return resource;
   }
 
   /**

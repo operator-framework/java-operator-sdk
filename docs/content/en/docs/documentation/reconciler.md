@@ -78,6 +78,13 @@ in Kubernetes parlance), thus usually using a resource created from scratch, see
 [sample](https://github.com/operator-framework/java-operator-sdk/blob/main/operator-framework/src/test/java/io/javaoperatorsdk/operator/baseapi/patchresourcewithssa).
 To contrast, see the same sample, this time [without SSA](https://github.com/operator-framework/java-operator-sdk/blob/main/operator-framework/src/test/java/io/javaoperatorsdk/operator/baseapi/patchresourceandstatusnossa/PatchResourceAndStatusNoSSAReconciler.java).
 
+The status is an exception: for `UpdateControl.patchStatus` and `ErrorStatusUpdateControl.patchStatus`, JOSDK derives
+the fully specified intent itself from the resource you return, keeping only the fields identifying it (name, namespace
+and the resource version, if set) and the status. Your controller thus never takes ownership of labels, annotations or
+the spec through the `status` subresource, which Kubernetes up to 1.35 would otherwise record and which makes other SSA
+appliers of those fields conflict with the controller (see
+[#3721](https://github.com/operator-framework/java-operator-sdk/issues/3721)).
+
 Non-SSA based patch is still supported.  
 You can control whether or not to use SSA
 using [`ConfigurationServcice.useSSAToPatchPrimaryResource()`](https://github.com/operator-framework/java-operator-sdk/blob/main/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/api/config/ConfigurationService.java#L385-L385)
