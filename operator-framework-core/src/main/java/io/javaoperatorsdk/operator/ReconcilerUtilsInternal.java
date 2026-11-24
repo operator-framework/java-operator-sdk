@@ -177,7 +177,7 @@ public class ReconcilerUtilsInternal {
       // if given spec is null, find the method just using its name
       Method setMethod;
       if (spec != null) {
-        setMethod = resourceClass.getMethod(setterMethodName, spec.getClass());
+        setMethod = findSetter(resourceClass, setterMethodName, spec.getClass());
       } else {
         setMethod =
             Arrays.stream(resourceClass.getMethods())
@@ -189,6 +189,24 @@ public class ReconcilerUtilsInternal {
       return setMethod.invoke(resource, spec);
     } catch (NoSuchMethodException | InvocationTargetException | IllegalAccessException e) {
       throw noMethodException(resource, e, setterMethodName);
+    }
+  }
+
+  // the value may be a subclass of the setter's parameter type, then there is no exact match
+  private static Method findSetter(
+      Class<?> resourceClass, String setterMethodName, Class<?> valueClass)
+      throws NoSuchMethodException {
+    try {
+      return resourceClass.getMethod(setterMethodName, valueClass);
+    } catch (NoSuchMethodException e) {
+      return Arrays.stream(resourceClass.getMethods())
+          .filter(
+              method ->
+                  setterMethodName.equals(method.getName())
+                      && method.getParameterCount() == 1
+                      && method.getParameterTypes()[0].isAssignableFrom(valueClass))
+          .findFirst()
+          .orElseThrow(() -> e);
     }
   }
 
