@@ -137,6 +137,12 @@ LocallyRunOperatorExtension.builder()
     .build();
 ```
 
+CRDs configured on the extension are applied using the infrastructure Kubernetes client and deleted
+when the test class finishes.
+The extension keeps that client open until CRD cleanup completes. If the operator uses the same client,
+stopping the operator also defers closing it until class cleanup. An explicit
+`withCloseClientOnStop(false)` continues to leave a shared client open for the caller to close.
+
 ### Accessing the Reconciler
 
 If your test needs to inspect the reconciler's internal state (e.g. counters, caches), you can
