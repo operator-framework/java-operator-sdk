@@ -19,6 +19,9 @@ import java.time.Duration;
 import java.util.Collections;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
+import java.util.function.Supplier;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -235,5 +238,87 @@ class PerResourcePollingEventSourceTest
         .pollDelay(Duration.ofMillis(2 * PERIOD))
         .atMost(Duration.ofMillis((4 * PERIOD)))
         .untilAsserted(() -> verify(supplier, times(1)).fetchResources(any()));
+  }
+
+  @Test
+  void keepsPollingAfterTheFetcherThrowsAnException() {
+    when(supplier.fetchResources(any()))
+        .thenThrow(new IllegalStateException("temporary failure"))
+        .thenReturn(Set.of(SampleExternalResource.testResource1()));
+
+    source.onResourceCreated(testCustomResource);
+
+    await()
+        .untilAsserted(
+            () -> {
+              verify(supplier, atLeast(3)).fetchResources(eq(testCustomResource));
+              verify(eventHandler, atLeastOnce()).handleEvent(any());
+            });
+  }
+
+  @Test
+  void pollingFailedWithAnErrorIsRegisteredAgainWhenTheResourceIsUpdated() {
+    when(supplier.fetchResources(any()))
+        .thenThrow(new OutOfMemoryError("test"))
+        .thenReturn(Set.of(SampleExternalResource.testResource1()));
+
+    source.onResourceCreated(testCustomResource);
+    await().untilAsserted(() -> verify(supplier, times(1)).fetchResources(any()));
+    await()
+        .pollDelay(Duration.ofMillis(2 * PERIOD))
+        .untilAsserted(() -> verify(supplier, times(1)).fetchResources(any()));
+
+    source.onResourceUpdated(testCustomResource, testCustomResource);
+
+    await().untilAsserted(() -> verify(supplier, atLeast(3)).fetchResources(any()));
+  }
+
+  @Test
+  void aFailingFetchOutlivingTheDeletionDoesNotStartASecondPollingChain() throws Exception {
+    verifyFetchOutlivingDeletionDoesNotStartASecondPollingChain(
+        () -> {
+          throw new IllegalStateException("failure after the deletion");
+        });
+  }
+
+  @Test
+  void aFetchOutlivingTheDeletionDoesNotStartASecondPollingChain() throws Exception {
+    verifyFetchOutlivingDeletionDoesNotStartASecondPollingChain(
+        () -> Set.of(SampleExternalResource.testResource1()));
+  }
+
+  private void verifyFetchOutlivingDeletionDoesNotStartASecondPollingChain(
+      Supplier<Set<SampleExternalResource>> result) throws Exception {
+    var fetching = new CountDownLatch(1);
+    var release = new CountDownLatch(1);
+    when(supplier.fetchResources(any()))
+        .thenAnswer(
+            invocation -> {
+              fetching.countDown();
+              var interrupted = false;
+              while (release.getCount() > 0) {
+                try {
+                  release.await();
+                } catch (InterruptedException e) {
+                  interrupted = true;
+                }
+              }
+              if (interrupted) {
+                Thread.currentThread().interrupt();
+              }
+              return result.get();
+            })
+        .thenReturn(Set.of(SampleExternalResource.testResource1()));
+
+    source.onResourceCreated(testCustomResource);
+    assertThat(fetching.await(5, TimeUnit.SECONDS)).isTrue();
+    source.onResourceDeleted(testCustomResource);
+    source.onResourceCreated(testCustomResource);
+    clearInvocations(supplier);
+    release.countDown();
+
+    await()
+        .pollDelay(Duration.ofMillis(10 * PERIOD))
+        .untilAsserted(() -> verify(supplier, atMost(15)).fetchResources(any()));
   }
 }
