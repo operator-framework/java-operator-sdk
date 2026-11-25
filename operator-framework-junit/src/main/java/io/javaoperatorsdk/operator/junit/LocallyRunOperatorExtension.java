@@ -24,13 +24,17 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Duration;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
+import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.WeakHashMap;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Stream;
@@ -44,11 +48,11 @@ import io.fabric8.kubernetes.api.model.Namespaced;
 import io.fabric8.kubernetes.api.model.apiextensions.v1.CustomResourceDefinition;
 import io.fabric8.kubernetes.client.CustomResource;
 import io.fabric8.kubernetes.client.KubernetesClient;
-import io.fabric8.kubernetes.client.KubernetesClientBuilder;
 import io.fabric8.kubernetes.client.LocalPortForward;
 import io.javaoperatorsdk.operator.Operator;
 import io.javaoperatorsdk.operator.ReconcilerUtilsInternal;
 import io.javaoperatorsdk.operator.RegisteredController;
+import io.javaoperatorsdk.operator.api.config.ConfigurationService;
 import io.javaoperatorsdk.operator.api.config.ConfigurationServiceOverrider;
 import io.javaoperatorsdk.operator.api.config.ControllerConfigurationOverrider;
 import io.javaoperatorsdk.operator.api.config.Utils;
@@ -63,12 +67,14 @@ public class LocallyRunOperatorExtension extends AbstractOperatorExtension {
   private static final Logger LOGGER = LoggerFactory.getLogger(LocallyRunOperatorExtension.class);
   private static final int CRD_DELETE_TIMEOUT = 5000;
   private static final int CRD_DELETE_WAIT_TIMEOUT = 60000;
-  private static final Set<AppliedCRD> appliedCRDs = new HashSet<>();
+  private static final Map<KubernetesClient, Set<AppliedCRD>> appliedCRDs =
+      Collections.synchronizedMap(new WeakHashMap<>());
   private static final boolean DELETE_CRDS_DEFAULT =
       Boolean.parseBoolean(System.getProperty("testsuite.deleteCRDs", "true"));
 
   private volatile boolean deleteCRDs = DELETE_CRDS_DEFAULT;
   private final Operator operator;
+  private final boolean closeInfrastructureClient;
   private final List<ReconcilerSpec> reconcilers;
   private final List<PortForwardSpec> portForwards;
   private final List<LocalPortForward> localPortForwards;
@@ -92,13 +98,13 @@ public class LocallyRunOperatorExtension extends AbstractOperatorExtension {
       boolean oneNamespacePerClass,
       KubernetesClient kubernetesClient,
       KubernetesClient infrastructureKubernetesClient,
-      Consumer<ConfigurationServiceOverrider> configurationServiceOverrider,
+      ConfigurationService configurationService,
       Function<ExtensionContext, String> namespaceNameSupplier,
       Function<ExtensionContext, String> perClassNamespaceNameSupplier,
       List<String> additionalCrds,
       Consumer<LocallyRunOperatorExtension> beforeStartHook,
       Boolean deleteCRDsOverride,
-      boolean useVirtualThreads) {
+      boolean originalCloseClientOnStop) {
     super(
         infrastructure,
         infrastructureTimeout,
@@ -117,16 +123,9 @@ public class LocallyRunOperatorExtension extends AbstractOperatorExtension {
     this.additionalCustomResourceDefinitions = additionalCustomResourceDefinitions;
     this.additionalCustomResourceDefinitionInstances = additionalCustomResourceDefinitionInstances;
     this.beforeStartHook = beforeStartHook;
-    Consumer<ConfigurationServiceOverrider> overrider =
-        o -> {
-          if (useVirtualThreads) {
-            o.withUseVirtualThreads(true);
-          }
-        };
-    if (configurationServiceOverrider != null) {
-      overrider = overrider.andThen(configurationServiceOverrider);
-    }
-    this.operator = new Operator(overrider.andThen(o -> o.withKubernetesClient(kubernetesClient)));
+    this.operator = new Operator(configurationService);
+    this.closeInfrastructureClient =
+        getKubernetesClient() != getInfrastructureKubernetesClient() || originalCloseClientOnStop;
     this.registeredControllers = new HashMap<>();
     crdMappings = getAdditionalCRDsFromFiles(additionalCrds, getKubernetesClient());
     if (deleteCRDsOverride != null) {
@@ -195,7 +194,9 @@ public class LocallyRunOperatorExtension extends AbstractOperatorExtension {
       final var crd =
           client.load(new ByteArrayInputStream(crdString.getBytes(StandardCharsets.UTF_8)));
       crd.serverSideApply();
-      appliedCRDs.add(new AppliedCRD.FileCRD(crdString, path));
+      appliedCRDs
+          .computeIfAbsent(client, ignored -> ConcurrentHashMap.newKeySet())
+          .add(new AppliedCRD.FileCRD(crdString, path));
       Thread.sleep(CRD_READY_WAIT); // readiness is not applicable for CRD, just wait a little
       LOGGER.debug("Applied CRD with path: {}", path);
     } catch (InterruptedException ex) {
@@ -225,10 +226,13 @@ public class LocallyRunOperatorExtension extends AbstractOperatorExtension {
       if (pathAsString != null) {
         applyCrdFromMappings(pathAsString, resourceTypeName);
       } else {
-        var resource = getKubernetesClient().resource(customResourceDefinition);
+        final var client = getInfrastructureKubernetesClient();
+        final var resource = client.resource(customResourceDefinition);
         resource.serverSideApply();
+        appliedCRDs
+            .computeIfAbsent(client, ignored -> ConcurrentHashMap.newKeySet())
+            .add(new AppliedCRD.InstanceCRD(customResourceDefinition));
         Thread.sleep(CRD_READY_WAIT); // readiness is not applicable for CRD, just wait a little
-        appliedCRDs.add(new AppliedCRD.InstanceCRD(customResourceDefinition));
       }
     } catch (Exception e) {
       throw new RuntimeException(e);
@@ -238,7 +242,7 @@ public class LocallyRunOperatorExtension extends AbstractOperatorExtension {
   private void applyCrdFromMappings(String pathAsString, String resourceTypeName) {
     final var path = Path.of(pathAsString);
     try {
-      applyCrd(Files.readString(path), pathAsString, getKubernetesClient());
+      applyCrd(Files.readString(path), pathAsString, getInfrastructureKubernetesClient());
     } catch (IOException e) {
       throw new IllegalStateException("Cannot open CRD file at " + path.toAbsolutePath(), e);
     }
@@ -262,7 +266,7 @@ public class LocallyRunOperatorExtension extends AbstractOperatorExtension {
       applyCrdFromMappings(pathAsString, resourceTypeName);
     } else {
       // if no manually defined CRD matches the resource type, apply the generated one
-      applyCrd(resourceTypeName, getKubernetesClient());
+      applyCrd(resourceTypeName, getInfrastructureKubernetesClient());
     }
   }
 
@@ -299,6 +303,28 @@ public class LocallyRunOperatorExtension extends AbstractOperatorExtension {
   @SuppressWarnings("unchecked")
   @Override
   protected void before(ExtensionContext context) {
+    var classContext = context;
+    while (classContext.getTestMethod().isPresent() && classContext.getParent().isPresent()) {
+      classContext = classContext.getParent().orElseThrow();
+    }
+    final var store =
+        classContext.getStore(ExtensionContext.Namespace.create(LocallyRunOperatorExtension.class));
+    CrdCleanup cleanup;
+    try {
+      cleanup =
+          store.computeIfAbsent(CrdCleanup.class, ignored -> new CrdCleanup(), CrdCleanup.class);
+    } catch (NoSuchMethodError nsme) {
+      // Exists to retain compatibility with Junit5.
+      cleanup =
+          (CrdCleanup) store.getOrComputeIfAbsent(CrdCleanup.class, ignored -> new CrdCleanup());
+    }
+    Objects.requireNonNull(cleanup)
+        .addCleanupTarget(
+            getKubernetesClient(),
+            getInfrastructureKubernetesClient(),
+            deleteCRDs,
+            closeInfrastructureClient);
+
     super.before(context);
 
     final var kubernetesClient = getInfrastructureKubernetesClient();
@@ -359,24 +385,12 @@ public class LocallyRunOperatorExtension extends AbstractOperatorExtension {
           } catch (IOException e) {
             throw new IllegalArgumentException("Couldn't read CRD located at " + path, e);
           }
-          applyCrd(crdString, path, getKubernetesClient());
+          applyCrd(crdString, path, getInfrastructureKubernetesClient());
         });
     crdMappings.clear();
 
     if (beforeStartHook != null) {
       beforeStartHook.accept(this);
-    }
-
-    // ExtensionContext.Store.CloseableResource registered in the class-level (parent) context
-    // is invoked by JUnit when the class scope closes
-    var classContext = oneNamespacePerClass ? context : context.getParent().orElse(context);
-    var store =
-        classContext.getStore(ExtensionContext.Namespace.create(LocallyRunOperatorExtension.class));
-    try {
-      store.computeIfAbsent(CrdCleanup.class, ignored -> new CrdCleanup(deleteCRDs));
-    } catch (NoSuchMethodError nsme) {
-      // Exists to retain compatibility with Junit5.
-      store.getOrComputeIfAbsent(CrdCleanup.class, ignored -> new CrdCleanup(deleteCRDs));
     }
 
     LOGGER.debug("Starting the operator locally");
@@ -386,14 +400,6 @@ public class LocallyRunOperatorExtension extends AbstractOperatorExtension {
   @Override
   protected void after(ExtensionContext context) {
     super.after(context);
-
-    var infrastructureKubernetesClient = getInfrastructureKubernetesClient();
-
-    // if the client is used for infra client, we should not close it
-    // either test or operator should close this client
-    if (getKubernetesClient() != infrastructureKubernetesClient) {
-      infrastructureKubernetesClient.close();
-    }
 
     try {
       this.operator.stop();
@@ -411,34 +417,83 @@ public class LocallyRunOperatorExtension extends AbstractOperatorExtension {
     localPortForwards.clear();
   }
 
-  private static class CrdCleanup implements ExtensionContext.Store.CloseableResource {
+  private static class CrdCleanup
+      implements ExtensionContext.Store.CloseableResource, AutoCloseable {
 
-    private final boolean deleteCRDs;
+    private final List<CleanupTarget> cleanupTargets = new ArrayList<>();
 
-    private CrdCleanup(boolean deleteCRDs) {
-      this.deleteCRDs = deleteCRDs;
+    synchronized void addCleanupTarget(
+        KubernetesClient kubernetesClient,
+        KubernetesClient infrastructureKubernetesClient,
+        boolean deleteCRDs,
+        boolean closeInfrastructureClient) {
+      cleanupTargets.add(
+          new CleanupTarget(
+              kubernetesClient,
+              infrastructureKubernetesClient,
+              deleteCRDs,
+              closeInfrastructureClient));
     }
 
     @Override
-    public void close() {
-      // Create a fresh client for cleanup since operator clients may already be closed.
-      try (var client = new KubernetesClientBuilder().build()) {
-        var iterator = appliedCRDs.iterator();
-        while (iterator.hasNext()) {
-          var appliedCRD = iterator.next();
-          iterator.remove();
-          if (!deleteCRDs) {
-            LOGGER.debug("Skipping deleting CRD because of configuration: {}", appliedCRD);
-            continue;
+    public synchronized void close() {
+      final Map<KubernetesClient, Set<AppliedCRD>> crdsByClient = new IdentityHashMap<>();
+      final Set<KubernetesClient> clientsToClose =
+          Collections.newSetFromMap(new IdentityHashMap<>());
+      final Set<KubernetesClient> clientsDisabledDeletion =
+          Collections.newSetFromMap(new IdentityHashMap<>());
+      for (var cleanupTarget : cleanupTargets) {
+        final var infrastructureKubernetesClient = cleanupTarget.infrastructureKubernetesClient();
+        if (cleanupTarget.closeInfrastructureClient()) {
+          clientsToClose.add(infrastructureKubernetesClient);
+        }
+        if (!cleanupTarget.deleteCRDs()) {
+          clientsDisabledDeletion.add(infrastructureKubernetesClient);
+        }
+        final var crds =
+            crdsByClient.computeIfAbsent(
+                infrastructureKubernetesClient, ignored -> ConcurrentHashMap.newKeySet());
+        // Include CRDs explicitly applied with the operator client via static applyCrd calls.
+        for (var kubernetesClient :
+            List.of(cleanupTarget.kubernetesClient(), infrastructureKubernetesClient)) {
+          final var applied = appliedCRDs.remove(kubernetesClient);
+          if (applied != null) {
+            crds.addAll(applied);
           }
+        }
+      }
+      try {
+        crdsByClient.forEach(
+            (client, crds) -> {
+              for (var crd : crds) {
+                if (clientsDisabledDeletion.contains(client)) {
+                  LOGGER.debug("Skipping deleting CRD because of configuration: {}", crd);
+                  continue;
+                }
+                try {
+                  crd.delete(client);
+                } catch (Exception e) {
+                  LOGGER.warn("Failed to delete CRD: {}. Continuing with remaining CRDs.", crd, e);
+                }
+              }
+            });
+      } finally {
+        cleanupTargets.clear();
+        for (var client : clientsToClose) {
           try {
-            appliedCRD.delete(client);
+            client.close();
           } catch (Exception e) {
-            LOGGER.warn("Failed to delete CRD: {}. Continuing with remaining CRDs.", appliedCRD, e);
+            LOGGER.warn("Failed to close infrastructure Kubernetes client.", e);
           }
         }
       }
     }
+
+    private record CleanupTarget(
+        KubernetesClient kubernetesClient,
+        KubernetesClient infrastructureKubernetesClient,
+        boolean deleteCRDs,
+        boolean closeInfrastructureClient) {}
   }
 
   private sealed interface AppliedCRD permits AppliedCRD.FileCRD, AppliedCRD.InstanceCRD {
@@ -618,6 +673,26 @@ public class LocallyRunOperatorExtension extends AbstractOperatorExtension {
     }
 
     public LocallyRunOperatorExtension build() {
+      final var originalCloseClientOnStop = new AtomicBoolean();
+      final Consumer<ConfigurationServiceOverrider> overrider =
+          o -> {
+            if (useVirtualThreads) {
+              o.withUseVirtualThreads(true);
+            }
+            if (configurationServiceOverrider != null) {
+              configurationServiceOverrider.accept(o);
+            }
+            o.withKubernetesClient(
+                kubernetesClient != null ? kubernetesClient : infrastructureKubernetesClient);
+            if (kubernetesClient == null
+                || infrastructureKubernetesClient == null
+                || kubernetesClient == infrastructureKubernetesClient) {
+              originalCloseClientOnStop.set(o.build().closeClientOnStop());
+              o.withCloseClientOnStop(false);
+            }
+          };
+      final var configurationService =
+          ConfigurationService.newOverriddenConfigurationService(overrider);
       return new LocallyRunOperatorExtension(
           reconcilers,
           infrastructure,
@@ -630,15 +705,15 @@ public class LocallyRunOperatorExtension extends AbstractOperatorExtension {
           waitForNamespaceDeletion,
           namespaceDeleteTimeout,
           oneNamespacePerClass,
-          kubernetesClient,
+          configurationService.getKubernetesClient(),
           infrastructureKubernetesClient,
-          configurationServiceOverrider,
+          configurationService,
           namespaceNameSupplier,
           perClassNamespaceNameSupplier,
           additionalCRDs,
           beforeStartHook,
           deleteCRDs,
-          useVirtualThreads);
+          originalCloseClientOnStop.get());
     }
   }
 
