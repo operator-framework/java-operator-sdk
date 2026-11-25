@@ -52,6 +52,7 @@ import io.fabric8.kubernetes.client.LocalPortForward;
 import io.javaoperatorsdk.operator.Operator;
 import io.javaoperatorsdk.operator.ReconcilerUtilsInternal;
 import io.javaoperatorsdk.operator.RegisteredController;
+import io.javaoperatorsdk.operator.api.config.ConfigurationService;
 import io.javaoperatorsdk.operator.api.config.ConfigurationServiceOverrider;
 import io.javaoperatorsdk.operator.api.config.ControllerConfigurationOverrider;
 import io.javaoperatorsdk.operator.api.config.Utils;
@@ -97,13 +98,13 @@ public class LocallyRunOperatorExtension extends AbstractOperatorExtension {
       boolean oneNamespacePerClass,
       KubernetesClient kubernetesClient,
       KubernetesClient infrastructureKubernetesClient,
-      Consumer<ConfigurationServiceOverrider> configurationServiceOverrider,
+      ConfigurationService configurationService,
       Function<ExtensionContext, String> namespaceNameSupplier,
       Function<ExtensionContext, String> perClassNamespaceNameSupplier,
       List<String> additionalCrds,
       Consumer<LocallyRunOperatorExtension> beforeStartHook,
       Boolean deleteCRDsOverride,
-      boolean useVirtualThreads) {
+      boolean originalCloseClientOnStop) {
     super(
         infrastructure,
         infrastructureTimeout,
@@ -122,25 +123,9 @@ public class LocallyRunOperatorExtension extends AbstractOperatorExtension {
     this.additionalCustomResourceDefinitions = additionalCustomResourceDefinitions;
     this.additionalCustomResourceDefinitionInstances = additionalCustomResourceDefinitionInstances;
     this.beforeStartHook = beforeStartHook;
-    var originalCloseClientOnStop = new AtomicBoolean();
-    Consumer<ConfigurationServiceOverrider> overrider =
-        o -> {
-          if (useVirtualThreads) {
-            o.withUseVirtualThreads(true);
-          }
-          if (configurationServiceOverrider != null) {
-            configurationServiceOverrider.accept(o);
-          }
-          o.withKubernetesClient(getKubernetesClient());
-          if (getKubernetesClient() == getInfrastructureKubernetesClient()) {
-            originalCloseClientOnStop.set(o.build().closeClientOnStop());
-            o.withCloseClientOnStop(false);
-          }
-        };
-    this.operator = new Operator(overrider);
+    this.operator = new Operator(configurationService);
     this.closeInfrastructureClient =
-        getKubernetesClient() != getInfrastructureKubernetesClient()
-            || originalCloseClientOnStop.get();
+        getKubernetesClient() != getInfrastructureKubernetesClient() || originalCloseClientOnStop;
     this.registeredControllers = new HashMap<>();
     crdMappings = getAdditionalCRDsFromFiles(additionalCrds, getKubernetesClient());
     if (deleteCRDsOverride != null) {
@@ -688,6 +673,26 @@ public class LocallyRunOperatorExtension extends AbstractOperatorExtension {
     }
 
     public LocallyRunOperatorExtension build() {
+      final var originalCloseClientOnStop = new AtomicBoolean();
+      final Consumer<ConfigurationServiceOverrider> overrider =
+          o -> {
+            if (useVirtualThreads) {
+              o.withUseVirtualThreads(true);
+            }
+            if (configurationServiceOverrider != null) {
+              configurationServiceOverrider.accept(o);
+            }
+            o.withKubernetesClient(
+                kubernetesClient != null ? kubernetesClient : infrastructureKubernetesClient);
+            if (kubernetesClient == null
+                || infrastructureKubernetesClient == null
+                || kubernetesClient == infrastructureKubernetesClient) {
+              originalCloseClientOnStop.set(o.build().closeClientOnStop());
+              o.withCloseClientOnStop(false);
+            }
+          };
+      final var configurationService =
+          ConfigurationService.newOverriddenConfigurationService(overrider);
       return new LocallyRunOperatorExtension(
           reconcilers,
           infrastructure,
@@ -700,15 +705,15 @@ public class LocallyRunOperatorExtension extends AbstractOperatorExtension {
           waitForNamespaceDeletion,
           namespaceDeleteTimeout,
           oneNamespacePerClass,
-          kubernetesClient,
+          configurationService.getKubernetesClient(),
           infrastructureKubernetesClient,
-          configurationServiceOverrider,
+          configurationService,
           namespaceNameSupplier,
           perClassNamespaceNameSupplier,
           additionalCRDs,
           beforeStartHook,
           deleteCRDs,
-          useVirtualThreads);
+          originalCloseClientOnStop.get());
     }
   }
 

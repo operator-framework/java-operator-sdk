@@ -19,12 +19,17 @@ import java.lang.reflect.Method;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.FutureTask;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.EnabledForJreRange;
+import org.junit.jupiter.api.condition.JRE;
 import org.junit.jupiter.api.extension.ExtensionContext;
 import org.mockito.MockedConstruction;
 
@@ -34,6 +39,9 @@ import io.fabric8.kubernetes.api.model.apiextensions.v1.CustomResourceDefinition
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.NamespaceableResource;
 import io.fabric8.kubernetes.client.dsl.Resource;
+import io.fabric8.kubernetes.client.http.HttpClient;
+import io.fabric8.kubernetes.client.impl.BaseClient;
+import io.fabric8.kubernetes.client.utils.HttpClientUtils;
 import io.javaoperatorsdk.operator.Operator;
 import io.javaoperatorsdk.operator.api.config.ConfigurationService;
 import io.javaoperatorsdk.operator.api.config.ConfigurationServiceOverrider;
@@ -45,6 +53,7 @@ import static org.mockito.Mockito.RETURNS_SELF;
 import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.mockConstruction;
+import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -79,10 +88,8 @@ class LocallyRunOperatorExtensionTest {
         mockConstruction(
             Operator.class,
             (operator, construction) -> {
-              final var configure =
-                  (Consumer<ConfigurationServiceOverrider>) construction.arguments().get(0);
               when(operator.getConfigurationService())
-                  .thenReturn(ConfigurationService.newOverriddenConfigurationService(configure));
+                  .thenReturn((ConfigurationService) construction.arguments().get(0));
             });
   }
 
@@ -125,6 +132,38 @@ class LocallyRunOperatorExtensionTest {
 
     assertThat(builder.build().getOperator().getConfigurationService())
         .returns(false, ConfigurationService::useVirtualThreads);
+  }
+
+  @Test
+  @EnabledForJreRange(min = JRE.JAVA_25)
+  void defaultClientUsesConfiguredVirtualThreads() throws Exception {
+    try (var httpClientUtilities = mockStatic(HttpClientUtils.class)) {
+      httpClientUtilities
+          .when(HttpClientUtils::getHttpClientFactory)
+          .thenReturn(mock(HttpClient.Factory.class, RETURNS_DEEP_STUBS));
+      final var configurationInvocationCount = new AtomicInteger();
+      final var extension =
+          LocallyRunOperatorExtension.builder()
+              .withConfigurationService(
+                  o -> {
+                    configurationInvocationCount.incrementAndGet();
+                    o.withUseVirtualThreads(true);
+                  })
+              .build();
+
+      try (var client = extension.getKubernetesClient()) {
+        assertThat(client)
+            .isSameAs(extension.getInfrastructureKubernetesClient())
+            .isSameAs(extension.getOperator().getConfigurationService().getKubernetesClient());
+        final var onVirtualThread =
+            new FutureTask<>(
+                () -> (Boolean) Thread.class.getMethod("isVirtual").invoke(Thread.currentThread()));
+        client.adapt(BaseClient.class).getExecutor().execute(onVirtualThread);
+
+        assertThat(onVirtualThread.get(5, TimeUnit.SECONDS)).isTrue();
+        assertThat(configurationInvocationCount).hasValue(1);
+      }
+    }
   }
 
   @Test
