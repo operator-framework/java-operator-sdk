@@ -402,6 +402,7 @@ class ReconciliationDispatcher<P extends HasMetadata> {
           new ObjectMetaBuilder()
               .withName(resource.getMetadata().getName())
               .withNamespace(resource.getMetadata().getNamespace())
+              .withUid(resource.getMetadata().getUid())
               .withResourceVersion(resource.getMetadata().getResourceVersion())
               .build());
       if (statusOnly instanceof CustomResource<?, ?> customResource) {

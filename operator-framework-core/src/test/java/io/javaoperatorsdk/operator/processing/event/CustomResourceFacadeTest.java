@@ -65,7 +65,7 @@ class CustomResourceFacadeTest {
     assertThat(applied.getMetadata().getFinalizers()).isNullOrEmpty();
     assertThat(applied.getMetadata().getManagedFields()).isNullOrEmpty();
     assertThat(applied.getMetadata().getGeneration()).isNull();
-    assertThat(applied.getMetadata().getUid()).isNull();
+    assertThat(applied.getMetadata().getUid()).isEqualTo("uid-1");
   }
 
   @Test
