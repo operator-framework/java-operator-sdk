@@ -29,6 +29,7 @@ import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.client.CustomResource;
 import io.fabric8.kubernetes.client.KubernetesClientException;
 import io.fabric8.kubernetes.client.utils.Serialization;
+import io.javaoperatorsdk.operator.api.config.Utils;
 import io.javaoperatorsdk.operator.api.reconciler.Constants;
 import io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.NonComparableResourceVersionException;
@@ -176,7 +177,7 @@ public class ReconcilerUtilsInternal {
       // if given spec is null, find the method just using its name
       Method setMethod;
       if (spec != null) {
-        setMethod = resourceClass.getMethod(setterMethodName, spec.getClass());
+        setMethod = findSetter(resourceClass, setterMethodName, spec.getClass());
       } else {
         setMethod =
             Arrays.stream(resourceClass.getMethods())
@@ -188,6 +189,40 @@ public class ReconcilerUtilsInternal {
       return setMethod.invoke(resource, spec);
     } catch (NoSuchMethodException | InvocationTargetException | IllegalAccessException e) {
       throw noMethodException(resource, e, setterMethodName);
+    }
+  }
+
+  // the value may be a subclass of the setter's parameter type, then there is no exact match
+  private static Method findSetter(
+      Class<?> resourceClass, String setterMethodName, Class<?> valueClass)
+      throws NoSuchMethodException {
+    try {
+      return resourceClass.getMethod(setterMethodName, valueClass);
+    } catch (NoSuchMethodException e) {
+      return Arrays.stream(resourceClass.getMethods())
+          .filter(
+              method ->
+                  setterMethodName.equals(method.getName())
+                      && method.getParameterCount() == 1
+                      && method.getParameterTypes()[0].isAssignableFrom(valueClass))
+          .findFirst()
+          .orElseThrow(() -> e);
+    }
+  }
+
+  /**
+   * Creates a new, empty instance of the given resource's class through its no-arg constructor, as
+   * a starting point for a server-side apply body that carries only selected fields.
+   */
+  @SuppressWarnings("unchecked")
+  public static <R extends HasMetadata> R newEmptyInstanceOf(R resource) {
+    try {
+      return (R) Utils.getConstructor(resource.getClass()).newInstance();
+    } catch (InstantiationException | IllegalAccessException | InvocationTargetException e) {
+      throw new RuntimeException(
+          "Issue with creating custom resource instance with reflection. Class: "
+              + resource.getClass().getName(),
+          e);
     }
   }
 

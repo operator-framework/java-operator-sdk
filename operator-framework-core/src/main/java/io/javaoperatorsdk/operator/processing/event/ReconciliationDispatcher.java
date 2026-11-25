@@ -22,6 +22,8 @@ import org.slf4j.LoggerFactory;
 import org.slf4j.event.Level;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
+import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
+import io.fabric8.kubernetes.client.CustomResource;
 import io.fabric8.kubernetes.client.KubernetesClientException;
 import io.javaoperatorsdk.operator.OperatorException;
 import io.javaoperatorsdk.operator.ReconcilerUtilsInternal;
@@ -385,18 +387,30 @@ class ReconciliationDispatcher<P extends HasMetadata> {
     public R patchStatus(Context<R> context, R resource, R originalResource) {
       log.trace("Patching status for resource: {} with ssa: {}", resource, useSSA);
       if (useSSA) {
-        var managedFields = resource.getMetadata().getManagedFields();
-        try {
-          resource.getMetadata().setManagedFields(null);
-          return context
-              .resourceOperations()
-              .serverSideApplyPrimaryStatus(resource, ResourceOperations.Options.cacheOnly());
-        } finally {
-          resource.getMetadata().setManagedFields(managedFields);
-        }
+        return context
+            .resourceOperations()
+            .serverSideApplyPrimaryStatus(
+                statusApplyFor(resource), ResourceOperations.Options.cacheOnly());
       } else {
         return editStatus(context, resource, originalResource);
       }
+    }
+
+    private R statusApplyFor(R resource) {
+      var statusOnly = ReconcilerUtilsInternal.newEmptyInstanceOf(resource);
+      statusOnly.setMetadata(
+          new ObjectMetaBuilder()
+              .withName(resource.getMetadata().getName())
+              .withNamespace(resource.getMetadata().getNamespace())
+              .withUid(resource.getMetadata().getUid())
+              .withResourceVersion(resource.getMetadata().getResourceVersion())
+              .build());
+      if (statusOnly instanceof CustomResource<?, ?> customResource) {
+        // a subclass may pre-populate the spec through CustomResource#initSpec()
+        customResource.setSpec(null);
+      }
+      ReconcilerUtilsInternal.setStatus(statusOnly, ReconcilerUtilsInternal.getStatus(resource));
+      return statusOnly;
     }
 
     private R editStatus(Context<R> context, R resource, R originalResource) {

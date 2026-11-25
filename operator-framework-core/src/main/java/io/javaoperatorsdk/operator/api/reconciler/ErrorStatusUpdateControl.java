@@ -27,6 +27,15 @@ public class ErrorStatusUpdateControl<P extends HasMetadata>
   private boolean noRetry = false;
   private final boolean defaultErrorProcessing;
 
+  /**
+   * Patches the status of the resource, the same way {@link UpdateControl#patchStatus(HasMetadata)}
+   * does: with Server-Side Apply only the fields identifying the resource and the status are
+   * applied.
+   *
+   * @param resource the resource with the target status
+   * @param <T> resource type
+   * @return ErrorStatusUpdateControl instance
+   */
   public static <T extends HasMetadata> ErrorStatusUpdateControl<T> patchStatus(T resource) {
     return new ErrorStatusUpdateControl<>(resource);
   }

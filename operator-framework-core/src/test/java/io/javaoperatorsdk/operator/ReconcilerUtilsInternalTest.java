@@ -26,6 +26,7 @@ import io.fabric8.kubernetes.api.model.*;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.api.model.apps.DeploymentBuilder;
 import io.fabric8.kubernetes.api.model.apps.DeploymentSpec;
+import io.fabric8.kubernetes.api.model.apps.DeploymentStatus;
 import io.fabric8.kubernetes.client.CustomResource;
 import io.fabric8.kubernetes.client.KubernetesClientException;
 import io.fabric8.kubernetes.client.http.HttpRequest;
@@ -120,6 +121,18 @@ class ReconcilerUtilsInternalTest {
 
     assertThat(deployment.getSpec().getReplicas()).isEqualTo(1);
   }
+
+  @Test
+  void setsStatusSubclassWithReflection() {
+    var deployment = new Deployment();
+    var status = new ExtendedDeploymentStatus();
+
+    ReconcilerUtilsInternal.setStatus(deployment, status);
+
+    assertThat(deployment.getStatus()).isSameAs(status);
+  }
+
+  private static class ExtendedDeploymentStatus extends DeploymentStatus {}
 
   @Test
   void setsSpecCustomResourceWithReflection() {
