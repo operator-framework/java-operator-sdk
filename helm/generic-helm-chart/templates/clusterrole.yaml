@@ -71,9 +71,12 @@ rules:
   {{- end }}
 {{- end }}
 # Event permissions - for recording events
-# All three verbs are used: an event is looked up by name ("get") so that a repeat of it resolves to
-# the event already recorded, which is then "patch"ed to count the new occurrence instead of being
-# "create"d a second time. Without them recording fails, visible only as a warning in the log.
+# An event is looked up by name ("get") so that a repeat of it resolves to the event already
+# recorded, which is then "patch"ed to count the new occurrence instead of being "create"d a second
+# time. Without these three recording fails, visible only as a warning in the log. "delete" is only
+# checked on clusters that enforce owner reference permissions (OpenShift by default), when an
+# explicitly named event switches to a different object while the recorded event or the new
+# occurrence carries owner references.
 - apiGroups:
   - ""
   resources:
@@ -82,6 +85,7 @@ rules:
   - get
   - create
   - patch
+  - delete
 {{- /* Leader election - Lease permissions */}}
 {{- if .Values.leaderElection.enabled }}
 # Lease permissions - for leader election
