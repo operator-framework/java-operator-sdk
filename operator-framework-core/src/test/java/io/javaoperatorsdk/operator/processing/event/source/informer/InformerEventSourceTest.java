@@ -424,6 +424,25 @@ class InformerEventSourceTest {
   }
 
   @Test
+  void indexersFromConfigurationAreRegisteredOnCreation() {
+    when(informerEventSourceConfiguration.getIndexers())
+        .thenReturn(Map.of("idx", d -> List.of(d.getMetadata().getLabels().get("app"))));
+    informerEventSource = buildInformerEventSource();
+    var ghost = testDeployment();
+    ghost.getMetadata().setLabels(Map.of("app", "key"));
+    when(temporaryResourceCache.getResources())
+        .thenReturn(new HashMap<>(Map.of(ResourceID.fromResource(ghost), ghost)));
+    var informerManager = mock(InformerManager.class);
+    stubLastSyncResourceVersion(informerManager, "1");
+    when(informerManager.byIndexStream(any(), any())).thenReturn(Stream.empty());
+    when(informerEventSource.manager()).thenReturn(informerManager);
+
+    var result = informerEventSource.byIndexStream("idx", "key").toList();
+
+    assertThat(result).containsExactly(ghost);
+  }
+
+  @Test
   void byIndexIncludesGhostResourceNotYetSeenByInformer() {
     var ghost = testDeployment();
     ghost.getMetadata().setLabels(Map.of("app", "key"));

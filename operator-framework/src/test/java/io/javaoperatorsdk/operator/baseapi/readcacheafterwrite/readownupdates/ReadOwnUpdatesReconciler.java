@@ -123,9 +123,9 @@ public class ReadOwnUpdatesReconciler implements Reconciler<ReadOwnUpdatesCustom
         new InformerEventSource<>(
             InformerEventSourceConfiguration.from(
                     ConfigMap.class, ReadOwnUpdatesCustomResource.class)
+                .withIndexer(
+                    RESOURCE_VERSION_INDEX, cm -> List.of(cm.getMetadata().getResourceVersion()))
                 .build());
-    configMapEventSource.addIndexers(
-        Map.of(RESOURCE_VERSION_INDEX, cm -> List.of(cm.getMetadata().getResourceVersion())));
     return List.of(configMapEventSource);
   }
 

@@ -16,9 +16,14 @@
 package io.javaoperatorsdk.operator.api.config.informer;
 
 import java.time.Duration;
+import java.util.Collections;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Function;
 
 import io.fabric8.kubernetes.api.model.GenericKubernetesResource;
 import io.fabric8.kubernetes.api.model.HasMetadata;
@@ -86,6 +91,16 @@ public interface InformerEventSourceConfiguration<R extends HasMetadata> extends
     return getInformerConfig().getName();
   }
 
+  /**
+   * The indexers to register on the informer event source, by index name. They are registered when
+   * the event source is created, so they are in place before it starts.
+   *
+   * @return the configured indexers, empty if there are none
+   */
+  default Map<String, Function<R, List<String>>> getIndexers() {
+    return Map.of();
+  }
+
   class DefaultInformerEventSourceConfiguration<R extends HasMetadata>
       implements InformerEventSourceConfiguration<R> {
     private final PrimaryToSecondaryMapper<?> primaryToSecondaryMapper;
@@ -93,6 +108,7 @@ public interface InformerEventSourceConfiguration<R extends HasMetadata> extends
     private final GroupVersionKind groupVersionKind;
     private final InformerConfiguration<R> informerConfig;
     private final KubernetesClient kubernetesClient;
+    private final Map<String, Function<R, List<String>>> indexers;
 
     protected DefaultInformerEventSourceConfiguration(
         GroupVersionKind groupVersionKind,
@@ -100,11 +116,33 @@ public interface InformerEventSourceConfiguration<R extends HasMetadata> extends
         SecondaryToPrimaryMapper<R> secondaryToPrimaryMapper,
         InformerConfiguration<R> informerConfig,
         KubernetesClient kubernetesClient) {
+      this(
+          groupVersionKind,
+          primaryToSecondaryMapper,
+          secondaryToPrimaryMapper,
+          informerConfig,
+          kubernetesClient,
+          Map.of());
+    }
+
+    protected DefaultInformerEventSourceConfiguration(
+        GroupVersionKind groupVersionKind,
+        PrimaryToSecondaryMapper<?> primaryToSecondaryMapper,
+        SecondaryToPrimaryMapper<R> secondaryToPrimaryMapper,
+        InformerConfiguration<R> informerConfig,
+        KubernetesClient kubernetesClient,
+        Map<String, Function<R, List<String>>> indexers) {
       this.informerConfig = Objects.requireNonNull(informerConfig);
       this.groupVersionKind = groupVersionKind;
       this.primaryToSecondaryMapper = primaryToSecondaryMapper;
       this.secondaryToPrimaryMapper = secondaryToPrimaryMapper;
       this.kubernetesClient = kubernetesClient;
+      this.indexers = indexers;
+    }
+
+    @Override
+    public Map<String, Function<R, List<String>>> getIndexers() {
+      return indexers;
     }
 
     @Override
@@ -145,6 +183,7 @@ public interface InformerEventSourceConfiguration<R extends HasMetadata> extends
     private PrimaryToSecondaryMapper<?> primaryToSecondaryMapper;
     private SecondaryToPrimaryMapper<R> secondaryToPrimaryMapper;
     private KubernetesClient kubernetesClient;
+    private final Map<String, Function<R, List<String>>> indexers = new LinkedHashMap<>();
 
     private Builder(Class<R> resourceClass, Class<? extends HasMetadata> primaryResourceClass) {
       this(resourceClass, primaryResourceClass, null);
@@ -272,6 +311,29 @@ public interface InformerEventSourceConfiguration<R extends HasMetadata> extends
       return this;
     }
 
+    /**
+     * Registers an indexer on the informer event source, so the resources it caches can be looked
+     * up by the keys the indexer computes (see {@link
+     * io.javaoperatorsdk.operator.processing.event.source.IndexerResourceCache#byIndex}).
+     *
+     * @param name the name of the index, unique per event source
+     * @param indexer computes the index keys of a resource
+     */
+    public Builder<R> withIndexer(String name, Function<R, List<String>> indexer) {
+      indexers.put(Objects.requireNonNull(name), Objects.requireNonNull(indexer));
+      return this;
+    }
+
+    /**
+     * Registers several indexers at once.
+     *
+     * @see #withIndexer(String, Function)
+     */
+    public Builder<R> withIndexers(Map<String, Function<R, List<String>>> indexers) {
+      indexers.forEach(this::withIndexer);
+      return this;
+    }
+
     public Builder<R> withItemStore(ItemStore<R> itemStore) {
       config.withItemStore(itemStore);
       return this;
@@ -345,7 +407,8 @@ public interface InformerEventSourceConfiguration<R extends HasMetadata> extends
                   HasMetadata.getKind(primaryResourceClass),
                   false)),
           config.build(),
-          kubernetesClient);
+          kubernetesClient,
+          Collections.unmodifiableMap(new LinkedHashMap<>(indexers)));
     }
   }
 }

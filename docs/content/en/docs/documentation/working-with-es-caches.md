@@ -216,6 +216,22 @@ With this index in place, you can retrieve the target resources very efficiently
             .withNamespacesInheritedFromController().build());
 ```
 
+The same can be done for the cache of a secondary resource: indexers are configured on the
+`InformerEventSourceConfiguration.Builder`, and are registered before the event source starts.
+Calling `InformerEventSource.addIndexers(..)` directly is deprecated:
+
+```java
+InformerEventSource<ConfigMap, MyResource> configMapEventSource =
+    new InformerEventSource<>(
+        InformerEventSourceConfiguration.from(ConfigMap.class, MyResource.class)
+            .withIndexer(
+                "by-resource-version", cm -> List.of(cm.getMetadata().getResourceVersion()))
+            .build());
+
+// later, e.g. in the reconciler
+configMapEventSource.byIndex("by-resource-version", resourceVersion);
+```
+
 ## Read-cache-after-write consistency and event filtering
 
 From version 5.3.0 we provide stronger consistency guarantees and
