@@ -25,8 +25,10 @@ import static io.javaoperatorsdk.operator.api.reconciler.Experimental.API_MIGHT_
 /**
  * Names the event recorded about an object. The name is what the sink looks a recorded event up by,
  * so it is also the aggregation identity: two records resolving to the same name are counted as
- * occurrences of one event. A name must therefore be unique among the events it should not
- * aggregate with, and stable across operator restarts and replicas.
+ * occurrences of one event. With {@link DefaultEventSink} that holds while they are about the same
+ * object (the same uid): a record about another object switches the event to that object and
+ * restarts its count. A name must therefore be unique among the events it should not aggregate with
+ * or replace, and stable across operator restarts and replicas.
  *
  * <p>A name must be a valid RFC 1123 DNS subdomain: at most 253 lowercase alphanumeric characters,
  * {@code -} or {@code .}, starting and ending with an alphanumeric character. Names longer than the

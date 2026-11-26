@@ -17,6 +17,7 @@ package io.javaoperatorsdk.operator.api.event;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -30,6 +31,7 @@ import io.fabric8.kubernetes.api.model.EventList;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.MicroTime;
 import io.fabric8.kubernetes.api.model.NamespaceBuilder;
+import io.fabric8.kubernetes.api.model.OwnerReference;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.NonNamespaceOperation;
@@ -200,6 +202,116 @@ class EventRecorderRegressionTest {
     assertThat(patched.get().getAction()).isEqualTo("Degraded");
   }
 
+  /**
+   * An explicitly named event can outlive the object it is about: an object deleted and recreated
+   * under the same name records onto the event of its predecessor. The event then follows the new
+   * object and counts its occurrences only, as a new event under the default name, which hashes the
+   * uid, would.
+   */
+  @Test
+  void aggregatingOntoANamedEventAboutARecreatedObjectFollowsTheNewObject() {
+    var stored = new AtomicReference<Event>();
+    var patched = new AtomicReference<Event>();
+    var sink = new DefaultEventSink(mockClient(stored, patched));
+    var recorder =
+        DefaultEventRecorder.builder(sink)
+            .namingStrategy((regarding, record) -> Optional.of("fixed-name"))
+            .ownerReference(true)
+            .build();
+    var context = context(configMap("test1"), "default");
+    recorder.record(degraded("1").build(), context);
+    stored.get().setCount(5);
+    stored.get().setFirstTimestamp("2026-01-01T00:00:00Z");
+
+    var recreated =
+        new ConfigMapBuilder(configMap("test1"))
+            .editMetadata()
+            .withUid("uid-2")
+            .endMetadata()
+            .build();
+    recorder.record(recreated, degraded("2").build(), context);
+
+    var event = patched.get();
+    assertThat(event.getInvolvedObject().getUid()).isEqualTo("uid-2");
+    assertThat(event.getMetadata().getOwnerReferences())
+        .singleElement()
+        .returns("uid-2", OwnerReference::getUid);
+    assertThat(event.getMetadata().getLabels()).containsExactlyEntriesOf(Map.of("generation", "2"));
+    assertThat(event.getMetadata().getAnnotations())
+        .containsExactlyEntriesOf(Map.of("generation", "2"));
+    assertThat(event.getCount()).isEqualTo(1);
+    assertThat(event.getFirstTimestamp()).isEqualTo(event.getLastTimestamp());
+  }
+
+  @Test
+  void aggregatingOntoANamedEventAboutTheSameObjectKeepsCountAndOwnerAndRefreshesTheRest() {
+    var stored = new AtomicReference<Event>();
+    var patched = new AtomicReference<Event>();
+    var sink = new DefaultEventSink(mockClient(stored, patched));
+    var recorder =
+        DefaultEventRecorder.builder(sink)
+            .namingStrategy((regarding, record) -> Optional.of("fixed-name"))
+            .ownerReference(true)
+            .build();
+    var context = context(configMap("test1"), "default");
+    recorder.record(
+        degraded("1").label("first-only", "true").annotation("first-only", "true").build(),
+        context);
+    stored.get().setFirstTimestamp("2026-01-01T00:00:00Z");
+    stored.get().getMetadata().getOwnerReferences().get(0).setController(true);
+
+    var updated =
+        new ConfigMapBuilder(configMap("test1"))
+            .editMetadata()
+            .withResourceVersion("43")
+            .endMetadata()
+            .build();
+    recorder.record(updated, degraded("2").build(), context);
+
+    var event = patched.get();
+    assertThat(event.getCount()).isEqualTo(2);
+    assertThat(event.getFirstTimestamp()).isEqualTo("2026-01-01T00:00:00Z");
+    assertThat(event.getInvolvedObject().getResourceVersion()).isEqualTo("43");
+    assertThat(event.getMetadata().getLabels()).containsExactlyEntriesOf(Map.of("generation", "2"));
+    assertThat(event.getMetadata().getAnnotations())
+        .containsExactlyEntriesOf(Map.of("generation", "2"));
+    assertThat(event.getMetadata().getOwnerReferences())
+        .singleElement()
+        .returns("uid-1", OwnerReference::getUid)
+        .returns(true, OwnerReference::getController);
+  }
+
+  @Test
+  void aggregatingOntoAnEventWithAnEventTimeKeepsItForTheSameObjectAndRestartsItForARecreatedOne() {
+    var stored = new AtomicReference<Event>();
+    var patched = new AtomicReference<Event>();
+    var sink = new DefaultEventSink(mockClient(stored, patched));
+    var recorder =
+        DefaultEventRecorder.builder(sink)
+            .namingStrategy((regarding, record) -> Optional.of("fixed-name"))
+            .build();
+    var context = context(clusterScoped("ns1"), "kube-system");
+    var firstObserved = new MicroTime("2026-01-01T00:00:00.000000Z");
+    recorder.record(degraded("1").build(), context);
+    stored.get().setEventTime(firstObserved);
+
+    recorder.record(degraded("2").build(), context);
+
+    assertThat(patched.get().getEventTime()).isEqualTo(firstObserved);
+
+    var recreated =
+        new NamespaceBuilder()
+            .withNewMetadata()
+            .withName("ns1")
+            .withUid("uid-4")
+            .endMetadata()
+            .build();
+    recorder.record(recreated, degraded("3").build(), context);
+
+    assertThat(patched.get().getEventTime()).isNotEqualTo(firstObserved);
+    assertThat(patched.get().getCount()).isEqualTo(1);
+  }
+
   @Test
   void shortenedGeneratedNamesDoNotEndInASeparatorBeforeTheHash() {
     var recorder = new DefaultEventRecorder((event, context) -> emitted.add(event));
@@ -233,7 +345,7 @@ class EventRecorderRegressionTest {
         .isNotEqualTo(emitted.get(1).getMetadata().getName());
   }
 
-  @SuppressWarnings({"unchecked", "rawtypes"})
+  @SuppressWarnings({"unchecked"})
   private KubernetesClient mockClient(
       AtomicReference<Event> stored, AtomicReference<Event> patched) {
     var client = mock(KubernetesClient.class);
@@ -306,5 +418,14 @@ class EventRecorderRegressionTest {
         .withResourceVersion("42")
         .endMetadata()
         .build();
+  }
+
+  private EventRecord.Builder degraded(String generation) {
+    return EventRecord.builder()
+        .type(EventType.WARNING)
+        .reason("Degraded")
+        .message("replica down")
+        .label("generation", generation)
+        .annotation("generation", generation);
   }
 }

@@ -130,6 +130,47 @@ class ConfiguredEventRecorderIT {
             });
   }
 
+  @Test
+  void aRecreatedResourceTakesOverItsNamedEvent() {
+    var original = extension.create(testResource());
+    await()
+        .untilAsserted(
+            () ->
+                assertThat(eventsWithReason(NAMED_REASON))
+                    .singleElement()
+                    .returns(
+                        original.getMetadata().getUid(),
+                        event -> event.getInvolvedObject().getUid()));
+
+    extension.delete(original);
+    await()
+        .untilAsserted(
+            () ->
+                assertThat(
+                        extension.get(
+                            ConfiguredEventRecorderCustomResource.class, TEST_RESOURCE_NAME))
+                    .isNull());
+    var executionsBeforeRecreation = reconciler.getNumberOfExecutions();
+    var recreated = extension.create(testResource());
+
+    await()
+        .untilAsserted(
+            () ->
+                assertThat(eventsWithReason(NAMED_REASON))
+                    .singleElement()
+                    .satisfies(
+                        event -> {
+                          var uid = recreated.getMetadata().getUid();
+                          assertThat(event.getInvolvedObject().getUid()).isEqualTo(uid);
+                          assertThat(event.getMetadata().getOwnerReferences())
+                              .singleElement()
+                              .returns(uid, OwnerReference::getUid);
+                          assertThat(event.getCount())
+                              .isLessThanOrEqualTo(
+                                  reconciler.getNumberOfExecutions() - executionsBeforeRecreation);
+                        }));
+  }
+
   private List<Event> eventsWithReason(String reason) {
     return eventsForTestResource().stream().filter(e -> reason.equals(e.getReason())).toList();
   }

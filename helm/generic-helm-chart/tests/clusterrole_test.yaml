@@ -47,6 +47,7 @@ tests:
               - get
               - create
               - patch
+              - delete
 
   - it: should add primary resource rules with default verbs
     set:

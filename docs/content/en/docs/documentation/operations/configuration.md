@@ -387,8 +387,12 @@ below configures where events about cluster scoped resources go.
 Recording events requires the operator's service account to be allowed `get`, `create` and `patch` on
 `events` in the core (`""`) API group. All three are used: an event that does not exist yet is
 created, and an event that does is a repeat of one already recorded, which is patched to count the
-new occurrence instead of being recorded a second time. The
-[generic Helm chart](helm-chart.md) grants all three. If you write your own RBAC and a permission is
+new occurrence instead of being recorded a second time. Clusters that enforce owner reference
+permissions (the `OwnerReferencesPermissionEnforcement` admission plugin, enabled by default on
+OpenShift) also require `delete` to change the owner references of an event. That happens when an
+explicitly named event switches to a different object, such as one deleted and recreated under the
+same name, while the recorded event or the new occurrence carries owner references. The
+[generic Helm chart](helm-chart.md) grants all four. If you write your own RBAC and a permission is
 missing, recording fails silently as far as reconciliation is concerned by default: the failure is
 swallowed so that it cannot break a reconciliation, and only shows up as a warning in the operator
 log. Kubernetes treats events as best effort, supplemental data, so this is usually what you want.

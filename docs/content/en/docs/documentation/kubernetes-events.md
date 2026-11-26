@@ -65,6 +65,15 @@ describe` report a repeating event once, as `(x12 over 3m)`, instead of listing 
 through `DefaultEventRecorder.builder(sink).keyStrategy(...)`, see the javadoc of
 `EventKeyStrategy` and `EventNamingStrategy`.
 
+An event named explicitly, through `EventRecord.Builder#name(...)` or an `EventNamingStrategy`, can
+outlive the object it is about, for example when that object is deleted and recreated under the
+same name. Such an event counts occurrences while they are about the same object. An occurrence
+about a different object (a different uid) switches the event to that object: it references it as
+the involved object and, when owner references are enabled (through
+`DefaultEventRecorder.builder(sink).ownerReference(true)` or per record through
+`EventRecord.Builder#ownedByRegarding(...)`), as its owner, and starts counting over. Labels and
+annotations always follow the latest occurrence.
+
 Events about cluster scoped objects live in the namespace configured through
 `withClusterScopedEventNamespace(...)` or the `josdk.events.cluster-scoped-namespace` property,
 `default` unless configured otherwise. The API server only accepts `default` and `kube-system`.
@@ -90,4 +99,7 @@ or implement an `EventSink` to change where the assembled events go.
 
 Recording needs `get`, `create` and `patch` on `events` in the core API group in every namespace
 events are recorded in, see the
-[Events section of the configuration page](operations/configuration.md#events).
+[Events section of the configuration page](operations/configuration.md#events). On clusters that
+enforce owner reference permissions, such as OpenShift, switching an explicitly named event to a
+different object also needs `delete` on `events` whenever the recorded event or the new occurrence
+carries owner references.
