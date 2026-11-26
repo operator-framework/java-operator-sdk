@@ -16,8 +16,11 @@
 package io.javaoperatorsdk.operator.processing.event.source.informer;
 
 import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
@@ -78,6 +81,17 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
     onUpdateFilter = informerConfig.getOnUpdateFilter();
     onDeleteFilter = informerConfig.getOnDeleteFilter();
     genericFilter = informerConfig.getGenericFilter();
+    super.addIndexers(configuration.getIndexers());
+  }
+
+  /**
+   * @deprecated configure indexers with {@link
+   *     InformerEventSourceConfiguration.Builder#withIndexer(String, Function)} instead
+   */
+  @Deprecated
+  @Override
+  public void addIndexers(Map<String, Function<R, List<String>>> indexers) {
+    super.addIndexers(indexers);
   }
 
   @Override

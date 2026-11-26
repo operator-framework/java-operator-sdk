@@ -15,6 +15,10 @@
  */
 package io.javaoperatorsdk.operator.api.config;
 
+import java.util.List;
+import java.util.Map;
+import java.util.function.Function;
+
 import org.junit.jupiter.api.Test;
 
 import io.fabric8.kubernetes.api.model.ConfigMap;
@@ -22,7 +26,10 @@ import io.fabric8.kubernetes.api.model.Secret;
 import io.javaoperatorsdk.operator.api.config.informer.InformerConfiguration;
 import io.javaoperatorsdk.operator.api.config.informer.InformerEventSourceConfiguration;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class InformerEventSourceConfigurationTest {
 
@@ -38,5 +45,39 @@ class InformerEventSourceConfigurationTest {
             .build());
 
     assertFalse(builder.build().getInformerConfig().isComparableResourceVersions());
+  }
+
+  @Test
+  void indexersAreEmptyByDefault() {
+    var configuration =
+        InformerEventSourceConfiguration.from(ConfigMap.class, Secret.class).build();
+
+    assertTrue(configuration.getIndexers().isEmpty());
+  }
+
+  @Test
+  void builderCollectsIndexers() {
+    Function<ConfigMap, List<String>> byName = cm -> List.of(cm.getMetadata().getName());
+    Function<ConfigMap, List<String>> byNamespace = cm -> List.of(cm.getMetadata().getNamespace());
+
+    var configuration =
+        InformerEventSourceConfiguration.from(ConfigMap.class, Secret.class)
+            .withIndexer("name", byName)
+            .withIndexers(Map.of("namespace", byNamespace))
+            .build();
+
+    assertEquals(Map.of("name", byName, "namespace", byNamespace), configuration.getIndexers());
+  }
+
+  @Test
+  void configuredIndexersCannotBeModifiedAfterBuild() {
+    var configuration =
+        InformerEventSourceConfiguration.from(ConfigMap.class, Secret.class)
+            .withIndexer("name", cm -> List.of(cm.getMetadata().getName()))
+            .build();
+
+    assertThrows(
+        UnsupportedOperationException.class,
+        () -> configuration.getIndexers().put("other", cm -> List.of()));
   }
 }
